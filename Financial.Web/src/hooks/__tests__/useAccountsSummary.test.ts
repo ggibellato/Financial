@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountGroupSummaryDto, CategoryTotalDto } from '../../api/types'
 import { useAccountsSummary } from '../useAccountsSummary'
+import { never } from '../../test-utils/deferred'
 
 const {
   getCategoryTotalsByMonthMock,
@@ -103,7 +104,7 @@ describe('useAccountsSummary', () => {
   })
 
   it('exposes empty summary figures and a Balanced result before the summary has loaded', () => {
-    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+    getDefaultGroupSummaryMock.mockReturnValue(never())
     const { result } = renderHook(() => useAccountsSummary(2026, 7))
 
     expect(result.current.incomeTotals).toEqual([])

@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TitheMonthDto, TitheSummaryDto } from '../../api/types'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import TitheTab from '../TitheTab'
+import { never } from '../../test-utils/deferred'
 
 const { getTitheSummaryByMonthMock, getTitheYearMock, updateTitheCarryForwardMock } = vi.hoisted(() => ({
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
@@ -177,8 +178,8 @@ describe('TitheTab', () => {
   })
 
   it('[AC P61-F03-tithe-tab-and-history-06] shows a loading state for the detail and the history', () => {
-    getTitheSummaryByMonthMock.mockReturnValue(new Promise(() => {}))
-    getTitheYearMock.mockReturnValue(new Promise(() => {}))
+    getTitheSummaryByMonthMock.mockReturnValue(never())
+    getTitheYearMock.mockReturnValue(never())
     renderTab()
 
     expect(screen.getByText('Loading the tithe…')).toBeInTheDocument()

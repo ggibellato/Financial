@@ -45,7 +45,7 @@ function buildWorkbook(overrides: Partial<TaxWorkbookDto> = {}): TaxWorkbookDto 
 
 describe('useTaxWorkbook', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('loads options and defaults selection to the first one, then fetches its workbook', async () => {

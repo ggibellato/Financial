@@ -30,6 +30,7 @@ import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
 import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
+import { never } from '../../test-utils/deferred'
 
 const {
   getAccountsMock,
@@ -1559,7 +1560,7 @@ describe('AccountScreenPage', () => {
   })
 
   it('shows skeletons for the header and grid on first load', () => {
-    getAccountMock.mockReturnValue(new Promise(() => {}))
+    getAccountMock.mockReturnValue(never())
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
@@ -1819,7 +1820,7 @@ describe('AccountScreenPage actions', () => {
   })
 
   it('keeps the other actions usable while the transfer counterparts are still loading', async () => {
-    getTransferDestinationsMock.mockReturnValue(new Promise(() => {}))
+    getTransferDestinationsMock.mockReturnValue(never())
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 

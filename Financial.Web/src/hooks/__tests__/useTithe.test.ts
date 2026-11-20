@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TitheMonthDto, TitheSummaryDto } from '../../api/types'
 import { CARRY_FORWARD_UPDATE_ERROR, NO_CARRY_FORWARD_MESSAGE, useTithe } from '../useTithe'
+import { never } from '../../test-utils/deferred'
 
 const { getTitheSummaryByMonthMock, getTitheYearMock, updateTitheCarryForwardMock } = vi.hoisted(() => ({
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
@@ -120,7 +121,7 @@ describe('useTithe', () => {
 
   it(`${AC_02} shows a retry message for any other failure, keeps the decision and clears the message on the next attempt`, async () => {
     updateTitheCarryForwardMock.mockRejectedValueOnce(new ApiError('Server error', 500))
-    updateTitheCarryForwardMock.mockReturnValueOnce(new Promise(() => {}))
+    updateTitheCarryForwardMock.mockReturnValueOnce(never())
     const { result } = await renderLoaded()
 
     act(() => result.current.updateCarryForwardInclusion(false))
@@ -158,7 +159,7 @@ describe('useTithe', () => {
     let resolveOctober!: (value: TitheSummaryDto) => void
     updateTitheCarryForwardMock
       .mockReturnValueOnce(new Promise((resolve) => { resolveOctober = resolve }))
-      .mockReturnValueOnce(new Promise(() => {}))
+      .mockReturnValueOnce(never())
     const { result, rerender } = renderHook(({ month }) => useTithe(2026, month), { initialProps: { month: 10 } })
     await waitFor(() => expect(result.current.detail.isLoading).toBe(false))
 

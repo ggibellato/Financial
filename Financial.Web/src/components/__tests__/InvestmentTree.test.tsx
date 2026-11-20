@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
-import { deferred } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentTree from '../InvestmentTree'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
@@ -149,7 +149,7 @@ describe('InvestmentTree', () => {
   })
 
   it('shows loading state on mount', () => {
-    getNavigationTreeMock.mockReturnValue(new Promise(() => {}))
+    getNavigationTreeMock.mockReturnValue(never())
     render(
       <SelectedNodeProvider>
         <InvestmentTree />

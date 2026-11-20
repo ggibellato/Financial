@@ -5,6 +5,7 @@ import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNod
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SelectedNode } from '../../api/types'
 import { ApiError } from '../../api/apiError'
+import { never } from '../../test-utils/deferred'
 
 const {
   getAssetDetailsMock,
@@ -141,11 +142,11 @@ describe('DetailPanel', () => {
     getPortfolioAssetsSummaryMock.mockReset()
     getTransactionsByBrokerMock.mockReset()
     getTransactionsByPortfolioMock.mockReset()
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
-    getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
-    getPortfolioAssetsSummaryMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
+    getCurrentPriceMock.mockReturnValue(never())
+    getSummaryByBrokerMock.mockReturnValue(never())
+    getSummaryByPortfolioMock.mockReturnValue(never())
+    getPortfolioAssetsSummaryMock.mockReturnValue(never())
     getTransactionsByBrokerMock.mockResolvedValue([])
     getTransactionsByPortfolioMock.mockResolvedValue([])
   })

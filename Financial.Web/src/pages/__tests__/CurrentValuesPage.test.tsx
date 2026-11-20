@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CurrentValuesPage from '../CurrentValuesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetPriceDto, BrokerNodeDto, PortfolioReferenceDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
 
 const { getBrokersMock, getCurrentPriceMock, getAssetPriceFetchScopeMock } = vi.hoisted(() => ({
   getBrokersMock: vi.fn<FinancialApiClient['getBrokers']>(),
@@ -159,7 +160,7 @@ describe('CurrentValuesPage', () => {
     getBrokersMock.mockResolvedValue([
       makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }]),
     ])
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getCurrentPriceMock.mockReturnValue(never())
 
     render(<CurrentValuesPage />)
     fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
@@ -177,7 +178,7 @@ describe('CurrentValuesPage', () => {
     ])
     getCurrentPriceMock
       .mockResolvedValueOnce(makePrice('BCIA11'))
-      .mockReturnValueOnce(new Promise(() => {}))
+      .mockReturnValueOnce(never())
 
     render(<CurrentValuesPage />)
     fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
@@ -204,7 +205,7 @@ describe('CurrentValuesPage', () => {
     getBrokersMock.mockResolvedValue([
       makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }]),
     ])
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getCurrentPriceMock.mockReturnValue(never())
 
     render(<CurrentValuesPage />)
     fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
@@ -443,7 +444,7 @@ describe('CurrentValuesPage', () => {
   })
 
   it('shows Loading again while a retry runs', async () => {
-    getBrokersMock.mockRejectedValueOnce(new Error('Network error')).mockReturnValueOnce(new Promise(() => {}))
+    getBrokersMock.mockRejectedValueOnce(new Error('Network error')).mockReturnValueOnce(never())
 
     render(<CurrentValuesPage />)
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
@@ -484,7 +485,7 @@ describe('CurrentValuesPage', () => {
         { name: 'Acoes', assets: [{ name: 'KLBN4', ticker: 'KLBN4' }] },
       ]),
     ])
-    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockReturnValueOnce(new Promise(() => {}))
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockReturnValueOnce(never())
 
     render(<CurrentValuesPage />)
     await checkPrices()
@@ -494,7 +495,7 @@ describe('CurrentValuesPage', () => {
 
   it('starts the progress bar from zero on a second check', async () => {
     getBrokersMock.mockResolvedValue([makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }])])
-    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockReturnValueOnce(new Promise(() => {}))
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockReturnValueOnce(never())
 
     render(<CurrentValuesPage />)
     await checkPrices()

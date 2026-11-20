@@ -199,8 +199,7 @@ describe('todayIsoDate', () => {
 
 describe('currentYearMonth', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 6, 15)) // 2026-07-15
+    pinDate('2026-07-15T12:00:00')
   })
 
   afterEach(() => {

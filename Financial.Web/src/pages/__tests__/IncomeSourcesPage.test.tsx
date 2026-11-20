@@ -4,6 +4,7 @@ import IncomeSourcesPage from '../IncomeSourcesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { IncomeSourceDto } from '../../api/types'
 import { potsAccount } from '../../test/account'
+import { never } from '../../test-utils/deferred'
 
 const { getIncomeSourcesMock, createIncomeSourceMock, updateIncomeSourceMock, deleteIncomeSourceMock, getAccountsMock } =
   vi.hoisted(() => ({
@@ -58,7 +59,7 @@ describe('IncomeSourcesPage', () => {
   })
 
   it('shows a split source as loading, not as no split, while accounts load', async () => {
-    getAccountsMock.mockReturnValue(new Promise(() => {}))
+    getAccountsMock.mockReturnValue(never())
     render(<IncomeSourcesPage />)
 
     await waitFor(() => expect(screen.getByText('Ariana')).toBeInTheDocument())

@@ -6,6 +6,7 @@ import type { AssetSearchOptionsData } from '../../hooks/useAssetSearchOptions'
 import { formatN2 } from '../../utils/formatters'
 import { BLANK_TARGET_ASSET_IDENTITY, BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
 import CorporateActionForm from '../CorporateActionForm'
+import { optionNames } from '../../test-utils/optionNames'
 
 const mockAssetSearchOptions: AssetSearchOptionsData = {
   options: [],
@@ -75,8 +76,7 @@ describe('CorporateActionForm', () => {
   it('offers Split / reverse split, Merger, and Spin-off in the type selector', () => {
     render(<CorporateActionForm {...baseProps} />)
 
-    const options = screen.getByLabelText('Type').querySelectorAll('option')
-    expect(Array.from(options).map((o) => o.textContent)).toEqual([
+    expect(optionNames(screen.getByLabelText('Type'))).toEqual([
       'Split / reverse split',
       'Merger',
       'Spin-off',

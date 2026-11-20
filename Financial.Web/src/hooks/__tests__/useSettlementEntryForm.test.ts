@@ -6,6 +6,7 @@ import type { SettlementEntryDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { useSettlementEntryForm, type SettlementEntryField } from '../useSettlementEntryForm'
+import { never } from '../../test-utils/deferred'
 
 const { createSettlementEntryMock, updateSettlementEntryMock, settleAccountMock } = vi.hoisted(() => ({
   settleAccountMock: vi.fn<FinancialApiClient['settleAccount']>(),
@@ -501,7 +502,7 @@ describe('useSettlementEntryForm', () => {
     })
 
     it('does not save twice while saving', () => {
-      createSettlementEntryMock.mockReturnValue(new Promise(() => {}))
+      createSettlementEntryMock.mockReturnValue(never())
       const { result } = renderForm()
       act(() => result.current.openAdd())
       fillValidEntry(result)

@@ -6,6 +6,7 @@ import type { AggregatedSummaryDto, InvestmentScope, PortfolioAssetSummaryItemDt
 import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
 import { formatN2 } from '../../utils/formatters'
 import PortfolioHoldingsTab from '../PortfolioHoldingsTab'
+import { pinDate } from '../../test-utils/pinDate'
 
 function renderComponent(scope: InvestmentScope = 'active') {
   return render(
@@ -807,8 +808,7 @@ describe('PortfolioHoldingsTab', () => {
   })
 
   it('renders_footer_credits_label_with_current_month_and_year', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-07-15'))
+    pinDate('2026-07-15')
     try {
       setAggregatedMock({ summary: SUMMARY })
       setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })

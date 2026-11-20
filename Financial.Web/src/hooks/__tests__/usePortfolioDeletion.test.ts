@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import { useSelectedNode } from '../../context/SelectedNodeContext'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { usePortfolioDeletion } from '../usePortfolioDeletion'
+import { never } from '../../test-utils/deferred'
 
 const { deleteEmptyPortfolioMock } = vi.hoisted(() => ({
   deleteEmptyPortfolioMock: vi.fn<FinancialApiClient['deleteEmptyPortfolio']>(),
@@ -34,7 +35,7 @@ describe('usePortfolioDeletion', () => {
   })
 
   it('clears the previous error when deleting again', async () => {
-    deleteEmptyPortfolioMock.mockRejectedValueOnce('unexpected').mockReturnValueOnce(new Promise(() => {}))
+    deleteEmptyPortfolioMock.mockRejectedValueOnce('unexpected').mockReturnValueOnce(never())
     const { result } = renderDeletion()
     await act(async () => result.current.deletion.deletePortfolio('XPI', 'Default'))
 

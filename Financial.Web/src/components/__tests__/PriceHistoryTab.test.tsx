@@ -8,6 +8,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import PriceHistoryTab from '../PriceHistoryTab'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { never } from '../../test-utils/deferred'
 
 const { getAssetDetailsMock, setAssetPriceMock, deleteAssetPriceMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -188,7 +189,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('renders_loading_state', async () => {
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
     renderWithSelectedNode(<PriceHistoryTab />, ASSET_NODE)
     expect(await screen.findByText('Loading…')).toBeInTheDocument()
   })
@@ -357,7 +358,7 @@ describe('PriceHistoryTab', () => {
 
   it('save_button_disabled_while_saving', async () => {
     await renderEmpty()
-    setAssetPriceMock.mockReturnValue(new Promise(() => {}))
+    setAssetPriceMock.mockReturnValue(never())
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     fireEvent.change(priceInput(), { target: { value: '50' } })
@@ -429,7 +430,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('shows_the_row_as_deleting_and_keeps_focus_on_it_while_the_delete_is_in_progress', async () => {
-    deleteAssetPriceMock.mockReturnValue(new Promise(() => {}))
+    deleteAssetPriceMock.mockReturnValue(never())
     await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
 
     await confirmDelete(MANUAL_NAME)
@@ -439,7 +440,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('blocks_a_second_delete_while_one_is_in_progress', async () => {
-    deleteAssetPriceMock.mockReturnValue(new Promise(() => {}))
+    deleteAssetPriceMock.mockReturnValue(never())
     await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
     await confirmDelete(MANUAL_NAME)
 

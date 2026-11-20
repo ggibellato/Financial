@@ -1,49 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
-import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import AllocationPieChart, { type AllocationChartEntry } from '../AllocationPieChart'
 
-interface MockPieDatum {
-  name: string
-  value: number
-  percentage: number
-}
-
-vi.mock('recharts', () => ({
-  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
-  Pie: ({ data, children }: { data: MockPieDatum[]; children?: React.ReactNode }) => (
-    <div data-testid="pie">
-      {data.map((d) => (
-        <span key={d.name} data-testid="pie-slice" data-percentage={d.percentage}>
-          {d.name}
-        </span>
-      ))}
-      {children}
-    </div>
-  ),
-  Cell: () => null,
-  Tooltip: ({
-    content,
-  }: {
-    content?: (props: {
-      active: boolean
-      payload: { payload: MockPieDatum }[]
-    }) => React.ReactNode
-  }) => (
-    <div data-testid="tooltip">
-      {content
-        ? content({
-            active: true,
-            payload: [{ payload: { name: 'Equity', value: 1234.5, percentage: 25.6 } }],
-          })
-        : null}
-    </div>
-  ),
-  Legend: () => <div data-testid="legend" />,
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="responsive-container">{children}</div>
-  ),
-}))
+vi.mock('recharts', () => import('../../../test/rechartsPieMock'))
 
 const ENTRIES: AllocationChartEntry[] = [
   { label: 'Equity', marketValue: 12000, percentage: 60 },

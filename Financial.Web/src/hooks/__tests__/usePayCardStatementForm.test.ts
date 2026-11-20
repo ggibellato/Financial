@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CardStatementDto, PayableStatementDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { payableCardsOf, usePayCardStatementForm } from '../usePayCardStatementForm'
+import { never } from '../../test-utils/deferred'
 
 const { getPayableStatementsMock, markCardStatementPaidMock } = vi.hoisted(() => ({
   getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
@@ -248,7 +249,7 @@ describe('usePayCardStatementForm', () => {
     act(() => result.current.setField('date', '2026-10-14'))
     const afterEdit = result.current.saveError
     await failPayment()
-    markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
+    markCardStatementPaidMock.mockReturnValue(never())
     act(() => {
       result.current.submit()
     })

@@ -8,6 +8,7 @@ import type { DueDateFormState, StatementDueDateFormHandle } from '../../hooks/u
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import CardStatementsTab from '../CardStatementsTab'
 import { findErrorAlert, getErrorAlert } from '../../test-utils/errorAlert'
+import { never } from '../../test-utils/deferred'
 
 const { getAccountStatementsMock, getAccountsMock, setStatementDueDateMock } = vi.hoisted(() => ({
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
@@ -578,7 +579,7 @@ describe('CardStatementsTab', () => {
       ['Save due date', 'Saving…', 'Clear due date'],
       ['Clear due date', 'Clearing…', 'Save due date'],
     ])('disables the form and the row actions while %s runs, keeping focus on the action', async (action, label, other) => {
-      setStatementDueDateMock.mockReturnValue(new Promise(() => {}))
+      setStatementDueDateMock.mockReturnValue(never())
       await openRealForm()
 
       await userEvent.click(screen.getByRole('button', { name: action }))

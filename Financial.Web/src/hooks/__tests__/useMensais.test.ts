@@ -5,6 +5,7 @@ import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
 import { pinDate } from '../../test-utils/pinDate'
 import { useMensais } from '../useMensais'
+import { never } from '../../test-utils/deferred'
 
 const CURRENT_MONTH_INPUT = '2026-12'
 const NEXT_MONTH_INPUT = '2027-01'
@@ -222,7 +223,7 @@ describe('useMensais', () => {
   })
 
   it('does not swap in another form while a bill is saving', async () => {
-    updateMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    updateMensaisBillMock.mockReturnValue(never())
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -432,7 +433,7 @@ describe('useMensais', () => {
   })
 
   it('ignores a second delete while one is still running', async () => {
-    deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    deleteMensaisBillMock.mockReturnValue(never())
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     act(() => result.current.deleteBill('b1'))

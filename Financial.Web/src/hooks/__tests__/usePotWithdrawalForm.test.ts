@@ -6,6 +6,7 @@ import { account, potsAccount } from '../../test/account'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault } from '../../utils/createFormDefaults'
 import { usePotWithdrawalForm } from '../usePotWithdrawalForm'
+import { never } from '../../test-utils/deferred'
 
 const { createPotWithdrawalMock, updatePotWithdrawalMock, getPotsMock } = vi.hoisted(() => ({
   createPotWithdrawalMock: vi.fn<FinancialApiClient['createPotWithdrawal']>(),
@@ -136,7 +137,7 @@ describe('usePotWithdrawalForm', () => {
   })
 
   it('does not submit before the pots have loaded', () => {
-    getPotsMock.mockReturnValue(new Promise(() => {}))
+    getPotsMock.mockReturnValue(never())
     const { result } = renderForm()
     act(() => result.current.openFromPotsAccount('reserva'))
     fillValidWithdrawal(result)
@@ -173,7 +174,7 @@ describe('usePotWithdrawalForm', () => {
   })
 
   it('sends a second submit only once while the first is saving', async () => {
-    createPotWithdrawalMock.mockReturnValue(new Promise(() => {}))
+    createPotWithdrawalMock.mockReturnValue(never())
     const { result } = await openWithPotsLoaded()
     fillValidWithdrawal(result)
 

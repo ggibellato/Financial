@@ -6,7 +6,7 @@ import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrap
 import { formatMonthKey } from '../../utils/formatters'
 import { buildMonthlyNetInvested, useTransactions } from '../useTransactions'
 import { pinDate } from '../../test-utils/pinDate'
-import { deferred } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const {
   getAssetDetailsMock,
@@ -556,7 +556,7 @@ describe('useTransactions', () => {
   }
 
   it('reports the transaction types as not loaded until they arrive', () => {
-    getTransactionTypeEffectsMock.mockReset().mockReturnValue(new Promise(() => {}))
+    getTransactionTypeEffectsMock.mockReset().mockReturnValue(never())
     const { wrapper } = createSelectedNodeWrapper()
 
     const { result } = renderHook(() => useTransactions(), { wrapper })

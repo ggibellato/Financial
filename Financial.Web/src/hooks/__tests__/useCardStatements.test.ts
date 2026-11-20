@@ -219,7 +219,7 @@ describe('useCardStatements', () => {
   })
 
   it('ignores opening another payment while one is saving', async () => {
-    markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
+    markCardStatementPaidMock.mockReturnValue(never())
     const { result } = await renderLoaded()
     act(() => result.current.openPayForm(OCTOBER))
     act(() => result.current.setPayField('bankId', 'barclays'))

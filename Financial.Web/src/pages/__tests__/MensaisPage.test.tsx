@@ -309,7 +309,7 @@ describe('MensaisPage', () => {
   })
 
   it('disables every other Delete while one bill is being deleted', async () => {
-    deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    deleteMensaisBillMock.mockReturnValue(never())
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
@@ -489,7 +489,7 @@ describe('MensaisPage', () => {
   })
 
   it('shows the bill as deleting and keeps focus on it while the delete is in progress', async () => {
-    deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    deleteMensaisBillMock.mockReturnValue(never())
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
@@ -553,7 +553,7 @@ describe('MensaisPage', () => {
   })
 
   it('keeps focus on the reset button while the reset is in progress', async () => {
-    resetMensaisToUnsetMock.mockReturnValue(new Promise(() => {}))
+    resetMensaisToUnsetMock.mockReturnValue(never())
     render(<MensaisPage />)
     await screen.findByText('INSS')
     screen.getByRole('button', { name: 'Reset all to Unset' }).focus()

@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useAssetSearchOptions } from '../useAssetSearchOptions'
+import { never } from '../../test-utils/deferred'
 
 const { getAdminAssetsMock } = vi.hoisted(() => ({
   getAdminAssetsMock: vi.fn<FinancialApiClient['getAdminAssets']>(),
@@ -80,7 +81,7 @@ describe('useAssetSearchOptions', () => {
   })
 
   it('sets_isLoading_true_while_fetch_is_in_progress', async () => {
-    getAdminAssetsMock.mockReturnValue(new Promise(() => {}))
+    getAdminAssetsMock.mockReturnValue(never())
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSearchOptions(), { wrapper })
     setNode(ASSET_NODE)

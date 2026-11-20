@@ -3,6 +3,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountGroupSummaryDto, CategoryTotalDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountsSummaryTab from '../AccountsSummaryTab'
+import { never } from '../../test-utils/deferred'
 
 const {
   getCategoryTotalsByMonthMock,
@@ -99,7 +100,7 @@ describe('AccountsSummaryTab', () => {
   })
 
   it(`${AC_07} shows one loading state and no grid while the summary is pending`, () => {
-    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+    getDefaultGroupSummaryMock.mockReturnValue(never())
 
     render(<AccountsSummaryTab year={2026} month={10} />)
 

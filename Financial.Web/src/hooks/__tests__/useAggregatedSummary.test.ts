@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AggregatedSummaryDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useAggregatedSummary } from '../useAggregatedSummary'
+import { never } from '../../test-utils/deferred'
 
 const { getSummaryByBrokerMock, getSummaryByPortfolioMock } = vi.hoisted(() => ({
   getSummaryByBrokerMock: vi.fn<FinancialApiClient['getSummaryByBroker']>(),
@@ -99,7 +100,7 @@ describe('useAggregatedSummary', () => {
   })
 
   it('sets_isLoading_true_while_fetch_is_in_progress', async () => {
-    getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
+    getSummaryByBrokerMock.mockReturnValue(never())
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAggregatedSummary(), { wrapper })
     setNode(BROKER_NODE)
@@ -134,7 +135,7 @@ describe('useAggregatedSummary', () => {
     setNode(BROKER_NODE)
     await waitFor(() => expect(result.current.summary).not.toBeNull())
 
-    getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
+    getSummaryByPortfolioMock.mockReturnValue(never())
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.isLoading).toBe(true))
     expect(result.current.summary).toBeNull()

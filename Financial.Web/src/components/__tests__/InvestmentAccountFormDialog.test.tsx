@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import { account, cardAccount, potsAccount } from '../../test/account'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
+import { optionNames } from '../../test-utils/optionNames'
 
 const activeCard = cardAccount({ id: 'cc1', name: 'Platinum Visa 8003' })
 const inactiveCard = cardAccount({ id: 'cc2', name: 'Retired Card', isActive: false })
@@ -85,7 +86,7 @@ describe('InvestmentAccountFormDialog', () => {
 
     const picker = screen.getByRole('combobox', { name: /^Pots account/ })
     expect(picker).toBeRequired()
-    expect(Array.from(picker.querySelectorAll('option')).map((option) => option.textContent)).toEqual([
+    expect(optionNames(picker)).toEqual([
       'Select Pots account…',
       'Holidays',
       'Reserva',

@@ -6,6 +6,7 @@ import { recurringBill } from '../../test/recurringBill'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
 import { ALREADY_PAID_ERROR, CHOOSE_BILL_ERROR, unpaidUkBills, usePayRecurringBill } from '../usePayRecurringBill'
+import { never } from '../../test-utils/deferred'
 
 const { getMensaisBillsMock, markMensaisBillPaidMock } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -275,7 +276,7 @@ describe('usePayRecurringBill', () => {
     act(() => result.current.setField('description', 'Council Tax October'))
     const afterEdit = result.current.saveError
     await failWithInactiveBank(result)
-    markMensaisBillPaidMock.mockReturnValue(new Promise(() => {}))
+    markMensaisBillPaidMock.mockReturnValue(never())
     act(() => result.current.submit())
 
     expect(afterEdit).toBeNull()
@@ -283,7 +284,7 @@ describe('usePayRecurringBill', () => {
   })
 
   it('pays once while a payment is still running, and shows it as saving', async () => {
-    markMensaisBillPaidMock.mockReturnValue(new Promise(() => {}))
+    markMensaisBillPaidMock.mockReturnValue(never())
     const { result } = renderPayBill()
     await openWithCouncilTax(result)
     act(() => result.current.setField('categoryId', 'cat-home'))

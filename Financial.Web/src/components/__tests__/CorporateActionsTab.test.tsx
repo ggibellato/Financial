@@ -96,6 +96,10 @@ function setMock(overrides: Partial<CorporateActionsData>) {
 }
 
 describe('CorporateActionsTab', () => {
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView
+  })
+
   beforeEach(() => {
     mockRetry.mockReset()
     mockShowNewForm.mockReset()
