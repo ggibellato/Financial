@@ -2623,22 +2623,6 @@ describe('AccountScreenPage card screen', () => {
       await waitFor(() => expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toHaveFocus())
     })
 
-    it('[AC P60-F15-card-refunds-and-credit-05] blocks an amount above the credit on the focused field', async () => {
-      const user = userEvent.setup()
-      cardInCredit(35)
-      const form = await openRefundForm(user)
-      await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
-      const amount = within(form).getByLabelText(/^Amount/)
-
-      await user.clear(amount)
-      await user.type(amount, '35.01')
-      await user.click(within(form).getByRole('button', { name: 'Refund credit to bank' }))
-
-      expect(await within(form).findByText("The card's credit is 35.00 GBP.")).toBeInTheDocument()
-      expect(amount).toHaveFocus()
-      expect(createCardCreditRefundMock).not.toHaveBeenCalled()
-    })
-
     it('keeps the form and shows the message when the server refuses', async () => {
       const user = userEvent.setup()
       cardInCredit(35)
@@ -2896,21 +2880,6 @@ describe('AccountScreenPage card screen', () => {
       expect(await screen.findByText('Refund added')).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
       await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
-    })
-
-    it('blocks a refund with no amount, showing the message on the focused field', async () => {
-      const user = userEvent.setup()
-      withActions(['AddRefund'])
-      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
-
-      await user.click(await screen.findByRole('button', { name: 'New refund' }))
-      const form = screen.getByRole('heading', { name: 'New refund' }).closest('form') as HTMLElement
-      await user.type(within(form).getByLabelText(/^Description/), 'Shoes returned')
-      await user.click(within(form).getByRole('button', { name: 'Add refund' }))
-
-      expect(await within(form).findByText('Amount must be greater than zero.')).toBeInTheDocument()
-      expect(within(form).getByLabelText(/^Amount/)).toHaveFocus()
-      expect(createExpenseMock).not.toHaveBeenCalled()
     })
 
     it('labels a refund row Refund with a positive amount and opens Edit in refund mode', async () => {

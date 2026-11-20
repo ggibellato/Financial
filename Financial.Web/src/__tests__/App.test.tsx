@@ -88,7 +88,7 @@ describe('App', () => {
     await waitFor(() => expect(document.title).toBe('Mensais - CashFlow - Financial'))
   })
 
-  it('renders_in_light_mode_by_default_regardless_of_os_preference', () => {
+  it('renders_the_light_fluent_theme_by_default', () => {
     render(<AppWithRoutes />)
 
     const provider = document.querySelector('.fui-FluentProvider') as HTMLElement

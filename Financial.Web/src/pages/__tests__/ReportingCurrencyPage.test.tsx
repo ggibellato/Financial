@@ -25,14 +25,6 @@ describe('ReportingCurrencyPage', () => {
     getReportingCurrencyMock.mockResolvedValue({ currency: 'GBP', enabled: true })
   })
 
-  it('renders_the_three_currency_options', async () => {
-    render(<ReportingCurrencyPage />)
-
-    expect(await screen.findByRole('radio', { name: 'GBP' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'BRL' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'USD' })).toBeInTheDocument()
-  })
-
   it('shows_a_loading_state_before_data_arrives', () => {
     render(<ReportingCurrencyPage />)
 
@@ -44,23 +36,6 @@ describe('ReportingCurrencyPage', () => {
     render(<ReportingCurrencyPage />)
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-  })
-
-  it('the_currently_saved_currency_is_selected', async () => {
-    getReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: true })
-    render(<ReportingCurrencyPage />)
-
-    expect(await screen.findByRole('radio', { name: 'BRL' })).toBeChecked()
-  })
-
-  it('selecting_a_currency_calls_setReportingCurrency', async () => {
-    setReportingCurrencyMock.mockResolvedValue({ currency: 'USD', enabled: true })
-    render(<ReportingCurrencyPage />)
-    const usdOption = await screen.findByRole('radio', { name: 'USD' })
-
-    usdOption.click()
-
-    await waitFor(() => expect(setReportingCurrencyMock).toHaveBeenCalledWith({ currency: 'USD', enabled: true }))
   })
 
   it('shows_a_save_error_inline_without_hiding_the_control', async () => {

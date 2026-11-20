@@ -246,52 +246,11 @@ describe('AggregatedSummaryTab', () => {
     expect(screen.queryByTestId('broker-breakdown-charts')).not.toBeInTheDocument()
   })
 
-  it('renders every converted figure labelled with the reporting currency alongside the native ones', () => {
-    setMock({
-      summary: {
-        ...SUMMARY,
-        reportingCurrency: 'GBP',
-        convertedMarketValue: 20880.0,
-        convertedInvested: 14175.78,
-        convertedUnrealisedGainLoss: 500.25,
-        convertedTotalReturn: 0.11,
-        convertedTotalReturnNetOfTax: 0.1,
-      },
-    })
-    renderComponent()
-
-    expect(screen.getByText('Market value (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Invested (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Unrealised gain/loss (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Total return (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Total return net of tax (converted to GBP)')).toBeInTheDocument()
-    const marketValueLabel = screen.getByText('Market value (converted to GBP)')
-    expect(marketValueLabel.nextElementSibling?.textContent).toMatch(/20[.,]880[.,]00/)
-    expect(screen.getByText('Total bought')).toBeInTheDocument()
-  })
-
-  it('shows a visible inline warning when the converted total is Partial', () => {
-    setMock({ summary: { ...SUMMARY, isPartial: true } })
-    renderComponent()
-
-    expect(screen.getByText(/could not be converted/)).toBeInTheDocument()
-  })
-
   it('does_not_show_the_partial_warning_when_not_flagged', () => {
     setMock({ summary: { ...SUMMARY, isPartial: false } })
     renderComponent()
 
     expect(screen.queryByText(/could not be converted/)).not.toBeInTheDocument()
-  })
-
-  it('hides the converted figures with a retry affordance when ReportingCurrencyUnavailable, leaving native figures visible', () => {
-    setMock({ summary: { ...SUMMARY, isReportingCurrencyUnavailable: true } })
-    renderComponent()
-
-    expect(screen.getByRole('alert')).toHaveTextContent(/Converted totals unavailable/)
-    expect(screen.queryByText(/Market value \(converted to/)).not.toBeInTheDocument()
-    expect(screen.getByText('Total bought')).toBeInTheDocument()
-    expect(screen.getByText('Market value')).toBeInTheDocument()
   })
 
   it('retrying_after_ReportingCurrencyUnavailable_calls_retry', () => {

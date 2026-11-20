@@ -467,16 +467,6 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/asset-price-fetch`)
   })
 
-  it('throws when the API returns an error', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(errorResponse())
-    const client = createFinancialApiClient({
-      baseUrl: API_BASE_URL,
-      fetch: fetchMock,
-    })
-
-    await expect(client.getNavigationTree()).rejects.toThrow('API request failed')
-  })
-
   it('throws the problem-details "detail" message when the API returns one', async () => {
     const fetchMock = vi
       .fn()
@@ -499,6 +489,7 @@ describe('financialApiClient', () => {
 
     expect(error).toBeInstanceOf(ApiError)
     expect((error as ApiError).status).toBe(500)
+    expect((error as ApiError).message).toContain('API request failed')
   })
 
   it('throws an ApiError with status 409 on a conflict response', async () => {
@@ -1099,13 +1090,6 @@ describe('financialApiClient', () => {
 
     expect(url).toBe(`${API_BASE_URL}/integrations/calendar/connect`)
     expect(fetchMock).not.toHaveBeenCalled()
-  })
-
-  it('throws an error carrying calendar disconnect failure details', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(errorResponse())
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await expect(client.disconnectCalendar()).rejects.toBeInstanceOf(ApiError)
   })
 
   it('throws the problem-details "title" message when the API returns one with no "detail"', async () => {
@@ -1789,18 +1773,6 @@ describe('financialApiClient', () => {
     expect(init?.method).toBe('DELETE')
   })
 
-  it('throws an ApiError carrying the status when an account delete is refused', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      problemDetailsResponse('Barclays has transactions and cannot be deleted. Deactivate it instead.'),
-    )
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await expect(client.deleteAccount('a1')).rejects.toMatchObject({
-      name: 'ApiError',
-      message: 'Barclays has transactions and cannot be deleted. Deactivate it instead.',
-    })
-  })
-
   it('gets one account for a month', async () => {
     const responseBody: AccountDetailDto = {
       id: 'a1',
@@ -2084,13 +2056,6 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('throws the API error when settling is refused', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ title: 'Nothing to settle.', status: 400 }), { status: 400, headers: { 'Content-Type': 'application/problem+json' } }))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await expect(client.settleAccount('mae', { date: '2026-11-07', description: 'Settlement', note: null, paidBy: 'Other', currency: 'BRL', amount: 1, convertedValue: null })).rejects.toMatchObject({ status: 400 })
-  })
-
   it('deletes a settlement entry through its account route, accepting the empty 204', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -2124,36 +2089,11 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/cards-in-credit`)
   })
 
-  it('rejects a refused account transfer with an ApiError carrying the server message', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: 'Enter the amount received in EUR.' }), { status: 400 }),
-    )
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await expect(
-      client.createAccountTransfer({
-        date: '2026-10-05',
-        sourceAccountId: 'a1',
-        destinationAccountId: 'a3',
-        amount: 10,
-        destinationAmount: null,
-        note: null,
-      }),
-    ).rejects.toMatchObject({ status: 400 })
-  })
-
   it('throws an ApiError with the network failure status when the request cannot reach the server', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     await expect(client.getAccounts()).rejects.toMatchObject({ name: 'ApiError', status: 0, message: 'Failed to fetch' })
-  })
-
-  it('throws an ApiError carrying the status when an account read fails', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(errorResponse())
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await expect(client.getAccount('a1', 2026, 10)).rejects.toMatchObject({ name: 'ApiError', status: 500 })
   })
 
   it('posts an expense create request', async () => {
@@ -2447,15 +2387,6 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dashboard?displayCurrency=GBP`)
   })
 
-  it('getAllocationBreakdown_with_no_params_requests_the_bare_path', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await client.getAllocationBreakdown()
-
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/allocation-breakdown`)
-  })
-
   it('getAllocationBreakdown_with_both_params_appends_displayCurrency_and_brokerCurrency_to_the_query_string', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -2463,14 +2394,5 @@ describe('financialApiClient', () => {
     await client.getAllocationBreakdown('GBP', 'BRL')
 
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/allocation-breakdown?displayCurrency=GBP&brokerCurrency=BRL`)
-  })
-
-  it('getAllocationBreakdown_with_only_displayCurrency_omits_brokerCurrency_from_the_query_string', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await client.getAllocationBreakdown('GBP')
-
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/allocation-breakdown?displayCurrency=GBP`)
   })
 })

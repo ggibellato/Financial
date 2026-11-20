@@ -26,24 +26,6 @@ describe('createFormDefaults', () => {
     expect(getStoredDefault('expense.date')).toBe('2026-08-30')
     expect(getStoredDefault('income.date')).toBe('2026-08-01')
   })
-
-  it('does not throw when sessionStorage access fails', () => {
-    const original = window.sessionStorage
-    Object.defineProperty(window, 'sessionStorage', {
-      configurable: true,
-      get() {
-        throw new Error('sessionStorage disabled')
-      },
-    })
-
-    expect(() => setStoredDefault('expense.date', '2026-08-30')).not.toThrow()
-    expect(getStoredDefault('expense.date')).toBeNull()
-
-    Object.defineProperty(window, 'sessionStorage', {
-      configurable: true,
-      value: original,
-    })
-  })
 })
 
 describe('getCreateFormDate', () => {

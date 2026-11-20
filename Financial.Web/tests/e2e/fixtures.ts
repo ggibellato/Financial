@@ -5,7 +5,6 @@ export const API_PATH = '/api/v1/financial'
 
 interface Fixtures {
   runId: string
-  allowedConsoleErrors: RegExp[]
 }
 
 export const test = base.extend<Fixtures>({
@@ -13,11 +12,7 @@ export const test = base.extend<Fixtures>({
   runId: async ({}, use) => {
     await use(process.env.GITHUB_RUN_ID ?? randomUUID().slice(0, 8))
   },
-  // eslint-disable-next-line no-empty-pattern -- Playwright requires destructuring in the first argument
-  allowedConsoleErrors: async ({}, use) => {
-    await use([])
-  },
-  page: async ({ page, allowedConsoleErrors }, use) => {
+  page: async ({ page }, use) => {
     const consoleErrors: string[] = []
     page.on('console', (message) => {
       if (message.type() === 'error') consoleErrors.push(message.text())
@@ -26,10 +21,7 @@ export const test = base.extend<Fixtures>({
 
     await use(page)
 
-    expect(
-      consoleErrors.filter((error) => !allowedConsoleErrors.some((allowed) => allowed.test(error))),
-      'browser console errors',
-    ).toEqual([])
+    expect(consoleErrors, 'browser console errors').toEqual([])
   },
 })
 
