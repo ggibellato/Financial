@@ -856,185 +856,185 @@ graph TD
 - [x] `scripts/parity/README.md` and `screen-checklist.md` exist and describe every command and figure
 
 ### F02. Account Model and Bank Migration
-- [x] `migrate` upgrades a V1 copy of the live data to V2: 3 bank accounts with the same Ids, names, opening balances, start dates and round-up settings; `Version` = 2
-- [x] Running `migrate` on a V2 file leaves it byte-for-byte unchanged
-- [x] `migrate` refuses `data/data-cashflow.json` as input or output and writes nothing
-- [x] A fresh spreadsheet import writes the current version with the banks as Bank-template accounts (same names and opening balances as before F02), and the API starts on it
-- [x] The API refuses to start on a V1 file with the version message; it starts on a V2 file
-- [x] The shared balance calculation returns the same balance as today for every bank and month, including months before the 2026-09-01 start date (opening amount only)
-- [x] Records dated before the balance start date still count in category totals and history
-- [x] A Unit test per Bank capability runs against a minimal account with only that capability; one combination test covers the Bank template
-- [x] The architecture test fails when a production type outside the allow-list reads `Account.Template`, and passes on the feature's code; only its adapter class references ArchUnitNET
-- [x] `/banks`, `/transfers` and `/expenses` return the same shapes and values as before (OpenAPI diff limited to intended additions)
-- [x] Test seed and example data are V2 and the full test suite passes
-- [x] Parity run on the latest live copy: 0 differences; `/simplify` run; architecture-reviewer passed
+- [x] **P60-F02-account-model-and-bank-migration-01** `migrate` upgrades a V1 copy of the live data to V2: 3 bank accounts with the same Ids, names, opening balances, start dates and round-up settings; `Version` = 2
+- [x] **P60-F02-account-model-and-bank-migration-02** Running `migrate` on a V2 file leaves it byte-for-byte unchanged
+- [x] **P60-F02-account-model-and-bank-migration-03** `migrate` refuses `data/data-cashflow.json` as input or output and writes nothing
+- [x] **P60-F02-account-model-and-bank-migration-04** A fresh spreadsheet import writes the current version with the banks as Bank-template accounts (same names and opening balances as before F02), and the API starts on it
+- [x] **P60-F02-account-model-and-bank-migration-05** The API refuses to start on a V1 file with the version message; it starts on a V2 file
+- [x] **P60-F02-account-model-and-bank-migration-06** The shared balance calculation returns the same balance as today for every bank and month, including months before the 2026-09-01 start date (opening amount only)
+- [x] **P60-F02-account-model-and-bank-migration-07** Records dated before the balance start date still count in category totals and history
+- [x] **P60-F02-account-model-and-bank-migration-08** A Unit test per Bank capability runs against a minimal account with only that capability; one combination test covers the Bank template
+- [x] **P60-F02-account-model-and-bank-migration-09** The architecture test fails when a production type outside the allow-list reads `Account.Template`, and passes on the feature's code; only its adapter class references ArchUnitNET
+- [x] **P60-F02-account-model-and-bank-migration-10** `/banks`, `/transfers` and `/expenses` return the same shapes and values as before (OpenAPI diff limited to intended additions)
+- [x] **P60-F02-account-model-and-bank-migration-11** Test seed and example data are V2 and the full test suite passes
+- [x] **P60-F02-account-model-and-bank-migration-12** Parity run on the latest live copy: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F03. Generic Account-to-Account Transfer
-- [x] A bank → bank transfer through `POST accounts/transfers` lowers the source and raises the destination balance by the amount on its date
-- [x] An account the pair rules don't allow as source or destination (a test account without the capability in F03; Card, Pots and Settlement once F07, F09 and F11 add them) is rejected with 400 and nothing saved
-- [x] Same account on both sides is rejected with 400
-- [x] Different currencies without a destination amount are rejected with 400; with it, each side moves by its own amount
-- [x] `transfer-destinations` for a bank lists the other active banks only; `transfer-sources` the same for the receiving side
-- [x] Existing transfers keep their amounts; `/transfers` returns the same data as before
-- [x] A same-currency transfer stores no destination amount; loading and saving a file with only such transfers leaves it byte-for-byte unchanged
-- [x] `/transfers` rejects a future date, a note over 200 characters, an inactive account and a pair not allowed, with the same messages as `accounts/transfers`
-- [x] Contract tests cover the pair rules table; adding a pair in a test changes the destination list with no other code change
-- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
+- [x] **P60-F03-generic-account-to-account-transfer-01** A bank → bank transfer through `POST accounts/transfers` lowers the source and raises the destination balance by the amount on its date
+- [x] **P60-F03-generic-account-to-account-transfer-02** An account the pair rules don't allow as source or destination (a test account without the capability in F03; Card, Pots and Settlement once F07, F09 and F11 add them) is rejected with 400 and nothing saved
+- [x] **P60-F03-generic-account-to-account-transfer-03** Same account on both sides is rejected with 400
+- [x] **P60-F03-generic-account-to-account-transfer-04** Different currencies without a destination amount are rejected with 400; with it, each side moves by its own amount
+- [x] **P60-F03-generic-account-to-account-transfer-05** `transfer-destinations` for a bank lists the other active banks only; `transfer-sources` the same for the receiving side
+- [x] **P60-F03-generic-account-to-account-transfer-06** Existing transfers keep their amounts; `/transfers` returns the same data as before
+- [x] **P60-F03-generic-account-to-account-transfer-07** A same-currency transfer stores no destination amount; loading and saving a file with only such transfers leaves it byte-for-byte unchanged
+- [x] **P60-F03-generic-account-to-account-transfer-08** `/transfers` rejects a future date, a note over 200 characters, an inactive account and a pair not allowed, with the same messages as `accounts/transfers`
+- [x] **P60-F03-generic-account-to-account-transfer-09** Contract tests cover the pair rules table; adding a pair in a test changes the destination list with no other code change
+- [x] **P60-F03-generic-account-to-account-transfer-10** Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F04. Default Account Group and Summary Query
-- [x] The default group lists the active Bank accounts ordered by name, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
-- [x] A newly created bank joins the default group with no other change; a Pots or Settlement account (from F09/F11) never does
-- [x] The summary for any month returns each member's balance and round-up total equal to today's values
-- [x] Totals are per currency; no figure in a different currency is added into another
-- [x] Category totals sum, round-up total, income totals per source (grouped by income source Id) and total incoming equal the values Monthly computes today
-- [x] Monthly's summary area loads from one summary request and performs no client-side sums of bank balances, round-ups, category totals or income totals (card outstanding moves in F07); bank rows match by account Id
-- [x] Monthly's summary area shows loading, error with Retry and empty states
-- [x] Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F04-default-account-group-and-summary-query-01** The default group lists the active Bank accounts ordered by name, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
+- [x] **P60-F04-default-account-group-and-summary-query-02** A newly created bank joins the default group with no other change; a Pots or Settlement account (from F09/F11) never does
+- [x] **P60-F04-default-account-group-and-summary-query-03** The summary for any month returns each member's balance and round-up total equal to today's values
+- [x] **P60-F04-default-account-group-and-summary-query-04** Totals are per currency; no figure in a different currency is added into another
+- [x] **P60-F04-default-account-group-and-summary-query-05** Category totals sum, round-up total, income totals per source (grouped by income source Id) and total incoming equal the values Monthly computes today
+- [x] **P60-F04-default-account-group-and-summary-query-06** Monthly's summary area loads from one summary request and performs no client-side sums of bank balances, round-ups, category totals or income totals (card outstanding moves in F07); bank rows match by account Id
+- [x] **P60-F04-default-account-group-and-summary-query-07** Monthly's summary area shows loading, error with Retry and empty states
+- [x] **P60-F04-default-account-group-and-summary-query-08** Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F05. Bank Account Screen
-- [x] The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen
-- [x] The picker switches account and keeps the selected month
-- [x] The header shows name, template, currency and the month-end balance equal to Monthly's value
-- [x] The Transactions grid lists every expense, income, transfer and adjustment of the account in the month, amounts signed and right-aligned
-- [x] The rendered actions are exactly the API's allowed actions for the account; a bank shows Add expense, Add income, Transfer to, Transfer from, Pay recurring bill, Reconcile (labelled Adjust balance)
-- [x] Each action opens one inline form above the grid; opening another with unsaved changes asks to discard
-- [x] Add expense saves, refreshes header and grid, and keeps the form open with the last date
-- [x] Pay recurring bill lists all unpaid UK bills and pays the chosen one through `POST mensais/{id}/paid` with this bank; the bill shows Paid on Mensais
-- [x] Edit and Delete on a row work; Delete asks for confirmation
-- [x] Loading, empty, validation, server error, saving, success and unsaved-changes states behave as specified
-- [x] Keyboard-only use reaches every control with visible focus; focus moves into an opened form and back to its action button on close
-- [x] At 320 px width the layout has no horizontal page scroll and meets `docs/ui/review-checklist.md`
-- [x] Old pages still work unchanged
-- [x] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F05-bank-account-screen-01** The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen
+- [x] **P60-F05-bank-account-screen-02** The picker switches account and keeps the selected month
+- [x] **P60-F05-bank-account-screen-03** The header shows name, template, currency and the month-end balance equal to Monthly's value
+- [x] **P60-F05-bank-account-screen-04** The Transactions grid lists every expense, income, transfer and adjustment of the account in the month, amounts signed and right-aligned
+- [x] **P60-F05-bank-account-screen-05** The rendered actions are exactly the API's allowed actions for the account; a bank shows Add expense, Add income, Transfer to, Transfer from, Pay recurring bill, Reconcile (labelled Adjust balance)
+- [x] **P60-F05-bank-account-screen-06** Each action opens one inline form above the grid; opening another with unsaved changes asks to discard
+- [x] **P60-F05-bank-account-screen-07** Add expense saves, refreshes header and grid, and keeps the form open with the last date
+- [x] **P60-F05-bank-account-screen-08** Pay recurring bill lists all unpaid UK bills and pays the chosen one through `POST mensais/{id}/paid` with this bank; the bill shows Paid on Mensais
+- [x] **P60-F05-bank-account-screen-09** Edit and Delete on a row work; Delete asks for confirmation
+- [x] **P60-F05-bank-account-screen-10** Loading, empty, validation, server error, saving, success and unsaved-changes states behave as specified
+- [x] **P60-F05-bank-account-screen-11** Keyboard-only use reaches every control with visible focus; focus moves into an opened form and back to its action button on close
+- [x] **P60-F05-bank-account-screen-12** At 320 px width the layout has no horizontal page scroll and meets `docs/ui/review-checklist.md`
+- [x] **P60-F05-bank-account-screen-13** Old pages still work unchanged
+- [x] **P60-F05-bank-account-screen-14** Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F06. Admin Accounts Page
-- [x] Creating a Bank account with name, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change; its currency is GBP and any other currency is rejected with 400
-- [x] A duplicate name (any case) is rejected with 409 shown under Name
-- [x] Template and currency are read-only for an account with records; the API rejects a change with 400
-- [x] Deleting an account with records returns 409 with the deactivate suggestion; deleting an unused account removes it
-- [x] A deactivated account disappears from pickers, destination lists and new-entry forms (including Monthly's, Mensais's and Reserva's bank pickers) while its history and figures stay unchanged; editing a record keeps showing its own account
-- [x] A new expense, income or balance adjustment on an inactive account, or an edit moving one onto it, is rejected with 400; deleting and same-account edits still work
-- [x] Dialog states (loading, validation, server error, saving, unsaved changes) behave as specified and pass the review checklist
-- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F06-admin-accounts-page-01** Creating a Bank account with name, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change; its currency is GBP and any other currency is rejected with 400
+- [x] **P60-F06-admin-accounts-page-02** A duplicate name (any case) is rejected with 409 shown under Name
+- [x] **P60-F06-admin-accounts-page-03** Template and currency are read-only for an account with records; the API rejects a change with 400
+- [x] **P60-F06-admin-accounts-page-04** Deleting an account with records returns 409 with the deactivate suggestion; deleting an unused account removes it
+- [x] **P60-F06-admin-accounts-page-05** A deactivated account disappears from pickers, destination lists and new-entry forms (including Monthly's, Mensais's and Reserva's bank pickers) while its history and figures stay unchanged; editing a record keeps showing its own account
+- [x] **P60-F06-admin-accounts-page-06** A new expense, income or balance adjustment on an inactive account, or an edit moving one onto it, is rejected with 400; deleting and same-account edits still work
+- [x] **P60-F06-admin-accounts-page-07** Dialog states (loading, validation, server error, saving, unsaved changes) behave as specified and pass the review checklist
+- [x] **P60-F06-admin-accounts-page-08** Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F07. Credit Card Template and Card Migration
-- [x] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids and active flags; each card's due date on the statement of its month; charges, statements and investment accounts reference them; cards appear in the default group
-- [x] Missing statements for months with charges are created, paid only when all their charges are settled
-- [x] Adding a card charge, or editing a charge onto a card or into another month, creates that statement when it is missing
-- [x] A card account shows no actions and is refused with 400 as the payer of an expense, a recurring bill or a card statement
-- [x] A card used by charges, statements or an investment account cannot be deleted (Admin → Accounts and `/credit-cards`); card changes in Admin → Accounts update the calendar event
-- [x] Statement totals, outstanding and paid status are identical to today for every card and month
-- [x] Snapshot suggestions for card sources are identical (paid + unpaid charges of the month)
-- [x] The default group summary includes each card's statement-month outstanding and status, and the card outstanding total per currency; card balance shown as owed
-- [x] Monthly's card outstanding total comes from the summary; the browser no longer sums card statements
-- [x] Calendar due-date sync and the payments-due banner work against card accounts
-- [x] Creating a card in Admin → Accounts needs no code and adds it to the default group
-- [x] `/credit-cards` and `/card-statements` return the same shapes and values
-- [x] A fresh spreadsheet import writes the cards as Credit card accounts and the API starts on it
-- [x] Parity: 0 differences (each card's statement outstanding and status mapped to today's per-statement figures; the card balance, negated, equals accumulated outstanding in the current month); `/simplify` run; architecture-reviewer passed
+- [x] **P60-F07-credit-card-template-and-card-migration-01** `migrate` upgrades V2 to V3: 5 card accounts with the same Ids and active flags; each card's due date on the statement of its month; charges, statements and investment accounts reference them; cards appear in the default group
+- [x] **P60-F07-credit-card-template-and-card-migration-02** Missing statements for months with charges are created, paid only when all their charges are settled
+- [x] **P60-F07-credit-card-template-and-card-migration-03** Adding a card charge, or editing a charge onto a card or into another month, creates that statement when it is missing
+- [x] **P60-F07-credit-card-template-and-card-migration-04** A card account shows no actions and is refused with 400 as the payer of an expense, a recurring bill or a card statement
+- [x] **P60-F07-credit-card-template-and-card-migration-05** A card used by charges, statements or an investment account cannot be deleted (Admin → Accounts and `/credit-cards`); card changes in Admin → Accounts update the calendar event
+- [x] **P60-F07-credit-card-template-and-card-migration-06** Statement totals, outstanding and paid status are identical to today for every card and month
+- [x] **P60-F07-credit-card-template-and-card-migration-07** Snapshot suggestions for card sources are identical (paid + unpaid charges of the month)
+- [x] **P60-F07-credit-card-template-and-card-migration-08** The default group summary includes each card's statement-month outstanding and status, and the card outstanding total per currency; card balance shown as owed
+- [x] **P60-F07-credit-card-template-and-card-migration-09** Monthly's card outstanding total comes from the summary; the browser no longer sums card statements
+- [x] **P60-F07-credit-card-template-and-card-migration-10** Calendar due-date sync and the payments-due banner work against card accounts
+- [x] **P60-F07-credit-card-template-and-card-migration-11** Creating a card in Admin → Accounts needs no code and adds it to the default group
+- [x] **P60-F07-credit-card-template-and-card-migration-12** `/credit-cards` and `/card-statements` return the same shapes and values
+- [x] **P60-F07-credit-card-template-and-card-migration-13** A fresh spreadsheet import writes the cards as Credit card accounts and the API starts on it
+- [x] **P60-F07-credit-card-template-and-card-migration-14** Parity: 0 differences (each card's statement outstanding and status mapped to today's per-statement figures; the card balance, negated, equals accumulated outstanding in the current month); `/simplify` run; architecture-reviewer passed
 
 ### F08. Statement Payment and Card Screen
-- [x] Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
-- [x] After payment the card's owed balance drops by the total and the bank shows one "Card payment" row that opens the statement
-- [x] Category totals and tithe count every charge in its statement month, paid or not
-- [x] Paying from the bank ("Pay card statement") produces the same records as paying from the card
-- [x] Paying an already paid or empty statement is rejected and nothing is saved
-- [x] Unmark on a transfer-paid statement deletes the transfer and sets it unpaid; on a legacy paid statement it restores today's reversal
-- [x] Moving an unpaid charge to a later unpaid statement works; to a paid or earlier one returns 400
-- [x] Card statement GETs write nothing to the data file and return stored statements only
-- [x] Charges on a paid statement count as paid; adding a charge to it, moving one into it, deleting one, or changing a charge's date, value, card or statement month returns 400, while description, category and counts-as-tithe stay editable
-- [x] Payment transfers are absent from the `/transfers` month list, and editing or deleting one through `/transfers` or `/accounts/transfers` returns 409
-- [x] The Statements tab shows each statement's due date
-- [x] A card's Transactions tab lists every charge of the viewed statement month, paid or not, with its purchase date
-- [x] Card screen states, keyboard use and narrow layout pass the review checklist
-- [x] Paying a statement stores the transfer's id on the statement with its paid status in one save; unmarking deletes that transfer and sets the statement unpaid in one save
-- [x] Parity: 0 differences and card screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F08-statement-payment-and-card-screen-01** Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
+- [x] **P60-F08-statement-payment-and-card-screen-02** After payment the card's owed balance drops by the total and the bank shows one "Card payment" row that opens the statement
+- [x] **P60-F08-statement-payment-and-card-screen-03** Category totals and tithe count every charge in its statement month, paid or not
+- [x] **P60-F08-statement-payment-and-card-screen-04** Paying from the bank ("Pay card statement") produces the same records as paying from the card
+- [x] **P60-F08-statement-payment-and-card-screen-05** Paying an already paid or empty statement is rejected and nothing is saved
+- [x] **P60-F08-statement-payment-and-card-screen-06** Unmark on a transfer-paid statement deletes the transfer and sets it unpaid; on a legacy paid statement it restores today's reversal
+- [x] **P60-F08-statement-payment-and-card-screen-07** Moving an unpaid charge to a later unpaid statement works; to a paid or earlier one returns 400
+- [x] **P60-F08-statement-payment-and-card-screen-08** Card statement GETs write nothing to the data file and return stored statements only
+- [x] **P60-F08-statement-payment-and-card-screen-09** Charges on a paid statement count as paid; adding a charge to it, moving one into it, deleting one, or changing a charge's date, value, card or statement month returns 400, while description, category and counts-as-tithe stay editable
+- [x] **P60-F08-statement-payment-and-card-screen-10** Payment transfers are absent from the `/transfers` month list, and editing or deleting one through `/transfers` or `/accounts/transfers` returns 409
+- [x] **P60-F08-statement-payment-and-card-screen-11** The Statements tab shows each statement's due date
+- [x] **P60-F08-statement-payment-and-card-screen-12** A card's Transactions tab lists every charge of the viewed statement month, paid or not, with its purchase date
+- [x] **P60-F08-statement-payment-and-card-screen-13** Card screen states, keyboard use and narrow layout pass the review checklist
+- [x] **P60-F08-statement-payment-and-card-screen-14** Paying a statement stores the transfer's id on the statement with its paid status in one save; unmarking deletes that transfer and sets the statement unpaid in one save
+- [x] **P60-F08-statement-payment-and-card-screen-15** Parity: 0 differences and card screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F09. Pots Template and Reserva Migration
-- [x] `migrate` upgrades V3 to V4: Pots account "Reserva" with 5 pots keeping the bucket Ids, names, split % and active flags; category = "Reserva"; movements unchanged; auto-split income sources and split incomes name Reserva
-- [x] Each pot balance and the Reserva total are identical to today for every month
-- [x] The snapshot source names the Reserva Pots account and its suggestions are identical
-- [x] Renaming the "Reserva" category does not break deposits or withdrawals (no lookup of the "Reserva" category by name remains in server or web)
-- [x] An income from a source with a Pots account starts with the split ticked into that account; unticking it or choosing another Pots account is saved with the income, editing it recalculates into the same account, and a source without one offers no split
-- [x] Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
-- [x] A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
-- [x] Parity: 0 differences apart from each month's snapshot source text, which now names the Pots account (values identical); `/simplify` run; architecture-reviewer passed
+- [x] **P60-F09-pots-template-and-reserva-migration-01** `migrate` upgrades V3 to V4: Pots account "Reserva" with 5 pots keeping the bucket Ids, names, split % and active flags; category = "Reserva"; movements unchanged; auto-split income sources and split incomes name Reserva
+- [x] **P60-F09-pots-template-and-reserva-migration-02** Each pot balance and the Reserva total are identical to today for every month
+- [x] **P60-F09-pots-template-and-reserva-migration-03** The snapshot source names the Reserva Pots account and its suggestions are identical
+- [x] **P60-F09-pots-template-and-reserva-migration-04** Renaming the "Reserva" category does not break deposits or withdrawals (no lookup of the "Reserva" category by name remains in server or web)
+- [x] **P60-F09-pots-template-and-reserva-migration-05** An income from a source with a Pots account starts with the split ticked into that account; unticking it or choosing another Pots account is saved with the income, editing it recalculates into the same account, and a source without one offers no split
+- [x] **P60-F09-pots-template-and-reserva-migration-06** Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
+- [x] **P60-F09-pots-template-and-reserva-migration-07** A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
+- [x] **P60-F09-pots-template-and-reserva-migration-08** Parity: 0 differences apart from each month's snapshot source text, which now names the Pots account (values identical); `/simplify` run; architecture-reviewer passed
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
-- [x] Saving a split-to-reserve income writes the income, the pot credits (90% of net, split by percentage) and one bank expense in the Pots account's category, in one save
-- [x] Hand-split funding lines (up to 5) that add up are saved as one expense per bank; lines that do not add up are rejected with 400
-- [x] A manual deposit with no funding lines credits the pots and writes no bank expense
-- [x] Editing the income recalculates the deposit; deleting it removes every linked record
-- [x] A withdrawal through a bank writes pot −X, bank −X in the Pots account's category and +X in the chosen category, linked; without a bank only the pot changes
-- [x] A pot overdraft needs confirmation (409 without it)
-- [x] Deposit and withdrawal can be started from both the bank and the Pots account and produce the same records
-- [x] Legacy deposits and withdrawals keep today's edit and delete behaviour
-- [x] A manual deposit into one pot, active or inactive, credits only that pot
-- [x] Editing a split income saved before F10 rebuilds its pot movements and adds no bank expense
-- [x] Deleting an old manual split removes only its own lines
-- [x] The Reserva page's income split and withdrawal write linked records
-- [x] Admin → Reserve buckets is retired; its route opens the Reserva account's Pots tab
-- [x] Manage pots saves all pots together and rejects active splits that do not total 100.00
-- [x] Pots screen states, keyboard use and narrow layout pass the review checklist
-- [x] Parity: 0 differences and Pots screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-01** Saving a split-to-reserve income writes the income, the pot credits (90% of net, split by percentage) and one bank expense in the Pots account's category, in one save
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-02** Hand-split funding lines (up to 5) that add up are saved as one expense per bank; lines that do not add up are rejected with 400
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-03** A manual deposit with no funding lines credits the pots and writes no bank expense
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-04** Editing the income recalculates the deposit; deleting it removes every linked record
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-05** A withdrawal through a bank writes pot −X, bank −X in the Pots account's category and +X in the chosen category, linked; without a bank only the pot changes
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-06** A pot overdraft needs confirmation (409 without it)
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-07** Deposit and withdrawal can be started from both the bank and the Pots account and produce the same records
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-08** Legacy deposits and withdrawals keep today's edit and delete behaviour
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-09** A manual deposit into one pot, active or inactive, credits only that pot
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-10** Editing a split income saved before F10 rebuilds its pot movements and adds no bank expense
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-11** Deleting an old manual split removes only its own lines
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-12** The Reserva page's income split and withdrawal write linked records
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-13** Admin → Reserve buckets is retired; its route opens the Reserva account's Pots tab
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-14** Manage pots saves all pots together and rejects active splits that do not total 100.00
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-15** Pots screen states, keyboard use and narrow layout pass the review checklist
+- [x] **P60-F10-linked-deposit-withdrawal-and-pots-screen-16** Parity: 0 differences and Pots screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F11. Settlement Template and Mãe Migration
-- [x] `migrate` upgrades V4 to V5: Settlement account "Mãe" (BRL + GBP, 2 participants) with the 36 entries; positive entries paid by the user, negative by Mãe; amounts stored positive
-- [x] The Mãe BRL and GBP totals are exactly the same at stored precision before and after (live: R$167.8768 / £7.94214099); the 5 pound entries are recorded as paid in GBP
-- [x] Entries without a converted value keep it empty
-- [x] A new entry stores who paid, the original amount and, on a 2-currency account, the converted value at the entry date's rate
-- [x] Creating a GBP-only son account in Admin → Accounts needs no code and asks no currency per entry
-- [x] `controle-mae` endpoints return the same shapes and values; a values edit sets who paid from the sign and refuses missing, zero or opposite-signed values
-- [x] The Accounts page shows a Settlement grid with who owes whom per currency and no totals
-- [x] A fresh spreadsheet import writes the Mãe Settlement account with its entries and the API starts on it
-- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
+- [x] **P60-F11-settlement-template-and-mae-migration-01** `migrate` upgrades V4 to V5: Settlement account "Mãe" (BRL + GBP, 2 participants) with the 36 entries; positive entries paid by the user, negative by Mãe; amounts stored positive
+- [x] **P60-F11-settlement-template-and-mae-migration-02** The Mãe BRL and GBP totals are exactly the same at stored precision before and after (live: R$167.8768 / £7.94214099); the 5 pound entries are recorded as paid in GBP
+- [x] **P60-F11-settlement-template-and-mae-migration-03** Entries without a converted value keep it empty
+- [x] **P60-F11-settlement-template-and-mae-migration-04** A new entry stores who paid, the original amount and, on a 2-currency account, the converted value at the entry date's rate
+- [x] **P60-F11-settlement-template-and-mae-migration-05** Creating a GBP-only son account in Admin → Accounts needs no code and asks no currency per entry
+- [x] **P60-F11-settlement-template-and-mae-migration-06** `controle-mae` endpoints return the same shapes and values; a values edit sets who paid from the sign and refuses missing, zero or opposite-signed values
+- [x] **P60-F11-settlement-template-and-mae-migration-07** The Accounts page shows a Settlement grid with who owes whom per currency and no totals
+- [x] **P60-F11-settlement-template-and-mae-migration-08** A fresh spreadsheet import writes the Mãe Settlement account with its entries and the API starts on it
+- [x] **P60-F11-settlement-template-and-mae-migration-09** Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F12. Settlement Screen
-- [x] The header shows the current balance in each currency with its direction (owes you / you owe / settled), a currency counting as settled when it rounds to 0.00 (test: `SettlementScreenAcceptanceTests.AccountDetail_Settlement_ReturnsCurrentBalancesPerCurrencyWhateverTheMonth`, `AccountHeader.test.tsx` "[AC P60-F12-settlement-screen-01] shows the current balance per currency with who owes whom, Settled when it rounds to 0.00")
-- [x] Edit changes description, note, date, paid by, amount and converted value without recalculating it; the currency cannot change (test: `SettlementScreenAcceptanceTests.EditEntry_ChangesDetailsAndValues_KeepsCurrencyAndDoesNotRecalculateTheConvertedValue`, `SettlementEntryForm.test.tsx` "[AC P60-F12-settlement-screen-02] edits every field but the currency, which reads as text")
-- [x] Settlement entries appear in the account transaction rows and F16's All transactions with their own currency; the footer totals them per currency (test: `SettlementScreenAcceptanceTests.Transactions_SettlementEntries_AreOneRowEachInTheirOwnCurrency_OnTheAccountAndInMonthTransactions`, `MonthTransactionsGrid.test.tsx`, `monthTransactionTotals.test.ts` and `AccountTransactionsGrid.test.tsx` [AC P60-F12-settlement-screen-03] cases)
-- [x] Add entry asks for currency only on a 2-currency account and saves with the converted value at 2 decimals; a converted value rounding to 0.00 or a missing rate saves it empty with a warning naming the currency (test: `SettlementScreenAcceptanceTests.AddEntry_TwoCurrencies_StoresConvertedValueAtTheDateRateToTwoDecimals`, `…AddEntry_OneCurrency_NeedsNoCurrencyAndStoresNoConvertedValue`, `…AddEntry_ConvertedRoundsToZero_SavesItEmptyWithWarning`, `…AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `SettlementEntryForm.test.tsx` [AC P60-F12-settlement-screen-04] cases)
-- [x] Settle pre-fills paid by, amount and, when the other currency points the same way, the converted value, so both totals round to zero after saving; it shows the implied rate as "1 GBP = R$x"; with opposite directions the confirmation states what remains (test: `SettlementScreenAcceptanceTests.Settle_PrefilledValues_LeaveEveryCurrencySettled`, `useSettlementEntryForm.test.ts` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-05] cases)
-- [x] Editing a Settle value so totals do not reach zero shows the leftover in the confirmation (test: `SettlementScreenAcceptanceTests.Settle_EditedValues_SaveAndLeaveTheRemainder`, `useSettlementEntryForm.test.ts` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-06] cases)
-- [x] Settle is disabled on a settled account (test: `SettlementScreenAcceptanceTests.AccountDetail_SettledAccount_DisablesSettleWithNothingToSettle`, `…Settle_SettledAccount_Returns400NothingToSettle`, `AccountActionBar.test.tsx` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-07] cases)
-- [x] Settlement screen states, keyboard use and narrow layout pass the review checklist (test: `SettlementEntryForm.test.tsx` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-08] cases; ui-reviewer; browser check at 320 px)
-- [x] Parity: 0 differences and Settlement screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F12-settlement-screen-01** The header shows the current balance in each currency with its direction (owes you / you owe / settled), a currency counting as settled when it rounds to 0.00 (test: `SettlementScreenAcceptanceTests.AccountDetail_Settlement_ReturnsCurrentBalancesPerCurrencyWhateverTheMonth`, `AccountHeader.test.tsx` "[AC P60-F12-settlement-screen-01] shows the current balance per currency with who owes whom, Settled when it rounds to 0.00")
+- [x] **P60-F12-settlement-screen-02** Edit changes description, note, date, paid by, amount and converted value without recalculating it; the currency cannot change (test: `SettlementScreenAcceptanceTests.EditEntry_ChangesDetailsAndValues_KeepsCurrencyAndDoesNotRecalculateTheConvertedValue`, `SettlementEntryForm.test.tsx` "[AC P60-F12-settlement-screen-02] edits every field but the currency, which reads as text")
+- [x] **P60-F12-settlement-screen-03** Settlement entries appear in the account transaction rows and F16's All transactions with their own currency; the footer totals them per currency (test: `SettlementScreenAcceptanceTests.Transactions_SettlementEntries_AreOneRowEachInTheirOwnCurrency_OnTheAccountAndInMonthTransactions`, `MonthTransactionsGrid.test.tsx`, `monthTransactionTotals.test.ts` and `AccountTransactionsGrid.test.tsx` [AC P60-F12-settlement-screen-03] cases)
+- [x] **P60-F12-settlement-screen-04** Add entry asks for currency only on a 2-currency account and saves with the converted value at 2 decimals; a converted value rounding to 0.00 or a missing rate saves it empty with a warning naming the currency (test: `SettlementScreenAcceptanceTests.AddEntry_TwoCurrencies_StoresConvertedValueAtTheDateRateToTwoDecimals`, `…AddEntry_OneCurrency_NeedsNoCurrencyAndStoresNoConvertedValue`, `…AddEntry_ConvertedRoundsToZero_SavesItEmptyWithWarning`, `…AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `SettlementEntryForm.test.tsx` [AC P60-F12-settlement-screen-04] cases)
+- [x] **P60-F12-settlement-screen-05** Settle pre-fills paid by, amount and, when the other currency points the same way, the converted value, so both totals round to zero after saving; it shows the implied rate as "1 GBP = R$x"; with opposite directions the confirmation states what remains (test: `SettlementScreenAcceptanceTests.Settle_PrefilledValues_LeaveEveryCurrencySettled`, `useSettlementEntryForm.test.ts` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-05] cases)
+- [x] **P60-F12-settlement-screen-06** Editing a Settle value so totals do not reach zero shows the leftover in the confirmation (test: `SettlementScreenAcceptanceTests.Settle_EditedValues_SaveAndLeaveTheRemainder`, `useSettlementEntryForm.test.ts` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-06] cases)
+- [x] **P60-F12-settlement-screen-07** Settle is disabled on a settled account (test: `SettlementScreenAcceptanceTests.AccountDetail_SettledAccount_DisablesSettleWithNothingToSettle`, `…Settle_SettledAccount_Returns400NothingToSettle`, `AccountActionBar.test.tsx` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-07] cases)
+- [x] **P60-F12-settlement-screen-08** Settlement screen states, keyboard use and narrow layout pass the review checklist (test: `SettlementEntryForm.test.tsx` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-08] cases; ui-reviewer; browser check at 320 px)
+- [x] **P60-F12-settlement-screen-09** Parity: 0 differences and Settlement screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F13. Consolidated Navigation and Retirement
-- [x] Opening CashFlow lands on Accounts; the menus match the F13 lists (test: `RootRedirect.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-01] lands CashFlow on Accounts", `Sidebar.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-01] shows the F13 CashFlow and Admin CashFlow menus")
-- [x] Monthly shows only the overview (group summary, category totals, income totals, tithe, banks and cards grids, All transactions) with no entry forms; each bank and card row links to its account screen at the viewed month (test: `MonthlyPage.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-02] shows Summary and All transactions with no entry forms", `CardsGrid.test.tsx` and `BanksGrid.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month", `useMonthly.test.ts`)
-- [x] A card statement's due date is set and cleared from the card's Statements tab; clearing one statement's date leaves the others, and the calendar sync runs on each save (test: `StatementDueDateAcceptanceTests.SetAndClear_OneStatement_LeavesTheOthersAndSyncsTheCalendarEachTime`, `StatementDueDateAcceptanceTests.Set_MonthWithoutAStatement_CreatesItWithTheDate`, `CardStatementsTab.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-03] sets and clears a statement's due date")
-- [x] Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are removed (Admin Reserve buckets in F10); their old routes redirect as specified (test: `routes.test.ts` "[AC P60-F13-consolidated-navigation-and-retirement-04] redirects every retired page address", `MovedPageRedirect.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-04]" cases, `NavigationRetirementAcceptanceTests.Accounts_ReplacesPage_FirstPotsAndSettlementInFileOrder`)
-- [x] The API endpoints only those pages used are removed, while the routes the account screen uses stay; the OpenAPI snapshot and generated types are updated (test: `RetiredRoutesAcceptanceTests.RetiredRoute_Returns404`, `RetiredRoutesAcceptanceTests.KeptRoute_StillAnswers`, `OpenApiContractTests`, `openapiFreshness.test.ts`)
-- [x] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins (test: `FixedNameLookupTests.Production_Source_Has_No_Fixed_Name_Lookups`; bank-name joins: the grep for `.bank ===` / `bankName ===` in `Financial.Web/src` finds only `useIncomeForm.ts`, which compares ids)
-- [x] The E2E smoke journeys (add expense on the account screen, pay a card statement, manual pots deposit, settle) pass in the `web-e2e` job (test: `add-expense.spec.ts`, `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts` in the `web-e2e` job)
-- [x] `context.md`, README, example data and `docs/ui/` describe the account model (test: `AccountModelBankMigrationAcceptanceTests.ExampleData_HasOneAccountPerTemplate`; doc review in PR 4)
-- [x] Final parity run on the latest live copy, through any migration step it still needs (none once it is V5): 0 differences and the full screen checklist ticked (test: final `Invoke-Parity.ps1 -Step All -LiveCopy …` run on the 2026-11-10 Drive download, V5: "Parity OK: 0 differences in 13,551 figures across 122 months", SHA-256 unchanged; screen checklist: rows browsed in #1218, B2, C2 and S5 browsed in the final-ticks PR, T1, T2 and S6 by `MonthTransactionsViewAcceptanceTests` and `monthTransactionTotals.test.ts`, N1 by AC 03's tests and #1207's browse, S2 by the Admin tests, C1 by the "Card statements" row)
-- [x] `/simplify` run; architecture-reviewer and ui-reviewer passed (Definition of Done of every F13 PR)
+- [x] **P60-F13-consolidated-navigation-and-retirement-01** Opening CashFlow lands on Accounts; the menus match the F13 lists (test: `RootRedirect.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-01] lands CashFlow on Accounts", `Sidebar.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-01] shows the F13 CashFlow and Admin CashFlow menus")
+- [x] **P60-F13-consolidated-navigation-and-retirement-02** Monthly shows only the overview (group summary, category totals, income totals, tithe, banks and cards grids, All transactions) with no entry forms; each bank and card row links to its account screen at the viewed month (test: `MonthlyPage.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-02] shows Summary and All transactions with no entry forms", `CardsGrid.test.tsx` and `BanksGrid.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month", `useMonthly.test.ts`)
+- [x] **P60-F13-consolidated-navigation-and-retirement-03** A card statement's due date is set and cleared from the card's Statements tab; clearing one statement's date leaves the others, and the calendar sync runs on each save (test: `StatementDueDateAcceptanceTests.SetAndClear_OneStatement_LeavesTheOthersAndSyncsTheCalendarEachTime`, `StatementDueDateAcceptanceTests.Set_MonthWithoutAStatement_CreatesItWithTheDate`, `CardStatementsTab.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-03] sets and clears a statement's due date")
+- [x] **P60-F13-consolidated-navigation-and-retirement-04** Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are removed (Admin Reserve buckets in F10); their old routes redirect as specified (test: `routes.test.ts` "[AC P60-F13-consolidated-navigation-and-retirement-04] redirects every retired page address", `MovedPageRedirect.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-04]" cases, `NavigationRetirementAcceptanceTests.Accounts_ReplacesPage_FirstPotsAndSettlementInFileOrder`)
+- [x] **P60-F13-consolidated-navigation-and-retirement-05** The API endpoints only those pages used are removed, while the routes the account screen uses stay; the OpenAPI snapshot and generated types are updated (test: `RetiredRoutesAcceptanceTests.RetiredRoute_Returns404`, `RetiredRoutesAcceptanceTests.KeptRoute_StillAnswers`, `OpenApiContractTests`, `openapiFreshness.test.ts`)
+- [x] **P60-F13-consolidated-navigation-and-retirement-06** No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins (test: `FixedNameLookupTests.Production_Source_Has_No_Fixed_Name_Lookups`; bank-name joins: the grep for `.bank ===` / `bankName ===` in `Financial.Web/src` finds only `useIncomeForm.ts`, which compares ids)
+- [x] **P60-F13-consolidated-navigation-and-retirement-07** The E2E smoke journeys (add expense on the account screen, pay a card statement, manual pots deposit, settle) pass in the `web-e2e` job (test: `add-expense.spec.ts`, `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts` in the `web-e2e` job)
+- [x] **P60-F13-consolidated-navigation-and-retirement-08** `context.md`, README, example data and `docs/ui/` describe the account model (test: `AccountModelBankMigrationAcceptanceTests.ExampleData_HasOneAccountPerTemplate`; doc review in PR 4)
+- [x] **P60-F13-consolidated-navigation-and-retirement-09** Final parity run on the latest live copy, through any migration step it still needs (none once it is V5): 0 differences and the full screen checklist ticked (test: final `Invoke-Parity.ps1 -Step All -LiveCopy …` run on the 2026-11-10 Drive download, V5: "Parity OK: 0 differences in 13,551 figures across 122 months", SHA-256 unchanged; screen checklist: rows browsed in #1218, B2, C2 and S5 browsed in the final-ticks PR, T1, T2 and S6 by `MonthTransactionsViewAcceptanceTests` and `monthTransactionTotals.test.ts`, N1 by AC 03's tests and #1207's browse, S2 by the Admin tests, C1 by the "Card statements" row)
+- [x] **P60-F13-consolidated-navigation-and-retirement-10** `/simplify` run; architecture-reviewer and ui-reviewer passed (Definition of Done of every F13 PR)
 
 ### F14. Accounts Page by Template and Card Totals
-- [x] The Accounts page shows one grid per template in the order Banks, Credit cards, Pots, with no grid for a template without listed accounts; each grid lists its accounts by name with the Inactive badge and its per-currency footer
-- [x] Each credit card row shows its next statement to pay (oldest statement month with an unpaid charge: month and unpaid total, "—" when none) and its total owed
-- [x] The card screen header shows "Owed at end of <month>" and "Total owed now"; changing the month changes the first and not the second
-- [x] Bank and card rows open the account screen; Pots rows are plain text until F10
-- [x] Parity: 0 differences with the new card figures mapped; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F14-accounts-page-by-template-and-card-totals-01** The Accounts page shows one grid per template in the order Banks, Credit cards, Pots, with no grid for a template without listed accounts; each grid lists its accounts by name with the Inactive badge and its per-currency footer
+- [x] **P60-F14-accounts-page-by-template-and-card-totals-02** Each credit card row shows its next statement to pay (oldest statement month with an unpaid charge: month and unpaid total, "—" when none) and its total owed
+- [x] **P60-F14-accounts-page-by-template-and-card-totals-03** The card screen header shows "Owed at end of <month>" and "Total owed now"; changing the month changes the first and not the second
+- [x] **P60-F14-accounts-page-by-template-and-card-totals-04** Bank and card rows open the account screen; Pots rows are plain text until F10
+- [x] **P60-F14-accounts-page-by-template-and-card-totals-05** Parity: 0 differences with the new card figures mapped; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F15. Card Refunds and Credit
-- [x] Add refund saves a negative charge on the statement for its date; the card's owed balance and the category's spend in that statement month drop by the amount (test: `CardRefundsAndCreditAcceptanceTests.AddRefund_SavesNegativeCharge_LowersOwedAndCategorySpendInStatementMonth`)
-- [x] A statement whose amount to pay is £0 or less shows "Nothing due", offers no Pay, and raises no payment-due banner or calendar reminder; a charge that brings it above £0 makes it Unpaid (test: `CardRefundsAndCreditAcceptanceTests.StatementAtOrBelowZero_IsNothingDueAndNotPayable_UntilAChargeRaisesIt`, `CardRefundsAndCreditAcceptanceTests.PaymentsDue_NothingDueMonthHasNoReminder_UntilAChargeRaisesIt`)
-- [x] The Statements tab lists every month from the card's first statement to the current month, months without charges as £0 "Nothing due" (test: `CardRefundsAndCreditAcceptanceTests.AccountStatements_ListEveryMonthFromFirstChargeToCurrent_EmptyMonthsNothingDue`)
-- [x] A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger (test: `CardRefundsAndCreditAcceptanceTests.Credit_LowersNextAmountToPay_AndCarriesWhileLarger`)
-- [x] Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes (test: `CardRefundsAndCreditAcceptanceTests.CreditRefund_WritesOneTransfer_LowersCredit_CappedAtCredit_TransferRoutesReturn409`, `CardRefundsAndCreditAcceptanceTests.CreditRefund_ShowsOnCardAndBankAsReadOnlyRows`, `CardRefundsAndCreditAcceptanceTests.ReceiveCardCredit_ListsCardsInCredit_AndWritesTheSameTransfer`)
-- [x] F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x" (test: `CardRefundsAndCreditAcceptanceTests.TemplateGroups_Card_NextStatementSkipsNothingDue_TotalOwedNetsCredit`)
-- [x] The card screen header shows "<Month yyyy> statement" (that month's amount to pay with its status: Unpaid, the paid date and amount, or Nothing due with any credit carried) and "Total owed" (or "Credit £x"); bank headers are unchanged (test: `CardRefundsAndCreditAcceptanceTests.AccountDetail_Card_ReturnsViewedStatementFromTheLedger_AndKeepsBalance`)
-- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] **P60-F15-card-refunds-and-credit-01** Add refund saves a negative charge on the statement for its date; the card's owed balance and the category's spend in that statement month drop by the amount (test: `CardRefundsAndCreditAcceptanceTests.AddRefund_SavesNegativeCharge_LowersOwedAndCategorySpendInStatementMonth`)
+- [x] **P60-F15-card-refunds-and-credit-02** A statement whose amount to pay is £0 or less shows "Nothing due", offers no Pay, and raises no payment-due banner or calendar reminder; a charge that brings it above £0 makes it Unpaid (test: `CardRefundsAndCreditAcceptanceTests.StatementAtOrBelowZero_IsNothingDueAndNotPayable_UntilAChargeRaisesIt`, `CardRefundsAndCreditAcceptanceTests.PaymentsDue_NothingDueMonthHasNoReminder_UntilAChargeRaisesIt`)
+- [x] **P60-F15-card-refunds-and-credit-03** The Statements tab lists every month from the card's first statement to the current month, months without charges as £0 "Nothing due" (test: `CardRefundsAndCreditAcceptanceTests.AccountStatements_ListEveryMonthFromFirstChargeToCurrent_EmptyMonthsNothingDue`)
+- [x] **P60-F15-card-refunds-and-credit-04** A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger (test: `CardRefundsAndCreditAcceptanceTests.Credit_LowersNextAmountToPay_AndCarriesWhileLarger`)
+- [x] **P60-F15-card-refunds-and-credit-05** Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes (test: `CardRefundsAndCreditAcceptanceTests.CreditRefund_WritesOneTransfer_LowersCredit_CappedAtCredit_TransferRoutesReturn409`, `CardRefundsAndCreditAcceptanceTests.CreditRefund_ShowsOnCardAndBankAsReadOnlyRows`, `CardRefundsAndCreditAcceptanceTests.ReceiveCardCredit_ListsCardsInCredit_AndWritesTheSameTransfer`)
+- [x] **P60-F15-card-refunds-and-credit-06** F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x" (test: `CardRefundsAndCreditAcceptanceTests.TemplateGroups_Card_NextStatementSkipsNothingDue_TotalOwedNetsCredit`)
+- [x] **P60-F15-card-refunds-and-credit-07** The card screen header shows "<Month yyyy> statement" (that month's amount to pay with its status: Unpaid, the paid date and amount, or Nothing due with any credit carried) and "Total owed" (or "Credit £x"); bank headers are unchanged (test: `CardRefundsAndCreditAcceptanceTests.AccountDetail_Card_ReturnsViewedStatementFromTheLedger_AndKeepsBalance`)
+- [x] **P60-F15-card-refunds-and-credit-08** Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F16. Month Transactions View
-- [x] Monthly's All transactions tab lists, for the picked month, the rows of every account as the account screens show them, card charges and refunds by statement month and every other record by its own date; an old settled card charge appears once, on its card (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_ListEveryAccountsRowsAsTheAccountScreens_SettledChargeOnceOnItsCard`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-01] lists every account's rows with account, type, category and signed amount")
-- [x] Filtering by category, account or type narrows the rows; the footer shows the row count and total per currency, and filtered to one category its Spend equals that category's Category totals figure (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_SpendPerCategory_EqualsCategoryTotals`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-02] filters by category, account and type, with count, total per currency and Spend", `monthTransactionTotals.test.ts` "[AC P60-F16-month-transactions-view-02] sums each currency into a Total and a Spend, currencies in code order")
-- [x] Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_RowsCarryTheirAccountAndOperation`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-03] links rows to the account screen and operation rows to their operation")
-- [x] Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too (narrow: rows stack and the grid adds no horizontal scroll; sort and filters are wide-screen only, as on every grid, user 2026-11-06) (test: `MonthTransactionsGrid.test.tsx` and `MonthlyPage.test.tsx` "[AC P60-F16-month-transactions-view-04] …"; screen checklist T3; ui-reviewer)
-- [x] Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed (test: `Parity.test.ps1` monthTransactions cases; parity run 0 differences in 14,452 figures across 122 months)
+- [x] **P60-F16-month-transactions-view-01** Monthly's All transactions tab lists, for the picked month, the rows of every account as the account screens show them, card charges and refunds by statement month and every other record by its own date; an old settled card charge appears once, on its card (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_ListEveryAccountsRowsAsTheAccountScreens_SettledChargeOnceOnItsCard`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-01] lists every account's rows with account, type, category and signed amount")
+- [x] **P60-F16-month-transactions-view-02** Filtering by category, account or type narrows the rows; the footer shows the row count and total per currency, and filtered to one category its Spend equals that category's Category totals figure (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_SpendPerCategory_EqualsCategoryTotals`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-02] filters by category, account and type, with count, total per currency and Spend", `monthTransactionTotals.test.ts` "[AC P60-F16-month-transactions-view-02] sums each currency into a Total and a Spend, currencies in code order")
+- [x] **P60-F16-month-transactions-view-03** Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_RowsCarryTheirAccountAndOperation`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-03] links rows to the account screen and operation rows to their operation")
+- [x] **P60-F16-month-transactions-view-04** Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too (narrow: rows stack and the grid adds no horizontal scroll; sort and filters are wide-screen only, as on every grid, user 2026-11-06) (test: `MonthTransactionsGrid.test.tsx` and `MonthlyPage.test.tsx` "[AC P60-F16-month-transactions-view-04] …"; screen checklist T3; ui-reviewer)
+- [x] **P60-F16-month-transactions-view-05** Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed (test: `Parity.test.ps1` monthTransactions cases; parity run 0 differences in 14,452 figures across 122 months)
 
 ### Cross-Feature Integration
 - [x] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map (test: every feature's Definition-of-Done run of `Invoke-Parity.ps1 -Step All -LiveCopy …` with the same command line; figures added only through `Parity.psm1` and `figure-map.json`, pinned by `Parity.test.ps1`)

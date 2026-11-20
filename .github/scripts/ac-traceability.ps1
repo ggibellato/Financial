@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $criterionLine = [regex]'^\s*- \[[ xX]\] (?<text>.*)$'
-$criterionId = [regex]'^\*\*(?<id>P\d+-F\d+-[A-Za-z0-9-]+)\*\*'
+$criterionId = [regex]'^\*\*(?<id>P\d+-(?:F\d+|CF)-[A-Za-z0-9-]+)\*\*'
 $dotnetTag = [regex]'Trait\("AC",\s*"(?<id>[^"]+)"\)'
 $webTag = [regex]'\[AC (?<id>[^\]\s]+)\]'
 

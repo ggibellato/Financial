@@ -199,7 +199,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('heading', { name: 'Portfolio summary' })).toBeInTheDocument()
   })
 
-  it('P52-F05-react-portfolio-dashboard-01: a Dashboard nav entry appears first under Investments and opens the new page', () => {
+  it('[AC P52-F05-react-portfolio-dashboard-01] a Dashboard nav entry appears first under Investments and opens the new page', () => {
     renderDashboardRoute()
 
     const investments = NAV_TREE.find((category) => category.id === 'investments')!
@@ -330,7 +330,7 @@ describe('DashboardPage', () => {
     expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(1)
   })
 
-  it('P52-F04-upcoming-income-03: switching the income window re-filters the held list without re-fetching it', async () => {
+  it('[AC P52-F04-upcoming-income-03] switching the income window re-filters the held list without re-fetching it', async () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('VHYL')).toBeInTheDocument()
@@ -342,7 +342,7 @@ describe('DashboardPage', () => {
     expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(1)
   })
 
-  it('P52-F05-react-portfolio-dashboard-02: all four panels render with their own independent states', async () => {
+  it('[AC P52-F05-react-portfolio-dashboard-02] all four panels render with their own independent states', async () => {
     getUpcomingIncomeMock.mockRejectedValue(new Error('Income service unavailable'))
 
     renderDashboardRoute()
@@ -354,7 +354,7 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
   })
 
-  it('P52-F05-react-portfolio-dashboard-03: a page-level error state with a single Retry action shows only when every panel request fails', async () => {
+  it('[AC P52-F05-react-portfolio-dashboard-03] a page-level error state with a single Retry action shows only when every panel request fails', async () => {
     getDashboardMock.mockRejectedValue(new Error('Dashboard unavailable'))
     getAllocationBreakdownMock.mockRejectedValue(new Error('Allocation unavailable'))
     getDataQualityReportMock.mockRejectedValue(new Error('Data quality unavailable'))
@@ -371,7 +371,7 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
   })
 
-  it('P52-F05-react-portfolio-dashboard-03: the page-level Retry re-issues all four requests and restores the panels', async () => {
+  it('[AC P52-F05-react-portfolio-dashboard-03] the page-level Retry re-issues all four requests and restores the panels', async () => {
     getDashboardMock.mockRejectedValueOnce(new Error('Dashboard unavailable')).mockResolvedValue(SUMMARY)
     getAllocationBreakdownMock.mockRejectedValueOnce(new Error('Allocation unavailable')).mockResolvedValue(BREAKDOWN)
     getDataQualityReportMock.mockRejectedValueOnce(new Error('Data quality unavailable')).mockResolvedValue(REPORT)
@@ -391,7 +391,7 @@ describe('DashboardPage', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toHaveFocus())
   })
 
-  it('P52-F05-react-portfolio-dashboard-03: focus stays on Retry, not the page heading, when the retry does not recover any panel', async () => {
+  it('[AC P52-F05-react-portfolio-dashboard-03] focus stays on Retry, not the page heading, when the retry does not recover any panel', async () => {
     getDashboardMock.mockRejectedValue(new Error('Dashboard unavailable'))
     getAllocationBreakdownMock.mockRejectedValue(new Error('Allocation unavailable'))
     getDataQualityReportMock.mockRejectedValue(new Error('Data quality unavailable'))
@@ -409,7 +409,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).not.toHaveFocus()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-01: seeds the currency selector from the global reporting-currency setting, ignoring its enabled flag', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-01] seeds the currency selector from the global reporting-currency setting, ignoring its enabled flag', async () => {
     getReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: false })
 
     renderDashboardRoute()
@@ -418,13 +418,13 @@ describe('DashboardPage', () => {
     await waitFor(() => expect(getDashboardMock).toHaveBeenCalledWith('BRL', undefined))
   })
 
-  it('P55-F03-react-dashboard-currency-selector-02: the broker filter always starts at All currencies on mount', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-02] the broker filter always starts at All currencies on mount', async () => {
     renderDashboardRoute()
 
     expect(await screen.findByRole('tab', { name: 'All currencies' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('P55-F03-react-dashboard-currency-selector-03: selecting a currency re-fetches both endpoints with the new value, leaving data quality/upcoming income uncalled again', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-03] selecting a currency re-fetches both endpoints with the new value, leaving data quality/upcoming income uncalled again', async () => {
     renderDashboardRoute()
     await screen.findByText('Market value (GBP)')
     getDashboardMock.mockClear()
@@ -440,7 +440,7 @@ describe('DashboardPage', () => {
     expect(getUpcomingIncomeMock).not.toHaveBeenCalled()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-04: selecting a broker filter re-fetches both endpoints, leaving data quality/upcoming income uncalled again', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-04] selecting a broker filter re-fetches both endpoints, leaving data quality/upcoming income uncalled again', async () => {
     renderDashboardRoute()
     await screen.findByText('Market value (GBP)')
     getDashboardMock.mockClear()
@@ -456,20 +456,20 @@ describe('DashboardPage', () => {
     expect(getUpcomingIncomeMock).not.toHaveBeenCalled()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-05: the selected currency is visible in the header', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-05] the selected currency is visible in the header', async () => {
     renderDashboardRoute()
 
     expect(await screen.findByRole('radio', { name: 'GBP' })).toBeChecked()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-06: the native, non-currency-suffixed KPI row is absent', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-06] the native, non-currency-suffixed KPI row is absent', async () => {
     renderDashboardRoute()
 
     await screen.findByText('Market value (GBP)')
     expect(screen.queryByText('Market value', { selector: '.dashboard-kpi-tiles__label' })).not.toBeInTheDocument()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-07: a filtered-to-zero-brokers response shows KPI zero values and the Allocation breakdown empty state, not an error', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-07] a filtered-to-zero-brokers response shows KPI zero values and the Allocation breakdown empty state, not an error', async () => {
     getDashboardMock.mockResolvedValue({
       ...SUMMARY,
       marketValue: 0,
@@ -494,7 +494,7 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-08: a partial/unavailable AllocationBreakdownDto drives the panel error state directly', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-08] a partial/unavailable AllocationBreakdownDto drives the panel error state directly', async () => {
     getAllocationBreakdownMock.mockResolvedValue({ ...BREAKDOWN, isUnavailable: true })
 
     renderDashboardRoute()
@@ -502,7 +502,7 @@ describe('DashboardPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Converted totals unavailable')
   })
 
-  it('P55-F03-react-dashboard-currency-selector-09: remounting the page re-seeds the selector and resets the filter', async () => {
+  it('[AC P55-F03-react-dashboard-currency-selector-09] remounting the page re-seeds the selector and resets the filter', async () => {
     const { unmount } = renderDashboardRoute()
     fireEvent.click(await screen.findByRole('radio', { name: 'BRL' }))
     fireEvent.click(screen.getByRole('tab', { name: 'USD' }))

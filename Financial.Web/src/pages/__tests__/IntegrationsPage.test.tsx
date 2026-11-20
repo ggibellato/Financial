@@ -75,14 +75,14 @@ describe('IntegrationsPage', () => {
     vi.spyOn(window, 'open').mockImplementation(() => null)
   })
 
-  it('P45-F03-integrations-settings-web-01: shows a Connect Google Calendar button when not connected', async () => {
+  it('[AC P45-F03-integrations-settings-web-01] shows a Connect Google Calendar button when not connected', async () => {
     getCalendarStatusMock.mockResolvedValue(NOT_CONNECTED_STATUS)
     render(<IntegrationsPage />)
 
     expect(await screen.findByRole('button', { name: 'Connect Google Calendar' })).toBeInTheDocument()
   })
 
-  it('P45-F03-integrations-settings-web-01: shows the connected account email, calendar name and per-card sync list when connected', async () => {
+  it('[AC P45-F03-integrations-settings-web-01] shows the connected account email, calendar name and per-card sync list when connected', async () => {
     getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
     render(<IntegrationsPage />)
 
@@ -92,7 +92,7 @@ describe('IntegrationsPage', () => {
     expect(screen.getByText('Nubank')).toBeInTheDocument()
   })
 
-  it('P45-F03-integrations-settings-web-02: conveys each row sync status with visible text, never color alone', async () => {
+  it('[AC P45-F03-integrations-settings-web-02] conveys each row sync status with visible text, never color alone', async () => {
     getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
     render(<IntegrationsPage />)
 
@@ -100,7 +100,7 @@ describe('IntegrationsPage', () => {
     expect(screen.getByText('Sync failed: Rate limit exceeded')).toBeInTheDocument()
   })
 
-  it('P45-F03-integrations-settings-web-03: clicking Disconnect always shows a confirmation dialog before the request is sent', async () => {
+  it('[AC P45-F03-integrations-settings-web-03] clicking Disconnect always shows a confirmation dialog before the request is sent', async () => {
     getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
     render(<IntegrationsPage />)
     await waitFor(() => expect(screen.getByText('user@gmail.com')).toBeInTheDocument())
@@ -111,7 +111,7 @@ describe('IntegrationsPage', () => {
     expect(disconnectCalendarMock).not.toHaveBeenCalled()
   })
 
-  it('P45-F03-integrations-settings-web-03: cancelling the confirmation dialog leaves the connection intact', async () => {
+  it('[AC P45-F03-integrations-settings-web-03] cancelling the confirmation dialog leaves the connection intact', async () => {
     getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
     render(<IntegrationsPage />)
     await waitFor(() => expect(screen.getByText('user@gmail.com')).toBeInTheDocument())
@@ -123,7 +123,7 @@ describe('IntegrationsPage', () => {
     expect(disconnectCalendarMock).not.toHaveBeenCalled()
   })
 
-  it('P45-F03-integrations-settings-web-03: confirming the dialog sends the disconnect request', async () => {
+  it('[AC P45-F03-integrations-settings-web-03] confirming the dialog sends the disconnect request', async () => {
     getCalendarStatusMock.mockResolvedValueOnce(CONNECTED_STATUS).mockResolvedValue(NOT_CONNECTED_STATUS)
     disconnectCalendarMock.mockResolvedValue({ remoteCleanupSucceeded: true })
     render(<IntegrationsPage />)
@@ -136,7 +136,7 @@ describe('IntegrationsPage', () => {
     await waitFor(() => expect(disconnectCalendarMock).toHaveBeenCalledOnce())
   })
 
-  it('P45-F03-integrations-settings-web-04: clicking Retry on an errored row calls its resync endpoint and updates its status', async () => {
+  it('[AC P45-F03-integrations-settings-web-04] clicking Retry on an errored row calls its resync endpoint and updates its status', async () => {
     getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
     resyncCreditCardCalendarMock.mockResolvedValue({
       creditCardId: 'card-error',
@@ -190,7 +190,7 @@ describe('IntegrationsPage', () => {
     expect(await screen.findByRole('button', { name: 'Retry calendar sync for Nubank' })).toHaveTextContent(/^$/)
   })
 
-  it('P45-F03-integrations-settings-web-05: a failed status request shows a retry affordance instead of a blank panel', async () => {
+  it('[AC P45-F03-integrations-settings-web-05] a failed status request shows a retry affordance instead of a blank panel', async () => {
     getCalendarStatusMock.mockRejectedValue(new Error('Network down'))
     render(<IntegrationsPage />)
 
