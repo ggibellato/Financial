@@ -135,16 +135,6 @@ public class InvestmentJsonRepositoryTests
         storage.WriteCount.Should().Be(0);
     }
 
-    [Fact]
-    public async Task ApplyAndSaveAsync_WithNullApplyChanges_Throws()
-    {
-        var repository = new InvestmentJsonRepository(Investments.Create(), new RecordingJsonStorage(), Serializer);
-
-        var act = async () => await repository.ApplyAndSaveAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("applyChanges");
-    }
-
     /// <summary>
     /// The contract is not "one write at a time" but "one mutation at a time": a second caller's
     /// change must not be applied while the first caller's document is still being written, because

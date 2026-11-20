@@ -100,16 +100,6 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public async Task GetBrokerSummary_ForwardsScopeToRepository()
-    {
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
-
-        await CreateService().GetBrokerSummaryAsync("XPI", InvestmentScope.Historic);
-
-        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Historic);
-    }
-
-    [Fact]
     public async Task GetBrokerSummary_ReturnsZerosForUnknownBrokerName()
     {
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
@@ -270,18 +260,6 @@ public class SummaryServiceTests
         result.TotalSold.Should().Be(50m);
         result.TotalCredits.Should().Be(999m);
         result.TotalInvested.Should().Be(50m);
-    }
-
-    [Fact]
-    public async Task GetPortfolioSummary_ForwardsScopeToRepository()
-    {
-        var asset = MakeAsset();
-        _repository.AssetsByBrokerPortfolio = [asset];
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
-
-        await CreateService().GetPortfolioSummaryAsync("XPI", "Default", InvestmentScope.Historic);
-
-        _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]

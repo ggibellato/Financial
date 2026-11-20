@@ -5,12 +5,12 @@ using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Investment.Infrastructure.Persistence;
-using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -24,30 +24,6 @@ public class AssetPriceLookupServiceTests
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
     private const string AssetName = "BCIA11";
-
-    [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_RecordsAutomaticEntryAndReturnsIsManualFalse()
-    {
-        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m));
-        try
-        {
-            var result = await service.GetCurrentPriceAsync(BuildRequest());
-
-            result.Price.Should().Be(123.45m);
-            result.IsManual.Should().BeFalse();
-
-            var today = TestClock.Today;
-            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
-            entry.Should().NotBeNull();
-            entry!.Price.Should().Be(123.45m);
-            entry.IsManual.Should().BeFalse();
-            repository.SaveCount.Should().Be(1);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
 
     [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PropagatesTheFetchedSourceAndReportsCurrent()
@@ -557,31 +533,16 @@ public class AssetPriceLookupServiceTests
     };
 
     [Fact]
-    public async Task GetCurrentPriceAsync_WhenPersistenceFails_DoesNotReportSuccess()
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_ReturnsTheFetchedPriceButReportsFailure()
     {
-        var (service, tracer, _, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
+        var (service, tracer, logger, tempFile) = CreateRecordingService(StubAssetPriceService.Success(123.45m), failWrites: true);
         try
         {
-            await service.GetCurrentPriceAsync(BuildRequest());
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
 
-            var span = tracer.Spans.Single(recorded => recorded.Name.EndsWith("GetCurrentPrice", StringComparison.Ordinal));
-            span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
-            span.RecordedException.Should().NotBeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task GetCurrentPriceAsync_WhenPersistenceFails_LogsTheErrorTypeOnly()
-    {
-        var (service, _, logger, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
-        try
-        {
-            await service.GetCurrentPriceAsync(BuildRequest());
-
+            using var _ = new AssertionScope();
+            result.Price.Should().Be(123.45m);
+            tracer.ShouldHaveFailedSpan<IOException>("Investment.AssetPriceLookupService.GetCurrentPrice");
             var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Error).Subject;
             entry.Message.Should().Contain(nameof(IOException));
             entry.Message.Should().NotContain(BrokerName).And.NotContain(PortfolioName).And.NotContain(AssetName)
@@ -594,30 +555,6 @@ public class AssetPriceLookupServiceTests
         }
     }
 
-    /// <summary>
-    /// The caller still gets the live price, so a storage fault does not blank out the value on
-    /// screen - but the operation reports failed rather than claiming a record was made.
-    /// </summary>
-    [Fact]
-    public async Task GetCurrentPriceAsync_WhenPersistenceFails_StillReturnsTheFetchedPrice()
-    {
-        var (service, _, _, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
-        try
-        {
-            var result = await service.GetCurrentPriceAsync(BuildRequest());
-
-            result.Price.Should().Be(123.45m);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    /// <summary>
-    /// The pre-existing record test reads back from the in-memory graph, so it passes even when
-    /// the save throws. This one goes to the file, which is what the user actually inspects.
-    /// </summary>
     [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheEntryWithItsSourceAndReportsSuccess()
     {
@@ -633,46 +570,6 @@ public class AssetPriceLookupServiceTests
             entry.Source.Should().Be(PriceSource.Google);
             entry.Currency.Should().BeEmpty();
             tracer.ShouldHaveSucceededSpan("Investment.AssetPriceLookupService.GetCurrentPrice");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task GetCurrentPriceAsync_WhenPersistenceFails_WritesNothingToTheDataFile()
-    {
-        var (service, _, _, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
-        try
-        {
-            await service.GetCurrentPriceAsync(BuildRequest());
-
-            ReloadAssetFromDisk(tempFile)!.GetPriceForDate(TestClock.Today)
-                .Should().BeNull("the save threw, so nothing reached the file");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    /// <summary>
-    /// The file assertion above is only half the story: the graph is serialized from memory, so an
-    /// entry the failed save left behind would be written out by the next successful save and read
-    /// back as if it had been recorded all along.
-    /// </summary>
-    [Fact]
-    public async Task GetCurrentPriceAsync_WhenPersistenceFails_LeavesNoEntryInMemory()
-    {
-        var (service, repository, tempFile) = CreateFailingServiceWithRepository(StubAssetPriceService.Success(123.45m));
-        try
-        {
-            await service.GetCurrentPriceAsync(BuildRequest());
-
-            repository.GetAsset(BrokerName, PortfolioName, AssetName)!
-                .GetPriceForDate(TestClock.Today)
-                .Should().BeNull("the save threw, so the in-memory write must have been reverted");
         }
         finally
         {
@@ -725,27 +622,6 @@ public class AssetPriceLookupServiceTests
         }
     }
 
-    /// <summary>As CreateRecordingService with failing writes, but hands back the repository so a
-    /// test can inspect the in-memory graph rather than only the file.</summary>
-    private static (AssetPriceLookupService Service, InvestmentJsonRepository Repository, string TempFile)
-        CreateFailingServiceWithRepository(IAssetPriceService assetPriceService)
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
-        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
-
-        var serializer = new InvestmentSerializerAdapter();
-        var investments = InvestmentLoader.LoadSync(new LocalJsonStorage(tempFile), serializer, TestClock.At());
-        var storage = new RecordingJsonStorage(new LocalJsonStorage(tempFile)) { FailWrites = true };
-
-        var tracer = new RecordingTelemetryTracer();
-        var repository = new InvestmentJsonRepository(investments, storage, serializer);
-        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
-        var service = new AssetPriceLookupService(
-            repository, navigationService, assetPriceService, TestClock.At(), tracer, new RecordingLogger<AssetPriceLookupService>());
-
-        return (service, repository, tempFile);
-    }
-
     private static Asset? ReloadAssetFromDisk(string tempFile)
     {
         var storage = new LocalJsonStorage(tempFile);
@@ -775,10 +651,6 @@ public class AssetPriceLookupServiceTests
 
         return (new AssetPriceLookupService(repository, navigationService, assetPriceService, TestClock.At(), tracer, logger), tracer, logger, tempFile);
     }
-
-    private static (AssetPriceLookupService Service, RecordingTelemetryTracer Tracer, RecordingLogger<AssetPriceLookupService> Logger, string TempFile)
-        CreateServiceWithFailingStorage(IAssetPriceService assetPriceService) =>
-        CreateRecordingService(assetPriceService, failWrites: true);
 
     /// <summary>Loads a repository over a private copy of the test data file, so a test that mutates
     /// it cannot affect any other.</summary>

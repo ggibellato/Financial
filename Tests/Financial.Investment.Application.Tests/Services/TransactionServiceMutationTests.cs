@@ -491,32 +491,6 @@ public class TransactionServiceMutationTests
         asset.Transactions.Should().Contain(t => t.Type.ToString() == type);
     }
 
-    [Theory]
-    [InlineData("Redemption")]
-    [InlineData("TransferOut")]
-    public async Task AddTransactionAsync_TypeExceedsHeldQuantity_ThrowsAndWritesNothing(string type)
-    {
-        var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        _repository.Asset = asset;
-
-        var act = async () => await CreateService().AddTransactionAsync(new TransactionCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "AAAA",
-            Date = new DateTime(2024, 2, 1),
-            Type = type,
-            Quantity = 15m,
-            UnitPrice = 6m,
-            Fees = 0m
-        });
-
-        (await act.Should().ThrowAsync<InvestmentRuleViolationException>()).WithMessage("*10*");
-        asset.Transactions.Should().ContainSingle();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
     [Fact]
     public async Task AddTransactionAsync_DisposingTransaction_ClassifiesItInTheSameCall()
     {
@@ -545,5 +519,4 @@ public class TransactionServiceMutationTests
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
-
 }

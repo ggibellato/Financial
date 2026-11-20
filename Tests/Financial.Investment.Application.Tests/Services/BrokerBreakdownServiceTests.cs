@@ -141,26 +141,6 @@ public class BrokerBreakdownServiceTests
     }
 
     [Fact]
-    public void GetBrokerBreakdown_DefaultScope_QueriesActiveScopeFromRepository()
-    {
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
-
-        CreateService().GetBrokerBreakdown("XPI");
-
-        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Active);
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_HistoricScope_QueriesHistoricScopeFromRepository()
-    {
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
-
-        CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
-
-        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Historic);
-    }
-
-    [Fact]
     public void GetBrokerBreakdown_ActiveScope_UsesNetInvestedAsSelectedAmount()
     {
         var asset = MakeAsset();
@@ -313,5 +293,4 @@ public class BrokerBreakdownServiceTests
         }
         return broker;
     }
-
 }

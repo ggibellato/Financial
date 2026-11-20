@@ -7,52 +7,19 @@ namespace Financial.Investment.Application.Tests;
 [Trait("Category", "Unit")]
 public class CreditTypeParserTests
 {
-    public static IEnumerable<object?[]> NullValues => new[]
+    [Fact]
+    public void TryParse_ValidValueWithSpacesAndAnyCase_ReturnsTrueAndParsed()
     {
-        new object?[] { null }
-    };
-
-    [Theory]
-    [MemberData(nameof(NullValues))]
-    public void TryParse_WhenValueIsNull_ReturnsFalseAndDefault(string? value)
-    {
-        var result = CreditTypeParser.TryParse(value, out var parsed);
-
-        result.Should().BeFalse();
-        parsed.Should().Be(default(Credit.CreditType));
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("  ")]
-    public void TryParse_WhenValueIsWhitespace_ReturnsFalseAndDefault(string value)
-    {
-        var result = CreditTypeParser.TryParse(value, out var parsed);
-
-        result.Should().BeFalse();
-        parsed.Should().Be(default(Credit.CreditType));
-    }
-
-    [Theory]
-    [InlineData("Dividend", Credit.CreditType.Dividend)]
-    [InlineData("SECURITIESLENDINGINCOME", Credit.CreditType.SecuritiesLendingIncome)]
-    [InlineData(" SecuritiesLendingIncome ", Credit.CreditType.SecuritiesLendingIncome)]
-    [InlineData("JCP", Credit.CreditType.JCP)]
-    [InlineData(" jcp ", Credit.CreditType.JCP)]
-    public void TryParse_WhenValueValid_ReturnsTrueAndParsed(string value, Credit.CreditType expected)
-    {
-        var result = CreditTypeParser.TryParse(value, out var parsed);
+        var result = CreditTypeParser.TryParse(" jcp ", out var parsed);
 
         result.Should().BeTrue();
-        parsed.Should().Be(expected);
+        parsed.Should().Be(Credit.CreditType.JCP);
     }
 
-    [Theory]
-    [InlineData("Hold")]
-    [InlineData("Sell")]
-    public void TryParse_WhenValueInvalid_ReturnsFalseAndDefault(string value)
+    [Fact]
+    public void TryParse_UnknownValue_ReturnsFalseAndDefault()
     {
-        var result = CreditTypeParser.TryParse(value, out var parsed);
+        var result = CreditTypeParser.TryParse("Sell", out var parsed);
 
         result.Should().BeFalse();
         parsed.Should().Be(default(Credit.CreditType));

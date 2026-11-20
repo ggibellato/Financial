@@ -6,6 +6,7 @@ using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
@@ -130,23 +131,6 @@ public class NavigationServiceTests
     }
 
     [Theory]
-    [InlineData(10, PositionType.Long)]
-    [InlineData(0, PositionType.Flat)]
-    [InlineData(-10, PositionType.Short)]
-    public void GetAssetDetails_ReturnsPositionTypeMatchingAsset(decimal quantity, PositionType expectedPositionType)
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", quantity));
-        _repository.Broker = broker;
-
-        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
-
-        details.Should().NotBeNull();
-        details!.PositionType.Should().Be(expectedPositionType);
-    }
-
-    [Theory]
     [InlineData(10)]
     [InlineData(0)]
     [InlineData(-10)]
@@ -178,27 +162,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_ComputesRealizedGainLossFromWeightedAverageCostBasisReplay()
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
-        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
-        portfolio.AddAsset(asset);
-        _repository.Broker = broker;
-
-        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
-
-        // Weighted-average cost after both buys is 100; capital gain = 550 - (5 x 100) = 50; plus 12 credits = 62
-        details.Should().NotBeNull();
-        details!.RealizedGainLoss.Should().Be(62m);
-    }
-
-    [Fact]
-    public void GetAssetDetails_MapsRealizedGainLossSharesOnly()
+    public void GetAssetDetails_MapsThePositionAndGainFiguresOfTheAsset()
     {
         var broker = Broker.Create("Broker", "BRL");
         var portfolio = broker.AddPortfolio("Portfolio");
@@ -213,59 +177,11 @@ public class NavigationServiceTests
         var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
         details.Should().NotBeNull();
-        details!.RealizedGainLossSharesOnly.Should().Be(asset.RealizedGainLossSharesOnly);
-    }
-
-    [Fact]
-    public void GetAssetDetails_WithNoSales_RealizedGainLossEqualsCreditsOnly()
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 8m));
-        portfolio.AddAsset(asset);
-        _repository.Broker = broker;
-
-        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
-
-        details.Should().NotBeNull();
-        details!.RealizedGainLoss.Should().Be(8m);
-    }
-
-    [Fact]
-    public void GetAssetDetails_WithSales_ComputesWeightedAverageSellPrice()
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 20m, 100m, 0m));
-        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        asset.AddTransaction(Transaction.Create(new DateTime(2022, 6, 1), Transaction.TransactionType.Sell, 5m, 120m, 0m));
-        portfolio.AddAsset(asset);
-        _repository.Broker = broker;
-
-        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
-
-        // Weighted average = (5 x 110 + 5 x 120) / 10 = 115
-        details.Should().NotBeNull();
-        details!.AverageSellPrice.Should().Be(115m);
-    }
-
-    [Fact]
-    public void GetAssetDetails_WithNoSales_AverageSellPriceIsNull()
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        portfolio.AddAsset(asset);
-        _repository.Broker = broker;
-
-        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
-
-        details.Should().NotBeNull();
-        details!.AverageSellPrice.Should().BeNull();
+        using var _ = new AssertionScope();
+        details!.PositionType.Should().Be(PositionType.Long);
+        details.RealizedGainLoss.Should().Be(62m);
+        details.RealizedGainLossSharesOnly.Should().Be(50m);
+        details.AverageSellPrice.Should().Be(110m);
     }
 
     [Fact]
@@ -399,6 +315,27 @@ public class NavigationServiceTests
         details!.PriceSnapshots.Should().HaveCount(2);
         details.PriceSnapshots[0].Date.Should().Be(new DateOnly(2024, 2, 1));
         details.PriceSnapshots[1].Date.Should().Be(new DateOnly(2024, 1, 1));
+    }
+
+    [Fact]
+    public void GetAssetDetails_ReturnsTransactionsAndCreditsNewestFirst()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 4m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 4, 1), Credit.CreditType.Dividend, 6m));
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        using var _ = new AssertionScope();
+        details!.Transactions.Select(t => t.Date).Should().Equal(new DateTime(2024, 3, 1), new DateTime(2024, 1, 1));
+        details.Credits.Select(c => c.Date).Should().Equal(new DateTime(2024, 4, 1), new DateTime(2024, 2, 1));
     }
 
     [Fact]

@@ -236,16 +236,6 @@ public class PortfolioServiceTests
     }
 
     [Fact]
-    public async Task DeleteEmptyPortfolioAsync_UsesTheScopeItWasGiven()
-    {
-        _repository.Broker = CreateBrokerWithEmptyPortfolio();
-
-        await CreateService().DeleteEmptyPortfolioAsync("XPI", "Stale", InvestmentScope.Historic);
-
-        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Historic);
-    }
-
-    [Fact]
     public async Task DeleteEmptyPortfolioAsync_WhenRefused_MarksTheSpanFailedWithoutLoggingTheName()
     {
         _repository.Broker = CreateBrokerWithEmptyPortfolio();

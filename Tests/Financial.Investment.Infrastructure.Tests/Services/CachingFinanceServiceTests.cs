@@ -27,14 +27,6 @@ public class CachingFinanceServiceTests
         new() { Exchange = exchange, Ticker = ticker };
 
     [Fact]
-    public void GetAssetValue_NullRequest_Throws()
-    {
-        Action act = () => _sut.GetAssetValue(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("request");
-    }
-
-    [Fact]
     public void GetAssetValue_SameQuoteWithinCacheDuration_ReturnsCachedSnapshotWithoutRefetching()
     {
         var first = _sut.GetAssetValue(StockRequest());

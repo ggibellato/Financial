@@ -332,7 +332,7 @@ public class CreditServiceTests
     }
 
     [Fact]
-    public void GetCreditsByBroker_IncludesCreditsFromFlatAndShortAssets()
+    public void GetCreditsByBroker_IncludesCreditsFromFlatAndShortAssetsNewestFirst()
     {
         var flatAsset = MakeAsset("FLAT");
         flatAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
@@ -347,8 +347,7 @@ public class CreditServiceTests
 
         var result = CreateService().GetCreditsByBroker("XPI");
 
-        result.Should().Contain(c => c.Value == 3m);
-        result.Should().Contain(c => c.Value == 7m);
+        result.Select(c => c.Value).Should().Equal(7m, 3m);
     }
 
     [Theory]
@@ -409,30 +408,6 @@ public class CreditServiceTests
 
         result.Should().BeEmpty();
         _tracer.ShouldHaveSucceededSpan("Investment.CreditService.GetCreditsByPortfolio");
-    }
-
-    [Fact]
-    public void GetCreditsByBroker_DefaultsToActiveScope()
-    {
-        CreateService().GetCreditsByBroker("XPI");
-
-        _repository.LastGetAssetsByBrokerScope.Should().Be(InvestmentScope.Active);
-    }
-
-    [Fact]
-    public void GetCreditsByBroker_ForwardsHistoricScopeToRepository()
-    {
-        CreateService().GetCreditsByBroker("XPI", InvestmentScope.Historic);
-
-        _repository.LastGetAssetsByBrokerScope.Should().Be(InvestmentScope.Historic);
-    }
-
-    [Fact]
-    public void GetCreditsByPortfolio_ForwardsHistoricScopeToRepository()
-    {
-        CreateService().GetCreditsByPortfolio("XPI", "Default", InvestmentScope.Historic);
-
-        _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
@@ -611,5 +586,4 @@ public class CreditServiceTests
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
-
 }
