@@ -5,15 +5,13 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
 [Trait("Category", "Unit")]
 public class PaymentsDueServiceTests
 {
-    private static readonly Microsoft.Extensions.Logging.ILogger<PaymentsDueService> Logger = NullLogger<PaymentsDueService>.Instance;
-
     // Pinned to a fixed UTC instant with TimeSpan.Zero, and tests use TimeZoneInfo.Utc, so "today" is
     // deterministic regardless of the machine running the suite - the same guarantee production gets
     // from TimeZoneInfo.Local, just pinned instead of host-dependent.
@@ -22,12 +20,14 @@ public class PaymentsDueServiceTests
 
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
+    private readonly RecordingLogger<PaymentsDueService> _logger;
     private readonly PaymentsDueService _sut;
 
     public PaymentsDueServiceTests()
     {
         _repository = new StubCashFlowRepository();
         _tracer = new RecordingTelemetryTracer();
+        _logger = new RecordingLogger<PaymentsDueService>();
         _sut = CreateService();
     }
 
@@ -36,7 +36,7 @@ public class PaymentsDueServiceTests
         new(
             repository ?? _repository,
             _tracer,
-            Logger,
+            _logger,
             timeProvider ?? new FakeTimeProvider(PinnedNow),
             timeZone ?? TimeZoneInfo.Utc);
 
@@ -324,6 +324,7 @@ public class PaymentsDueServiceTests
         var result = _sut.GetPaymentsDue();
 
         result.Should().ContainSingle().Which.Name.Should().Be("Nubank");
+        ShouldHaveLoggedOnlyTheErrorType();
     }
 
     [Fact]
@@ -335,6 +336,7 @@ public class PaymentsDueServiceTests
         var result = _sut.GetPaymentsDue();
 
         result.Should().ContainSingle().Which.Name.Should().Be("Internet");
+        ShouldHaveLoggedOnlyTheErrorType();
     }
 
     [Fact]
@@ -380,6 +382,14 @@ public class PaymentsDueServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.PaymentsDueService.GetPaymentsDue");
+        ShouldHaveLoggedOnlyTheErrorType();
+    }
+
+    private void ShouldHaveLoggedOnlyTheErrorType()
+    {
+        var entry = _logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Error).Subject;
+        entry.Message.Should().Contain(nameof(InvalidOperationException)).And.NotContainEquivalentOf("simulated");
+        entry.Exception.Should().BeNull();
     }
 
     private sealed class ThrowingTimeProvider : TimeProvider

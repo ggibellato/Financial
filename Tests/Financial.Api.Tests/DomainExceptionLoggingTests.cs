@@ -7,6 +7,8 @@ using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -34,6 +36,20 @@ public class DomainExceptionLoggingTests
 
         entry.Message.Should().NotContain("Ariana");
         entry.Message.Should().NotContain("654.27");
+    }
+
+    [Fact]
+    public async Task RejectionOnARouteNamingTheHolding_LogsTheRouteTemplate_NotTheNamesInThePath()
+    {
+        var (logger, _) = await InvokeWithAsync(
+            new KeyNotFoundException("missing"),
+            "GET",
+            "/api/v1/financial/assets/XP/ETF ISA/VUSA",
+            "api/v1/financial/assets/{brokerName}/{portfolioName}/{assetName}");
+
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Message.Should().Contain("api/v1/financial/assets/{brokerName}/{portfolioName}/{assetName}");
+        entry.Message.Should().NotContain("VUSA").And.NotContain("ETF ISA");
     }
 
     [Fact]
@@ -211,10 +227,11 @@ public class DomainExceptionLoggingTests
     private static async Task<(RecordingLogger<DomainExceptionMappingMiddleware> Logger, HttpContext Context)> InvokeWithAsync(
         Exception exception,
         string method,
-        string path)
+        string path,
+        string? route = null)
     {
         var logger = new RecordingLogger<DomainExceptionMappingMiddleware>();
-        var context = CreateHttpContext(method, path);
+        var context = CreateHttpContext(method, path, route);
         var middleware = new DomainExceptionMappingMiddleware(_ => throw exception, logger);
 
         await middleware.InvokeAsync(context);
@@ -222,7 +239,7 @@ public class DomainExceptionLoggingTests
         return (logger, context);
     }
 
-    private static HttpContext CreateHttpContext(string method, string path)
+    private static HttpContext CreateHttpContext(string method, string path, string? route = null)
     {
         var services = new ServiceCollection();
         services.AddProblemDetails();
@@ -234,6 +251,7 @@ public class DomainExceptionLoggingTests
         };
         context.Request.Method = method;
         context.Request.Path = path;
+        context.SetEndpoint(new RouteEndpoint(_ => Task.CompletedTask, RoutePatternFactory.Parse(route ?? path), 0, EndpointMetadataCollection.Empty, null));
         context.Response.Body = new MemoryStream();
 
         return context;

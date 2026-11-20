@@ -56,7 +56,7 @@ public sealed class PaymentsDueService : IPaymentsDueService
         catch (Exception ex)
         {
             span.MarkFailed(ex);
-            _logger.LogError(ex, "Failed to aggregate payments due; returning an empty list.");
+            _logger.LogError("{Operation} returned an empty list after {ErrorType}", "GetPaymentsDue", ex.GetType().Name);
             return Array.Empty<PaymentDueDTO>();
         }
     }
@@ -80,7 +80,7 @@ public sealed class PaymentsDueService : IPaymentsDueService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load recurring bills for the payments-due aggregation.");
+            _logger.LogError("{Operation} skipped recurring bills after {ErrorType}", "GetPaymentsDue", ex.GetType().Name);
             return [];
         }
     }
@@ -105,7 +105,7 @@ public sealed class PaymentsDueService : IPaymentsDueService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load credit cards for the payments-due aggregation.");
+            _logger.LogError("{Operation} skipped credit cards after {ErrorType}", "GetPaymentsDue", ex.GetType().Name);
             return [];
         }
     }

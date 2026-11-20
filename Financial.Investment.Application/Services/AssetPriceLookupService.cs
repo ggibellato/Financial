@@ -77,7 +77,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             // inside, a persistence failure fell into the fallback branch, which found the entry
             // that SetPrice had just added in memory, and so returned a successful response for a
             // write that never happened.
-            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price, request);
+            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price);
             if (persistenceError is null)
             {
                 return CompleteSuccessfully(span, price);
@@ -170,8 +170,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// </summary>
     private async Task<Exception?> TryRecordAutomaticPriceAsync(
         Asset asset,
-        AssetPriceDTO price,
-        AssetPriceRequestDTO request)
+        AssetPriceDTO price)
     {
         try
         {
