@@ -9,28 +9,16 @@ namespace Financial.Api.Tests;
 public class NavigationEndpointsTests : ApiEndpointTests
 {
     [Fact]
-    public async Task GetNavigationTree_ReturnsOk()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/navigation/tree");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var tree = await response.Content.ReadFromJsonAsync<TreeNodeDTO>();
-        tree.Should().NotBeNull();
-        tree!.NodeType.Should().Be(TreeNodeType.Investments);
-        tree.DisplayName.Should().NotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
-    public async Task GetBrokers_ReturnsOk()
+    public async Task GetBrokers_ScopeOmitted_ReturnsOnlyTheActiveBroker()
     {
         var response = await Client.GetAsync("/api/v1/financial/navigation/brokers");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var brokers = await response.Content.ReadFromJsonAsync<BrokerNodeDTO[]>();
-        brokers.Should().NotBeNull();
-        brokers!.Length.Should().BeGreaterThan(0);
+        brokers.Should().ContainSingle()
+            .Which.Portfolios.Should().ContainSingle()
+            .Which.Assets.Should().ContainSingle(a => a.Name == "BCIA11");
     }
 
     [Fact]

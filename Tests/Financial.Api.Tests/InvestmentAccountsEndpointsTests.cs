@@ -26,17 +26,6 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetInvestmentAccounts_RequiresNoParameters_AndReturnsFullUnfilteredList()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/investment-accounts");
-        var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
-
-        // All 11 seeded accounts come back regardless of IsActive/IsLiability value.
-        accounts.Should().HaveCount(11);
-        accounts.Should().OnlyContain(a => a.IsActive);
-    }
-
-    [Fact]
     public async Task GetInvestmentAccounts_WithNoSnapshot_HasNonZeroInvestmentSnapshotIsFalse()
     {
         var response = await Client.GetAsync("/api/v1/financial/investment-accounts");

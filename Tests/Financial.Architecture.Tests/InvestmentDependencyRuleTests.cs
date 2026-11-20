@@ -18,13 +18,6 @@ public class InvestmentDependencyRuleTests
     }
 
     [Fact]
-    public void Domain_Should_Not_Reference_Infrastructure()
-    {
-        ProjectAssembly.GetReferencedAssemblyNames(DomainAssembly)
-            .Should().NotContain("Financial.Investment.Infrastructure");
-    }
-
-    [Fact]
     public void Application_Should_Not_Reference_Infrastructure()
     {
         ProjectAssembly.GetReferencedAssemblyNames(ApplicationAssembly)

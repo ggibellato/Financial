@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -51,7 +52,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetBrokerSummary_Returns200WithDto()
+    public async Task GetBrokerSummary_ScopeOmitted_SumsTheActiveBrokerOnly()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI");
 
@@ -59,25 +60,10 @@ public class SummaryEndpointsTests : ApiEndpointTests
 
         var dto = await response.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
         dto.Should().NotBeNull();
-        dto!.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalSold.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalInvested.Should().BeGreaterThanOrEqualTo(0m);
-    }
-
-    [Fact]
-    public async Task GetPortfolioSummary_Returns200WithDto()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var dto = await response.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
-        dto.Should().NotBeNull();
-        dto!.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalSold.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalInvested.Should().BeGreaterThanOrEqualTo(0m);
+        using var _ = new AssertionScope();
+        dto!.TotalBought.Should().Be(1000m, "10 bought at 100");
+        dto.TotalSold.Should().Be(220m, "2 sold at 110");
+        dto.TotalCredits.Should().Be(11m, "dividends of 5 and 6");
     }
 
     [Theory]

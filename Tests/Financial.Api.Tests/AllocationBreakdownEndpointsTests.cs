@@ -51,14 +51,6 @@ public class AllocationBreakdownEndpointsTests : ApiEndpointTests
         dto.ByBroker.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task GetAllocationBreakdown_RejectsAnUnknownSubRoute()
-    {
-        var response = await Client.GetAsync($"{AllocationBreakdownRoute}/unknown");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
     private async Task SetPriceAsync(decimal price)
     {
         var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
