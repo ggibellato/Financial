@@ -27,26 +27,6 @@ public class FrankfurterExchangeRateProviderTests
     }
 
     [Fact]
-    public async Task GetHistoricalRateAsync_WithNonSuccessStatusCode_ReturnsNull()
-    {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
-
-        var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
-
-        rate.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetHistoricalRateAsync_WithMalformedBody_ReturnsNull()
-    {
-        var provider = CreateProvider(_ => Ok("not json"));
-
-        var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
-
-        rate.Should().BeNull();
-    }
-
-    [Fact]
     public async Task GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull()
     {
         var provider = CreateProvider(_ => throw new HttpRequestException("network down"));
@@ -255,28 +235,6 @@ public class FrankfurterExchangeRateProviderTests
             e.Level == LogLevel.Warning && e.Message.Contains(nameof(HttpRequestException)));
     }
 
-    [Fact]
-    public async Task FetchAsync_WithMalformedBody_ReturnsEmptyResult()
-    {
-        var provider = CreateProvider(_ => Ok("not json"));
-
-        var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
-
-        result.BrlRate.Should().BeNull();
-        result.GbpRate.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task FetchAsync_WithNonSuccessStatusCode_ReturnsEmptyResult()
-    {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
-
-        var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
-
-        result.BrlRate.Should().BeNull();
-        result.GbpRate.Should().BeNull();
-    }
-
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -299,7 +257,7 @@ public class FrankfurterExchangeRateProviderTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Lookup_WithServerError_MakesASingleRequest(bool usdLookup)
+    public async Task Lookup_WithServerError_FindsNothingAfterASingleRequest(bool usdLookup)
     {
         var requestCount = 0;
         var provider = CreateProvider(_ =>
@@ -308,9 +266,20 @@ public class FrankfurterExchangeRateProviderTests
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         });
 
-        await LookUpAsync(provider, usdLookup);
+        var found = await LookUpAsync(provider, usdLookup);
 
+        found.Should().BeFalse();
         requestCount.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Lookup_WithMalformedBody_FindsNothing(bool usdLookup)
+    {
+        var provider = CreateProvider(_ => Ok("not json"));
+
+        (await LookUpAsync(provider, usdLookup)).Should().BeFalse();
     }
 
     [Fact]

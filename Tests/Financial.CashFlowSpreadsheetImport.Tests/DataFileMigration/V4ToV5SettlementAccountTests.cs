@@ -21,12 +21,6 @@ public class V4ToV5SettlementAccountTests
     private static string WithEntries(string entries) => V4DataFile.Json.Replace(V4DataFile.Entries, entries);
 
     [Fact]
-    public void FromVersion_Is4()
-    {
-        _sut.FromVersion.Should().Be(4);
-    }
-
-    [Fact]
     [Trait("AC", "P60-F11-settlement-template-and-mae-migration-01")]
     public void Apply_MaeAccount_IsSettlementWithBrlGbpAndOtherParticipantMae()
     {

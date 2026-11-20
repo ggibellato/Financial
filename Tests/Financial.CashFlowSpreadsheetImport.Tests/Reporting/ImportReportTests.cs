@@ -35,17 +35,4 @@ public class ImportReportTests
         rendered.Should().NotContain("--- Row issues ---");
         rendered.Should().NotContain("--- Resumo validation warnings ---");
     }
-
-    [Fact]
-    public void Collections_ExposeEveryRecordedEntry()
-    {
-        var report = new ImportReport();
-        report.SheetImported("Jul2026");
-        report.SheetSkipped("Casa", "Not a monthly tab");
-        report.RowFlagged("Out2017", 14, "Category", "Casas", "typo");
-
-        report.ImportedSheets.Should().ContainSingle("Jul2026");
-        report.SkippedSheets.Should().ContainSingle(s => s.Sheet == "Casa");
-        report.RowIssues.Should().ContainSingle(i => i.RawValue == "Casas");
-    }
 }

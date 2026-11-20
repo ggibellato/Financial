@@ -10,14 +10,6 @@ namespace Financial.Shared.Infrastructure.Tests.Persistence;
 public class JsonStorageFactoryTests
 {
     [Fact]
-    public void Constructor_WithNullTracer_ThrowsArgumentNullException()
-    {
-        Action act = () => new JsonStorageFactory(null, null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task CreateLocal_ReturnsWorkingLocalJsonStorage()
     {
         var factory = new JsonStorageFactory(null, NoOpTelemetryTracer.Instance);

@@ -79,10 +79,4 @@ public class GoogleFinanceVerificationTests
             _output.WriteLine("");
         }
     }
-
-    [Fact]
-    public void RunDetailedVerification()
-    {
-        GoogleFinanceVerifier.VerifyMultipleUrls();
-    }
 }

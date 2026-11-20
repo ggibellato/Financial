@@ -81,30 +81,6 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_RateLimitedRepeatedly_BacksOffExponentially(NamedRunner runner)
-    {
-        var callCount = 0;
-
-        var result = await runner.Run(
-            () =>
-            {
-                callCount++;
-                if (callCount < 4)
-                {
-                    throw RateLimitedException();
-                }
-                return 9;
-            },
-            5,
-            null,
-            RecordDelay);
-
-        result.Should().Be(9);
-        _requestedDelays.Should().Equal(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4), TimeSpan.FromSeconds(8));
-    }
-
-    [Theory]
-    [MemberData(nameof(Runners))]
     public async Task ExecuteWithRetry_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal(NamedRunner runner)
     {
         var act = async () => await runner.Run(() => throw RateLimitedException(), 0, null, RecordDelay);

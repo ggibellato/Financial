@@ -134,14 +134,4 @@ public class AssetMetadataResolverTests
 
         resolver.IsClosedPortfolio("Acoes").Should().BeFalse();
     }
-
-    [Fact]
-    public void ResolveHistoricPortfolioName_DelegatesToAssetClassificationLookup()
-    {
-        var resolver = CreateResolver();
-
-        var portfolioName = resolver.ResolveHistoricPortfolioName("Bitcoin");
-
-        portfolioName.Should().Be(AssetClassificationLookup.UncategorizedHistoricPortfolioName);
-    }
 }

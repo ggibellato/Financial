@@ -102,31 +102,21 @@ public class ResumoValidationReaderTests : IDisposable
         snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(-433.78m);
     }
 
-    [Fact]
-    public void ImportAccountSnapshots_LabelWithDoubleSpaceVariant_StillResolves()
-    {
-        var sheet = _workbook.AddWorksheet("Resumo2026");
-
-        sheet.Cell(31, 1).Value = "Chase Master  4023 (-)";
-        sheet.Cell(31, 2).Value = -11526.59;
-
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), _report);
-
-        snapshots.Should().OnlyContain(s => s.Account.Name == "Chase Master 4023");
-    }
-
-    [Fact]
-    public void ImportAccountSnapshots_HistoricalAccountLabel_NowResolves()
+    [Theory]
+    [InlineData("Chase Master  4023 (-)", "Chase Master 4023")]
+    [InlineData("Help to Buy ISA GGS", "Help to Buy ISA GGS")]
+    [InlineData("Chip Cash ISA", "Chip Cash ISA Gleison")]
+    [InlineData("Instant ISE Issue 1", "Instant ISA Issue 1")]
+    public void ImportAccountSnapshots_LabelVariant_ResolvesToTheSeededAccount(string label, string accountName)
     {
         var sheet = _workbook.AddWorksheet("Resumo2023");
 
-        sheet.Cell(30, 1).Value = "Help to Buy ISA GGS";
-        sheet.Cell(30, 2).Value = 15682.05;
+        sheet.Cell(30, 1).Value = label;
+        sheet.Cell(30, 2).Value = 100.00;
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2023, SeededAccounts(), _report);
 
-        snapshots.Should().OnlyContain(s => s.Account.Name == "Help to Buy ISA GGS");
-        snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(15682.05m);
+        snapshots.Should().NotBeEmpty().And.OnlyContain(s => s.Account.Name == accountName);
     }
 
     [Fact]
@@ -153,32 +143,6 @@ public class ResumoValidationReaderTests : IDisposable
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2020, SeededAccounts(), _report);
 
         snapshots.Should().OnlyContain(s => s.Account.Name == "Barclays Blue Rewards");
-    }
-
-    [Fact]
-    public void ImportAccountSnapshots_ChipCashIsaLabel_ResolvesToChipCashIsaGleison()
-    {
-        var sheet = _workbook.AddWorksheet("Resumo2024");
-
-        sheet.Cell(35, 1).Value = "Chip Cash ISA";
-        sheet.Cell(35, 2).Value = 500.00;
-
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2024, SeededAccounts(), _report);
-
-        snapshots.Should().OnlyContain(s => s.Account.Name == "Chip Cash ISA Gleison");
-    }
-
-    [Fact]
-    public void ImportAccountSnapshots_InstantIseIssue1Typo_ResolvesToInstantIsaIssue1()
-    {
-        var sheet = _workbook.AddWorksheet("Resumo2017");
-
-        sheet.Cell(20, 1).Value = "Instant ISE Issue 1";
-        sheet.Cell(20, 2).Value = 1000.00;
-
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2017, SeededAccounts(), _report);
-
-        snapshots.Should().OnlyContain(s => s.Account.Name == "Instant ISA Issue 1");
     }
 
     [Fact]

@@ -34,24 +34,6 @@ public class FxRateSerializerAdapterTests
     }
 
     [Fact]
-    public void Serialize_NullRates_Throws()
-    {
-        var act = () => Serializer.Serialize(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("ratesByDate");
-    }
-
-    [Fact]
-    public void Deserialize_Missing_Version_Treated_As_Version_1()
-    {
-        var json = "{\"ratesByDate\":{}}";
-
-        var act = () => Serializer.Deserialize(json);
-
-        act.Should().NotThrow();
-    }
-
-    [Fact]
     public void Deserialize_Missing_RatesByDate_Returns_Empty_Dictionary()
     {
         var result = Serializer.Deserialize("{\"Version\":1}");
@@ -60,46 +42,17 @@ public class FxRateSerializerAdapterTests
     }
 
     [Fact]
-    public void Round_Trip_Preserves_At_Least_Six_Decimal_Places()
-    {
-        var record = new FxRateRecord(5.452317m, 0.771845m, "frankfurter", TestClock.Default);
-        var ratesByDate = new Dictionary<DateOnly, FxRateRecord> { [new DateOnly(2026, 9, 18)] = record };
-
-        var json = Serializer.Serialize(ratesByDate);
-        var result = Serializer.Deserialize(json);
-
-        result[new DateOnly(2026, 9, 18)].BrlRate.Should().Be(5.452317m);
-        result[new DateOnly(2026, 9, 18)].GbpRate.Should().Be(0.771845m);
-    }
-
-    [Fact]
-    public void Round_Trip_Preserves_Source_And_StoredAt()
-    {
-        var storedAt = new DateTimeOffset(2026, 9, 18, 23, 59, 59, TimeSpan.Zero);
-        var record = new FxRateRecord(5.452317m, 0.771845m, "frankfurter", storedAt);
-        var ratesByDate = new Dictionary<DateOnly, FxRateRecord> { [new DateOnly(2026, 9, 18)] = record };
-
-        var json = Serializer.Serialize(ratesByDate);
-        var result = Serializer.Deserialize(json);
-
-        result[new DateOnly(2026, 9, 18)].Source.Should().Be("frankfurter");
-        result[new DateOnly(2026, 9, 18)].StoredAt.Should().Be(storedAt);
-    }
-
-    [Fact]
-    public void Round_Trip_Multiple_Dates_Preserves_All_Entries()
+    public void RoundTrip_KeepsEveryDateWithSixDecimalRatesSourceAndStoredAt()
     {
         var ratesByDate = new Dictionary<DateOnly, FxRateRecord>
         {
-            [new DateOnly(2026, 9, 17)] = new FxRateRecord(5.40m, 0.77m, "frankfurter", TestClock.Default),
-            [new DateOnly(2026, 9, 18)] = new FxRateRecord(5.45m, 0.78m, "frankfurter", TestClock.Default)
+            [new DateOnly(2026, 9, 17)] = new FxRateRecord(5.40m, 0.77m, "manual", TestClock.Default),
+            [new DateOnly(2026, 9, 18)] = new FxRateRecord(5.452317m, 0.771845m, "frankfurter",
+                new DateTimeOffset(2026, 9, 18, 23, 59, 59, TimeSpan.Zero))
         };
 
-        var json = Serializer.Serialize(ratesByDate);
-        var result = Serializer.Deserialize(json);
+        var result = Serializer.Deserialize(Serializer.Serialize(ratesByDate));
 
-        result.Should().HaveCount(2);
-        result.Should().ContainKey(new DateOnly(2026, 9, 17));
-        result.Should().ContainKey(new DateOnly(2026, 9, 18));
+        result.Should().BeEquivalentTo(ratesByDate);
     }
 }

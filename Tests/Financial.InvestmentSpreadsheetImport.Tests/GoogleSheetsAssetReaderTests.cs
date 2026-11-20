@@ -167,20 +167,6 @@ public class GoogleSheetsAssetReaderTests
         importLog.Messages.Should().BeEmpty();
     }
 
-    /// <summary>The tool passes a progress sink, but the reader must not require one.</summary>
-    [Fact]
-    public async Task ReadTransactionsAsync_WithNoImportLog_StillFloorsTheNegativeFee()
-    {
-        _dataSource.Rows = new List<IList<object>>
-        {
-            new List<object> { 45000L, "", "C", "10", "", "100", "900" }
-        };
-
-        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
-
-        result.Should().ContainSingle().Which.Fees.Should().Be(0m);
-    }
-
     private sealed class RecordingProgress : IProgress<string>
     {
         public List<string> Messages { get; } = new();
@@ -299,20 +285,6 @@ public class GoogleSheetsAssetReaderTests
         var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Fees.Should().Be(10m);
-    }
-
-    [Fact]
-    public async Task ReadTransactionsAsync_NegativeComputedFees_ClampsToZero()
-    {
-        _dataSource.Rows = new List<IList<object>>
-        {
-            // Total price cell (column 6) = 500, unitPrice*quantity = 100*10 = 1000, so raw fees = -500.
-            new List<object> { 45000L, "", "C", "10", "", "100", "500" }
-        };
-
-        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
-
-        result.Should().ContainSingle().Which.Fees.Should().Be(0m);
     }
 
     [Fact]

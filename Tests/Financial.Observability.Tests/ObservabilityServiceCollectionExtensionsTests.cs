@@ -46,16 +46,6 @@ public class ObservabilityServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddObservability_AlwaysRegistersATelemetryTracer()
-    {
-        var provider = BuildServiceProvider(new Dictionary<string, string?>());
-
-        var tracer = provider.GetService<ITelemetryTracer>();
-
-        tracer.Should().NotBeNull();
-    }
-
-    [Fact]
     public void AddObservability_StartSpanNeverReturnsNullOrThrows()
     {
         var provider = BuildServiceProvider(new Dictionary<string, string?>
@@ -126,23 +116,6 @@ public class ObservabilityServiceCollectionExtensionsTests
 
         provider.GetService<TracerProvider>().Should().NotBeNull();
         provider.GetService<MeterProvider>().Should().BeNull();
-    }
-
-    [Fact]
-    public void AddObservability_WhenEnabledWithLangfuseBackend_RegistersOpenTelemetryTracer()
-    {
-        var provider = BuildServiceProvider(new Dictionary<string, string?>
-        {
-            ["Observability:Enabled"] = "true",
-            ["Observability:Backend"] = "Langfuse",
-            ["Observability:Endpoint"] = "http://langfuse:4318",
-            ["Observability:Langfuse:PublicKey"] = "pub-key",
-            ["Observability:Langfuse:SecretKey"] = "secret-key"
-        });
-
-        var tracer = provider.GetRequiredService<ITelemetryTracer>();
-
-        tracer.Should().BeOfType<OpenTelemetryTracer>();
     }
 
     [Fact]

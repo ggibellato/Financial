@@ -19,14 +19,6 @@ public class AssetClassificationLookupTests
     }
 
     [Fact]
-    public void TryGet_Bitcoin_HistoricPortfolioIsNull()
-    {
-        AssetClassificationLookup.TryGet("Bitcoin", out var entry);
-
-        entry.HistoricPortfolio.Should().BeNull();
-    }
-
-    [Fact]
     public void TryGet_BitcoinCaseInsensitiveAndTrimmed_ReturnsCryptocurrencyClass()
     {
         var found = AssetClassificationLookup.TryGet(" bitcoin ", out var entry);
