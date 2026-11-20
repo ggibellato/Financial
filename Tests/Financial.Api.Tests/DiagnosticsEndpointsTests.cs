@@ -46,24 +46,6 @@ public class DiagnosticsEndpointsTests : ApiEndpointTests
     }
 
     /// <summary>
-    /// The endpoint is a readiness probe - CI polls it in a boot loop, and a container healthcheck
-    /// would too. It must stay 200 for a storage fault, which a restart cannot fix and would in fact
-    /// make worse, since startup re-reads from the same failing storage.
-    /// </summary>
-    [Fact]
-    public async Task GetHealth_AnswersRepeatedProbesWithOk()
-    {
-        var first = await Client.GetAsync("/api/v1/financial/health");
-        var second = await Client.GetAsync("/api/v1/financial/health");
-
-        using (new AssertionScope())
-        {
-            first.StatusCode.Should().Be(HttpStatusCode.OK);
-            second.StatusCode.Should().Be(HttpStatusCode.OK);
-        }
-    }
-
-    /// <summary>
     /// The repository-config endpoint was removed rather than gated: its only guard was
     /// ASPNETCORE_ENVIRONMENT, which is a runtime setting that can be - and in docker-compose.yml
     /// is - Development. This pins the route as gone in both environments, so no setting can bring

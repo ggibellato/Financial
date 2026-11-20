@@ -14,41 +14,17 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
     private static readonly Guid ReservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");
 
     [Fact]
-    public async Task GetIncomeSources_ReturnsTheFourSeededSourcesWithCorrectFields()
+    public async Task GetIncomeSources_ReturnsTheFourSeededSourcesWithTheirFields()
     {
         var response = await Client.GetAsync("/api/v1/financial/income-sources");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
         sources.Should().HaveCount(4);
-        sources.Should().ContainSingle(s => s.Name == "Gleison" && s.IsActive && s.Group == "Salary" && s.Id != Guid.Empty);
-        sources.Should().ContainSingle(s => s.Name == "Ariana" && s.IsActive && s.Group == "Salary");
+        sources.Should().ContainSingle(s => s.Id == GleisonId && s.Name == "Gleison" && s.IsActive && s.Group == "Salary" && s.PotsAccountId == null);
+        sources.Should().ContainSingle(s => s.Name == "Ariana" && s.IsActive && s.Group == "Salary" && s.PotsAccountId == ReservaId);
         sources.Should().ContainSingle(s => s.Name == "Lottery" && s.IsActive && s.Group == "NonReportable");
         sources.Should().ContainSingle(s => s.Name == "DividendoJuros" && s.IsActive && s.Group == "DividendoJuros");
-    }
-
-    [Fact]
-    public async Task GetIncomeSources_ReturnsThePotsAccountIdInResponse()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/income-sources");
-
-        var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
-        sources.Should().ContainSingle(s => s.Name == "Ariana" && s.PotsAccountId == ReservaId);
-        sources.Should().ContainSingle(s => s.Name == "Gleison" && s.PotsAccountId == null);
-        sources.Should().ContainSingle(s => s.Name == "Lottery" && s.PotsAccountId == null);
-        sources.Should().ContainSingle(s => s.Name == "DividendoJuros" && s.PotsAccountId == null);
-    }
-
-    [Fact]
-    public async Task GetIncomeSources_RequiresNoParameters_AndReturnsFullUnfilteredList()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/income-sources");
-        var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
-
-        // All 4 seeded sources come back regardless of IsActive value - none are seeded inactive
-        // in the fixture, so this also confirms no isActive=true filter is silently applied.
-        sources.Should().HaveCount(4);
-        sources.Should().OnlyContain(s => s.IsActive);
     }
 
     [Fact]

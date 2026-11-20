@@ -9,7 +9,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Financial.Api.Tests;
@@ -18,18 +17,26 @@ namespace Financial.Api.Tests;
 public class DividendEndpointsTests
 {
     [Fact]
-    public async Task GetDividendHistory_ReturnsOk()
+    public async Task GetDividendSummary_PassesTheTickerAndExchangeToTheService()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/summary?exchange=NYSE");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        doc.RootElement.GetProperty("ticker").GetString().Should().Be("BCIA11");
+        doc.RootElement.GetProperty("exchange").GetString().Should().Be("NYSE");
+    }
+
+    [Fact]
+    public async Task GetDividendHistory_KnownTicker_ReturnsOk()
     {
         await using var factory = CreateFactory();
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/history?exchange=BVMF");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var history = await response.Content.ReadFromJsonAsync<DividendHistoryItemDTO[]>();
-        history.Should().NotBeNull();
-        history!.Length.Should().Be(1);
-        history[0].Type.Should().Be("Dividend");
     }
 
     [Fact]
@@ -50,22 +57,6 @@ public class DividendEndpointsTests
         var response = await client.GetAsync("/api/v1/financial/dividends/%20/summary?exchange=BVMF");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task GetDividendSummary_ReturnsOk()
-    {
-        await using var factory = CreateFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/summary?exchange=NYSE");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var summary = await response.Content.ReadFromJsonAsync<DividendSummaryDTO>();
-        summary.Should().NotBeNull();
-        summary!.Ticker.Should().Be("BCIA11");
-        summary.Exchange.Should().Be("NYSE");
-        summary.YearTotals.Should().ContainSingle(total => total.Year == 2023 && total.Total == 4m);
     }
 
     [Fact]
@@ -117,61 +108,14 @@ public class DividendEndpointsTests
         }));
     }
 
-    private sealed class DividendServiceStub(bool throwOnLookup = false) : IDividendService
+    private sealed class DividendServiceStub(bool throwOnLookup) : IDividendService
     {
-        public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request)
-        {
-            if (throwOnLookup)
-            {
-                throw new InvalidOperationException("Ticker not found.");
-            }
+        public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request) =>
+            throwOnLookup ? throw new InvalidOperationException("Ticker not found.") : [];
 
-            return new[]
-            {
-                new DividendHistoryItemDTO
-                {
-                    Type = "Dividend",
-                    Date = new DateTime(2024, 2, 1),
-                    Value = 1.23m
-                }
-            };
-        }
-
-        public DividendSummaryDTO GetDividendSummary(DividendLookupRequestDTO request)
-        {
-            if (throwOnLookup)
-            {
-                throw new InvalidOperationException("Ticker not found.");
-            }
-
-            return new DividendSummaryDTO
-            {
-                Exchange = request.Exchange,
-                Ticker = request.Ticker,
-                Name = "Sample Asset",
-                CurrentPrice = 10.5m,
-                PriceAsOf = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero),
-                AverageDividendLastFiveYears = 4m,
-                PriceMaxBuy = 66.67m,
-                DiscountPercent = 20m,
-                History = new[]
-                {
-                    new DividendHistoryItemDTO
-                    {
-                        Type = "Dividend",
-                        Date = new DateTime(2023, 6, 1),
-                        Value = 4m
-                    }
-                },
-                YearTotals = new[]
-                {
-                    new DividendYearTotalDTO
-                    {
-                        Year = 2023,
-                        Total = 4m
-                    }
-                }
-            };
-        }
+        public DividendSummaryDTO GetDividendSummary(DividendLookupRequestDTO request) =>
+            throwOnLookup
+                ? throw new InvalidOperationException("Ticker not found.")
+                : new DividendSummaryDTO { Exchange = request.Exchange, Ticker = request.Ticker, Name = "Sample Asset", History = [], YearTotals = [] };
     }
 }

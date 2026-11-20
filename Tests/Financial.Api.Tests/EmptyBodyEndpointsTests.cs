@@ -18,8 +18,10 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
     [GeneratedRegex(@"\{(?<name>\w+)[^}]*\}")]
     private static partial Regex RouteParameter();
 
-    [Fact]
-    public async Task EveryEndpointWithARequestBody_EmptyBody_ReturnsBadRequest()
+    [Theory]
+    [InlineData("")]
+    [InlineData("null")]
+    public async Task EveryEndpointWithARequestBody_EmptyOrNullBody_ReturnsBadRequest(string body)
     {
         var endpoints = Services.GetRequiredService<EndpointDataSource>().Endpoints
             .OfType<RouteEndpoint>()
@@ -35,7 +37,7 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
             var url = "/" + RouteParameter().Replace(endpoint.RoutePattern.RawText!, parameter => PlaceholderFor(parameter, action)).TrimStart('/');
             using var request = new HttpRequestMessage(new HttpMethod(method), url)
             {
-                Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json")
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
             };
 
             var response = await Client.SendAsync(request);
@@ -46,7 +48,7 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
             }
         }
 
-        offenders.Should().BeEmpty("an empty body must be rejected with 400 rather than reach a service");
+        offenders.Should().BeEmpty("an empty or null body must be rejected with 400 rather than reach a service");
     }
 
     private static async Task<bool> IsRejectedBeforeAnyServiceAsync(HttpResponseMessage response, RouteEndpoint endpoint)

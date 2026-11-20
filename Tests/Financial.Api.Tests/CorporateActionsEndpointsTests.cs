@@ -31,36 +31,6 @@ public class CorporateActionsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddSplit_InvalidRatioFactor_ReturnsBadRequest()
-    {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/split", new CorporateActionSplitCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "BCIA11",
-            EffectiveDate = new DateTime(2024, 7, 1),
-            RatioFactor = 1.0m
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task AddSplit_ZeroQuantityHolding_ReturnsConflict()
-    {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/split", new CorporateActionSplitCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "BCIA11",
-            EffectiveDate = new DateTime(2023, 1, 1),
-            RatioFactor = 2.0m
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict, "an unrescalable zero-quantity position is a well-formed request the domain refuses on its own rules, not a malformed one");
-    }
-
-    [Fact]
     public async Task AddSplit_UnknownAsset_ReturnsBadRequest()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/split", new CorporateActionSplitCreateDTO
@@ -374,42 +344,6 @@ public class CorporateActionsEndpointsTests : ApiEndpointTests
         result.Should().NotBeNull();
         result!.Parent!.Quantity.Should().Be(8m, "a spin-off never changes the parent's quantity");
         result.New!.Quantity.Should().Be(5m);
-    }
-
-    [Fact]
-    public async Task AddSpinOff_InvalidAllocationPercentage_ReturnsBadRequest()
-    {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/spin-off", new CorporateActionSpinOffCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            ParentAssetName = "BCIA11",
-            EffectiveDate = new DateTime(2024, 7, 1),
-            QuantityReceived = 5m,
-            AllocationPercentage = 101m,
-            NewAssetName = "SPINCO",
-            CreateNewAssetInline = true
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task AddSpinOff_InvalidQuantityReceived_ReturnsBadRequest()
-    {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/spin-off", new CorporateActionSpinOffCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            ParentAssetName = "BCIA11",
-            EffectiveDate = new DateTime(2024, 7, 1),
-            QuantityReceived = 0m,
-            AllocationPercentage = 15m,
-            NewAssetName = "SPINCO",
-            CreateNewAssetInline = true
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

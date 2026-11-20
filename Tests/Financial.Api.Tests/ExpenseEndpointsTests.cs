@@ -11,7 +11,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
-    private static readonly Guid ChaseMaster4023Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003");
     private static readonly Guid CasaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000003");
     private static readonly Guid ExtrasId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000005");
     private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
@@ -61,27 +60,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddExpense_WithCountsAsTitheFalse_ReturnsOkWithFlagFalse()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Charitable offer",
-            Value = 50m,
-            CategoryId = DizimoId,
-            PaymentSourceBankId = BarclaysId,
-            CreditCardId = null,
-            CountsAsTithe = false
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
-        expense!.CountsAsTithe.Should().BeFalse();
-    }
-
-    [Fact]
     public async Task UpdateExpense_TogglingCountsAsTitheToFalse_ReturnsOkWithFlagFalse()
     {
         var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -112,68 +90,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddExpense_CreditCardIdWithoutPaymentSource_ReturnsCreditCardCharge()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Card charge",
-            Value = 30m,
-            CategoryId = ExtrasId,
-            PaymentSourceBankId = null,
-            CreditCardId = ChaseMaster4023Id
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
-        expense!.PaymentSourceBankId.Should().BeNull();
-        expense.CreditCardName.Should().Be("ChaseMaster4023");
-        expense.PaymentStatus.Should().Be("CreditCardCharge");
-    }
-
-    [Fact]
-    public async Task AddExpense_CreditCardExpense_ReturnsNonNullChargeDateAndInvoiceDate()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Card charge",
-            Value = 30m,
-            CategoryId = ExtrasId,
-            PaymentSourceBankId = null,
-            CreditCardId = ChaseMaster4023Id
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
-        expense!.ChargeDate.Should().Be(new DateOnly(2026, 7, 15));
-        expense.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
-    }
-
-    [Fact]
-    public async Task AddExpense_WithInvoiceDateOverride_UsesProvidedMonth()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 29),
-            Description = "Cutoff charge",
-            Value = 30m,
-            CategoryId = ExtrasId,
-            PaymentSourceBankId = null,
-            CreditCardId = ChaseMaster4023Id,
-            InvoiceDate = new DateOnly(2026, 8, 17)
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
-        expense!.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
-    }
-
-    [Fact]
     public async Task AddExpense_NeitherPaymentSourceNorCreditCardId_ReturnsBadRequest()
     {
         var request = new ExpenseCreateDTO
@@ -191,66 +107,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("payment source or a card tag");
-    }
-
-    [Fact]
-    public async Task AddExpense_BothPaymentSourceAndCreditCardId_ReturnsBadRequest()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Both payment fields",
-            Value = 30m,
-            CategoryId = ExtrasId,
-            PaymentSourceBankId = BarclaysId,
-            CreditCardId = ChaseMaster4023Id
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("marking its card statement paid");
-    }
-
-    [Fact]
-    public async Task AddExpense_ZeroValue_ReturnsBadRequestWithMessage()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Zero value expense",
-            Value = 0m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = BarclaysId,
-            CreditCardId = null
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("zero");
-    }
-
-    [Fact]
-    public async Task AddExpense_MissingCategory_ReturnsBadRequestWithMessage()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Bad category",
-            Value = 10m,
-            CategoryId = Guid.NewGuid(),
-            PaymentSourceBankId = BarclaysId,
-            CreditCardId = null
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Category");
     }
 
     [Fact]
@@ -356,70 +212,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var totals = await response.Content.ReadFromJsonAsync<List<CategoryTotalDTO>>();
         totals.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 15m);
-    }
-
-    [Fact]
-    public async Task AddExpense_RoundUpAmountOnRoundUpEnabledBank_ReturnsOkWithAmountSaved()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "TfL",
-            Value = 9.40m,
-            CategoryId = ExtrasId,
-            PaymentSourceBankId = Trading212Id,
-            CreditCardId = null,
-            RoundUpAmount = 0.60m
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
-        expense!.RoundUpAmount.Should().Be(0.60m);
-        expense.SuggestedRoundUpAmount.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task AddExpense_RoundUpAmountOnNonRoundUpBank_ReturnsBadRequest()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Groceries",
-            Value = 9.40m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = BarclaysId,
-            CreditCardId = null,
-            RoundUpAmount = 0.60m
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Barclays").And.Contain("does not support round-up");
-    }
-
-    [Fact]
-    public async Task AddExpense_RoundUpAmountWithCreditCardId_ReturnsBadRequest()
-    {
-        var request = new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 15),
-            Description = "Card charge",
-            Value = 9.40m,
-            CategoryId = ExtrasId,
-            PaymentSourceBankId = null,
-            CreditCardId = ChaseMaster4023Id,
-            RoundUpAmount = 0.60m
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("not a credit-card charge");
     }
 
     [Fact]

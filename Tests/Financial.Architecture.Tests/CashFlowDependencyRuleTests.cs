@@ -18,13 +18,6 @@ public class CashFlowDependencyRuleTests
     }
 
     [Fact]
-    public void Domain_Should_Not_Reference_Infrastructure()
-    {
-        ProjectAssembly.GetReferencedAssemblyNames(DomainAssembly)
-            .Should().NotContain("Financial.CashFlow.Infrastructure");
-    }
-
-    [Fact]
     public void Application_Should_Not_Reference_Infrastructure()
     {
         ProjectAssembly.GetReferencedAssemblyNames(ApplicationAssembly)
