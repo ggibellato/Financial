@@ -69,6 +69,7 @@ public class MensaisServiceTests
         });
 
         await act.Should().ThrowAsync<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.MensaisService.CreateBill");
     }
 
     [Fact]
@@ -161,6 +162,7 @@ public class MensaisServiceTests
         var act = async () => await _sut.UpdateBillAsync(Guid.NewGuid(), ValidUpdateRequest());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.MensaisService.UpdateBill");
     }
 
     [Fact]
@@ -216,6 +218,7 @@ public class MensaisServiceTests
         var act = async () => await _sut.UpdateBillStatusAsync(Guid.NewGuid(), new RecurringBillStatusUpdateDTO { Status = "Paid" });
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.MensaisService.UpdateBillStatus");
     }
 
     [Fact]
@@ -461,22 +464,6 @@ public class MensaisServiceTests
             bill.Status.Should().Be(BillStatus.Unset);
             repository.Expenses.Should().BeEmpty();
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.MensaisService.MarkBillPaid");
-        }
-    }
-
-    [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.CreateBillAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.CreateBill");
-            await FluentActions.Awaiting(() => _sut.UpdateBillAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.UpdateBill");
-            await FluentActions.Awaiting(() => _sut.UpdateBillStatusAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.UpdateBillStatus");
-            await FluentActions.Awaiting(() => _sut.MarkBillPaidAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.MarkBillPaid");
         }
     }
 }

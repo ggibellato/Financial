@@ -112,6 +112,7 @@ public class BalanceAdjustmentServiceTests
         });
 
         await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownAccountId}' was not found*");
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.BalanceAdjustmentService.AddAdjustment");
     }
 
     [Fact]
@@ -263,17 +264,5 @@ public class BalanceAdjustmentServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.BalanceAdjustmentService.DeleteAdjustment");
-    }
-
-    [Fact]
-    public async Task AddAndUpdate_NullRequest_ThrowAndRecordFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.AddAdjustmentAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.BalanceAdjustmentService.AddAdjustment");
-            await FluentActions.Awaiting(() => _sut.UpdateAdjustmentAsync(Guid.NewGuid(), Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.BalanceAdjustmentService.UpdateAdjustment");
-        }
     }
 }

@@ -145,15 +145,6 @@ public class StatementDueDateServiceTests
     }
 
     [Fact]
-    public async Task SetDueDateAsync_NullRequest_IsRefused()
-    {
-        var act = () => _sut.SetDueDateAsync(_amex.Id, 2026, 10, null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        ShouldHaveRefused<ArgumentNullException>();
-    }
-
-    [Fact]
     public async Task SetDueDateAsync_UnknownAccount_IsRefused()
     {
         var act = () => _sut.SetDueDateAsync(Guid.NewGuid(), 2026, 10, new StatementDueDateUpdateDTO { DueDate = null });

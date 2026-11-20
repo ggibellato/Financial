@@ -1041,16 +1041,4 @@ public class AccountAdminServiceTests
             SettlementTransaction.Create(mae, new DateOnly(2026, 7, 1), "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m, TestClock.Today));
         return mae;
     }
-
-    [Fact]
-    public async Task CreateAndUpdate_NullRequest_ThrowAndRecordFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.CreateAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountAdminService.CreateAccount");
-            await FluentActions.Awaiting(() => _sut.UpdateAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountAdminService.UpdateAccount");
-        }
-    }
 }

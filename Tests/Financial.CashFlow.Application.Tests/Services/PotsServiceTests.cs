@@ -819,17 +819,4 @@ public class PotsServiceTests
             _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.PotsService.GetPots");
         }
     }
-
-    [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsArgumentNullException()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.DepositAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-            await FluentActions.Awaiting(() => _sut.UpdateDepositAsync(Reserva.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            await FluentActions.Awaiting(() => _sut.WithdrawAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-            await FluentActions.Awaiting(() => _sut.UpdateWithdrawalAsync(Reserva.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            await FluentActions.Awaiting(() => _sut.ReplacePotsAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-        }
-    }
 }

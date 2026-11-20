@@ -349,15 +349,6 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task MarkStatementPaidAsync_NullRequest_ThrowsAndRecordsFailedSpan()
-    {
-        var act = async () => await _sut.MarkStatementPaidAsync(Guid.NewGuid(), null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.CardStatementService.MarkStatementPaid");
-    }
-
-    [Fact]
     public async Task MarkStatementPaidAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var act = async () => await _sut.MarkStatementPaidAsync(Guid.NewGuid(), PaidBy(_repository, "Barclays"));

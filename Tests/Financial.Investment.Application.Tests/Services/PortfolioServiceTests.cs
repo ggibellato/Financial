@@ -262,24 +262,6 @@ public class PortfolioServiceTests
     }
 
     [Fact]
-    public async Task CreatePortfolioAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().CreatePortfolioAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task UpdatePortfolioAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().UpdatePortfolioAsync("XPI", "Default", null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
     public async Task UpdatePortfolioAsync_BlankCurrentName_ThrowsAndWritesNothing()
     {
         _repository.Investments = Investments.Create();

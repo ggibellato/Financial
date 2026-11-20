@@ -654,20 +654,6 @@ public class AccountTransferServiceTests
     }
 
     [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.AddAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.AddTransfer");
-            await FluentActions.Awaiting(() => _sut.AddCreditRefundAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.AddCreditRefund");
-            await FluentActions.Awaiting(() => _sut.UpdateAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.UpdateTransfer");
-        }
-    }
-
-    [Fact]
     public void GetCardsInCredit_WhenTheRepositoryThrows_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");

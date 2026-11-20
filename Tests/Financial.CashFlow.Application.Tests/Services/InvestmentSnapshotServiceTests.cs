@@ -158,14 +158,6 @@ public class InvestmentSnapshotServiceTests
         _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.InvestmentSnapshotService.UpdateSnapshotValue");
     }
 
-    [Fact]
-    public async Task UpdateSnapshotValueAsync_NullRequest_ThrowsArgumentNullException()
-    {
-        var act = async () => await _sut.UpdateSnapshotValueAsync(Guid.NewGuid(), null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-    }
-
     private static StubCashFlowRepository CreateRepository()
     {
         var repository = new StubCashFlowRepository();

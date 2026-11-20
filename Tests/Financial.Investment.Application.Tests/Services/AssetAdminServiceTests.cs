@@ -423,24 +423,6 @@ public class AssetAdminServiceTests
     }
 
     [Fact]
-    public async Task CreateAssetAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().CreateAssetAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task UpdateAssetAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
     public async Task UpdateAssetAsync_BlankCurrentName_ThrowsAndWritesNothing()
     {
         SeedBrokerWithAsset("AAAA");

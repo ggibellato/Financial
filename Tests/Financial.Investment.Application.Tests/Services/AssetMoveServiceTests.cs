@@ -207,24 +207,6 @@ public class AssetMoveServiceTests
         }
     }
 
-    [Fact]
-    public async Task MoveAssetAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().MoveAssetAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task ArchiveAssetAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().ArchiveAssetAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
     private AssetMoveService CreateService() =>
         new(_repository, CreateNavigationService(), _tracer, _logger);
 

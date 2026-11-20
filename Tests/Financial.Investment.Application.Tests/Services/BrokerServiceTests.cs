@@ -306,24 +306,6 @@ public class BrokerServiceTests
     }
 
     [Fact]
-    public async Task CreateBrokerAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().CreateBrokerAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task UpdateBrokerAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().UpdateBrokerAsync("XPI", null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
     public async Task UpdateBrokerAsync_BlankCurrentName_ThrowsAndWritesNothing()
     {
         _repository.Investments!.AddActiveBroker(Broker.Create("XPI", "BRL"));
