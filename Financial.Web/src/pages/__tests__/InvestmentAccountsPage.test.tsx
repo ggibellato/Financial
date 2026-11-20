@@ -4,6 +4,8 @@ import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentAccountDto } from '../../api/types'
 import { account, cardAccount, potsAccount } from '../../test/account'
+import { never } from '../../test-utils/deferred'
+import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const {
   getInvestmentAccountsMock,
@@ -150,6 +152,26 @@ describe('InvestmentAccountsPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'New investment account' })).not.toBeInTheDocument(),
     )
+  })
+
+  it('shows a loading state before data arrives', () => {
+    getInvestmentAccountsMock.mockReturnValue(never())
+    render(<InvestmentAccountsPage />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading')
+  })
+
+  it('keeps the New investment account dialog open with the duplicate under Name when the create is refused', async () => {
+    createInvestmentAccountMock.mockRejectedValue(duplicateNameRejection('An investment account named "Monzo Pot" already exists.'))
+    render(<InvestmentAccountsPage />)
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New investment account' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Monzo Pot' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
+
+    await expectDuplicateUnderName('An investment account named "Monzo Pot" already exists.')
+    expect(screen.getByRole('heading', { name: 'New investment account' })).toBeInTheDocument()
   })
 
   it('edits an investment account through its row action', async () => {

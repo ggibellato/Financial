@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import RecurringBillsPage from '../RecurringBillsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { RecurringBillDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
 
 const { getMensaisBillsMock, createMensaisBillMock, updateMensaisBillMock, deleteMensaisBillMock } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -117,6 +118,13 @@ describe('RecurringBillsPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'New recurring bill' })).not.toBeInTheDocument(),
     )
+  })
+
+  it('shows a loading state before data arrives', () => {
+    getMensaisBillsMock.mockReturnValue(never())
+    render(<RecurringBillsPage />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading')
   })
 
   it('edits a recurring bill through its row action', async () => {

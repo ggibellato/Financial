@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AssetsPage from '../AssetsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
+import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const {
   getAdminAssetsMock,
@@ -119,6 +121,27 @@ describe('AssetsPage', () => {
       ),
     )
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'New asset' })).not.toBeInTheDocument())
+  })
+
+  it('shows a loading state before data arrives', () => {
+    getAdminAssetsMock.mockReturnValue(never())
+    render(<AssetsPage />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading')
+  })
+
+  it('keeps the New asset dialog open with the duplicate under Name when the create is refused', async () => {
+    createAssetMock.mockRejectedValue(duplicateNameRejection('Portfolio "Default" already has an asset named "NEWASSET".'))
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New asset' }))
+    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'NEWASSET' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add asset' }))
+
+    await expectDuplicateUnderName('Portfolio "Default" already has an asset named "NEWASSET".')
+    expect(screen.getByRole('heading', { name: 'New asset' })).toBeInTheDocument()
   })
 
   it('edits an asset through its row action', async () => {
