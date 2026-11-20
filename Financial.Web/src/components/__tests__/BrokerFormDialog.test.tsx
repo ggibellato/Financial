@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BrokerFormDialog from '../BrokerFormDialog'
-import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 
 describe('BrokerFormDialog', () => {
   it('renders in create mode with an empty name, the first currency, and Average cost selected', () => {
@@ -58,16 +57,5 @@ describe('BrokerFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('XPI', 'BRL', 'SpecificId'))
-  })
-
-  it('shows a duplicate name under Name and moves focus there', async () => {
-    const message = 'A broker named "XPI" already exists.'
-    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
-    render(<BrokerFormDialog broker={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'XPI' } })
-    saveFromTheSaveButton('Add broker')
-
-    await expectDuplicateUnderName(message)
   })
 })

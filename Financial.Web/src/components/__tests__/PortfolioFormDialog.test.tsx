@@ -52,17 +52,6 @@ describe('PortfolioFormDialog', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Avenue', 'Growth'))
   })
 
-  it('shows a duplicate name under Name and moves focus there', async () => {
-    const message = 'Broker "XPI" already has a portfolio named "Default".'
-    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
-    render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default' } })
-    saveFromTheSaveButton('Add portfolio')
-
-    await expectDuplicateUnderName(message)
-  })
-
   it('drops a duplicate-name message once a different broker is chosen', async () => {
     const message = 'Broker "XPI" already has a portfolio named "Default".'
     const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))

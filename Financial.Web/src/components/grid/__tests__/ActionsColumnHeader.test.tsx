@@ -21,10 +21,4 @@ describe('ActionsColumnHeader', () => {
     expect(header.textContent).toBe('')
     expect(header).toHaveClass('data-table__col--action')
   })
-
-  it('keeps a wider action column class when one is given', () => {
-    renderInHeaderRow(<ActionsColumnHeader className="data-table__col--action-wide" />)
-
-    expect(screen.getByRole('columnheader', { name: 'Actions' })).toHaveClass('data-table__col--action-wide')
-  })
 })

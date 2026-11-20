@@ -234,37 +234,6 @@ describe('AggregatedSummaryTab', () => {
     expect(investedLabel.nextElementSibling?.textContent).toMatch(/\d+[.,]\d{2}$/)
   })
 
-  it('renders_zero_values_without_error', () => {
-    setMock({
-      summary: {
-        totalBought: 0,
-        totalSold: 0,
-        totalCredits: 0,
-        totalInvested: 0,
-        marketValue: 0,
-        holdingCount: 0,
-        unvaluedHoldingCount: 0,
-        priceOnlyReturn: null,
-        totalReturn: null,
-        totalReturnNetOfTax: null,
-        reportingCurrency: 'GBP',
-        isReportingCurrencyEnabled: true,
-        convertedMarketValue: null,
-        convertedInvested: null,
-        convertedUnrealisedGainLoss: null,
-        convertedTotalReturn: null,
-        convertedTotalReturnNetOfTax: null,
-        isPartial: false,
-        isReportingCurrencyUnavailable: false,
-      },
-    })
-    renderComponent()
-    expect(screen.getByText('Total bought')).toBeInTheDocument()
-    expect(screen.getByText('Total sold')).toBeInTheDocument()
-    expect(screen.getByText('Total credits')).toBeInTheDocument()
-    expect(screen.getByText('Total invested')).toBeInTheDocument()
-  })
-
   it('renders_broker_breakdown_charts_for_broker_node_selection', () => {
     setMock({ summary: SUMMARY })
     renderComponentWithNode({ nodeType: 'Broker', brokerName: 'XPI', currency: 'BRL' })

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '../../../test/renderWithFluent'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { mockMatchMedia } from '../../../test/mockMatchMedia'
 import SortableColumnHeader from '../SortableColumnHeader'
 
@@ -63,34 +64,22 @@ describe('SortableColumnHeader', () => {
     expect(onSort).toHaveBeenCalledWith('value')
   })
 
-  it('renders children in the same header cell, for the future filter icon slot', () => {
+  it('sorts when Enter is pressed on the header', async () => {
+    const onSort = vi.fn()
     render(
       <table>
         <thead>
           <tr>
-            <SortableColumnHeader label="Category" columnKey="category" onSort={vi.fn()}>
-              <span data-testid="filter-slot" />
-            </SortableColumnHeader>
+            <SortableColumnHeader label="Value" columnKey="value" onSort={onSort} />
           </tr>
         </thead>
       </table>,
     )
 
-    expect(screen.getByTestId('filter-slot')).toBeInTheDocument()
-  })
+    screen.getByRole('button', { name: 'Value' }).focus()
+    await userEvent.keyboard('{Enter}')
 
-  it('is keyboard-operable via a native button element', () => {
-    render(
-      <table>
-        <thead>
-          <tr>
-            <SortableColumnHeader label="Value" columnKey="value" onSort={vi.fn()} />
-          </tr>
-        </thead>
-      </table>,
-    )
-
-    expect(screen.getByRole('button', { name: 'Value' }).tagName).toBe('BUTTON')
+    expect(onSort).toHaveBeenCalledWith('value')
   })
 
   describe('in the stacked narrow layout, where the header row is clipped', () => {

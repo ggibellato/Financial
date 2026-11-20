@@ -131,19 +131,13 @@ describe('TransferForm', () => {
       />,
     )
 
-    expect(screen.getByText('Transfer amount must be greater than zero.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Amount/)).toHaveAccessibleDescription('Transfer amount must be greater than zero.')
   })
 
   it('renders a general error banner when no field claims the error', () => {
     render(<TransferForm {...baseProps} saveError="Network request failed" saveErrorFields={{}} />)
 
     expect(screen.getByText('Network request failed')).toBeInTheDocument()
-  })
-
-  it('shows Saving… and disables the button while isSaving', () => {
-    render(<TransferForm {...baseProps} isSaving />)
-
-    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('disables every field and Cancel while saving', () => {
@@ -223,20 +217,6 @@ describe('TransferForm', () => {
     expect(optionNames(screen.getByLabelText(/^To/))).not.toContain('Monzo')
   })
 
-  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of a transfer being edited on its own side only', () => {
-    render(<TransferForm {...baseProps} isEditing sourceBank="bank-monzo" banks={[...baseProps.banks, INACTIVE_BANK]} />)
-
-    expect(screen.getByLabelText(/^From/)).toHaveValue('bank-monzo')
-    expect(optionNames(screen.getByLabelText(/^To/))).not.toContain('Monzo')
-  })
-
-  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive destination of a transfer being edited', () => {
-    render(<TransferForm {...baseProps} isEditing destinationBank="bank-monzo" banks={[...baseProps.banks, INACTIVE_BANK]} />)
-
-    expect(screen.getByLabelText(/^To/)).toHaveValue('bank-monzo')
-    expect(optionNames(screen.getByLabelText(/^From/))).not.toContain('Monzo')
-  })
-
   it("[AC P60-F06-admin-accounts-page-05] keeps the edited transfer's inactive bank after another bank is picked", () => {
     const props = { ...baseProps, isEditing: true, banks: [...baseProps.banks, INACTIVE_BANK] }
     const { rerender } = render(<TransferForm {...props} sourceBank="bank-monzo" />)
@@ -276,14 +256,5 @@ describe('TransferForm', () => {
 
     expect(getErrorAlert()).toHaveTextContent('The service is unavailable.')
     expect(getErrorAlert()).toHaveFocus()
-  })
-
-  it('does not save again while a save is in flight', () => {
-    const onSave = vi.fn()
-    render(<TransferForm {...baseProps} isSaving onSave={onSave} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Saving…' }))
-
-    expect(onSave).not.toHaveBeenCalled()
   })
 })

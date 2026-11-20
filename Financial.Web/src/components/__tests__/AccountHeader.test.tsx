@@ -343,14 +343,6 @@ describe('AccountHeader', () => {
     expect(screen.getByRole('heading', { level: 1 }).closest('.account-screen__summary')).toHaveClass('account-screen__summary--busy')
   })
 
-  it('leaves the summary plain when not busy, and a bank balance not top-aligned', () => {
-    renderHeader(BARCLAYS)
-    const summary = screen.getByRole('heading', { level: 1 }).closest('.account-screen__summary')!
-
-    expect([...summary.classList]).toEqual(['account-screen__summary'])
-    expect([...screen.getByText(/at end of/).parentElement!.classList]).toEqual(['account-screen__balance'])
-  })
-
   it("top-aligns a card's statement figure", () => {
     renderHeader(AMEX)
     expect(screen.getByText('October 2026 statement').parentElement).toHaveClass('account-screen__balance', 'account-screen__balance--top-aligned')

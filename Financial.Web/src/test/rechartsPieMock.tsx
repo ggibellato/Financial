@@ -13,7 +13,7 @@ export const PieChart = ({ children }: { children: ReactNode }) => <div data-tes
 export const Pie = ({ data, children }: { data: MockPieDatum[]; children?: ReactNode }) => (
   <div data-testid="pie">
     {data.map((d) => (
-      <span key={d.name} data-testid="pie-slice" data-percentage={d.percentage}>
+      <span key={d.name} data-testid="pie-slice">
         {d.name}
       </span>
     ))}

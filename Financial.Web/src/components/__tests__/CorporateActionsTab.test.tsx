@@ -298,20 +298,6 @@ describe('CorporateActionsTab', () => {
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
   })
 
-  it('ignores a record asked for that is not loaded, whatever its id holds', async () => {
-    Element.prototype.scrollIntoView = vi.fn()
-    await renderLoaded([split({ id: 'ca1' })], 'not"loaded')
-
-    expect(document.body).toHaveFocus()
-  })
-
-  it('focuses the only record when it is the one asked for', async () => {
-    Element.prototype.scrollIntoView = vi.fn()
-    await renderLoaded([split({ id: 'ca1' })], 'ca1')
-
-    expect(rowOf('ca1')?.querySelector('button')).toHaveFocus()
-  })
-
   it('focuses the record asked for once the history finishes loading', async () => {
     Element.prototype.scrollIntoView = vi.fn()
     const pending = deferred<AssetDetailsDto>()
@@ -353,7 +339,7 @@ describe('CorporateActionsTab', () => {
 
   it('does not crash or change focus when focusRecordId matches no loaded record', async () => {
     Element.prototype.scrollIntoView = vi.fn()
-    await renderLoaded([split({ id: 'ca1' })], 'does-not-exist')
+    await renderLoaded([split({ id: 'ca1' })], 'not"loaded')
 
     expect(rowOf('ca1')).not.toHaveFocus()
     expect(document.body).toHaveFocus()

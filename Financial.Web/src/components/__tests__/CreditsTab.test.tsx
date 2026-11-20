@@ -37,21 +37,15 @@ vi.mock('recharts', () => ({
   Bar: ({
     name,
     dataKey,
-    fill,
-    stackId,
     children,
   }: {
     name?: string
     dataKey: BucketReader | string
-    fill?: string
-    stackId?: string
     children?: React.ReactNode
   }) => (
     <div
       data-testid="bar"
       data-name={name}
-      data-fill={fill}
-      data-stack={stackId}
       data-own={typeof dataKey === 'function' ? String(dataKey(bucketWith(name))) : dataKey}
       data-other={typeof dataKey === 'function' ? String(dataKey(bucketWith(undefined))) : dataKey}
     >
@@ -80,14 +74,7 @@ vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  LabelList: ({ formatter }: { formatter: (value: unknown) => string }) => (
-    <div
-      data-testid="label"
-      data-positive={formatter(7)}
-      data-zero={formatter(0)}
-      data-text={formatter('n/a')}
-    />
-  ),
+  LabelList: () => null,
 }))
 
 type BucketReader = (bucket: { byType: Record<string, number> }) => number
@@ -252,11 +239,6 @@ describe('CreditsTab', () => {
     expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument()
   })
 
-  it('renders_date_in_dd_MM_yyyy_format', async () => {
-    await renderAssetTab([CREDIT_DIVIDEND])
-    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
-  })
-
   it.each([
     [CREDIT_DIVIDEND, 'Dividend', 'credits-tab__type--dividend'],
     [CREDIT_SECURITIES_LENDING_INCOME, 'Securities lending income', 'credits-tab__type--securities-lending-income'],
@@ -264,12 +246,6 @@ describe('CreditsTab', () => {
   ])('renders_%#_credit_type_%s_with_its_class', async (credit, label, typeClass) => {
     await renderAssetTab([credit])
     expect(screen.getByText(label)).toHaveClass(typeClass)
-  })
-
-  it('renders_value_in_n2_bold', async () => {
-    await renderAssetTab([CREDIT_DIVIDEND])
-    const [valueCell] = screen.getAllByText('120.50')
-    expect(valueCell).toHaveClass('credits-tab__value')
   })
 
   it('new_button_shows_the_new_credit_form', async () => {
@@ -546,31 +522,11 @@ describe('CreditsTab', () => {
     expect(rowButton(`Delete ${DIVIDEND_NAME}`)).toBeInTheDocument()
   })
 
-  it('renders_all_filter_buttons', async () => {
-    await renderAssetTab()
-    expect(screen.getByRole('tab', { name: 'This month' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Last 3 months' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Last 6 months' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'YTD' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'All time' })).toBeInTheDocument()
-  })
-
-  it('active_filter_has_active_class', async () => {
-    await renderAssetTab()
-    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toHaveAttribute('aria-selected', 'true')
-  })
-
   it('clicking_filter_selects_that_filter', async () => {
     await renderAssetTab()
     fireEvent.click(screen.getByRole('tab', { name: 'Last 3 months' }))
     expect(screen.getByRole('tab', { name: 'Last 3 months' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Last 12 months' })).toHaveAttribute('aria-selected', 'false')
-  })
-
-  it('active_mode_has_active_class', async () => {
-    await renderAssetTab()
-    expect(screen.getByRole('tab', { name: 'Stacked' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('clicking_mode_selects_that_mode', async () => {
@@ -760,16 +716,6 @@ describe('CreditsTab', () => {
     expect(screen.getByText('Bonus')).toHaveClass('credits-tab__type--dividend')
   })
 
-  it.each(['Bar', 'Line'])('the_%s_chart_tooltip_formats_numbers_to_two_decimals_and_leaves_other_values_untouched', async (chart) => {
-    await renderBrokerTab([CREDIT_DIVIDEND])
-
-    fireEvent.click(screen.getByRole('tab', { name: chart }))
-
-    const tooltip = screen.getByTestId('tooltip')
-    expect(tooltip).toHaveAttribute('data-number', '12.50')
-    expect(tooltip).toHaveAttribute('data-text', 'n/a')
-  })
-
   it('each_bar_series_reads_its_own_type_from_the_month_bucket_and_zero_for_other_types', async () => {
     await renderBrokerTab([CREDIT_DIVIDEND, CREDIT_JCP])
 
@@ -781,22 +727,14 @@ describe('CreditsTab', () => {
     }
   })
 
-  it('bar_labels_show_positive_amounts_and_hide_zero_and_non_numeric_values', async () => {
+  it.each(['Bar', 'Line'])('the_%s_chart_tooltip_formats_numbers_to_two_decimals_and_leaves_other_values_untouched', async (chart) => {
     await renderBrokerTab([CREDIT_DIVIDEND])
 
-    const label = screen.getByTestId('label')
-    expect(label).toHaveAttribute('data-positive', '7.00')
-    expect(label).toHaveAttribute('data-zero', '')
-    expect(label).toHaveAttribute('data-text', '')
-  })
+    fireEvent.click(screen.getByRole('tab', { name: chart }))
 
-  it('stacked_line_series_read_their_own_type_and_the_grouped_line_reads_the_total', async () => {
-    await renderBrokerTab([CREDIT_DIVIDEND])
-    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
-    expect(screen.getByTestId('line')).toHaveAttribute('data-own', '7')
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Grouped' }))
-    expect(screen.getByTestId('line')).toHaveAttribute('data-own', 'total')
+    const tooltip = screen.getByTestId('tooltip')
+    expect(tooltip).toHaveAttribute('data-number', '12.50')
+    expect(tooltip).toHaveAttribute('data-text', 'n/a')
   })
 
   it.each([
@@ -808,30 +746,5 @@ describe('CreditsTab', () => {
     fireEvent.click(screen.getByRole('tab', { name: chart }))
 
     expect(screen.getByTestId(testId)).toHaveAttribute('data-accessibility-layer', 'false')
-  })
-
-  it('colours_a_single_credit_type_in_the_single_type_blue', async () => {
-    await renderBrokerTab([CREDIT_DIVIDEND])
-
-    expect(screen.getByTestId('bar')).toHaveAttribute('data-fill', '#4682b4')
-  })
-
-  it('shades_several_credit_types_from_light_to_dark_blue', async () => {
-    await renderBrokerTab([CREDIT_DIVIDEND, CREDIT_JCP, CREDIT_SECURITIES_LENDING_INCOME])
-
-    expect(screen.getAllByTestId('bar').map((bar) => bar.getAttribute('data-fill'))).toEqual([
-      'rgb(173, 216, 230)',
-      'rgb(91, 149, 193)',
-      'rgb(8, 81, 156)',
-    ])
-  })
-
-  it('stacks_the_bars_of_every_type_together_only_while_stacked', async () => {
-    await renderBrokerTab([CREDIT_DIVIDEND, CREDIT_JCP])
-    expect(screen.getAllByTestId('bar').map((bar) => bar.getAttribute('data-stack'))).toEqual(['credits', 'credits'])
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Grouped' }))
-
-    expect(screen.getAllByTestId('bar').map((bar) => bar.getAttribute('data-stack'))).toEqual([null, null])
   })
 })

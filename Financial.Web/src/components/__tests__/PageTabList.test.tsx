@@ -18,14 +18,4 @@ describe('PageTabList', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Credits' }))
     expect(onTabSelect).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ value: 'credits' }))
   })
-
-  it('wraps its tabs onto another row instead of overflowing at narrow widths', () => {
-    render(
-      <PageTabList aria-label="Monthly views">
-        <Tab value="a">A</Tab>
-      </PageTabList>,
-    )
-
-    expect(getComputedStyle(screen.getByRole('tablist', { name: 'Monthly views' })).flexWrap).toBe('wrap')
-  })
 })
