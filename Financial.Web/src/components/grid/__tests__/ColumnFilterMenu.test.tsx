@@ -7,7 +7,7 @@ const TEN_VALUES = Array.from({ length: 10 }, (_, i) => `Category ${i + 1}`)
 const ELEVEN_VALUES = Array.from({ length: 11 }, (_, i) => `Category ${i + 1}`)
 
 describe('ColumnFilterMenu', () => {
-  it('renders the filter icon without the active class when unfiltered', () => {
+  it('describes no filter on the trigger when the column is unfiltered', () => {
     render(
       <ColumnFilterMenu
         columnKey="category"
@@ -20,11 +20,10 @@ describe('ColumnFilterMenu', () => {
       />,
     )
 
-    const trigger = screen.getByRole('button', { name: 'Filter by Category' })
-    expect(trigger.className).not.toMatch(/--active/)
+    expect(screen.getByRole('button', { name: 'Filter by Category' })).not.toHaveAccessibleDescription()
   })
 
-  it('marks the trigger active when the column is filtered', () => {
+  it('describes the trigger as filtered when the column is filtered', () => {
     render(
       <ColumnFilterMenu
         columnKey="category"
@@ -37,8 +36,7 @@ describe('ColumnFilterMenu', () => {
       />,
     )
 
-    const trigger = screen.getByRole('button', { name: 'Filter by Category' })
-    expect(trigger.className).toMatch(/--active/)
+    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveAccessibleDescription('Filter applied')
   })
 
   it('opens the checklist with one checkbox per available value, plus (All)', () => {

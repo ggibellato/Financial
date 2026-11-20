@@ -777,7 +777,7 @@ describe('AnnualSummaryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
-    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveClass('column-filter-menu__trigger--active')
+    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveAccessibleDescription('Filter applied')
     const message = screen.getByText('No rows match the current filters.')
     expect(message.closest('td')).toHaveAttribute('colspan', '15')
   })
@@ -790,7 +790,7 @@ describe('AnnualSummaryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
 
-    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveClass('column-filter-menu__trigger--active')
+    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveAccessibleDescription('Filter applied')
     expect(screen.getByText('No rows match the current filters.').closest('td')).toHaveAttribute('colspan', '3')
   })
 
