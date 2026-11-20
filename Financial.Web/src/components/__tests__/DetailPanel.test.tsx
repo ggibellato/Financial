@@ -1,5 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { act, fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'

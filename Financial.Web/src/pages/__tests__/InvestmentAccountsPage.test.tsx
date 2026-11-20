@@ -1,5 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'

@@ -1,7 +1,6 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { render } from '../../test/renderWithFluent'
 import type { AssetSearchOptionsData } from '../../hooks/useAssetSearchOptions'
 import { formatN2 } from '../../utils/formatters'
 import { BLANK_TARGET_ASSET_IDENTITY, BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'

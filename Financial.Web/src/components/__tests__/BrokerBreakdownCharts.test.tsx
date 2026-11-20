@@ -1,5 +1,4 @@
-import { screen, within } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { render, screen, within } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BrokerBreakdownData } from '../../hooks/useBrokerBreakdown'
 import type { PortfolioBreakdownItemDto } from '../../api/types'

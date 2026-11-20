@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it } from 'vitest'
 import ErrorState from '../../components/ErrorState'
 import { awaitRetryOutcome } from '../../utils/retryOutcomeFocus'

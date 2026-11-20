@@ -1,5 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { render, screen, waitFor, within } from '../../test/renderWithFluent'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'

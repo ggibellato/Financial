@@ -1,5 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import { afterEach, describe, expect, it } from 'vitest'
 import AppearancePage from '../AppearancePage'
 import { ColourModeProvider, useColourMode } from '../../context/ColourModeContext'

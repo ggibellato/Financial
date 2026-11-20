@@ -1,5 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryData, RowPriceState } from '../../hooks/usePortfolioAssetSummary'

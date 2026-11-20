@@ -1,9 +1,8 @@
-import { act, fireEvent, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Sidebar from '../Sidebar'
 import { NAV_TREE, type NavCategory } from '../../navigation/navTree'
-import { render } from '../../test/renderWithFluent'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
 
 function LocationDisplay() {

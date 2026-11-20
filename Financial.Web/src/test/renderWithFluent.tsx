@@ -18,4 +18,4 @@ export function render(ui: ReactElement, options?: RenderOptions) {
   return testingLibraryRender(ui, { ...options, wrapper: FluentWrapper })
 }
 
-export { fireEvent, screen, waitFor, within } from '@testing-library/react'
+export { act, fireEvent, screen, waitFor, within } from '@testing-library/react'

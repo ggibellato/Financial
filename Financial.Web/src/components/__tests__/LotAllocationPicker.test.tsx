@@ -1,5 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { render } from '../../test/renderWithFluent'
+import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import type { OpenLotDto } from '../../api/types'
 import LotAllocationPicker from '../LotAllocationPicker'
