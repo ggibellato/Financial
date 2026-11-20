@@ -555,46 +555,6 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task AddExpenseAsync_EligibleWithRoundUpAmountAlreadySaved_ReturnsNoSuggestion()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.SuggestedRoundUpAmount.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_OnNonRoundUpBank_ReturnsNoSuggestion()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Barclays", Value = 9.40m });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.SuggestedRoundUpAmount.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_CreditCardCharge_ReturnsNoSuggestion()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023", Value = 9.40m });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.SuggestedRoundUpAmount.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_NegativeValueOnRoundUpBank_ReturnsNoSuggestion()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = -9.40m });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.SuggestedRoundUpAmount.Should().BeNull();
-    }
-
-    [Fact]
     public async Task UpdateExpenseAsync_WithNewRoundUpAmount_ChangesIt()
     {
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, 

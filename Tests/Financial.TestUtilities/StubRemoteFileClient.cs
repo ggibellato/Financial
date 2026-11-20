@@ -25,5 +25,11 @@ public sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
         _client = client;
     }
 
-    public IRemoteFileClient Create(string credentialsPath) => _client;
+    public string? LastCredentialsPath { get; private set; }
+
+    public IRemoteFileClient Create(string credentialsPath)
+    {
+        LastCredentialsPath = credentialsPath;
+        return _client;
+    }
 }

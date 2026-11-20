@@ -93,7 +93,8 @@ Worth testing here:
 
 NOT worth testing here:
 - **Controller business behaviour in isolation** — controllers delegate; prove them through the host.
-- **Per-class constructor null guards** — each project's `ConstructorGuardTests` covers them.
+- **Null guards** — constructor guards are covered by each project's `ConstructorGuardTests`; method-argument
+  `ThrowIfNull` guards are not tested at all (our own callers never pass null).
 - **DTO or entity shape by hand** — the OpenAPI snapshot pins DTOs; a getter with no logic is covered
   by its factory test.
 - **Framework behaviour** — ASP.NET model binding and routing, `System.Text.Json`, react-router,
@@ -203,7 +204,7 @@ When creating or modifying an artifact, read the corresponding guide for the com
 - ❌ **Add a test to move a count or a coverage number** — it must pass the test-value questions in §2
 - ❌ **Repeat a Unit assertion through the host or Playwright** without a new thing to prove (§2)
 - ❌ **Add an E2E spec for a risk a lower layer can catch** — answer the four E2E questions first (`references/e2e-environment.md`)
-- ❌ **Write per-class constructor null-guard tests** — `ConstructorGuardTests` owns them
+- ❌ **Write null-guard tests** — `ConstructorGuardTests` owns constructor guards; method-argument guards go untested
 - ❌ **Construct `ApiTestFactory` as a field, or copy a stub locally** — derive from `ApiEndpointTests`; shared doubles go in `Tests/Financial.TestUtilities`
 - ❌ **Read the wall clock or wait on it** (`DateTime.Now`, `Task.Delay`, `waitForTimeout`) — CI's hygiene scan rejects it (`references/gotchas.md`)
 - ❌ **Mock `fetch` per call in a hook test, or add a second Fluent/ResizeObserver shim** — mock `financialApiClient`; `setupTests.ts` already shims (`references/gotchas.md`)

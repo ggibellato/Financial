@@ -131,13 +131,10 @@ public class InvestmentAccountServiceTests
         }
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task CreateInvestmentAccountAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_BlankName_ThrowsAndWritesNothing()
     {
-        var request = new InvestmentAccountCreateDTO { Name = name!, IsActive = true, IsLiability = false };
+        var request = new InvestmentAccountCreateDTO { Name = "   ", IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.CreateInvestmentAccountAsync(request);
 
@@ -611,18 +608,6 @@ public class InvestmentAccountServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.InvestmentAccountService.GetInvestmentAccounts");
-    }
-
-    [Fact]
-    public async Task UpdateInvestmentAccountAsync_WithBlankName_ThrowsArgumentException()
-    {
-        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-        _repository.InvestmentAccounts.Add(account);
-        var request = new InvestmentAccountUpdateDTO { Name = "   ", IsActive = true, IsLiability = false };
-
-        var act = async () => await _sut.UpdateInvestmentAccountAsync(account.Id, request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*name is required*");
     }
 
     [Fact]

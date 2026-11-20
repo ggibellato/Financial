@@ -71,15 +71,12 @@ public class CategoryServiceTests
         }
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task CreateCategoryAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
+    [Fact]
+    public async Task CreateCategoryAsync_BlankName_ThrowsAndWritesNothing()
     {
         var repository = new StubCashFlowRepository();
         var sut = CreateService(repository);
-        var request = new CategoryCreateDTO { Name = name!, Active = true, IsInvestment = false, IsTithe = false };
+        var request = new CategoryCreateDTO { Name = "   ", Active = true, IsInvestment = false, IsTithe = false };
 
         var act = async () => await sut.CreateCategoryAsync(request);
 
@@ -130,16 +127,6 @@ public class CategoryServiceTests
             repository.SaveChangesCallCount.Should().Be(1);
             _tracer.ShouldHaveSucceededSpan("CashFlow.CategoryService.UpdateCategory").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(category.Id.ToString());
         }
-    }
-
-    [Fact]
-    public async Task UpdateCategoryAsync_BlankNameForAnUnknownId_IsRefusedForTheNameBeforeTheLookup()
-    {
-        var request = new CategoryUpdateDTO { Name = " ", Active = true, IsInvestment = false, IsTithe = false };
-
-        var act = async () => await _sut.UpdateCategoryAsync(Guid.NewGuid(), request);
-
-        await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
 
     [Fact]

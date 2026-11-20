@@ -47,21 +47,6 @@ public class JsonStorageFactoryExtensionsTests
         _storageFactory.Calls.Should().BeEmpty();
     }
 
-    [Fact]
-    public void Create_NullArguments_ThrowBeforeCreatingAnyStorage()
-    {
-        var selection = new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, "data/custom.json", null, null);
-
-        using var _ = new AssertionScope();
-        FluentActions.Invoking(() => ((IJsonStorageFactory)null!).Create(selection, "data-investment.json", Keys))
-            .Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
-        FluentActions.Invoking(() => _storageFactory.Create(null!, "data-investment.json", Keys))
-            .Should().Throw<ArgumentNullException>().WithParameterName("selection");
-        FluentActions.Invoking(() => _storageFactory.Create(selection, "data-investment.json", null!))
-            .Should().Throw<ArgumentNullException>().WithParameterName("configurationKeys");
-        _storageFactory.Calls.Should().BeEmpty();
-    }
-
     private sealed class RecordingJsonStorageFactory : IJsonStorageFactory
     {
         public List<string> Calls { get; } = [];
