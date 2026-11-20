@@ -575,7 +575,7 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_WhenPersistenceFails_LogsAnErrorNamingTheAsset()
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_LogsTheErrorTypeOnly()
     {
         var (service, _, logger, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
         try
@@ -583,8 +583,10 @@ public class AssetPriceLookupServiceTests
             await service.GetCurrentPriceAsync(BuildRequest());
 
             var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Error).Subject;
-            entry.Message.Should().Contain(BrokerName).And.Contain(PortfolioName).And.Contain(AssetName);
-            entry.Exception.Should().NotBeNull();
+            entry.Message.Should().Contain(nameof(IOException));
+            entry.Message.Should().NotContain(BrokerName).And.NotContain(PortfolioName).And.NotContain(AssetName)
+                .And.NotContain("being used by another process");
+            entry.Exception.Should().BeNull();
         }
         finally
         {
@@ -679,7 +681,7 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_WhenAssetContextResolvesNothing_LogsAWarningNamingTheTriple()
+    public async Task GetCurrentPriceAsync_WhenAssetContextResolvesNothing_LogsAWarningWithoutTheNames()
     {
         var (service, _, logger, tempFile) = CreateRecordingService(StubAssetPriceService.Success(10m));
         try
@@ -690,7 +692,8 @@ public class AssetPriceLookupServiceTests
             await service.GetCurrentPriceAsync(request);
 
             var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Warning).Subject;
-            entry.Message.Should().Contain(BrokerName).And.Contain(PortfolioName).And.Contain("NOT-A-REAL-ASSET");
+            entry.Message.Should().Contain("GetCurrentPrice");
+            entry.Message.Should().NotContain(BrokerName).And.NotContain(PortfolioName).And.NotContain("NOT-A-REAL-ASSET");
         }
         finally
         {

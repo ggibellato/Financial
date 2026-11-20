@@ -19,6 +19,13 @@ internal static class ProductionSourceFiles
             .Select(path => (Path.GetRelativePath(root, path), path));
     }
 
+    public static IEnumerable<(string RelativePath, string FullPath)> Integrations()
+    {
+        var root = RepoRoot.Find();
+        return FilesUnder(Path.Combine(root, "Integrations"), BuildOutputFolders, path => path.EndsWith(".cs", StringComparison.Ordinal))
+            .Select(path => (Path.GetRelativePath(root, path), path));
+    }
+
     public static IEnumerable<(string RelativePath, string FullPath)> Web()
     {
         var root = RepoRoot.Find();

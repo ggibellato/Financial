@@ -3,6 +3,7 @@ using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Domain.Exceptions;
 using Financial.Shared.Abstractions.Resilience;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Financial.Api.Middleware;
 
@@ -87,9 +88,9 @@ internal sealed class DomainExceptionMappingMiddleware
         // must stay out of the log stream. The caller still gets the full message in the
         // response body - only the log is redacted.
         _logger.LogWarning(
-            "Request {RequestMethod} {RequestPath} rejected with {StatusCode} by {ErrorType}",
+            "Request {RequestMethod} {RequestRoute} rejected with {StatusCode} by {ErrorType}",
             context.Request.Method,
-            context.Request.Path,
+            (context.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? "unmatched",
             statusCode,
             exception.GetType().Name);
 

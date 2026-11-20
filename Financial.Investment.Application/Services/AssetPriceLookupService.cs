@@ -77,7 +77,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             // inside, a persistence failure fell into the fallback branch, which found the entry
             // that SetPrice had just added in memory, and so returned a successful response for a
             // write that never happened.
-            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price, request);
+            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price);
             if (persistenceError is null)
             {
                 return CompleteSuccessfully(span, price);
@@ -170,8 +170,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// </summary>
     private async Task<Exception?> TryRecordAutomaticPriceAsync(
         Asset asset,
-        AssetPriceDTO price,
-        AssetPriceRequestDTO request)
+        AssetPriceDTO price)
     {
         try
         {
@@ -181,11 +180,9 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
         catch (Exception ex)
         {
             _logger.LogError(
-                ex,
-                "Automatic price for {BrokerName}/{PortfolioName}/{AssetName} could not be persisted",
-                request.BrokerName,
-                request.PortfolioName,
-                request.AssetName);
+                "{Operation} could not record the automatic price after {ErrorType}",
+                "GetCurrentPrice",
+                ex.GetType().Name);
             return ex;
         }
     }
@@ -203,10 +200,8 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
         }
 
         _logger.LogWarning(
-            "Price returned without recording: no asset matches {BrokerName}/{PortfolioName}/{AssetName}",
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName);
+            "{Operation} returned a price without recording it: no asset matches the request",
+            "GetCurrentPrice");
     }
 
     private ITelemetrySpan StartSpan(string operationName)
