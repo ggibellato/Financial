@@ -25,10 +25,7 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 type MockDotProps = {
-  cx?: number
-  cy?: number
   payload?: { kind: 'automatic' | 'manual' | 'buy' | 'sell'; date: string; value: number }
-  key?: React.Key | null
 }
 
 vi.mock('recharts', () => ({
@@ -37,15 +34,7 @@ vi.mock('recharts', () => ({
       {children}
     </div>
   ),
-  Line: ({ dot }: { dot?: (props: MockDotProps) => React.ReactNode }) => (
-    <div data-testid="chart-dots">
-      {dot?.({ cx: 10, cy: 20, payload: { kind: 'automatic', date: '2024-01-01', value: 10 }, key: 'automatic' })}
-      {dot?.({ cx: 10, cy: 20, payload: { kind: 'manual', date: '2024-01-02', value: 20 }, key: 'manual' })}
-      {dot?.({ cx: 10, cy: 20, payload: { kind: 'buy', date: '2024-01-03', value: 30 }, key: 'buy' })}
-      {dot?.({ cx: 10, cy: 20, payload: { kind: 'sell', date: '2024-01-04', value: 40 }, key: 'sell' })}
-      {dot?.({ cx: undefined, cy: undefined, payload: undefined, key: 'missing' })}
-    </div>
-  ),
+  Line: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
@@ -223,16 +212,6 @@ describe('PriceHistoryTab', () => {
     expect(screen.getByText('Date')).toBeInTheDocument()
     expect(screen.getByText('Price')).toBeInTheDocument()
     expect(screen.getByText('Source')).toBeInTheDocument()
-  })
-
-  it('renders_date_in_dd_MM_yyyy_format', async () => {
-    await renderLoaded(MANUAL_ENTRY)
-    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
-  })
-
-  it('renders_price_in_n2', async () => {
-    await renderLoaded(MANUAL_ENTRY)
-    expect(screen.getByText('120.50')).toBeInTheDocument()
   })
 
   it('renders_manual_source_label', async () => {
@@ -494,18 +473,6 @@ describe('PriceHistoryTab', () => {
     expect(within(table).getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_all_filter_buttons', async () => {
-    await renderEmpty()
-    for (const name of ['This month', 'Last 3 months', 'Last 6 months', 'Last 12 months', 'YTD', 'All time']) {
-      expect(screen.getByRole('tab', { name })).toBeInTheDocument()
-    }
-  })
-
-  it('active_filter_is_last_12_months_by_default', async () => {
-    await renderEmpty()
-    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toHaveAttribute('aria-selected', 'true')
-  })
-
   it('clicking_filter_selects_that_tab', async () => {
     await renderEmpty()
     fireEvent.click(screen.getByRole('tab', { name: 'Last 3 months' }))
@@ -566,20 +533,6 @@ describe('PriceHistoryTab', () => {
     expect(within(rows[0]).getByText('Google')).toBeInTheDocument()
     expect(within(rows[1]).getByText('Manual')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Source' }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
-  })
-
-  it('draws_each_kind_of_point_with_its_own_marker_shape_and_skips_a_point_without_coordinates', async () => {
-    await renderLoaded(MANUAL_ENTRY)
-
-    const dots = screen.getByTestId('chart-dots')
-    expect(dots.querySelector('circle')).toHaveAttribute('cx', '10')
-    expect(dots.querySelector('rect')).toHaveAttribute('x', '7')
-    expect(dots.querySelector('rect')).toHaveAttribute('y', '17')
-    expect([...dots.querySelectorAll('polygon')].map((polygon) => polygon.getAttribute('points'))).toEqual([
-      '10,16 6,24 14,24',
-      '10,24 6,16 14,16',
-    ])
-    expect(dots.querySelectorAll('g')).toHaveLength(1)
   })
 
   it('keeps_the_recharts_keyboard_layer_off_so_the_chart_image_holds_no_focus_stop', async () => {

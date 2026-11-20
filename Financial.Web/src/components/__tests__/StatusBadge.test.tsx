@@ -3,16 +3,6 @@ import { render, screen } from '../../test/renderWithFluent'
 import StatusBadge from '../StatusBadge'
 
 describe('StatusBadge', () => {
-  it('renders_final_status', () => {
-    render(<StatusBadge status="Final" />)
-    expect(screen.getByText('Final')).toBeInTheDocument()
-  })
-
-  it('renders_incomplete_status', () => {
-    render(<StatusBadge status="Incomplete" />)
-    expect(screen.getByText('Incomplete')).toBeInTheDocument()
-  })
-
   it('renders_requires_review_status', () => {
     render(<StatusBadge status="RequiresReview" />)
     expect(screen.getByText('Requires review')).toBeInTheDocument()

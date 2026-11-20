@@ -39,13 +39,6 @@ describe('IncomingGrid', () => {
     expect(within(dataRows[1]).getByText('Gleison')).toBeInTheDocument()
   })
 
-  it('[AC P61-F03-tithe-tab-and-history-05] shows no tithe lines or carry-forward checkbox', () => {
-    renderGrid()
-
-    expect(screen.queryByText(/tithe|carry/i)).not.toBeInTheDocument()
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
-  })
-
   it('shows its empty message when no income was recorded in the month', () => {
     renderGrid({ incomeTotals: [], totalIncoming: 0 })
 

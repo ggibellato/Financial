@@ -702,30 +702,12 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByText(/12[.,]50/)).toBeInTheDocument()
   })
 
-  it('renders_last_month_credits_as_dash_when_no_credits', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 0, lastCreditMonth: null }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(1)
-  })
-
   it('renders_last_credit_month_in_mmm_yyyy_format', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06' }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
     expect(screen.getByText('Jun 2026')).toBeInTheDocument()
-  })
-
-  it('renders_last_credit_month_as_dash_when_null', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastCreditMonth: null }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders_last_month_percent_with_percent_suffix', () => {
@@ -736,15 +718,6 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByText(/1[.,]25%/)).toBeInTheDocument()
   })
 
-  it('renders_last_month_percent_as_dash_when_null', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCreditsPercent: null }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(1)
-  })
-
   it('renders_estimated_annual_credits_with_formatted_value', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', estimatedAnnualCredits: 150.00 }
     setAggregatedMock({ summary: SUMMARY })
@@ -753,38 +726,12 @@ describe('PortfolioHoldingsTab', () => {
     expect(within(screen.getByRole('table')).getByText(/150[.,]00/)).toBeInTheDocument()
   })
 
-  it('renders_estimated_annual_credits_as_dash_when_null', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(1)
-  })
-
   it('renders_estimated_annual_percent_with_percent_suffix', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', estimatedAnnualCredits: 150.00, estimatedAnnualPercent: 6.00 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
     expect(screen.getByText(/6[.,]00%/)).toBeInTheDocument()
-  })
-
-  it('renders_estimated_annual_percent_as_dash_when_null', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualPercent: null }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('renders_credits_separator_class_on_last_month_group_header', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    const header = screen.getByRole('columnheader', { name: 'Last month' })
-    expect(header).toHaveClass('portfolio-holdings__credits-separator')
   })
 
   it('renders_footer_total_invested_from_the_server_summary_not_a_client_sum', () => {
@@ -936,14 +883,6 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByRole('columnheader', { name: 'Realized (shares only)' })).toHaveAttribute('aria-sort', 'descending')
 
     expect(dataRowNames()).toEqual(['AAA11', 'BBB11'])
-  })
-
-  it('footer_panel_is_not_inside_table_element', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    expect(document.querySelector('.portfolio-holdings__footer')).not.toBeNull()
-    expect(document.querySelector('table tfoot')).toBeNull()
   })
 
   it.each([

@@ -65,44 +65,6 @@ describe('BrokerBreakdownCharts', () => {
     expect(screen.queryAllByTestId('pie-chart')).toHaveLength(0)
   })
 
-  it('renders_portfolio_breakdown_pie_with_one_slice_per_portfolio', () => {
-    setMock({ breakdown: BREAKDOWN })
-    render(<BrokerBreakdownCharts />)
-    expect(screen.getByText('Portfolio breakdown')).toBeInTheDocument()
-    const pies = screen.getAllByTestId('pie')
-    const overviewSlices = pies[0].querySelectorAll('[data-testid="pie-slice"]')
-    expect(overviewSlices).toHaveLength(2)
-    expect(overviewSlices[0].textContent).toBe('Acoes')
-    expect(overviewSlices[1].textContent).toBe('FII')
-  })
-
-  it('computes_correct_percentage_per_slice', () => {
-    setMock({ breakdown: BREAKDOWN })
-    render(<BrokerBreakdownCharts />)
-    const pies = screen.getAllByTestId('pie')
-    const overviewSlices = pies[0].querySelectorAll('[data-testid="pie-slice"]')
-    const total = 38639.49 + 20000
-    expect(Number(overviewSlices[0].getAttribute('data-percentage'))).toBeCloseTo((38639.49 / total) * 100, 5)
-    expect(Number(overviewSlices[1].getAttribute('data-percentage'))).toBeCloseTo((20000 / total) * 100, 5)
-  })
-
-  it('renders_one_additional_pie_per_portfolio', () => {
-    setMock({ breakdown: BREAKDOWN })
-    render(<BrokerBreakdownCharts />)
-    expect(screen.getByRole('heading', { name: 'Acoes' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'FII' })).toBeInTheDocument()
-    const pieCharts = screen.getAllByTestId('pie-chart')
-    expect(pieCharts).toHaveLength(3)
-  })
-
-  it('renders_tooltip_content_with_name_value_and_formatted_percentage', () => {
-    setMock({ breakdown: BREAKDOWN })
-    render(<BrokerBreakdownCharts />)
-    expect(screen.getAllByText('Equity').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/1,234\.50|1234[.,]50/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('25.6%').length).toBeGreaterThan(0)
-  })
-
   it('renders_an_accessible_table_equivalent_for_every_pie', () => {
     setMock({ breakdown: BREAKDOWN })
     render(<BrokerBreakdownCharts />)

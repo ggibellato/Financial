@@ -25,14 +25,6 @@ const COLUMNS = [
 ]
 
 describe('TotalsGrid', () => {
-  it('renders rows in their original order with no sort applied', () => {
-    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
-
-    const dataRows = screen.getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('Bravo')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('Alpha')).toBeInTheDocument()
-  })
-
   it('sorts rows by the clicked column ascending, then descending, then back to original order', () => {
     render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
 

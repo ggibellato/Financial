@@ -118,16 +118,6 @@ describe('AssetFormDialog', () => {
     )
   })
 
-  it('shows a duplicate name under Name and moves focus there', async () => {
-    const message = 'Portfolio "Default" already holds an asset named "BCIA11".'
-    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
-    render(<AssetFormDialog asset={EXISTING_ASSET} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    saveFromTheSaveButton()
-
-    await expectDuplicateUnderName(message)
-  })
-
   it('focuses Broker, the first field, when creating', async () => {
     render(<AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 

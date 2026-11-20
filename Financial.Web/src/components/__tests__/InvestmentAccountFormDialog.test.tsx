@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import { account, cardAccount, potsAccount } from '../../test/account'
-import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 import { optionNames } from '../../test-utils/optionNames'
 
 const activeCard = cardAccount({ id: 'cc1', name: 'Platinum Visa 8003' })
@@ -281,16 +280,5 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
     expect(await screen.findByText('The investment account could not be saved.')).toBeInTheDocument()
-  })
-
-  it('shows a duplicate name under Name and moves focus there', async () => {
-    const message = 'An investment account named "ChaseSave" already exists.'
-    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
-    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'ChaseSave' } })
-    saveFromTheSaveButton('Add investment account')
-
-    await expectDuplicateUnderName(message)
   })
 })

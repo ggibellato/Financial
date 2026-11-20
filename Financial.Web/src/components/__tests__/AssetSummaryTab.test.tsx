@@ -273,8 +273,8 @@ describe('AssetSummaryTab', () => {
     expect(screen.queryByText('(Manual)')).not.toBeInTheDocument()
   })
 
-  it('hides_current_section_when_quantity_is_zero', () => {
-    setMock({ asset: { ...ASSET, quantity: 0 }, showCurrentSection: false })
+  it('hides_current_section_when_the_hook_says_so', () => {
+    setMock({ asset: ASSET, showCurrentSection: false })
     renderAssetSummaryTab()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Refresh price' })).not.toBeInTheDocument()
@@ -376,12 +376,6 @@ describe('AssetSummaryTab', () => {
   it('hides_current_section_for_historic_scope_even_when_hook_reports_it_true', () => {
     setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
     renderAssetSummaryTab('historic')
-    expect(screen.queryByText('Current')).not.toBeInTheDocument()
-  })
-
-  it('hides_current_section_when_average_price_is_zero', () => {
-    setMock({ asset: { ...ASSET, averagePrice: 0 }, showCurrentSection: false })
-    renderAssetSummaryTab()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
   })
 

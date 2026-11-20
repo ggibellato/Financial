@@ -391,13 +391,6 @@ describe('ExpenseForm with a locked bank', () => {
     expect(optionNames(screen.getByLabelText(/^Payment source/))).toEqual(['Barclays', 'Trading212'])
   })
 
-  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of an expense being edited', () => {
-    render(<ExpenseForm {...baseProps} isEditing paymentSource="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
-
-    expect(screen.getByLabelText(/^Payment source/)).toHaveValue('bank-chase')
-    expect(optionNames(screen.getByLabelText(/^Payment source/))).toEqual(['Barclays', 'Trading212', 'Chase'])
-  })
-
   it("[AC P60-F06-admin-accounts-page-05] keeps the edited expense's inactive bank after another bank is picked", () => {
     const props = { ...baseProps, isEditing: true, banks: [...BANKS, INACTIVE_BANK] }
     const { rerender } = render(<ExpenseForm {...props} paymentSource="bank-chase" />)

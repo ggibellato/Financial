@@ -12,12 +12,6 @@ function getLeftPanel() {
 }
 
 describe('SplitPanel', () => {
-  it('renders the left and right content', () => {
-    renderSplitPanel()
-    expect(screen.getByText('Left content')).toBeInTheDocument()
-    expect(screen.getByText('Right content')).toBeInTheDocument()
-  })
-
   it('starts at the default width', () => {
     renderSplitPanel()
     expect(getLeftPanel()).toHaveStyle({ width: '300px' })

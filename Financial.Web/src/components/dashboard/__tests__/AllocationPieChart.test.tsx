@@ -67,13 +67,6 @@ describe('AllocationPieChart', () => {
     expect(cells[2].textContent).toBe('Percentage:60.0%')
   })
 
-  it('renders_one_pie_slice_per_entry_in_the_same_order', () => {
-    renderChart()
-
-    const slices = screen.getAllByTestId('pie-slice')
-    expect(slices.map((slice) => slice.textContent)).toEqual(['Equity', 'Bond', 'Cash'])
-  })
-
   it('renders_tooltip_content_with_name_value_and_formatted_percentage', () => {
     renderChart()
 

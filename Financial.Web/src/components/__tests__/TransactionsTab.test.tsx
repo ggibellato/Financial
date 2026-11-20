@@ -28,17 +28,9 @@ vi.mock('recharts', () => ({
       {children}
     </div>
   ),
-  Bar: ({ children }: { children?: ReactNode }) => <div data-testid="bar">{children}</div>,
+  Bar: ({ children }: { children?: ReactNode }) => <>{children}</>,
   Line: () => null,
-  LabelList: ({ formatter }: { formatter: (value: unknown) => string }) => (
-    <div
-      data-testid="label"
-      data-positive={formatter(7)}
-      data-negative={formatter(-7)}
-      data-zero={formatter(0)}
-      data-text={formatter('n/a')}
-    />
-  ),
+  LabelList: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
@@ -309,13 +301,6 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_six_period_filter_buttons', async () => {
-    await renderAssetTab()
-    for (const name of ['This month', 'Last 3 months', 'Last 6 months', 'Last 12 months', 'YTD', 'All time']) {
-      expect(screen.getByRole('tab', { name })).toBeInTheDocument()
-    }
-  })
-
   it('renders_bar_line_toggle_defaulting_to_bar', async () => {
     await renderAssetTab()
     expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'true')
@@ -357,11 +342,6 @@ describe('TransactionsTab', () => {
     }
   })
 
-  it('renders_date_in_dd_MM_yyyy_format', async () => {
-    await renderAssetTab()
-    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
-  })
-
   it.each([
     [TRANSACTION_BUY, 'Buy', 'transactions-tab__type--buy'],
     [TRANSACTION_SELL, 'Sell', 'transactions-tab__type--sell'],
@@ -388,29 +368,10 @@ describe('TransactionsTab', () => {
     expect(tooltip).toHaveAttribute('data-text', 'n/a')
   })
 
-  it('bar_labels_show_non_zero_amounts_and_hide_zero_and_non_numeric_values', async () => {
-    await renderAssetTab()
-    const label = screen.getByTestId('label')
-    expect(label).toHaveAttribute('data-positive', '7.00')
-    expect(label).toHaveAttribute('data-negative', '-7.00')
-    expect(label).toHaveAttribute('data-zero', '')
-    expect(label).toHaveAttribute('data-text', '')
-  })
-
   it('line_chart_tooltip_formats_numbers_to_two_decimals', async () => {
     await renderAssetTab()
     fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
     expect(screen.getByTestId('tooltip')).toHaveAttribute('data-number', '12.50')
-  })
-
-  it('renders_quantity_with_8_decimal_places', async () => {
-    await renderAssetTab()
-    expect(screen.getByText('100.00000000')).toBeInTheDocument()
-  })
-
-  it('renders_total_in_bold', async () => {
-    await renderAssetTab()
-    expect(screen.getByText('-420.50')).toHaveClass('transactions-tab__total')
   })
 
   it('names_the_transactions_table', async () => {

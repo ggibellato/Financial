@@ -10,6 +10,7 @@ import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import PortfolioFormDialog from '../PortfolioFormDialog'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
 import { getErrorAlert } from '../../test-utils/errorAlert'
+import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
   { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
@@ -162,6 +163,20 @@ describe('form dialog contract: server rejection', () => {
     expect(screen.getByRole('button', { name: saveLabel })).not.toBeDisabled()
     await waitFor(() => expect(getErrorAlert()).toHaveFocus())
   })
+})
+
+describe('form dialog contract: duplicate name', () => {
+  it.each(CASES.filter((dialog) => dialog.name !== 'RecurringBillFormDialog'))(
+    '$name shows a duplicate name under Name and moves focus there',
+    async ({ renderDialog, fillValid, serverError, saveLabel }) => {
+      renderDialog(handlers({ onSubmit: vi.fn().mockRejectedValue(duplicateNameRejection(serverError)) }))
+
+      fillValid()
+      fireEvent.click(screen.getByRole('button', { name: saveLabel }))
+
+      await expectDuplicateUnderName(serverError)
+    },
+  )
 })
 
 describe('form dialog contract: keyboard submit', () => {

@@ -116,7 +116,7 @@ describe('BalanceAdjustmentForm', () => {
       />,
     )
 
-    expect(screen.getByText('Balance cannot be negative.')).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: /^Target balance/ })).toHaveAccessibleDescription('Balance cannot be negative.')
   })
 
   it('renders a general error banner when no field claims the error', () => {
