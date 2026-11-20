@@ -183,13 +183,6 @@ describe('useAnnualSummary', () => {
     expect(result.current.year).toBe(year)
   })
 
-  it('says the annual summary could not be loaded when the load fails without a reason', async () => {
-    getCategoryTotalsAnnualForYearMock.mockRejectedValue('offline')
-    const { result } = renderHook(() => useAnnualSummary())
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load annual summary data.'))
-  })
-
   it('reports loading from its very first render', () => {
     const loading: boolean[] = []
 

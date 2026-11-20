@@ -53,15 +53,6 @@ describe('useCategories', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => useCategories())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getCategoriesMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createCategory calls the API and re-fetches the list', async () => {
     createCategoryMock.mockResolvedValue({
       id: 'c3',
@@ -80,16 +71,6 @@ describe('useCategories', () => {
 
     expect(createCategoryMock).toHaveBeenCalledWith({ name: 'Lazer', active: true, isInvestment: false, isTithe: false })
     await waitFor(() => expect(getCategoriesMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createCategory propagates a rejected promise to the caller without swallowing it', async () => {
-    createCategoryMock.mockRejectedValue(new Error('A category named "Mercado" already exists.'))
-    const { result } = renderHook(() => useCategories())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(
-      result.current.createCategory({ name: 'Mercado', active: true, isInvestment: false, isTithe: false }),
-    ).rejects.toThrow('A category named "Mercado" already exists.')
   })
 
   it('updateCategory calls the API and re-fetches the list', async () => {

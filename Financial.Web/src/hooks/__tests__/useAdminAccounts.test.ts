@@ -166,21 +166,4 @@ describe('useAdminAccounts', () => {
     expect(result.current.deletingId).toBeNull()
     expect(getAccountsMock).toHaveBeenCalledTimes(1)
   })
-
-  it('says the accounts could not be loaded when the load fails without a reason', async () => {
-    getAccountsMock.mockRejectedValue('offline')
-    const { result } = renderHook(() => useAdminAccounts())
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load accounts.'))
-  })
-
-  it('says the account could not be deleted when the delete fails without a reason', async () => {
-    deleteAccountMock.mockRejectedValue('offline')
-    const { result } = renderHook(() => useAdminAccounts())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.deleteAccount('a1', vi.fn()))
-
-    await waitFor(() => expect(result.current.deleteError).toBe('The account could not be deleted. Try again.'))
-  })
 })

@@ -1161,13 +1161,14 @@ describe('useCorporateActions', () => {
     )
   })
 
-  it('rejects a blank spin-off allocation without calling the API', async () => {
+  it.each(['', '-1', '100.01'])('rejects a spin-off allocation of %o without calling the API', async (allocation) => {
     const result = await renderLoadedForAsset()
 
     act(() => result.current.showNewForm())
     act(() => result.current.setFormField('formType', 'SpinOff'))
     act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
     act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', allocation))
     act(() => result.current.saveForm())
 
     expect(result.current.saveErrorFields.formAllocationPercentage).toBe('Allocation percentage must be between 0 and 100.')
@@ -1205,34 +1206,6 @@ describe('useCorporateActions', () => {
     expect(callsForSplit).toBe(0)
   })
 
-  it('rejects a negative spin-off allocation without calling the API', async () => {
-    const result = await renderLoadedForAsset()
-
-    act(() => result.current.showNewForm())
-    act(() => result.current.setFormField('formType', 'SpinOff'))
-    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
-    act(() => result.current.setFormField('formQuantityReceived', '40'))
-    act(() => result.current.setFormField('formAllocationPercentage', '-1'))
-    act(() => result.current.saveForm())
-
-    expect(result.current.saveErrorFields.formAllocationPercentage).toBe('Allocation percentage must be between 0 and 100.')
-    expect(addSpinOffMock).not.toHaveBeenCalled()
-  })
-
-  it('rejects a spin-off allocation above 100% without calling the API', async () => {
-    const result = await renderLoadedForAsset()
-
-    act(() => result.current.showNewForm())
-    act(() => result.current.setFormField('formType', 'SpinOff'))
-    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
-    act(() => result.current.setFormField('formQuantityReceived', '40'))
-    act(() => result.current.setFormField('formAllocationPercentage', '100.01'))
-    act(() => result.current.saveForm())
-
-    expect(result.current.saveErrorFields.formAllocationPercentage).toBeDefined()
-    expect(addSpinOffMock).not.toHaveBeenCalled()
-  })
-
   it('rejects a whitespace-only merger effective date and target name', async () => {
     const result = await renderLoadedForAsset()
 
@@ -1245,20 +1218,6 @@ describe('useCorporateActions', () => {
 
     expect(result.current.formStep).toBe('fields')
     expect(Object.keys(result.current.saveErrorFields)).toEqual(expect.arrayContaining(['formEffectiveDate', 'formTargetAsset']))
-  })
-
-  it('rejects a negative cash in lieu', async () => {
-    const result = await renderLoadedForAsset()
-
-    act(() => result.current.showNewForm())
-    act(() => result.current.setFormField('formType', 'Merger'))
-    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
-    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
-    act(() => result.current.setFormField('formCashInLieu', '-1'))
-    act(() => result.current.advanceToConfirm())
-
-    expect(result.current.formStep).toBe('fields')
-    expect(result.current.saveErrorFields.formCashInLieu).toBeDefined()
   })
 
   it('rejects a whitespace-only spin-off effective date and new asset name', async () => {

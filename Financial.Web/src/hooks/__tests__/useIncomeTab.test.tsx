@@ -151,11 +151,4 @@ describe('useIncomeTab', () => {
     expect(result.current.isGoneNoticeShown).toBe(false)
     expect(getIncomesByMonthMock).toHaveBeenCalledOnce()
   })
-
-  it('shows the load error with the fallback message when the request gives none', async () => {
-    getIncomesByMonthMock.mockRejectedValue('offline')
-    const { result } = await renderLoaded()
-
-    expect(result.current.error).toBe('Unable to load the incomes.')
-  })
 })

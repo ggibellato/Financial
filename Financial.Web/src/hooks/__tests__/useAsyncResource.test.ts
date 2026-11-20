@@ -19,6 +19,32 @@ describe('useAsyncResource', () => {
   })
 
   it.each([
+    ['its message', new Error('Load failed'), 'Load failed'],
+    ['the fallback message when it carries no reason', 'not an error', 'Fallback message'],
+  ])('reports a rejected first load with %s and keeps the data empty', async (_, reason, message) => {
+    const { result } = renderResource(() => Promise.reject(reason))
+
+    await waitFor(() => expect(result.current.error).toBe(message))
+    expect(result.current.data).toBeNull()
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it('retry re-fetches and clears the error once the fetch succeeds', async () => {
+    const fetcher = vi
+      .fn<(key: string) => Promise<string>>()
+      .mockRejectedValueOnce(new Error('Load failed'))
+      .mockResolvedValueOnce('value-a')
+    const { result } = renderResource(fetcher)
+    await waitFor(() => expect(result.current.error).toBe('Load failed'))
+
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(result.current.data).toBe('value-a'))
+    expect(result.current.error).toBeNull()
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([
     ['is not loading', undefined, false],
     ['reports loading', { initialLoading: true }, true],
   ])('%s on the first render with options %o', (_, options, loading) => {

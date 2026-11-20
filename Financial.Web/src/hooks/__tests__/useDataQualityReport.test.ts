@@ -1,5 +1,4 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { act } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { DataQualityReportDto } from '../../api/types'
@@ -51,26 +50,5 @@ describe('useDataQualityReport', () => {
     await waitFor(() => expect(result.current.error).toBe('Service unavailable'))
     expect(result.current.report).toBeNull()
     expect(result.current.isLoading).toBe(false)
-  })
-
-  it('falls_back_to_a_report_specific_message_for_a_non_error_rejection', async () => {
-    getDataQualityReportMock.mockRejectedValue('boom')
-
-    const { result } = renderHook(() => useDataQualityReport())
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load the data-quality report.'))
-  })
-
-  it('retry_re_issues_the_request', async () => {
-    getDataQualityReportMock.mockRejectedValueOnce(new Error('Service unavailable')).mockResolvedValue(REPORT)
-
-    const { result } = renderHook(() => useDataQualityReport())
-    await waitFor(() => expect(result.current.error).toBe('Service unavailable'))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(result.current.report).toEqual(REPORT))
-    expect(getDataQualityReportMock).toHaveBeenCalledTimes(2)
-    expect(result.current.error).toBeNull()
   })
 })

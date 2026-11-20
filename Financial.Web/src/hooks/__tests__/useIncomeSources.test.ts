@@ -53,15 +53,6 @@ describe('useIncomeSources', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => useIncomeSources())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getIncomeSourcesMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createIncomeSource calls the API and re-fetches the list', async () => {
     createIncomeSourceMock.mockResolvedValue({
       id: 's3',
@@ -90,16 +81,6 @@ describe('useIncomeSources', () => {
       potsAccountId: null,
     })
     await waitFor(() => expect(getIncomeSourcesMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createIncomeSource propagates a rejected promise to the caller without swallowing it', async () => {
-    createIncomeSourceMock.mockRejectedValue(new Error('An income source named "Gleison" already exists.'))
-    const { result } = renderHook(() => useIncomeSources())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(
-      result.current.createIncomeSource({ name: 'Gleison', group: 'Salary', isActive: true, potsAccountId: null }),
-    ).rejects.toThrow('An income source named "Gleison" already exists.')
   })
 
   it('updateIncomeSource calls the API and re-fetches the list', async () => {

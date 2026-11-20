@@ -154,15 +154,6 @@ describe('useSuggestedValues', () => {
     await waitFor(() => expect(result.current.phase).toBe('ready'))
   })
 
-  it('shows the load fallback message when the load fails without one', async () => {
-    getInvestmentSnapshotSuggestionsMock.mockRejectedValue('unexpected')
-    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
-
-    act(() => result.current.open())
-
-    await waitFor(() => expect(result.current.fetchError).toBe("Couldn't load suggestions"))
-  })
-
   it('counts the rows that are ticked', async () => {
     const result = await renderOpened()
     const before = result.current.checkedCount

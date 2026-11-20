@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, SelectedNode, TransactionDto, TransactionSummaryItemDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
-import { formatMonthKey } from '../../utils/formatters'
 import { buildMonthlyNetInvested, useTransactions } from '../useTransactions'
 import { pinDate } from '../../test-utils/pinDate'
 import { deferred, never } from '../../test-utils/deferred'
@@ -939,7 +938,7 @@ describe('buildMonthlyNetInvested', () => {
     const referenceDate = new Date(2024, 2, 15)
     const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_A], 'last-12-months', referenceDate)
     expect(buckets.length).toBe(12)
-    const marchBucket = buckets.find((b) => b.month === formatMonthKey(referenceDate))
+    const marchBucket = buckets.find((b) => b.month === '03/2024')
     expect(marchBucket?.netInvested).toBe(420.5)
     const emptyMonths = buckets.filter((b) => b.netInvested === 0)
     expect(emptyMonths.length).toBe(11)
@@ -971,15 +970,15 @@ describe('buildMonthlyNetInvested', () => {
     const referenceDate = new Date(2024, 2, 31)
     const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_A, SUMMARY_ITEM_B], 'all-time', referenceDate)
 
-    expect(buckets[0].month).toBe(formatMonthKey(new Date(2024, 0, 10)))
-    expect(buckets[buckets.length - 1].month).toBe(formatMonthKey(referenceDate))
+    expect(buckets[0].month).toBe('01/2024')
+    expect(buckets[buckets.length - 1].month).toBe('03/2024')
   })
 
   it('starts the range at the earliest transaction even when it is listed first', () => {
     const referenceDate = new Date(2024, 2, 31)
     const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_B, SUMMARY_ITEM_A], 'all-time', referenceDate)
 
-    expect(buckets[0].month).toBe(formatMonthKey(new Date(2024, 0, 10)))
+    expect(buckets[0].month).toBe('01/2024')
   })
 
   it('starts the range at the reference month when the all-time filter is selected with no transactions', () => {
@@ -987,7 +986,7 @@ describe('buildMonthlyNetInvested', () => {
     const buckets = buildMonthlyNetInvested([], 'all-time', referenceDate)
 
     expect(buckets.length).toBe(1)
-    expect(buckets[0].month).toBe(formatMonthKey(referenceDate))
+    expect(buckets[0].month).toBe('03/2024')
     expect(buckets[0].netInvested).toBe(0)
   })
 })

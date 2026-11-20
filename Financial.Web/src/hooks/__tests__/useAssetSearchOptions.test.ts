@@ -4,7 +4,6 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useAssetSearchOptions } from '../useAssetSearchOptions'
-import { never } from '../../test-utils/deferred'
 
 const { getAdminAssetsMock } = vi.hoisted(() => ({
   getAdminAssetsMock: vi.fn<FinancialApiClient['getAdminAssets']>(),
@@ -80,14 +79,6 @@ describe('useAssetSearchOptions', () => {
     expect(getAdminAssetsMock).not.toHaveBeenCalled()
   })
 
-  it('sets_isLoading_true_while_fetch_is_in_progress', async () => {
-    getAdminAssetsMock.mockReturnValue(never())
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useAssetSearchOptions(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.isLoading).toBe(true))
-  })
-
   it('filters_to_the_current_broker_and_portfolio_and_excludes_the_current_asset', async () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSearchOptions(), { wrapper })
@@ -105,28 +96,5 @@ describe('useAssetSearchOptions', () => {
 
     await waitFor(() => expect(result.current.error).toBe('Network error'))
     expect(result.current.options).toEqual([])
-  })
-
-  it('retry_re_fetches', async () => {
-    getAdminAssetsMock.mockRejectedValueOnce(new Error('Fail'))
-    getAdminAssetsMock.mockResolvedValue(ALL_ASSETS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useAssetSearchOptions(), { wrapper })
-    setNode(ASSET_NODE)
-
-    await waitFor(() => expect(result.current.error).toBe('Fail'))
-
-    act(() => result.current.retry())
-    await waitFor(() => expect(result.current.options).toEqual([SAME_PORTFOLIO_OTHER_ASSET]))
-    expect(getAdminAssetsMock).toHaveBeenCalledTimes(2)
-  })
-
-  it('says the assets could not be loaded when the load fails without a reason', async () => {
-    getAdminAssetsMock.mockRejectedValue('offline')
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useAssetSearchOptions(), { wrapper })
-    setNode(ASSET_NODE)
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load assets.'))
   })
 })

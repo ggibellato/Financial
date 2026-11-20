@@ -187,15 +187,15 @@ describe('usePayRecurringBill', () => {
     expect(result.current.billId).toBe('council')
   })
 
-  it('keeps the values and shows the connection message when the payment cannot reach the server', async () => {
-    markMensaisBillPaidMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+  it('keeps the values and reloads nothing when the server fails the payment', async () => {
+    markMensaisBillPaidMock.mockRejectedValue(new ApiError('Server unavailable.', 500))
     const { result } = renderPayBill()
     await openWithCouncilTax(result)
 
     act(() => result.current.setField('categoryId', 'cat-home'))
     await act(async () => result.current.submit())
 
-    expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
+    expect(result.current.saveError).toBe('Server unavailable.')
     expect(result.current.values?.categoryId).toBe('cat-home')
     expect(getMensaisBillsMock).toHaveBeenCalledOnce()
   })

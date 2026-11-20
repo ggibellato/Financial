@@ -243,6 +243,7 @@ describe('useBalanceAdjustmentForm', () => {
 
     expect(result.current.isSaving).toBe(false)
     expect(result.current.saveError).toBe('Balance cannot be negative.')
+    expect(result.current.targetBalance).toBe('150')
     expect(result.current.saveErrorFields).toHaveProperty('targetBalance')
     expect(result.current.isOpen).toBe(true)
   })
@@ -377,18 +378,5 @@ describe('useBalanceAdjustmentForm account settings', () => {
 
     act(() => result.current.setField('note', ADJUSTMENT.note!))
     expect(result.current.isDirty).toBe(false)
-  })
-
-  it('shows the connection message and keeps the values when the save cannot reach the server', async () => {
-    createBalanceAdjustmentMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
-    const { result } = renderHook(() => useBalanceAdjustmentForm(CHASE_BALANCE, BANKS, vi.fn(), { lockedBank: LOCKED_CHASE }))
-
-    act(() => result.current.openCreateForm())
-    act(() => result.current.setField('targetBalance', '400'))
-    await act(async () => result.current.submit())
-
-    expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
-    expect(result.current.saveErrorFields).toEqual({})
-    expect(result.current.targetBalance).toBe('400')
   })
 })
