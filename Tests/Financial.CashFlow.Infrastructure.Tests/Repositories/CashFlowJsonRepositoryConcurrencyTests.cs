@@ -2,7 +2,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
-using Financial.Shared.Abstractions.Persistence;
 using FluentAssertions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Rules;

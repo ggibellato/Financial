@@ -4,7 +4,6 @@ using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;

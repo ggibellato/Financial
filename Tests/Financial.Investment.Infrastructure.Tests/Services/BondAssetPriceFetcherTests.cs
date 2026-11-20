@@ -2,7 +2,6 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
-using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Services;
 using FluentAssertions;
 

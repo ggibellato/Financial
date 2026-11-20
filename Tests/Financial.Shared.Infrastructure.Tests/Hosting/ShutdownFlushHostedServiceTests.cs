@@ -1,5 +1,4 @@
 using Financial.Shared.Infrastructure.Hosting;
-using Financial.Shared.Abstractions.Sync;
 using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Hosting;
