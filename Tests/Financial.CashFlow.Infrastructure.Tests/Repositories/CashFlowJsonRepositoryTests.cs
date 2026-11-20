@@ -227,7 +227,7 @@ public class CashFlowJsonRepositoryTests
         var loaded = TestCashFlowSeed.AsWrittenBy(serializer);
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-repo-{Guid.NewGuid()}.json");
         File.WriteAllText(path, loaded);
-        var storage = new FailOnceJsonStorage(new LocalJsonStorage(path)) { FailNextWrite = true };
+        var storage = new RecordingJsonStorage(new LocalJsonStorage(path)) { FailNextWrite = true };
         try
         {
             var repository = CashFlowJsonRepository.Load(storage, serializer);
@@ -262,7 +262,7 @@ public class CashFlowJsonRepositoryTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-repo-{Guid.NewGuid()}.json");
         var serializer = new CashFlowSerializerAdapter();
-        var storage = new FailOnceJsonStorage(new LocalJsonStorage(path));
+        var storage = new RecordingJsonStorage(new LocalJsonStorage(path));
         var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, serializer);
         try
         {
@@ -293,74 +293,6 @@ public class CashFlowJsonRepositoryTests
         finally
         {
             File.Delete(path);
-        }
-    }
-
-    private sealed class RecordingJsonStorage : IJsonStorage
-    {
-        public int WriteCount { get; private set; }
-
-        public bool FailNextWrite { get; set; }
-
-        public Task<string> ReadAsync() => throw new NotSupportedException("These tests build the data directly.");
-
-        public Task WriteAsync(string json)
-        {
-            if (FailNextWrite)
-            {
-                FailNextWrite = false;
-                throw new IOException("The process cannot access the file because it is being used by another process.");
-            }
-
-            WriteCount++;
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class FailOnceJsonStorage : IJsonStorage
-    {
-        private readonly IJsonStorage _inner;
-
-        public FailOnceJsonStorage(IJsonStorage inner)
-        {
-            _inner = inner;
-        }
-
-        public bool FailNextWrite { get; set; }
-
-        public Task<string> ReadAsync() => _inner.ReadAsync();
-
-        public Task WriteAsync(string json)
-        {
-            if (FailNextWrite)
-            {
-                FailNextWrite = false;
-                throw new IOException("The process cannot access the file because it is being used by another process.");
-            }
-
-            return _inner.WriteAsync(json);
-        }
-    }
-
-    /// <summary>Holds a write open until the test releases it, so "is the second caller blocked?" is
-    /// answered by the gate rather than by timing.</summary>
-    private sealed class BlockingJsonStorage : IJsonStorage
-    {
-        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public TaskCompletionSource WriteEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public int WriteCount { get; private set; }
-
-        public Task<string> ReadAsync() => throw new NotSupportedException("These tests build the data directly.");
-
-        public void ReleaseWrite() => _release.TrySetResult();
-
-        public async Task WriteAsync(string json)
-        {
-            WriteCount++;
-            WriteEntered.TrySetResult();
-            await _release.Task;
         }
     }
 

@@ -100,16 +100,4 @@ public class BondAssetPriceFetcherTests
         captured.Ticker.Should().Be("TESOURO IPCA+ 2029");
         captured.Name.Should().Be("TESOURO IPCA+ 2029");
     }
-
-    private sealed class FakeFinanceService : IFinanceService
-    {
-        private readonly Func<AssetValueRequestDTO, AssetValueSnapshot> _behavior;
-
-        public FakeFinanceService(Func<AssetValueRequestDTO, AssetValueSnapshot> behavior)
-        {
-            _behavior = behavior;
-        }
-
-        public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request) => _behavior(request);
-    }
 }

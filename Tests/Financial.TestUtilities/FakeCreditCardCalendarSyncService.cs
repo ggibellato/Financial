@@ -19,5 +19,5 @@ public sealed class FakeCreditCardCalendarSyncService : ICreditCardCalendarSyncS
     public Task<IReadOnlyList<CreditCardCalendarSyncStatusDTO>> ResyncAllAsync(CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
-    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses() => Array.Empty<CreditCardCalendarSyncStatusDTO>();
+    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses() => throw new NotSupportedException();
 }

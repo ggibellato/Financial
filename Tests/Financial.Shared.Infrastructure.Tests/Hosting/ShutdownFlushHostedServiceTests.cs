@@ -10,8 +10,8 @@ public class ShutdownFlushHostedServiceTests
     [Fact]
     public async Task StopAsync_WhenRepositoryIsASyncStatusProvider_CallsFlushAsync()
     {
-        var repository = new SyncStatusProviderStub();
-        var hostedService = new ShutdownFlushHostedService<SyncStatusProviderStub>(repository);
+        var repository = new FakeSyncStatusStorage();
+        var hostedService = new ShutdownFlushHostedService<FakeSyncStatusStorage>(repository);
 
         await hostedService.StopAsync(CancellationToken.None);
 
@@ -35,18 +35,5 @@ public class ShutdownFlushHostedServiceTests
         Action act = () => new ShutdownFlushHostedService<object>(null!);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    private sealed class SyncStatusProviderStub : ISyncStatusProvider
-    {
-        public int FlushAsyncCallCount { get; private set; }
-
-        public SyncStatus GetStatus() => new(SyncState.Idle, null, null);
-
-        public Task FlushAsync()
-        {
-            FlushAsyncCallCount++;
-            return Task.CompletedTask;
-        }
     }
 }

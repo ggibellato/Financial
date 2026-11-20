@@ -11,7 +11,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class FxEntryCaptureHelperTests
 {
-    private static readonly StubReportingCurrencyProvider ReportingCurrencyProvider = new();
+    private readonly StubReportingCurrencyProvider _reportingCurrencyProvider = new();
 
     [Fact]
     public async Task CaptureAsync_WhenBrokerCurrencyMatchesReportingCurrency_ReturnsNoSnapshot()
@@ -20,7 +20,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(0.15m);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Trading212", new DateTime(2026, 7, 1));
+            repository, provider, _reportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Trading212", new DateTime(2026, 7, 1));
 
         result.Should().NotBeNull();
         result!.Value.Currency.Should().Be(Currency.GBP);
@@ -37,7 +37,7 @@ public class FxEntryCaptureHelperTests
         var timeProvider = new FakeTimeProvider(retrievedAt);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, timeProvider, InvestmentScope.Active, "XPI", new DateTime(2026, 7, 1));
+            repository, provider, _reportingCurrencyProvider, timeProvider, InvestmentScope.Active, "XPI", new DateTime(2026, 7, 1));
 
         result.Should().NotBeNull();
         result!.Value.Currency.Should().Be(Currency.BRL);
@@ -55,7 +55,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(rate: null);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "XPI", new DateTime(2026, 7, 1));
+            repository, provider, _reportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "XPI", new DateTime(2026, 7, 1));
 
         result.Should().NotBeNull();
         result!.Value.Currency.Should().Be(Currency.BRL);
@@ -69,7 +69,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(0.15m);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Unknown", new DateTime(2026, 7, 1));
+            repository, provider, _reportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Unknown", new DateTime(2026, 7, 1));
 
         result.Should().BeNull();
     }
@@ -81,7 +81,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(0.15m);
 
         var act = async () => await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Bad", new DateTime(2026, 7, 1));
+            repository, provider, _reportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Bad", new DateTime(2026, 7, 1));
 
         await act.Should().ThrowAsync<ArgumentException>();
     }

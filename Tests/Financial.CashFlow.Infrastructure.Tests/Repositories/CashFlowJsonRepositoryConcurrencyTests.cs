@@ -122,21 +122,4 @@ public class CashFlowJsonRepositoryConcurrencyTests
             repository.GetCategories().First(),
             repository.GetAccounts().First(),
             creditCard: null);
-
-    private sealed class BlockingJsonStorage : IJsonStorage
-    {
-        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public TaskCompletionSource WriteEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public Task<string> ReadAsync() => throw new NotSupportedException("These tests build the data directly.");
-
-        public void ReleaseWrite() => _release.TrySetResult();
-
-        public async Task WriteAsync(string json)
-        {
-            WriteEntered.TrySetResult();
-            await _release.Task;
-        }
-    }
 }

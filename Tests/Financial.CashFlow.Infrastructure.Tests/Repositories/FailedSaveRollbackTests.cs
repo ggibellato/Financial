@@ -18,13 +18,13 @@ public class FailedSaveRollbackTests
 {
     private static readonly DateOnly July1 = new(2026, 7, 1);
 
-    private readonly SwitchableFailingJsonStorage _storage;
+    private readonly RecordingJsonStorage _storage;
     private readonly CashFlowJsonRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
 
     public FailedSaveRollbackTests()
     {
-        _storage = new SwitchableFailingJsonStorage();
+        _storage = new RecordingJsonStorage();
         _repository = new CashFlowJsonRepository(CreateSeededData(), _storage, new CashFlowSerializerAdapter());
         _tracer = new RecordingTelemetryTracer();
     }
@@ -227,17 +227,5 @@ public class FailedSaveRollbackTests
         });
 
         return _repository.GetCardStatements().Single(s => s.CreditCard.Id == card.Id).Id;
-    }
-
-    private sealed class SwitchableFailingJsonStorage : IJsonStorage
-    {
-        public bool FailWrites { get; set; }
-
-        public Task<string> ReadAsync() => throw new NotSupportedException("These tests build the data directly.");
-
-        public Task WriteAsync(string json) =>
-            FailWrites
-                ? throw new IOException("The process cannot access the file because it is being used by another process.")
-                : Task.CompletedTask;
     }
 }

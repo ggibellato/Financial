@@ -163,7 +163,7 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_QueuedMutationIsUploadedOnFlush()
     {
-        var remoteFileClient = new RecordingRemoteFileClient();
+        var remoteFileClient = new RecordingRemoteFileClient(EmptyFile);
         var factory = new InvestmentRepositoryFactory(
             new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance), TestClock.At());
         var options = new JsonRepositorySelection(
@@ -207,7 +207,7 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProviderAndTracer_RecordsTheSaveAndUploadSpansOnFlush()
     {
-        var remoteFileClient = new RecordingRemoteFileClient();
+        var remoteFileClient = new RecordingRemoteFileClient(EmptyFile);
         var tracer = new RecordingTelemetryTracer();
         var factory = new InvestmentRepositoryFactory(
             new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), tracer), TestClock.At());
@@ -227,13 +227,4 @@ public class InvestmentRepositoryFactoryTests
     }
 
     private static string EmptyFile() => new InvestmentSerializerAdapter().Serialize(Investments.Create());
-
-    private sealed class RecordingRemoteFileClient : IRemoteFileClient
-    {
-        public int UploadCallCount { get; private set; }
-
-        public string DownloadFileContent(string path) => EmptyFile();
-
-        public void UploadFileContent(string path, string content) => UploadCallCount++;
-    }
 }

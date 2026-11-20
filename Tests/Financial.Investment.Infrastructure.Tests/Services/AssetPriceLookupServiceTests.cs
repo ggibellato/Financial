@@ -735,7 +735,7 @@ public class AssetPriceLookupServiceTests
 
         var serializer = new InvestmentSerializerAdapter();
         var investments = InvestmentLoader.LoadSync(new LocalJsonStorage(tempFile), serializer, TestClock.At());
-        var storage = new WriteFailingJsonStorage(new LocalJsonStorage(tempFile));
+        var storage = new RecordingJsonStorage(new LocalJsonStorage(tempFile)) { FailWrites = true };
 
         var tracer = new RecordingTelemetryTracer();
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
@@ -765,7 +765,7 @@ public class AssetPriceLookupServiceTests
         var investments = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
         if (failWrites)
         {
-            storage = new WriteFailingJsonStorage(storage);
+            storage = new RecordingJsonStorage(storage) { FailWrites = true };
         }
 
         var tracer = new RecordingTelemetryTracer();
@@ -779,23 +779,6 @@ public class AssetPriceLookupServiceTests
     private static (AssetPriceLookupService Service, RecordingTelemetryTracer Tracer, RecordingLogger<AssetPriceLookupService> Logger, string TempFile)
         CreateServiceWithFailingStorage(IAssetPriceService assetPriceService) =>
         CreateRecordingService(assetPriceService, failWrites: true);
-
-    /// <summary>Stands in for the storage faults the real providers raise - a locked file locally,
-    /// or a refused upload against Google Drive.</summary>
-    private sealed class WriteFailingJsonStorage : IJsonStorage
-    {
-        private readonly IJsonStorage _inner;
-
-        public WriteFailingJsonStorage(IJsonStorage inner)
-        {
-            _inner = inner;
-        }
-
-        public Task<string> ReadAsync() => _inner.ReadAsync();
-
-        public Task WriteAsync(string json) =>
-            throw new IOException("The process cannot access the file because it is being used by another process.");
-    }
 
     /// <summary>Loads a repository over a private copy of the test data file, so a test that mutates
     /// it cannot affect any other.</summary>

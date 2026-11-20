@@ -341,52 +341,6 @@ public class InvestmentJsonRepositoryTests
                 "the last document written must carry every recorded price");
     }
 
-    private sealed class RecordingJsonStorage : IJsonStorage
-    {
-        public int WriteCount { get; private set; }
-
-        public string? LastJson { get; private set; }
-
-        public bool FailNextWrite { get; set; }
-
-        public Task<string> ReadAsync() => throw new NotSupportedException("These tests build the graph directly.");
-
-        public Task WriteAsync(string json)
-        {
-            if (FailNextWrite)
-            {
-                FailNextWrite = false;
-                throw new IOException("The process cannot access the file because it is being used by another process.");
-            }
-
-            WriteCount++;
-            LastJson = json;
-            return Task.CompletedTask;
-        }
-    }
-
-    /// <summary>Holds a write open until the test releases it, so "is the second caller blocked?" is
-    /// answered by the gate rather than by timing.</summary>
-    private sealed class BlockingJsonStorage : IJsonStorage
-    {
-        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public TaskCompletionSource WriteEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public int WriteCount { get; private set; }
-
-        public Task<string> ReadAsync() => throw new NotSupportedException("These tests build the graph directly.");
-
-        public void ReleaseWrite() => _release.TrySetResult();
-
-        public async Task WriteAsync(string json)
-        {
-            WriteCount++;
-            WriteEntered.TrySetResult();
-            await _release.Task;
-        }
-    }
-
     private static InvestmentJsonRepository CreateRepositoryWithBothScopes(out Broker activeBroker, out Broker historicBroker)
     {
         var investments = Investments.Create();
