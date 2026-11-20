@@ -229,40 +229,40 @@ graph TD
 Every criterion is traced by tests named with the project's AC-tracing convention (`[AC P61-F0n-<slug>-NN]`). Every PR runs `/simplify` and passes architecture-reviewer and, for UI changes, ui-reviewer against `docs/ui/review-checklist.md`.
 
 ### F01. Accounts Overview Tabs and Monthly Fold
-- [x] Accounts has a month picker defaulting to the current month and the tabs Accounts, Summary and All transactions in that order; the month and tab are in the address, a malformed month falls back to the current month and an unknown tab to Accounts
-- [x] The Accounts tab shows the by-template groups for the chosen month, with "Balances at end of <month>", and each account link opens its account screen at that month
-- [x] Summary shows Category totals, Income by source with Total incoming, and Result = Total incoming − Category totals sum with "Surplus", "Deficit" or "Balanced"; it shows no bank or card grid; the tithe lines and the carry-forward checkbox stay until F03
-- [x] All transactions on Accounts behaves as P60 F16's tab did on Monthly (columns, filters, footer, links, states)
-- [x] Only the open tab loads its data; changing the month reloads the open tab and keeps it selected
-- [x] The Monthly page and menu item are gone; `/cashflow/monthly` redirects to Accounts → Summary, keeping `?month=`; no in-app link points to `/cashflow/monthly`
-- [x] Loading, empty, load-error (with Retry, scoped to the tab) states pass the review checklist; tabs and month picker are keyboard operable with visible focus; the Result's meaning is not colour-only; no horizontal scroll at narrow width
-- [x] Parity on the latest live copy: 0 differences; no API route or data file change
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-01** Accounts has a month picker defaulting to the current month and the tabs Accounts, Summary and All transactions in that order; the month and tab are in the address, a malformed month falls back to the current month and an unknown tab to Accounts
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-02** The Accounts tab shows the by-template groups for the chosen month, with "Balances at end of <month>", and each account link opens its account screen at that month
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-03** Summary shows Category totals, Income by source with Total incoming, and Result = Total incoming − Category totals sum with "Surplus", "Deficit" or "Balanced"; it shows no bank or card grid; the tithe lines and the carry-forward checkbox stay until F03
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-04** All transactions on Accounts behaves as P60 F16's tab did on Monthly (columns, filters, footer, links, states)
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-05** Only the open tab loads its data; changing the month reloads the open tab and keeps it selected
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-06** The Monthly page and menu item are gone; `/cashflow/monthly` redirects to Accounts → Summary, keeping `?month=`; no in-app link points to `/cashflow/monthly`
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-07** Loading, empty, load-error (with Retry, scoped to the tab) states pass the review checklist; tabs and month picker are keyboard operable with visible focus; the Result's meaning is not colour-only; no horizontal scroll at narrow width
+- [x] **P61-F01-accounts-overview-tabs-and-monthly-fold-08** Parity on the latest live copy: 0 differences; no API route or data file change
 
 ### F02. Income Tab and Bankless Income
-- [x] The Income tab lists every income of the chosen month (bank and no bank) with Date, Source, Bank ("No bank"), Description, Gross, Net and row icons; its count equals `GET /incomes/month/{y}/{m}`'s and its Total net equals Summary's Total incoming
-- [x] New income with "— No bank —" saves an income with no account: no account balance changes, and the month's Total incoming, Result and tithe base rise by its net value
-- [x] New income with a bank from the Income tab saves exactly as from the account screen, and the income appears on that bank's Transactions grid
-- [x] Edit changes any field, including bank to No bank and back; Delete asks for confirmation and removes the income (and its linked pots deposit, if any)
-- [x] A bankless income can't be split into pots: the form asks for a bank before saving a split, and the server refuses it with "Choose the bank this income landed in."
-- [x] Validation (net empty or negative, no source), 404 on a stale row, and save or delete failure each show the specified message and persist nothing
-- [x] All transactions lists each bankless income once with Type Income, Account "No bank", no category, with no link; the Account filter offers "No bank"; the footer shows a "Total (no bank)" total; category Spend figures are unchanged
-- [x] The OpenAPI snapshot and generated types are regenerated for the month-transaction row's optional account fields; `openapiFreshness.test.ts` and `OpenApiContractTests` pass
-- [x] Saving, validation, server-error, success, empty, loading and unsaved-changes states pass the review checklist; row icons have accessible names; the form is keyboard operable
-- [x] The data file version is unchanged and a file with bankless incomes loads and saves unchanged; parity on the latest live copy: 0 differences
+- [x] **P61-F02-income-tab-and-bankless-income-01** The Income tab lists every income of the chosen month (bank and no bank) with Date, Source, Bank ("No bank"), Description, Gross, Net and row icons; its count equals `GET /incomes/month/{y}/{m}`'s and its Total net equals Summary's Total incoming
+- [x] **P61-F02-income-tab-and-bankless-income-02** New income with "— No bank —" saves an income with no account: no account balance changes, and the month's Total incoming, Result and tithe base rise by its net value
+- [x] **P61-F02-income-tab-and-bankless-income-03** New income with a bank from the Income tab saves exactly as from the account screen, and the income appears on that bank's Transactions grid
+- [x] **P61-F02-income-tab-and-bankless-income-04** Edit changes any field, including bank to No bank and back; Delete asks for confirmation and removes the income (and its linked pots deposit, if any)
+- [x] **P61-F02-income-tab-and-bankless-income-05** A bankless income can't be split into pots: the form asks for a bank before saving a split, and the server refuses it with "Choose the bank this income landed in."
+- [x] **P61-F02-income-tab-and-bankless-income-06** Validation (net empty or negative, no source), 404 on a stale row, and save or delete failure each show the specified message and persist nothing
+- [x] **P61-F02-income-tab-and-bankless-income-07** All transactions lists each bankless income once with Type Income, Account "No bank", no category, with no link; the Account filter offers "No bank"; the footer shows a "Total (no bank)" total; category Spend figures are unchanged
+- [x] **P61-F02-income-tab-and-bankless-income-08** The OpenAPI snapshot and generated types are regenerated for the month-transaction row's optional account fields; `openapiFreshness.test.ts` and `OpenApiContractTests` pass
+- [x] **P61-F02-income-tab-and-bankless-income-09** Saving, validation, server-error, success, empty, loading and unsaved-changes states pass the review checklist; row icons have accessible names; the form is keyboard operable
+- [x] **P61-F02-income-tab-and-bankless-income-10** The data file version is unchanged and a file with bankless incomes loads and saves unchanged; parity on the latest live copy: 0 differences
 
 ### F03. Tithe Tab and History
-- [x] The Tithe tab shows, for the chosen month, Income base, Tithe (10%), Tithe paid, Carry-in with its source month, and Balance, matching the existing month tithe calculation
-- [x] The carry-forward checkbox works on the Tithe tab as it did on Monthly (persists only the decision, refreshes Balance and the history); it is hidden when there is no carry-in; a failed update reverts it with the specified message
-- [x] The history shows 12 rows (January to December of the chosen month's year), each equal to that month's detail; the current month is marked; the footer totals Income base, Tithe and Tithe paid; clicking a month selects it
-- [x] The year route returns 12 items in one request, each equal to the month route for that month; the month route gains `incomeBase` and `tithePaid`; the OpenAPI snapshot and generated types are regenerated
-- [x] Summary no longer shows tithe lines or the checkbox
-- [x] Loading, empty-month, separate detail and history error states pass the review checklist; the history is a captioned table; Balance's meaning is not colour-only
-- [x] The E2E smoke journey (add a bankless income on Income, check the Tithe tab's base and tithe) passes in the `web-e2e` job
-- [x] `context.md`, README and `docs/ui/` references to the Monthly page describe the Accounts tabs; parity on the latest live copy: 0 differences
+- [x] **P61-F03-tithe-tab-and-history-01** The Tithe tab shows, for the chosen month, Income base, Tithe (10%), Tithe paid, Carry-in with its source month, and Balance, matching the existing month tithe calculation
+- [x] **P61-F03-tithe-tab-and-history-02** The carry-forward checkbox works on the Tithe tab as it did on Monthly (persists only the decision, refreshes Balance and the history); it is hidden when there is no carry-in; a failed update reverts it with the specified message
+- [x] **P61-F03-tithe-tab-and-history-03** The history shows 12 rows (January to December of the chosen month's year), each equal to that month's detail; the current month is marked; the footer totals Income base, Tithe and Tithe paid; clicking a month selects it
+- [x] **P61-F03-tithe-tab-and-history-04** The year route returns 12 items in one request, each equal to the month route for that month; the month route gains `incomeBase` and `tithePaid`; the OpenAPI snapshot and generated types are regenerated
+- [x] **P61-F03-tithe-tab-and-history-05** Summary no longer shows tithe lines or the checkbox
+- [x] **P61-F03-tithe-tab-and-history-06** Loading, empty-month, separate detail and history error states pass the review checklist; the history is a captioned table; Balance's meaning is not colour-only
+- [x] **P61-F03-tithe-tab-and-history-07** The E2E smoke journey (add a bankless income on Income, check the Tithe tab's base and tithe) passes in the `web-e2e` job
+- [x] **P61-F03-tithe-tab-and-history-08** `context.md`, README and `docs/ui/` references to the Monthly page describe the Accounts tabs; parity on the latest live copy: 0 differences
 
 ### Cross-Feature Integration
-- [x] The Income tab (F02) and Tithe tab (F03) appear in the F01 tab list in the fixed order Accounts · Summary · Income · Tithe · All transactions, use F01's month picker and address, and load only when open
-- [x] A bankless income saved on the Income tab (F02) appears in All transactions on the same Accounts page (F01) for its month
-- [x] A bankless income saved on the Income tab (F02) raises the Tithe tab's (F03) Income base by its net value and Tithe by 10% of it for its month, and the same month's history row
-- [x] The carry-forward checkbox is reachable at every point: on Summary (F01) until F03 ships, then only on the Tithe tab (F03)
-- [x] After every feature, every figure the parity toolkit reads (incomes, tithe, category totals, default group summary, by-template groups, month transactions, account figures) shows 0 differences on the latest live copy, with no data file version change
+- [x] **P61-CF-cross-feature-01** The Income tab (F02) and Tithe tab (F03) appear in the F01 tab list in the fixed order Accounts · Summary · Income · Tithe · All transactions, use F01's month picker and address, and load only when open
+- [x] **P61-CF-cross-feature-02** A bankless income saved on the Income tab (F02) appears in All transactions on the same Accounts page (F01) for its month
+- [x] **P61-CF-cross-feature-03** A bankless income saved on the Income tab (F02) raises the Tithe tab's (F03) Income base by its net value and Tithe by 10% of it for its month, and the same month's history row
+- [x] **P61-CF-cross-feature-04** The carry-forward checkbox is reachable at every point: on Summary (F01) until F03 ships, then only on the Tithe tab (F03)
+- [x] **P61-CF-cross-feature-05** After every feature, every figure the parity toolkit reads (incomes, tithe, category totals, default group summary, by-template groups, month transactions, account figures) shows 0 differences on the latest live copy, with no data file version change

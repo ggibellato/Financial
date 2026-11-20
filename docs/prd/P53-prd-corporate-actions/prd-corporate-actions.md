@@ -276,40 +276,40 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Split and Reverse Split
-- [x] Recording a 2-for-1 split doubles quantity and halves average price, with total cost basis unchanged
-- [x] Recording a 1-for-10 reverse split reduces quantity to one-tenth and multiplies average price by ten, with total cost basis unchanged
-- [x] A split applied on the same date as a buy or sell is applied before that transaction in replay order
-- [x] Every open lot on a `FIFO`/`SpecificId`-costed holding is rescaled proportionally, with total lot cost unchanged
-- [x] Recording a split on a zero-quantity holding is rejected with an inline error and no state change
-- [x] Recording a ratio of exactly 1.0 or ≤ 0 is rejected with an inline error
-- [x] Deleting a split re-triggers replay and updates the holding's quantity/average cost correctly
-- [x] No `DisposalRecord` is created or modified by recording, editing, or deleting a split
+- [x] **P53-F01-split-and-reverse-split-01** Recording a 2-for-1 split doubles quantity and halves average price, with total cost basis unchanged
+- [x] **P53-F01-split-and-reverse-split-02** Recording a 1-for-10 reverse split reduces quantity to one-tenth and multiplies average price by ten, with total cost basis unchanged
+- [x] **P53-F01-split-and-reverse-split-03** A split applied on the same date as a buy or sell is applied before that transaction in replay order
+- [x] **P53-F01-split-and-reverse-split-04** Every open lot on a `FIFO`/`SpecificId`-costed holding is rescaled proportionally, with total lot cost unchanged
+- [x] **P53-F01-split-and-reverse-split-05** Recording a split on a zero-quantity holding is rejected with an inline error and no state change
+- [x] **P53-F01-split-and-reverse-split-06** Recording a ratio of exactly 1.0 or ≤ 0 is rejected with an inline error
+- [x] **P53-F01-split-and-reverse-split-07** Deleting a split re-triggers replay and updates the holding's quantity/average cost correctly
+- [x] **P53-F01-split-and-reverse-split-08** No `DisposalRecord` is created or modified by recording, editing, or deleting a split
 
 ### F02. Merger
-- [x] Recording a merger reduces the source holding's quantity to zero and closes all its open lots
-- [x] The target holding's quantity increases by `source quantity × exchange ratio`, and its cost basis increases by the source's full cost basis at the effective date
-- [x] Selecting "create inline" for a non-existent target asset creates it with the entered identity fields and links the merger to it
-- [x] Selecting a target asset name that collides with an existing distinct asset is rejected with an inline error
-- [x] No `DisposalRecord` is created for the converted portion
-- [x] A `TaxClassification` is created for the merger with status `RequiresReview` when no matching `TaxRule` exists
-- [x] An existing `DisposalRecord` on the source asset predating the merger is left byte-identical after the merger is recorded
-- [x] Cash-in-lieu amount, when entered, is stored on the merger record and does not create any `DisposalRecord`
+- [x] **P53-F02-merger-01** Recording a merger reduces the source holding's quantity to zero and closes all its open lots
+- [x] **P53-F02-merger-02** The target holding's quantity increases by `source quantity × exchange ratio`, and its cost basis increases by the source's full cost basis at the effective date
+- [x] **P53-F02-merger-03** Selecting "create inline" for a non-existent target asset creates it with the entered identity fields and links the merger to it
+- [x] **P53-F02-merger-04** Selecting a target asset name that collides with an existing distinct asset is rejected with an inline error
+- [x] **P53-F02-merger-05** No `DisposalRecord` is created for the converted portion
+- [x] **P53-F02-merger-06** A `TaxClassification` is created for the merger with status `RequiresReview` when no matching `TaxRule` exists
+- [x] **P53-F02-merger-07** An existing `DisposalRecord` on the source asset predating the merger is left byte-identical after the merger is recorded
+- [x] **P53-F02-merger-08** Cash-in-lieu amount, when entered, is stored on the merger record and does not create any `DisposalRecord`
 
 ### F03. Spin-off
-- [x] Recording a spin-off leaves the parent's quantity unchanged and reduces its cost basis by exactly `allocation% × prior cost basis`
-- [x] The new asset's quantity equals the entered received quantity, with unit cost equal to `(allocation% × parent's prior cost basis) ÷ quantity received`
-- [x] Every open lot on a `FIFO`/`SpecificId`-costed parent is proportionally reduced by the allocation percentage
-- [x] An allocation percentage outside 0–100 is rejected with an inline error
-- [x] A quantity received ≤ 0 is rejected with an inline error
-- [x] A `TaxClassification` is created for the new asset with status `RequiresReview` when no matching `TaxRule` exists
-- [x] No `DisposalRecord` is created on the parent asset
+- [x] **P53-F03-spinoff-01** Recording a spin-off leaves the parent's quantity unchanged and reduces its cost basis by exactly `allocation% × prior cost basis`
+- [x] **P53-F03-spinoff-02** The new asset's quantity equals the entered received quantity, with unit cost equal to `(allocation% × parent's prior cost basis) ÷ quantity received`
+- [x] **P53-F03-spinoff-03** Every open lot on a `FIFO`/`SpecificId`-costed parent is proportionally reduced by the allocation percentage
+- [x] **P53-F03-spinoff-04** An allocation percentage outside 0–100 is rejected with an inline error
+- [x] **P53-F03-spinoff-05** A quantity received ≤ 0 is rejected with an inline error
+- [x] **P53-F03-spinoff-06** A `TaxClassification` is created for the new asset with status `RequiresReview` when no matching `TaxRule` exists
+- [x] **P53-F03-spinoff-07** No `DisposalRecord` is created on the parent asset
 
 ### F04. Corporate Action History and Data-Quality Integration
-- [x] The history endpoint for an asset returns every split, merger, and spin-off recorded against it, ordered by effective date
-- [x] A merger or spin-off with `TaxClassification` status `RequiresReview` appears in the P52 dashboard data-quality warnings list
-- [x] Clicking the warning navigates to the affected holding
-- [x] The warning disappears once a matching admin `TaxRule` re-classifies the event to a resolved status
-- [x] Deleting a corporate action from the history list re-triggers replay and does not directly modify any `DisposalRecord` or `TaxClassification` outside the existing supersede policy
+- [x] **P53-F04-history-01** The history endpoint for an asset returns every split, merger, and spin-off recorded against it, ordered by effective date
+- [x] **P53-F04-history-02** A merger or spin-off with `TaxClassification` status `RequiresReview` appears in the P52 dashboard data-quality warnings list
+- [x] **P53-F04-history-03** Clicking the warning navigates to the affected holding
+- [x] **P53-F04-history-04** The warning disappears once a matching admin `TaxRule` re-classifies the event to a resolved status
+- [x] **P53-F04-history-05** Deleting a corporate action from the history list re-triggers replay and does not directly modify any `DisposalRecord` or `TaxClassification` outside the existing supersede policy
 
 ### F05. React Entry and Display
 - [x] The Corporate Actions section shows only the fields relevant to the selected type

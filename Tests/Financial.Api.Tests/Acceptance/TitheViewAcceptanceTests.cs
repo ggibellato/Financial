@@ -167,7 +167,7 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    [Trait("AC", "P61-cross-03")]
+    [Trait("AC", "P61-CF-cross-feature-03")]
     public async Task TitheMonth_BanklessIncome_RaisesBaseAndTithe()
     {
         var before = await MonthAsync(10);

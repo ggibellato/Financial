@@ -129,10 +129,12 @@ cd Financial.Web; npx vitest list -t "\[AC P42-F02"
 ```
 
 `dotnet test Tests/Financial.Api.Tests --filter "AC~P45-F01" --list-tests` lists the real tests in
-`GoogleCalendarAccountConnectionAcceptanceTests.cs`. As of 2026-11-14 there are 356 `AC` traits in
-`Tests/` (38 files under `Acceptance/`) and 220 `[AC …]` web titles, most of them inline in the
+`GoogleCalendarAccountConnectionAcceptanceTests.cs`. As of 2026-11-20 there are 356 `AC` traits in
+`Tests/` (38 files under `Acceptance/`) and 287 `[AC …]` web titles, most of them inline in the
 component/page test that owns the behaviour rather than in `src/acceptance/`. The nightly
-`ac-traceability` job reports §9 criteria with no tagged test.
+`ac-traceability` job reports §9 criteria with no tagged test, tags naming no PRD id (orphans), and
+ids written outside `[AC …]` / `Trait("AC", …)` (malformed). A criterion id must appear literally in
+the title or trait; a title built at run time (``${AC('01')}``) is invisible to it.
 
 **Given a test, which AC does it prove?** — read its trait / title prefix. **Whole-repo
 listing of every AC-tracing test:**

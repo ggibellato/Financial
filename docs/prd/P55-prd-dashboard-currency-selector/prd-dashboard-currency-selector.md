@@ -369,57 +369,57 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Dashboard KPI Currency Conversion and Broker Filtering
-- [x] Requesting the Dashboard with a display currency returns KPI totals converted into
+- [x] **P55-F01-dashboard-currency-01** Requesting the Dashboard with a display currency returns KPI totals converted into
   that currency, regardless of the global Reporting Currency setting's enabled/disabled
   state
-- [x] Requesting the Dashboard without a display currency preserves today's exact
+- [x] **P55-F01-dashboard-currency-02** Requesting the Dashboard without a display currency preserves today's exact
   behaviour (native totals, conversion gated by the global setting)
-- [x] Requesting the Dashboard with a broker-currency filter excludes both active and
+- [x] **P55-F01-dashboard-currency-03** Requesting the Dashboard with a broker-currency filter excludes both active and
   historic brokers that don't match, from every KPI total
-- [x] Requesting the Dashboard with a broker-currency filter matching zero brokers (e.g.
+- [x] **P55-F01-dashboard-currency-04** Requesting the Dashboard with a broker-currency filter matching zero brokers (e.g.
   USD) returns a valid response with zero/empty totals, not an error
-- [x] An invalid display-currency or broker-currency value is rejected before any
+- [x] **P55-F01-dashboard-currency-05** An invalid display-currency or broker-currency value is rejected before any
   calculation
-- [x] KPI totals are marked partial when at least one, but not all, currency groups
+- [x] **P55-F01-dashboard-currency-06** KPI totals are marked partial when at least one, but not all, currency groups
   failed to convert
-- [x] KPI totals are marked unavailable when every currency group failed to convert
+- [x] **P55-F01-dashboard-currency-07** KPI totals are marked unavailable when every currency group failed to convert
 
 ### F02. Allocation Breakdown Currency Conversion and Broker Filtering
-- [x] Requesting the allocation breakdown with a display currency returns every
+- [x] **P55-F02-allocation-breakdown-01** Requesting the allocation breakdown with a display currency returns every
   dimension's market value and percentage computed in that currency
-- [x] A portfolio with brokers in two different currencies produces allocation totals
+- [x] **P55-F02-allocation-breakdown-02** A portfolio with brokers in two different currencies produces allocation totals
   and percentages that are numerically consistent (sum to the expected converted total)
   once a display currency is requested
-- [x] The "by currency" dimension's labels remain the native currency of each bucket,
+- [x] **P55-F02-allocation-breakdown-03** The "by currency" dimension's labels remain the native currency of each bucket,
   while its values are converted into the requested display currency
-- [x] Requesting the allocation breakdown without a display currency preserves today's
+- [x] **P55-F02-allocation-breakdown-04** Requesting the allocation breakdown without a display currency preserves today's
   existing (unconverted) behaviour
-- [x] Requesting the allocation breakdown with a broker-currency filter excludes
+- [x] **P55-F02-allocation-breakdown-05** Requesting the allocation breakdown with a broker-currency filter excludes
   non-matching active brokers from every dimension
-- [x] Requesting the allocation breakdown with a broker-currency filter matching zero
+- [x] **P55-F02-allocation-breakdown-06** Requesting the allocation breakdown with a broker-currency filter matching zero
   brokers returns a valid, empty response, not an error
-- [x] The breakdown is marked partial or unavailable using the same rules as F01
+- [x] **P55-F02-allocation-breakdown-07** The breakdown is marked partial or unavailable using the same rules as F01
 
 ### F03. React Dashboard Currency Selector and Broker Filter
-- [x] Opening the Dashboard seeds the currency selector from the current global
+- [x] **P55-F03-react-dashboard-currency-selector-01** Opening the Dashboard seeds the currency selector from the current global
   Reporting Currency setting's currency value, ignoring its enabled/disabled flag
-- [x] Opening the Dashboard always shows the broker-currency filter defaulted to "All
+- [x] **P55-F03-react-dashboard-currency-selector-02** Opening the Dashboard always shows the broker-currency filter defaulted to "All
   currencies," regardless of any prior session's selection
-- [x] Selecting a different currency updates both the KPI tiles and the Allocation
+- [x] **P55-F03-react-dashboard-currency-selector-03** Selecting a different currency updates both the KPI tiles and the Allocation
   Breakdown panel to that currency, without affecting Data Quality Warnings or Upcoming
   Income
-- [x] Selecting a broker-currency filter updates both the KPI tiles and the Allocation
+- [x] **P55-F03-react-dashboard-currency-selector-04** Selecting a broker-currency filter updates both the KPI tiles and the Allocation
   Breakdown panel to reflect only matching brokers, without affecting Data Quality
   Warnings or Upcoming Income
-- [x] The selected display currency is visible in the Dashboard header and next to every
+- [x] **P55-F03-react-dashboard-currency-selector-05** The selected display currency is visible in the Dashboard header and next to every
   converted value shown
-- [x] Only the converted KPI row is shown; the native/unconverted row is no longer
+- [x] **P55-F03-react-dashboard-currency-selector-06** Only the converted KPI row is shown; the native/unconverted row is no longer
   rendered
-- [x] Filtering to a currency with no brokers shows a clear empty state on the
+- [x] **P55-F03-react-dashboard-currency-selector-07** Filtering to a currency with no brokers shows a clear empty state on the
   Allocation Breakdown panel and zero/blank KPI tiles, with no error
-- [x] A partial conversion result shows a visible inline notice; an unavailable result
+- [x] **P55-F03-react-dashboard-currency-selector-08** A partial conversion result shows a visible inline notice; an unavailable result
   shows the existing error state with a retry action
-- [x] Reloading the Dashboard page resets the broker-currency filter to "All currencies"
+- [x] **P55-F03-react-dashboard-currency-selector-09** Reloading the Dashboard page resets the broker-currency filter to "All currencies"
   and re-seeds the currency selector from the global default
 
 ### F04. WPF Dashboard Currency Selector and Broker Filter

@@ -79,7 +79,7 @@ describe('UpcomingIncomePanel', () => {
     expect(visibleAssets()).toEqual(['OVERDUE'])
   })
 
-  it('P52-F04-upcoming-income-04: the empty state shows when no projection falls inside the selected window', () => {
+  it('[AC P52-F04-upcoming-income-04] the empty state shows when no projection falls inside the selected window', () => {
     renderPanel([entry('KLBN4', 150, 96)])
 
     expect(screen.getByText('No upcoming payments detected in the next 90 days')).toBeInTheDocument()

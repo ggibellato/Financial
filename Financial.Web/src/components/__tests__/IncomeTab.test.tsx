@@ -33,8 +33,6 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const AC = (n: string) => `[AC P61-F02-income-tab-and-bankless-income-${n}]`
-
 const SOURCES: IncomeSourceDto[] = [
   { id: 'gleison', name: 'Gleison', isActive: true, group: 'Salary', potsAccountId: null, hasReferences: true },
   { id: 'ariana', name: 'Ariana', isActive: true, group: 'Salary', potsAccountId: 'pots', hasReferences: true },
@@ -150,7 +148,7 @@ describe('IncomeTab', () => {
     vi.useRealTimers()
   })
 
-  it(`${AC('01')} lists every income newest first with No bank, a dash for no gross value, and a count with Total net`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-01] lists every income newest first with No bank, a dash for no gross value, and a count with Total net', async () => {
     renderTab()
     const table = await grid()
 
@@ -221,7 +219,7 @@ describe('IncomeTab', () => {
     expect(within(await screen.findByRole('form', { name: 'Edit income' })).getByRole('checkbox', { name: 'Split to pots' })).not.toBeChecked()
   })
 
-  it(`${AC('01')} filters by Bank and Source, showing the filtered count of all incomes`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-01] filters by Bank and Source, showing the filtered count of all incomes', async () => {
     renderTab()
     await grid()
 
@@ -232,7 +230,7 @@ describe('IncomeTab', () => {
     expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
   })
 
-  it(`${AC('01')} counts a single income as "1 income"`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-01] counts a single income as "1 income"', async () => {
     getIncomesByMonthMock.mockResolvedValue([DIVIDENDS])
     renderTab()
     await grid()
@@ -240,7 +238,7 @@ describe('IncomeTab', () => {
     expect(footer()).toHaveTextContent('1 income · Total net 85.20')
   })
 
-  it(`${AC('02')} starts New income on No bank and saves it with no bank, toasting and refreshing the list`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-02] starts New income on No bank and saves it with no bank, toasting and refreshing the list', async () => {
     createIncomeMock.mockResolvedValue(income({ id: 'new', date: '2026-10-20', netValue: 42.1 }))
     renderTab()
 
@@ -257,7 +255,7 @@ describe('IncomeTab', () => {
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
 
-  it(`${AC('03')} offers only active accounts that receive income and saves a bank income`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-03] offers only active accounts that receive income and saves a bank income', async () => {
     createIncomeMock.mockResolvedValue(SALARY)
     renderTab()
 
@@ -274,7 +272,7 @@ describe('IncomeTab', () => {
     await waitFor(() => expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: 'barclays' })))
   })
 
-  it(`${AC('04')} edits a bank income to No bank`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-04] edits a bank income to No bank', async () => {
     updateIncomeMock.mockResolvedValue({ ...SALARY, bankId: null, bankName: null })
     renderTab()
     await grid()
@@ -289,7 +287,7 @@ describe('IncomeTab', () => {
     expect(updateIncomeMock).toHaveBeenCalledWith('salary', expect.objectContaining({ bankId: null }))
   })
 
-  it(`${AC('04')} keeps an inactive bank on an income being edited, and does not offer it for a new one`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-04] keeps an inactive bank on an income being edited, and does not offer it for a new one', async () => {
     getAccountsMock.mockResolvedValue([...ACCOUNTS, account({ id: 'old', name: 'Old bank', isActive: false })])
     getIncomesByMonthMock.mockResolvedValue([{ ...SALARY, bankId: 'old', bankName: 'Old bank' }])
     renderTab()
@@ -329,7 +327,7 @@ describe('IncomeTab', () => {
     expect(screen.getByText('search:?month=2026-10&tab=income')).toBeInTheDocument()
   })
 
-  it(`${AC('04')} deletes an income after confirmation, toasting and refreshing the list`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-04] deletes an income after confirmation, toasting and refreshing the list', async () => {
     deleteIncomeMock.mockResolvedValue()
     renderTab()
 
@@ -342,7 +340,7 @@ describe('IncomeTab', () => {
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
 
-  it(`${AC('04')} warns that a linked pots deposit is deleted with its income`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-04] warns that a linked pots deposit is deleted with its income', async () => {
     getIncomesByMonthMock.mockResolvedValue([{ ...SALARY, potsAccountId: 'pots', hasLinkedDeposit: true }])
     renderTab()
 
@@ -351,7 +349,7 @@ describe('IncomeTab', () => {
     expect(dialog).toHaveTextContent('Delete this income? Its Pots deposit is deleted with it. This cannot be undone.')
   })
 
-  it(`${AC('05')} asks for a bank before splitting to pots and sends nothing`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-05] asks for a bank before splitting to pots and sends nothing', async () => {
     renderTab()
 
     const form = await openNewIncome()
@@ -363,7 +361,7 @@ describe('IncomeTab', () => {
     expect(createIncomeMock).not.toHaveBeenCalled()
   })
 
-  it(`${AC('06')} shows a field message for a missing net value and keeps the form open`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-06] shows a field message for a missing net value and keeps the form open', async () => {
     renderTab()
 
     const form = await openNewIncome()
@@ -373,7 +371,7 @@ describe('IncomeTab', () => {
     expect(createIncomeMock).not.toHaveBeenCalled()
   })
 
-  it(`${AC('06')} keeps the values and shows the server message when a save fails`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-06] keeps the values and shows the server message when a save fails', async () => {
     createIncomeMock.mockRejectedValue(new ApiError('Income source is required.', 400))
     renderTab()
 
@@ -385,7 +383,7 @@ describe('IncomeTab', () => {
     expect(field(form, 'Net value')).toHaveValue(10)
   })
 
-  it(`${AC('06')} closes the form, refreshes and warns when the edited income no longer exists`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-06] closes the form, refreshes and warns when the edited income no longer exists', async () => {
     updateIncomeMock.mockRejectedValue(new ApiError('Not found.', 404))
     renderTab()
     await grid()
@@ -402,7 +400,7 @@ describe('IncomeTab', () => {
     expect(screen.getByRole('button', { name: 'New income' })).toHaveFocus()
   })
 
-  it(`${AC('06')} closes the dialog, refreshes and warns when the deleted income no longer exists`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-06] closes the dialog, refreshes and warns when the deleted income no longer exists', async () => {
     deleteIncomeMock.mockRejectedValue(new ApiError('Not found.', 404))
     renderTab()
 
@@ -413,7 +411,7 @@ describe('IncomeTab', () => {
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
 
-  it(`${AC('06')} keeps the dialog open with the message when a delete fails`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-06] keeps the dialog open with the message when a delete fails', async () => {
     deleteIncomeMock.mockRejectedValue(new ApiError('Server unavailable.', 500))
     renderTab()
 
@@ -424,7 +422,7 @@ describe('IncomeTab', () => {
     expect(getIncomesByMonthMock).toHaveBeenCalledOnce()
   })
 
-  it(`${AC('09')} shows a loading skeleton with New income enabled`, () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-09] shows a loading skeleton with New income enabled', () => {
     getIncomesByMonthMock.mockReturnValue(never())
     renderTab()
 
@@ -433,7 +431,7 @@ describe('IncomeTab', () => {
     expect(screen.getByRole('button', { name: 'New income' })).toBeEnabled()
   })
 
-  it(`${AC('09')} shows the empty month with New income`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-09] shows the empty month with New income', async () => {
     getIncomesByMonthMock.mockResolvedValue([])
     renderTab()
 
@@ -442,7 +440,7 @@ describe('IncomeTab', () => {
     expect(screen.queryByRole('group', { name: 'Totals for Incomes' })).not.toBeInTheDocument()
   })
 
-  it(`${AC('09')} shows the load error with Try again, which reloads and moves focus into the tab`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-09] shows the load error with Try again, which reloads and moves focus into the tab', async () => {
     getIncomesByMonthMock.mockRejectedValueOnce('offline')
     renderTab()
 
@@ -454,7 +452,7 @@ describe('IncomeTab', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New income' })).toHaveFocus())
   })
 
-  it(`${AC('09')} names every row icon after its income and blocks the others while one deletes`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-09] names every row icon after its income and blocks the others while one deletes', async () => {
     deleteIncomeMock.mockReturnValue(never())
     renderTab()
 
@@ -468,7 +466,7 @@ describe('IncomeTab', () => {
     expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeDisabled()
   })
 
-  it(`${AC('09')} blocks Delete with a reason and disables Edit while a save is in flight`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-09] blocks Delete with a reason and disables Edit while a save is in flight', async () => {
     updateIncomeMock.mockReturnValue(never())
     renderTab()
     await grid()
@@ -480,7 +478,7 @@ describe('IncomeTab', () => {
     expect(screen.getByRole('button', { name: 'Delete income 15/10/2026 DividendoJuros, XP dividends' })).toHaveAccessibleDescription('Wait for the save to finish.')
   })
 
-  it(`${AC('09')} moves focus to the first field on open and back to New income on Cancel`, async () => {
+  it('[AC P61-F02-income-tab-and-bankless-income-09] moves focus to the first field on open and back to New income on Cancel', async () => {
     renderTab()
 
     const form = await openNewIncome()

@@ -7,9 +7,11 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $criterionLine = [regex]'^\s*- \[[ xX]\] (?<text>.*)$'
-$criterionId = [regex]'^\*\*(?<id>P\d+-F\d+-[A-Za-z0-9-]+)\*\*'
+$criterionId = [regex]'^\*\*(?<id>P\d+-(?:F\d+|CF)-[A-Za-z0-9-]+)\*\*'
 $dotnetTag = [regex]'Trait\("AC",\s*"(?<id>[^"]+)"\)'
 $webTag = [regex]'\[AC (?<id>[^\]\s]+)\]'
+$anyTag = [regex]'Trait\("AC",\s*"[^"]+"\)|\[AC [^\]\s]+\]'
+$bareId = [regex]'P\d{2}-(?:F\d{2}|CF)-[a-z0-9-]+-\d{2}'
 
 $prds = foreach ($file in Get-ChildItem -Path $PrdRoot -Recurse -File -Filter 'prd-*.md') {
     $ids = [System.Collections.Generic.List[string]]::new()
@@ -29,13 +31,18 @@ $prds = foreach ($file in Get-ChildItem -Path $PrdRoot -Recurse -File -Filter 'p
 }
 
 $tagged = [System.Collections.Generic.HashSet[string]]::new()
+$malformed = [System.Collections.Generic.List[string]]::new()
 foreach ($root in $TestRoots) {
     $files = Get-ChildItem -Path $root -Recurse -File -Include '*.cs', '*.ts', '*.tsx' -ErrorAction SilentlyContinue |
         Where-Object { $_.FullName -notmatch '[\\/](bin|obj|node_modules)[\\/]' }
     foreach ($file in $files) {
         $pattern = if ($file.Extension -eq '.cs') { $dotnetTag } else { $webTag }
-        foreach ($match in $pattern.Matches([IO.File]::ReadAllText($file.FullName))) {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        foreach ($match in $pattern.Matches($text)) {
             [void]$tagged.Add($match.Groups['id'].Value)
+        }
+        foreach ($match in $bareId.Matches($anyTag.Replace($text, ''))) {
+            $malformed.Add("$($file.Name): $($match.Value)")
         }
     }
 }
@@ -64,6 +71,11 @@ if ($orphans.Count -gt 0) {
     $lines.Add("**Orphan tags** (no PRD has these ids): $($orphans.Count)")
     foreach ($id in $orphans) { $lines.Add("- ``$id``") }
 }
+if ($malformed.Count -gt 0) {
+    $lines.Add('')
+    $lines.Add("**Malformed tags** (an id outside ``[AC <id>]`` or ``Trait(""AC"", ...)``): $($malformed.Count)")
+    foreach ($entry in $malformed) { $lines.Add("- ``$entry``") }
+}
 if ($withoutIds.Count -gt 0 -or $unreadable.Count -gt 0) {
     $lines.Add('')
     $lines.Add('<details><summary>' + "$($withoutIds.Count) PRDs have no criterion ids and cannot be traced" + '</summary>')
@@ -76,4 +88,4 @@ if ($withoutIds.Count -gt 0 -or $unreadable.Count -gt 0) {
 
 if ($SummaryPath) { Add-Content $SummaryPath $lines }
 
-Write-Host "ac-traceability: $untracedTotal of $criteriaTotal criteria untraced across $($withIds.Count) PRDs, $($orphans.Count) orphan tags, $($withoutIds.Count) PRDs without ids"
+Write-Host "ac-traceability: $untracedTotal of $criteriaTotal criteria untraced across $($withIds.Count) PRDs, $($orphans.Count) orphan tags, $($malformed.Count) malformed tags, $($withoutIds.Count) PRDs without ids"

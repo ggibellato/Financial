@@ -47,8 +47,6 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const AC = (n: string) => `[AC P61-F01-accounts-overview-tabs-and-monthly-fold-${n}]`
-
 const TITHE_SUMMARY = { incomeBase: 100, calculatedTithe: 10, tithePaid: 0, titheBalance: 10, carryForward: null }
 
 const TITHE_YEAR = Array.from({ length: 12 }, (_, index) => ({ year: 2026, month: index + 1, summary: TITHE_SUMMARY }))
@@ -463,7 +461,7 @@ describe('AccountsPage', () => {
     expect(screen.getByText('Account screen')).toBeInTheDocument()
   })
 
-  it(`${AC('02')} shows each bank's round-up for the chosen month, and no Round-up column on other balance grids`, async () => {
+  it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-02] shows each bank's round-up for the chosen month, and no Round-up column on other balance grids`, async () => {
     renderPage('/cashflow/accounts?month=2026-09')
 
     const banks = await screen.findByRole('table', { name: 'Banks' })
@@ -481,7 +479,7 @@ describe('AccountsPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Accounts')
   })
 
-  it(`${AC('01')} shows the month picker and the tabs in order, Accounts selected`, async () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] shows the month picker and the tabs in order, Accounts selected', async () => {
     renderPage()
 
     expect(screen.getByRole('tablist', { name: 'Accounts views' })).toBeInTheDocument()
@@ -491,7 +489,7 @@ describe('AccountsPage', () => {
     expect(await screen.findByRole('tabpanel', { name: 'Accounts' })).toContainElement(await screen.findByRole('table', { name: 'Banks' }))
   })
 
-  it(`${AC('01')} opens the tab in the address and falls back to Accounts for an unknown one`, async () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] opens the tab in the address and falls back to Accounts for an unknown one', async () => {
     const { unmount } = renderPage('/cashflow/accounts?tab=summary&month=2026-09')
 
     expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
@@ -516,7 +514,7 @@ describe('AccountsPage', () => {
     expect(getIncomesByMonthMock).toHaveBeenCalledExactlyOnceWith(2026, 9)
   })
 
-  it('[AC P61-cross-01] shows the Tithe tab fourth and loads the tithe only while it is open', async () => {
+  it('[AC P61-CF-cross-feature-01] shows the Tithe tab fourth and loads the tithe only while it is open', async () => {
     renderPage('/cashflow/accounts?month=2026-09')
     await screen.findByRole('table', { name: 'Banks' })
 
@@ -544,7 +542,7 @@ describe('AccountsPage', () => {
     expect(screen.getByRole('table', { name: 'Tithe by month, 2026' })).toBeInTheDocument()
   })
 
-  it(`${AC('01')} writes the selected tab to the address, keeping the month`, async () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] writes the selected tab to the address, keeping the month', async () => {
     renderPage('/cashflow/accounts?month=2026-09')
 
     selectTab('Summary')
@@ -555,7 +553,7 @@ describe('AccountsPage', () => {
     expect(await screen.findByRole('tabpanel', { name: 'Summary' })).toBeInTheDocument()
   })
 
-  it(`${AC('03')} shows the Summary with its Result and no bank or card grid`, async () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-03] shows the Summary with its Result and no bank or card grid', async () => {
     renderPage('/cashflow/accounts?tab=summary')
 
     expect(await screen.findByRole('group', { name: 'Month result' })).toHaveTextContent('Result: +57.50 Surplus')
@@ -563,7 +561,7 @@ describe('AccountsPage', () => {
     expect(screen.queryByRole('table', { name: 'Credit cards' })).not.toBeInTheDocument()
   })
 
-  it(`${AC('04')} renders All transactions with F16's grid for the chosen month`, async () => {
+  it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-04] renders All transactions with F16's grid for the chosen month`, async () => {
     renderPage('/cashflow/accounts?month=2026-09')
 
     await openAllTransactions()
@@ -589,7 +587,7 @@ describe('AccountsPage', () => {
     await waitFor(() => expect(screen.queryByText('Lidl UK')).not.toBeInTheDocument())
   })
 
-  it(`${AC('05')} requests only the open tab's data`, async () => {
+  it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-05] requests only the open tab's data`, async () => {
     renderPage()
     await screen.findByRole('table', { name: 'Banks' })
 
@@ -605,7 +603,7 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledOnce()
   })
 
-  it(`${AC('05')} reloads the open tab for a new month and keeps it selected`, async () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-05] reloads the open tab for a new month and keeps it selected', async () => {
     renderPage('/cashflow/accounts?tab=summary')
     await screen.findByRole('table', { name: 'Category totals' })
 
@@ -618,7 +616,7 @@ describe('AccountsPage', () => {
     expect(getMonthTransactionsMock).not.toHaveBeenCalled()
   })
 
-  it(`${AC('05')} never shows the previous month's figures while the new month loads`, async () => {
+  it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-05] never shows the previous month's figures while the new month loads`, async () => {
     renderPage('/cashflow/accounts?tab=summary')
     await screen.findByRole('table', { name: 'Category totals' })
     getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
@@ -653,7 +651,7 @@ describe('AccountsPage', () => {
     await waitFor(() => expect(getMonthTransactionsMock).toHaveBeenCalledTimes(2))
   })
 
-  it(`${AC('07')} keeps a load error to its tab and leaves the others selectable and working`, async () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-07] keeps a load error to its tab and leaves the others selectable and working', async () => {
     getDefaultGroupSummaryMock.mockRejectedValue(new Error('boom'))
     renderPage('/cashflow/accounts?tab=summary')
 
@@ -665,7 +663,7 @@ describe('AccountsPage', () => {
     expect(await screen.findByRole('table', { name: 'Banks' })).toBeInTheDocument()
   })
 
-  it(`${AC('07')} keeps the month picker and tabs usable while a tab loads`, () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-07] keeps the month picker and tabs usable while a tab loads', () => {
     getAccountTemplateGroupsMock.mockReturnValue(new Promise(() => {}))
     renderPage()
 

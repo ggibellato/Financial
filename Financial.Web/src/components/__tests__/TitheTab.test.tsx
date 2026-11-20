@@ -19,8 +19,6 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const AC = (n: string) => `[AC P61-F03-tithe-tab-and-history-${n}]`
-
 const OCTOBER: TitheSummaryDto = {
   incomeBase: 4227.3,
   calculatedTithe: 422.73,
@@ -57,7 +55,7 @@ describe('TitheTab', () => {
     updateTitheCarryForwardMock.mockReset()
   })
 
-  it(`${AC('01')} shows the income base, tithe, tithe paid, carry-in with its month and the balance owed`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-01] shows the income base, tithe, tithe paid, carry-in with its month and the balance owed', async () => {
     renderTab()
 
     const figures = await detail()
@@ -69,14 +67,14 @@ describe('TitheTab', () => {
     expect(getTitheSummaryByMonthMock).toHaveBeenCalledWith(2026, 10)
   })
 
-  it(`${AC('06')} shows a negative balance as in credit, in words`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-06] shows a negative balance as in credit, in words', async () => {
     getTitheSummaryByMonthMock.mockResolvedValue(OTHER_MONTH)
     renderTab()
 
     expect(await detail()).toHaveTextContent('Balance: 19.99 in credit')
   })
 
-  it(`${AC('06')} shows an empty month with zero figures, no checkbox and a no-income message`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-06] shows an empty month with zero figures, no checkbox and a no-income message', async () => {
     getTitheSummaryByMonthMock.mockResolvedValue(EMPTY)
     renderTab()
 
@@ -89,7 +87,7 @@ describe('TitheTab', () => {
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
 
-  it(`${AC('02')} shows the carry-forward checkbox only with a carry-in, checked from the server`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-02] shows the carry-forward checkbox only with a carry-in, checked from the server', async () => {
     renderTab()
 
     const checkbox = await screen.findByRole('checkbox', { name: "Include September 2026's balance of 120.00" })
@@ -97,7 +95,7 @@ describe('TitheTab', () => {
     expect(screen.queryByText('No income this month.')).not.toBeInTheDocument()
   })
 
-  it(`${AC('02')} keeps focus on the checkbox and shows progress while saving, then shows the refreshed figures`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-02] keeps focus on the checkbox and shows progress while saving, then shows the refreshed figures', async () => {
     let resolveUpdate!: (value: TitheSummaryDto) => void
     updateTitheCarryForwardMock.mockReturnValue(new Promise((resolve) => { resolveUpdate = resolve }))
     renderTab()
@@ -123,7 +121,7 @@ describe('TitheTab', () => {
     expect(getTitheYearMock).toHaveBeenCalledTimes(2)
   })
 
-  it(`${AC('02')} shows a failed update in an error message bar and leaves the checkbox as it was`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-02] shows a failed update in an error message bar and leaves the checkbox as it was', async () => {
     updateTitheCarryForwardMock.mockRejectedValue(new ApiError('Server error', 500))
     renderTab()
 
@@ -133,7 +131,7 @@ describe('TitheTab', () => {
     expect(screen.getByRole('checkbox', { name: /Include September 2026/ })).toBeChecked()
   })
 
-  it(`${AC('02')} keeps the no-balance message visible after the refresh removes the checkbox`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-02] keeps the no-balance message visible after the refresh removes the checkbox', async () => {
     updateTitheCarryForwardMock.mockRejectedValue(new ApiError('No carry-forward is available for 2026-10.', 400))
     renderTab()
     const checkbox = await screen.findByRole('checkbox', { name: /Include September 2026/ })
@@ -146,7 +144,7 @@ describe('TitheTab', () => {
     expect(screen.getByText('There is no balance to carry into this month.')).toBeInTheDocument()
   })
 
-  it(`${AC('03')} lists the twelve months with the chosen one marked and a totals footer`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-03] lists the twelve months with the chosen one marked and a totals footer', async () => {
     renderTab()
 
     const table = await historyTable()
@@ -170,7 +168,7 @@ describe('TitheTab', () => {
     expect(within(footer).getAllByRole('img', { name: 'Not totalled' })).toHaveLength(3)
   })
 
-  it(`${AC('03')} selects a month from its row`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-03] selects a month from its row', async () => {
     const onSelectMonth = renderTab()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Show March 2026' }))
@@ -178,7 +176,7 @@ describe('TitheTab', () => {
     expect(onSelectMonth).toHaveBeenCalledWith('2026-03')
   })
 
-  it(`${AC('06')} shows a loading state for the detail and the history`, () => {
+  it('[AC P61-F03-tithe-tab-and-history-06] shows a loading state for the detail and the history', () => {
     getTitheSummaryByMonthMock.mockReturnValue(new Promise(() => {}))
     getTitheYearMock.mockReturnValue(new Promise(() => {}))
     renderTab()
@@ -188,7 +186,7 @@ describe('TitheTab', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  it(`${AC('06')} shows each load error on its own with Try again, keeping the other part`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-06] shows each load error on its own with Try again, keeping the other part', async () => {
     getTitheYearMock.mockRejectedValueOnce(new Error('boom'))
     renderTab()
 
@@ -201,7 +199,7 @@ describe('TitheTab', () => {
     expect(getTitheYearMock).toHaveBeenCalledTimes(2)
   })
 
-  it(`${AC('06')} shows the detail error while the history still loads`, async () => {
+  it('[AC P61-F03-tithe-tab-and-history-06] shows the detail error while the history still loads', async () => {
     getTitheSummaryByMonthMock.mockRejectedValueOnce(new Error('boom'))
     renderTab()
 
