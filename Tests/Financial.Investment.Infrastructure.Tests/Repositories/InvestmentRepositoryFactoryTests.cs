@@ -165,7 +165,7 @@ public class InvestmentRepositoryFactoryTests
     {
         var remoteFileClient = new RecordingRemoteFileClient();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance), TestClock.At());
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance), TestClock.At());
         var options = new JsonRepositorySelection(
             JsonRepositoryProvider.GoogleDriveJson,
             null,
@@ -210,7 +210,7 @@ public class InvestmentRepositoryFactoryTests
         var remoteFileClient = new RecordingRemoteFileClient();
         var tracer = new RecordingTelemetryTracer();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer), TestClock.At());
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), tracer), TestClock.At());
         var options = new JsonRepositorySelection(
             JsonRepositoryProvider.GoogleDriveJson,
             null,
@@ -228,21 +228,11 @@ public class InvestmentRepositoryFactoryTests
 
     private static string EmptyFile() => new InvestmentSerializerAdapter().Serialize(Investments.Create());
 
-    private sealed class RecordingRemoteFileClientFactory : IRemoteFileClientFactory
-    {
-        private readonly IRemoteFileClient _client;
-
-        public RecordingRemoteFileClientFactory(IRemoteFileClient client) => _client = client;
-
-        public IRemoteFileClient Create(string credentialsPath) => _client;
-    }
-
     private sealed class RecordingRemoteFileClient : IRemoteFileClient
     {
         public int UploadCallCount { get; private set; }
 
-        public string DownloadFileContent(string path) =>
-            new InvestmentSerializerAdapter().Serialize(Investments.Create());
+        public string DownloadFileContent(string path) => EmptyFile();
 
         public void UploadFileContent(string path, string content) => UploadCallCount++;
     }

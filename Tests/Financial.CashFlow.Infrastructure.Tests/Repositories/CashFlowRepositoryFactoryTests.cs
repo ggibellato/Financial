@@ -213,7 +213,7 @@ public class CashFlowRepositoryFactoryTests
         {
             var remoteFileClient = new RecordingRemoteFileClient();
             var factory = new CashFlowRepositoryFactory(
-                new CashFlowSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
             var options = new JsonRepositorySelection(
                 JsonRepositoryProvider.GoogleDriveJson,
                 null,
@@ -249,7 +249,7 @@ public class CashFlowRepositoryFactoryTests
             var remoteFileClient = new RecordingRemoteFileClient();
             var tracer = new RecordingTelemetryTracer();
             var factory = new CashFlowRepositoryFactory(
-                new CashFlowSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), tracer));
             var options = new JsonRepositorySelection(
                 JsonRepositoryProvider.GoogleDriveJson,
                 null,
@@ -291,23 +291,13 @@ public class CashFlowRepositoryFactoryTests
 
     private static string EmptyFile() => new CashFlowSerializerAdapter().Serialize(CashFlowData.Create());
 
-    private sealed class RecordingRemoteFileClientFactory : IRemoteFileClientFactory
-    {
-        private readonly IRemoteFileClient _client;
-
-        public RecordingRemoteFileClientFactory(IRemoteFileClient client) => _client = client;
-
-        public IRemoteFileClient Create(string credentialsPath) => _client;
-    }
-
     private sealed class RecordingRemoteFileClient : IRemoteFileClient
     {
         public int UploadCallCount { get; private set; }
 
         public string? LastUploadedContent { get; private set; }
 
-        public string DownloadFileContent(string path) =>
-            new CashFlowSerializerAdapter().Serialize(CashFlowData.Create());
+        public string DownloadFileContent(string path) => EmptyFile();
 
         public void UploadFileContent(string path, string content)
         {
