@@ -26,7 +26,7 @@ public partial class LogRedactionTests
         "StatusCode",
     ];
 
-    [GeneratedRegex(@"\.Log(?:Trace|Debug|Information|Warning|Error|Critical)\(\s*(?<template>\$?@?""(?:[^""\\]|\\.)*"")?")]
+    [GeneratedRegex(@"\.Log(?:Trace|Debug|Information|Warning|Error|Critical)?\(\s*(?<template>\$?@?""(?:[^""\\]|\\.)*""(?!""))?")]
     private static partial Regex LogCall();
 
     [GeneratedRegex(@"\{(?<name>\w+)[^}]*\}")]
@@ -52,6 +52,9 @@ public partial class LogRedactionTests
     [InlineData("_logger.LogWarning($\"Failed for {name}\");", true)]
     [InlineData("_logger.LogWarning(\"No asset matches {AssetName}\", request.AssetName);", true)]
     [InlineData("_logger.LogWarning(\"Balance is {Amount:N2}\", amount);", true)]
+    [InlineData("_logger.Log(LogLevel.Warning, \"{Operation} failed\", \"Op\");", true)]
+    [InlineData("_logger.LogWarning(\"\"\"{Operation} {AssetName}\"\"\", \"Op\", name);", true)]
+    [InlineData("// _logger.LogError(ex, \"{Operation} failed\", \"Op\");", false)]
     public void Scanner_Flags_Exceptions_Interpolation_And_Unlisted_Placeholders(string source, bool flagged)
     {
         FindViolations("Financial.X/Service.cs", source).Any().Should().Be(flagged);
@@ -62,6 +65,12 @@ public partial class LogRedactionTests
         var normalized = relativePath.Replace(Path.DirectorySeparatorChar, '/');
         foreach (Match call in LogCall().Matches(source))
         {
+            var lineStart = source.LastIndexOf('\n', Math.Max(call.Index - 1, 0)) + 1;
+            if (source.AsSpan(lineStart, call.Index - lineStart).TrimStart().StartsWith("//"))
+            {
+                continue;
+            }
+
             var line = source.AsSpan(0, call.Index).Count('\n') + 1;
             var template = call.Groups["template"];
             if (!template.Success)

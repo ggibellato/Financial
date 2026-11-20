@@ -24,7 +24,11 @@ public class DomainExceptionLoggingTests
     public async Task RejectedWithdrawal_LogsTheExceptionType_WithoutTheFinancialValuesInItsMessage()
     {
         var exception = new OverdraftConfirmationRequiredException("Ariana", 654.27m);
-        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/withdrawals");
+        var (logger, context) = await InvokeWithAsync(
+            exception,
+            "POST",
+            "/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/withdrawals",
+            "api/v1/financial/accounts/{id:guid}/withdrawals");
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
 
@@ -32,7 +36,7 @@ public class DomainExceptionLoggingTests
         entry.Level.Should().Be(LogLevel.Warning);
         entry.Message.Should().Contain(nameof(OverdraftConfirmationRequiredException));
         entry.Message.Should().Contain("409");
-        entry.Message.Should().Contain("/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/withdrawals");
+        entry.Message.Should().Contain("api/v1/financial/accounts/{id:guid}/withdrawals");
 
         entry.Message.Should().NotContain("Ariana");
         entry.Message.Should().NotContain("654.27");
@@ -125,6 +129,7 @@ public class DomainExceptionLoggingTests
         entry.Level.Should().Be(LogLevel.Warning);
         entry.Message.Should().Contain(nameof(KeyNotFoundException));
         entry.Message.Should().Contain("404");
+        entry.Message.Should().Contain("unmatched").And.NotContain("/expenses/x");
     }
 
     [Fact]
@@ -149,7 +154,7 @@ public class DomainExceptionLoggingTests
         var exception = new InvestmentRuleViolationException(
             "Portfolio \"ETF ISA\" already holds an asset named \"VUSA\".");
 
-        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/assets/move");
+        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/assets/move", "api/v1/financial/assets/move");
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
 
@@ -157,7 +162,7 @@ public class DomainExceptionLoggingTests
         entry.Level.Should().Be(LogLevel.Warning);
         entry.Message.Should().Contain(nameof(InvestmentRuleViolationException));
         entry.Message.Should().Contain("409");
-        entry.Message.Should().Contain("/api/v1/financial/assets/move");
+        entry.Message.Should().Contain("api/v1/financial/assets/move");
 
         entry.Message.Should().NotContain("VUSA");
         entry.Message.Should().NotContain("ETF ISA");
@@ -251,7 +256,11 @@ public class DomainExceptionLoggingTests
         };
         context.Request.Method = method;
         context.Request.Path = path;
-        context.SetEndpoint(new RouteEndpoint(_ => Task.CompletedTask, RoutePatternFactory.Parse(route ?? path), 0, EndpointMetadataCollection.Empty, null));
+        if (route is not null)
+        {
+            context.SetEndpoint(new RouteEndpoint(_ => Task.CompletedTask, RoutePatternFactory.Parse(route), 0, EndpointMetadataCollection.Empty, null));
+        }
+
         context.Response.Body = new MemoryStream();
 
         return context;
