@@ -35,9 +35,9 @@ AC-tracing tests draw their setup from.
   `sessionStorage`/`localStorage` are real jsdom storage, cleared in `afterEach`.
 - **Unit**: not for pages — their logic lives in hooks/components.
 - **E2E**: only for the few journeys that pass the four questions in
-  `../references/e2e-environment.md`; today: app load, asset summary, add expense (success,
-  validation and server-error), Historic Summary Average, pay card statement, pots deposit,
-  settle, bankless income and tithe.
+  `../references/e2e-environment.md`; today: app load and asset summary, add expense, Historic
+  Summary Average, pay card statement, pots deposit, settle, bankless income and tithe. Failure
+  states stay in page tests; never fake the API with `page.route` in a spec.
 
 ## Setup pattern
 

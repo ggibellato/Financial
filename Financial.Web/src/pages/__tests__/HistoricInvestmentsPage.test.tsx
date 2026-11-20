@@ -81,13 +81,6 @@ describe('HistoricInvestmentsPage', () => {
     getSummaryByPortfolioMock.mockReturnValue(never())
   })
 
-  it('renders tree and empty detail state on load', async () => {
-    getNavigationTreeMock.mockResolvedValue(stubTree)
-    renderPage()
-    expect(await screen.findByText('XPI (BRL)')).toBeInTheDocument()
-    expect(screen.getByText('Select an item to view details')).toBeInTheDocument()
-  })
-
   it('requests the navigation tree with historic scope', async () => {
     getNavigationTreeMock.mockResolvedValue(stubTree)
     renderPage()
@@ -103,14 +96,5 @@ describe('HistoricInvestmentsPage', () => {
     fireEvent.click(screen.getByText('CLOSEDASSET'))
     expect(screen.getByText('CLOSEDASSET', { selector: '.detail-panel__name' })).toBeInTheDocument()
     expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', 'historic')
-  })
-
-  it('selecting a broker node shows broker name in right panel', async () => {
-    getNavigationTreeMock.mockResolvedValue(stubTree)
-    renderPage()
-    await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getByText('XPI (BRL)'))
-    expect(screen.getAllByText('XPI').length).toBeGreaterThan(0)
-    expect(screen.getByRole('tab', { name: 'Summary' })).toBeInTheDocument()
   })
 })

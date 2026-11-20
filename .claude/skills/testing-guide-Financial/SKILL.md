@@ -157,7 +157,7 @@ each artifact created or modified, check the required layers — and the failure
 | React page | Page test: full state matrix with `apiClient` faked | `artifacts/react-pages.md` |
 | `financialApiClient` method | Unit: verb, URL, body, `ApiError` on non-2xx | `artifacts/web-api-client.md` |
 | Web util / context / navigation entry | Unit; sidebar ↔ route agreement | `artifacts/web-utils-context-navigation.md` |
-| New or changed critical journey | E2E: Playwright spec incl. one failure journey | `references/e2e-environment.md` |
+| New or changed critical journey | E2E: Playwright spec (a failure journey only if it passes the four questions) | `references/e2e-environment.md` |
 
 **How to use:** after implementing a feature, add its AC-tracing row first, then walk each row for
 anything you created or modified, read the guide, and confirm both the success and the failure case

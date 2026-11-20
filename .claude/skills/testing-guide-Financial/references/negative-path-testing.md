@@ -2,9 +2,9 @@
 
 # Negative-Path Testing
 
-The rule: every branch, every external-provider call, every storage write and every critical
-journey needs its failure case tested at the same layer as its success case — never inferred
-from the happy path passing. Track it per artifact row in `../SKILL.md` §3.
+The rule: every branch, every external-provider call and every storage write needs its failure
+case tested at the same layer as its success case — never inferred from the happy path passing.
+A critical journey's failure case belongs at the lowest layer that shows it (see §E2E). Track it per artifact row in `../SKILL.md` §3.
 
 ## Unit
 
@@ -92,9 +92,10 @@ Failure cases belong at the lowest layer that can show them — validation in th
 the 409 mapping in the host test, the provider failure in its contract test. An E2E failure
 journey is added only when it passes the four questions in `e2e-environment.md`, typically
 because the failure is only visible with the SPA and the published API together (a problem-details
-body actually rendered, nothing sent after inline rejection). `Financial.Web/tests/e2e/add-expense.spec.ts`
-has the two the suite needs today: a blank value rejected inline with nothing sent, and a forced
-500 shown with the form still usable. Candidates if a critical flow ever needs one more:
+body actually rendered, nothing sent after inline rejection). The suite has none today: inline
+validation is proven in the form hook and component tests, and a refused save keeping the form in
+the page tests. Never fake the API with `page.route` to stage a failure; that is a page test's job.
+Candidates if a critical flow ever needs one:
 
 - **Rejected submission end to end**: POST an expense with `value: 0` through the UI form and
   assert the inline validation / 400 message renders and the row does not appear.
@@ -113,4 +114,3 @@ frontend's own error state for that is covered at the page layer.
 - Unit: `ExpenseServiceTests`, `YahooFinanceServiceTests.GetAssetValue_UnsupportedExchange_ThrowsInvalidOperationException_WithoutCallingHttp`, `FrankfurterExchangeRateProviderTests` (all failure modes, fake transport).
 - Integration: `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`, `SettlementScreenAcceptanceTests.AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `DomainExceptionLoggingTests`, `ObservabilityBackendUnreachableTests`, `EmptyBodyEndpointsTests`.
 - Page: `CategoriesPage.test.tsx` (error state with retry).
-- E2E: `add-expense.spec.ts` (blank value rejected inline; forced 500 shown, form usable).

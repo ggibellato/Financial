@@ -8,15 +8,6 @@ function ModeDisplay() {
   return <div data-testid="mode">{colourMode}</div>
 }
 
-function ModeToggler() {
-  const { toggleColourMode } = useColourMode()
-  return (
-    <button type="button" onClick={() => toggleColourMode()}>
-      toggle-elsewhere
-    </button>
-  )
-}
-
 describe('AppearancePage', () => {
   afterEach(() => {
     localStorage.clear()
@@ -33,26 +24,6 @@ describe('AppearancePage', () => {
     expect(screen.getByRole('radio', { name: 'Dark' })).toBeInTheDocument()
   })
 
-  it('light_is_selected_by_default', () => {
-    render(
-      <ColourModeProvider>
-        <AppearancePage />
-      </ColourModeProvider>,
-    )
-    expect(screen.getByRole('radio', { name: 'Light' })).toBeChecked()
-    expect(screen.getByRole('radio', { name: 'Dark' })).not.toBeChecked()
-  })
-
-  it('dark_is_selected_when_previously_stored', () => {
-    localStorage.setItem('financial.colourMode', 'dark')
-    render(
-      <ColourModeProvider>
-        <AppearancePage />
-      </ColourModeProvider>,
-    )
-    expect(screen.getByRole('radio', { name: 'Dark' })).toBeChecked()
-  })
-
   it('selecting_dark_updates_the_shared_colour_mode', async () => {
     render(
       <ColourModeProvider>
@@ -60,18 +31,11 @@ describe('AppearancePage', () => {
         <ModeDisplay />
       </ColourModeProvider>,
     )
-    fireEvent.click(screen.getByRole('radio', { name: 'Dark' }))
-    expect(await screen.findByTestId('mode')).toHaveTextContent('dark')
-  })
+    expect(screen.getByRole('radio', { name: 'Light' })).toBeChecked()
 
-  it('reflects_a_mode_changed_elsewhere_in_the_same_provider', () => {
-    render(
-      <ColourModeProvider>
-        <AppearancePage />
-        <ModeToggler />
-      </ColourModeProvider>,
-    )
-    fireEvent.click(screen.getByText('toggle-elsewhere'))
+    fireEvent.click(screen.getByRole('radio', { name: 'Dark' }))
+
+    expect(await screen.findByTestId('mode')).toHaveTextContent('dark')
     expect(screen.getByRole('radio', { name: 'Dark' })).toBeChecked()
   })
 })

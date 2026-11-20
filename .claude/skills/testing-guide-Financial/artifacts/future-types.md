@@ -62,8 +62,8 @@ arrives with the right test rather than a new convention.
 
 - Done: the suite is `@playwright/test` under `Financial.Web/tests/e2e`. It deliberately has
   no `webServer`: the published API is started separately on a non-8080 port
-  (`feedback_never_smoke_test_against_live_port`). Each new journey is E2E and needs one failure
-  journey (`../references/negative-path-testing.md`).
+  (`feedback_never_smoke_test_against_live_port`). A new journey gets a failure journey only if it
+  passes the four questions (`../references/e2e-environment.md`).
 
 ## Database/EF Core migrations
 

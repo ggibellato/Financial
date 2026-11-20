@@ -82,14 +82,13 @@ The sentinel replaces a "which data file are you on" endpoint on purpose:
 
 ## What the suite proves
 
-Ten `@smoke` tests in eight spec files (the PR job runs `npm run smoke-test`; the nightly `e2e-web`
+Seven `@smoke` tests in seven spec files (the PR job runs `npm run smoke-test`; the nightly `e2e-web`
 job runs `npm run test:e2e`, every spec) in `Financial.Web/tests/e2e/`, each also failing on any console error:
 
 | Spec | Journey |
 |---|---|
-| `app-loads` | `/` renders the investment tree (`XPI`) |
-| `investment-asset` | XPI → Default → BCIA11 shows the asset summary |
-| `add-expense` (3) | add an expense (`e2e-<runId>`) and see it listed; blank value → `Value must be a non-zero number`, nothing POSTed; forced 500 → error shown, form usable |
+| `investment-asset` | `/` loads the investment tree; XPI → Default → BCIA11 shows the asset summary |
+| `add-expense` | add an expense (`e2e-<runId>`) and see it listed |
 | `historic-average` | seed three expenses → Historic Summary Average shows `Mercado` `25.00` (catches frontend/API shape drift that still compiles) |
 | `pay-card-statement` | Amex → Statements → pay October 2026 from Barclays → "from Barclays"; then Unmark |
 | `pots-deposit` | Reserva → manual deposit with no bank → the Pots total grows by the deposit and its rows list; then delete the deposit |
