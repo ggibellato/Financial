@@ -1,4 +1,3 @@
-using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence.FxRates;
 using FluentAssertions;
 
@@ -22,23 +21,9 @@ public class ExampleDataFileTests
     }
 
     [Fact]
-    public void ExampleFile_DeserializesThroughTheRealSerializer()
+    public void ExampleFile_DeserializesThroughTheRealSerializer_ToAnEmptyStore()
     {
-        var storage = new LocalJsonStorage(ExampleFilePath);
-        var serializer = new FxRateSerializerAdapter();
-
-        var act = () => FxRateLoader.LoadSync(storage, serializer);
-
-        act.Should().NotThrow("a fresh checkout seeds from this file, so anything it cannot deserialize stops the app at startup");
-    }
-
-    [Fact]
-    public void ExampleFile_YieldsAnEmptyStore()
-    {
-        var storage = new LocalJsonStorage(ExampleFilePath);
-        var serializer = new FxRateSerializerAdapter();
-
-        var ratesByDate = FxRateLoader.LoadSync(storage, serializer);
+        var ratesByDate = new FxRateSerializerAdapter().Deserialize(File.ReadAllText(ExampleFilePath));
 
         ratesByDate.Should().BeEmpty();
     }

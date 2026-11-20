@@ -29,7 +29,8 @@ public static class FxRateInfrastructureServiceCollectionExtensions
             return new FxRateStoreFactory(
                 sp.GetRequiredService<IFxRateSerializer>(),
                 sp.GetRequiredService<IJsonStorageFactory>(),
-                sp.GetRequiredService<TimeProvider>()).Create(options);
+                sp.GetRequiredService<TimeProvider>(),
+                sp.GetRequiredService<ILogger<FxRateJsonStore>>()).Create(options);
         });
         services.AddHttpClient<FrankfurterExchangeRateProvider>();
         services.AddSingleton<IExchangeRateProvider>(sp =>

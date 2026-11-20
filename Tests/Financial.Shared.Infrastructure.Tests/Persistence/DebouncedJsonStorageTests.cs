@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Resilience;
 using Financial.Shared.Infrastructure.Persistence;
@@ -39,10 +38,13 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task AfterDebounceWindowElapses_LatestJsonIsUploaded()
     {
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(50));
+        var clock = new ObservableFakeClock(TestClock.Default);
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(50), clock);
 
         await storage.WriteAsync("{\"a\":1}");
+        _inner.WrittenJson.Should().BeEmpty();
 
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(50));
         await WaitForAsync(() => _inner.WrittenJson.Count == 1);
 
         _inner.WrittenJson.Should().ContainSingle().Which.Should().Be("{\"a\":1}");
@@ -76,20 +78,20 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task WriteDuringInFlightSave_StartsFollowUpCycleWithoutBlockingTheWrite()
     {
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.HoldWritesUntilReleased();
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(30));
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(30), clock);
 
         await storage.WriteAsync("{\"a\":1}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(30));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
 
-        var stopwatch = Stopwatch.StartNew();
         var secondWrite = storage.WriteAsync("{\"a\":2}");
-        stopwatch.Stop();
 
         secondWrite.IsCompleted.Should().BeTrue();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(200);
 
         _inner.Release();
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(30));
 
         await WaitForAsync(() => _inner.WrittenJson.Count == 2);
         _inner.WrittenJson[0].Should().Be("{\"a\":1}");
@@ -225,9 +227,10 @@ public class DebouncedJsonStorageTests
 
         await storage.WriteAsync("{\"a\":1}");
         await storage.FlushAsync();
-        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(10));
+        clock.Advance(TimeSpan.FromMilliseconds(10));
         await storage.WriteAsync("{\"a\":2}");
-        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(10));
+        await WaitForAsync(() => clock.TimersArmed >= 3);
+        clock.Advance(TimeSpan.FromMilliseconds(10));
 
         _inner.WrittenJson.Should().Equal("{\"a\":1}");
 
@@ -299,32 +302,36 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task FlushAsync_WhenSaveExceedsTimeout_ReturnsWithoutWaitingFurther()
     {
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.HoldWritesUntilReleased();
         var storage = new DebouncedJsonStorage(
-            _inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 5, flushTimeout: TimeSpan.FromMilliseconds(100));
+            _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 5, flushTimeout: TimeSpan.FromMilliseconds(100));
 
         await storage.WriteAsync("{\"a\":1}");
+        var flush = storage.FlushAsync();
+        await WaitForAsync(() => clock.TimersArmed >= 2);
+        flush.IsCompleted.Should().BeFalse();
 
-        var stopwatch = Stopwatch.StartNew();
-        await storage.FlushAsync();
-        stopwatch.Stop();
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+        await flush;
 
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
         _inner.WrittenJson.Should().BeEmpty();
     }
 
     [Fact]
     public async Task TwoInstances_NeverShareDirtyDebounceRetryOrStatusState()
     {
+        var clock = new ObservableFakeClock(TestClock.Default);
         var failingInner = new ControllableJsonStorage();
         failingInner.FailNextWrites(1);
         var failingStorage = new DebouncedJsonStorage(
-            failingInner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
+            failingInner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         var healthyInner = new ControllableJsonStorage();
-        var healthyStorage = new DebouncedJsonStorage(healthyInner, TimeSpan.FromMilliseconds(20));
+        var healthyStorage = new DebouncedJsonStorage(healthyInner, TimeSpan.FromMilliseconds(20), clock);
 
         await failingStorage.WriteAsync("{\"a\":1}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
         await WaitForAsync(() => failingStorage.GetStatus().State == SyncState.Failed);
 
         healthyStorage.GetStatus().State.Should().Be(SyncState.Idle);
@@ -362,28 +369,29 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task AfterDebounceWindowElapses_RecordsJsonStorageSaveSpan_OnSuccess()
     {
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), tracer: _tracer);
+        var clock = new ObservableFakeClock(TestClock.Default);
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock, tracer: _tracer);
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => _tracer.Spans.Any(s => s.Name == "JsonStorage.Save"));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => _tracer.Spans.Any(s => s.Name == "JsonStorage.Save" && s.Disposed));
 
-        var span = _tracer.Spans.Should().ContainSingle(s => s.Name == "JsonStorage.Save").Which;
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        _tracer.ShouldHaveSucceededSpan("JsonStorage.Save");
     }
 
     [Fact]
     public async Task RetriesExhausted_RecordsJsonStorageSaveSpan_OnFailure()
     {
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.FailNextWrites(1);
         var storage = new DebouncedJsonStorage(
-            _inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8), tracer: _tracer);
+            _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8), tracer: _tracer);
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => _tracer.Spans.Any(s => s.Name == "JsonStorage.Save"));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => _tracer.Spans.Any(s => s.Name == "JsonStorage.Save" && s.Disposed));
 
-        var span = _tracer.Spans.Should().ContainSingle(s => s.Name == "JsonStorage.Save").Which;
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
-        span.RecordedException.Should().NotBeNull();
+        _tracer.ShouldHaveFailedSpan<TransientStorageException>("JsonStorage.Save");
     }
 
     [Fact]
@@ -410,12 +418,14 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task RetriesExhausted_LogsAnErrorWithTheExceptionTypeOnly()
     {
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.FailNextWrites(1);
         var logger = new RecordingLogger<DebouncedJsonStorage>();
         var storage = new DebouncedJsonStorage(
-            _inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
+            _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
 
         await storage.WriteAsync("{\"a\":1}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Failed);
 
         var error = logger.Entries.Should().ContainSingle(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error).Which;
@@ -430,19 +440,5 @@ public class DebouncedJsonStorageTests
         clock.Advance(span);
     }
 
-    private static async Task WaitForAsync(Func<bool> condition, TimeSpan? timeout = null)
-    {
-        var effectiveTimeout = timeout ?? TimeSpan.FromSeconds(2);
-        var deadline = DateTime.UtcNow + effectiveTimeout;
-
-        while (!condition())
-        {
-            if (DateTime.UtcNow >= deadline)
-            {
-                throw new TimeoutException($"Condition not met within {effectiveTimeout}.");
-            }
-
-            await Task.Delay(10);
-        }
-    }
+    private static Task WaitForAsync(Func<bool> condition) => Eventually.HoldsAsync(condition);
 }
