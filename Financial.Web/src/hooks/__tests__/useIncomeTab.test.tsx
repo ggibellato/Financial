@@ -1,18 +1,21 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { FluentProvider, Toaster } from '@fluentui/react-components'
+import { act, renderHook, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { IncomeDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
+import { financialLightTheme } from '../../theme/fluentTheme'
 import { setStoredDefault } from '../../utils/createFormDefaults'
+import { APP_TOASTER_ID } from '../useSuccessToast'
 import { useIncomeTab } from '../useIncomeTab'
 
-const { getIncomesByMonthMock, getIncomeSourcesMock, getAccountsMock, deleteIncomeMock, showSuccessMock } = vi.hoisted(() => ({
+const { getIncomesByMonthMock, getIncomeSourcesMock, getAccountsMock, deleteIncomeMock } = vi.hoisted(() => ({
   getIncomesByMonthMock: vi.fn<FinancialApiClient['getIncomesByMonth']>(),
   getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
-  showSuccessMock: vi.fn<(message: string) => void>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -23,8 +26,6 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteIncome: deleteIncomeMock,
   } as Partial<FinancialApiClient>,
 }))
-
-vi.mock('../useSuccessToast', () => ({ useSuccessToast: () => ({ showSuccess: showSuccessMock }) }))
 
 const INCOME: IncomeDto = {
   id: 'i1',
@@ -47,8 +48,17 @@ const ACCOUNTS = [
   cardAccount({ id: 'amex', name: 'Amex' }),
 ]
 
+function WithToaster({ children }: { children: ReactNode }) {
+  return (
+    <FluentProvider theme={financialLightTheme}>
+      <Toaster toasterId={APP_TOASTER_ID} />
+      {children}
+    </FluentProvider>
+  )
+}
+
 async function renderLoaded(year = 2026, month = 10) {
-  const rendered = renderHook(({ y, m }) => useIncomeTab(y, m), { initialProps: { y: year, m: month } })
+  const rendered = renderHook(({ y, m }) => useIncomeTab(y, m), { initialProps: { y: year, m: month }, wrapper: WithToaster })
   await waitFor(() => expect(rendered.result.current.isLoading).toBe(false))
   return rendered
 }
@@ -59,7 +69,6 @@ describe('useIncomeTab', () => {
     getIncomeSourcesMock.mockReset().mockResolvedValue([])
     getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     deleteIncomeMock.mockReset()
-    showSuccessMock.mockReset()
     sessionStorage.clear()
   })
 
@@ -106,7 +115,7 @@ describe('useIncomeTab', () => {
     act(() => result.current.incomeDelete.request(INCOME))
     act(() => result.current.incomeDelete.confirm())
 
-    await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted'))
+    expect(await screen.findByText('Income deleted')).toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
     expect(result.current.isGoneNoticeShown).toBe(false)
   })
@@ -122,7 +131,7 @@ describe('useIncomeTab', () => {
     act(() => result.current.incomeDelete.request(INCOME))
     act(() => result.current.incomeDelete.confirm())
 
-    await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted'))
+    expect(await screen.findByText('Income deleted')).toBeInTheDocument()
     expect(result.current.incomeForm.editingIncomeId).toBe(editingId)
   })
 
@@ -135,7 +144,7 @@ describe('useIncomeTab', () => {
 
     await waitFor(() => expect(result.current.isGoneNoticeShown).toBe(true))
     expect(result.current.incomeDelete.isOpen).toBe(false)
-    expect(showSuccessMock).not.toHaveBeenCalled()
+    expect(screen.queryByText('Income deleted')).not.toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
 
     act(() => result.current.dismissGoneNotice())
