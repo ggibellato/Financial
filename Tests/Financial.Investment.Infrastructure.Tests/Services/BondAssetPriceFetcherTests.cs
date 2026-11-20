@@ -2,7 +2,6 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
-using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Services;
 using FluentAssertions;
 
@@ -99,17 +98,5 @@ public class BondAssetPriceFetcherTests
         captured!.Exchange.Should().Be("BVMF");
         captured.Ticker.Should().Be("TESOURO IPCA+ 2029");
         captured.Name.Should().Be("TESOURO IPCA+ 2029");
-    }
-
-    private sealed class FakeFinanceService : IFinanceService
-    {
-        private readonly Func<AssetValueRequestDTO, AssetValueSnapshot> _behavior;
-
-        public FakeFinanceService(Func<AssetValueRequestDTO, AssetValueSnapshot> behavior)
-        {
-            _behavior = behavior;
-        }
-
-        public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request) => _behavior(request);
     }
 }

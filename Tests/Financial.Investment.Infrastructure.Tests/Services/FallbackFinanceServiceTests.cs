@@ -126,16 +126,4 @@ public class FallbackFinanceServiceTests
 
         _logger.Entries.Should().BeEmpty();
     }
-
-    private sealed class FakeFinanceService : IFinanceService
-    {
-        private readonly Func<AssetValueRequestDTO, AssetValueSnapshot> _behavior;
-
-        public FakeFinanceService(Func<AssetValueRequestDTO, AssetValueSnapshot> behavior)
-        {
-            _behavior = behavior;
-        }
-
-        public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request) => _behavior(request);
-    }
 }

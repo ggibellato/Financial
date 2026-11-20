@@ -15,8 +15,8 @@ namespace Financial.Investment.Application.Tests.Services;
 public class CreditServiceTests
 {
     private readonly RecordingTelemetryTracer _tracer = new();
-    private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
-    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new StubReportingCurrencyProvider();
+    private readonly IExchangeRateProvider _exchangeRateProvider = new StubExchangeRateProvider(0.15m);
+    private readonly IReportingCurrencyProvider _reportingCurrencyProvider = new StubReportingCurrencyProvider();
 
     private readonly StubInvestmentRepository _repository = new()
     {
@@ -224,7 +224,7 @@ public class CreditServiceTests
         asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m, currency: Currency.USD, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
-        var service = new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<CreditService>.Instance);
+        var service = new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, _reportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<CreditService>.Instance);
 
         await service.UpdateCreditAsync(new CreditUpdateDTO
         {
@@ -607,7 +607,7 @@ public class CreditServiceTests
         asset.TaxClassifications.Should().BeEmpty();
     }
 
-    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<CreditService>.Instance);
+    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), _exchangeRateProvider, _reportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);

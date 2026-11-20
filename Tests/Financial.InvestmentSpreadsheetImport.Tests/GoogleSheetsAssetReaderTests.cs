@@ -25,7 +25,7 @@ public class GoogleSheetsAssetReaderTests
         public string? LastRange { get; private set; }
 
         public Task<List<SheetDTO>> GetSpreadSheetAsync(string spreadSheetId) =>
-            Task.FromResult(new List<SheetDTO>());
+            throw new NotSupportedException();
 
         public Task<IList<IList<object>>> GetSpreadSheetDataAsync(string spreadSheetId, string range)
         {

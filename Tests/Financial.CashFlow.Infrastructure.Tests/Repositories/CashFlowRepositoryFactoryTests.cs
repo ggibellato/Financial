@@ -4,7 +4,6 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
@@ -211,7 +210,7 @@ public class CashFlowRepositoryFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var remoteFileClient = new RecordingRemoteFileClient();
+            var remoteFileClient = new RecordingRemoteFileClient(EmptyFile);
             var factory = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
             var options = new JsonRepositorySelection(
@@ -246,7 +245,7 @@ public class CashFlowRepositoryFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var remoteFileClient = new RecordingRemoteFileClient();
+            var remoteFileClient = new RecordingRemoteFileClient(EmptyFile);
             var tracer = new RecordingTelemetryTracer();
             var factory = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(remoteFileClient), tracer));
@@ -290,19 +289,4 @@ public class CashFlowRepositoryFactoryTests
     }
 
     private static string EmptyFile() => new CashFlowSerializerAdapter().Serialize(CashFlowData.Create());
-
-    private sealed class RecordingRemoteFileClient : IRemoteFileClient
-    {
-        public int UploadCallCount { get; private set; }
-
-        public string? LastUploadedContent { get; private set; }
-
-        public string DownloadFileContent(string path) => EmptyFile();
-
-        public void UploadFileContent(string path, string content)
-        {
-            UploadCallCount++;
-            LastUploadedContent = content;
-        }
-    }
 }

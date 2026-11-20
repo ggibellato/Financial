@@ -58,7 +58,7 @@ public class JsonStorageFactoryTests
     [Fact]
     public void CreateRemote_WithRemoteFileClientFactory_ReturnsDebounceWrappedStorage()
     {
-        var factory = new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance);
+        var factory = new JsonStorageFactory(new StubRemoteFileClientFactory(new StubRemoteFileClient(() => "{}")), NoOpTelemetryTracer.Instance);
         var credentialsPath = Path.GetTempFileName();
         try
         {
@@ -75,17 +75,5 @@ public class JsonStorageFactoryTests
         {
             File.Delete(credentialsPath);
         }
-    }
-
-    private sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
-    {
-        public IRemoteFileClient Create(string credentialsPath) => new StubRemoteFileClient();
-    }
-
-    private sealed class StubRemoteFileClient : IRemoteFileClient
-    {
-        public string DownloadFileContent(string path) => "{}";
-
-        public void UploadFileContent(string path, string content) => throw new NotSupportedException();
     }
 }

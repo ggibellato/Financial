@@ -14,8 +14,8 @@ namespace Financial.Investment.Application.Tests.Services;
 public class TransactionServiceQueryTests
 {
     private readonly RecordingTelemetryTracer _tracer = new();
-    private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
-    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new StubReportingCurrencyProvider();
+    private readonly IExchangeRateProvider _exchangeRateProvider = new StubExchangeRateProvider(0.15m);
+    private readonly IReportingCurrencyProvider _reportingCurrencyProvider = new StubReportingCurrencyProvider();
 
     private readonly StubInvestmentRepository _repository = new();
 
@@ -219,7 +219,7 @@ public class TransactionServiceQueryTests
         buy.CashEffect.Should().Be("Out");
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), _exchangeRateProvider, _reportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);

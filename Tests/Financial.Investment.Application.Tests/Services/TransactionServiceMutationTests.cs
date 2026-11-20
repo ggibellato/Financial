@@ -16,8 +16,8 @@ namespace Financial.Investment.Application.Tests.Services;
 public class TransactionServiceMutationTests
 {
     private readonly RecordingTelemetryTracer _tracer = new();
-    private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
-    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new StubReportingCurrencyProvider();
+    private readonly IExchangeRateProvider _exchangeRateProvider = new StubExchangeRateProvider(0.15m);
+    private readonly IReportingCurrencyProvider _reportingCurrencyProvider = new StubReportingCurrencyProvider();
 
     private readonly StubInvestmentRepository _repository = new()
     {
@@ -77,7 +77,7 @@ public class TransactionServiceMutationTests
     {
         _repository.Asset = MakeAsset();
         var tracer = new RecordingTelemetryTracer();
-        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TestClock.At(), tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), _exchangeRateProvider, _reportingCurrencyProvider, TestClock.At(), tracer, NullLogger<TransactionService>.Instance);
 
         await service.AddTransactionAsync(new TransactionCreateDTO
         {
@@ -229,7 +229,7 @@ public class TransactionServiceMutationTests
         asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.USD, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
-        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, _reportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
 
         await service.UpdateTransactionAsync(new TransactionUpdateDTO
         {
@@ -541,7 +541,7 @@ public class TransactionServiceMutationTests
         classification.SourceId.Should().Be(asset.DisposalRecords.Single().Id);
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), _exchangeRateProvider, _reportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
