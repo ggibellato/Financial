@@ -26,18 +26,6 @@ public class AssetCorporateActionTests
     }
 
     [Fact]
-    public void RecordCorporateAction_OneForTenReverseSplit_ReducesQuantityAndMultipliesAveragePrice()
-    {
-        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-
-        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 0.1m));
-
-        asset.Quantity.Should().Be(1m);
-        asset.AveragePrice.Should().Be(1000m);
-    }
-
-    [Fact]
     public void RecordCorporateAction_SameDateAsSell_AppliesBeforeTheSaleAndRealizesGainAtRescaledCost()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");

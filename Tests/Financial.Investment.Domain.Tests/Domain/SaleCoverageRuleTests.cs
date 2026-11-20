@@ -196,7 +196,7 @@ public class SaleCoverageRuleTests
     }
 
     [Fact]
-    public void FindFirstUncoveredSale_NoCorporateActions_SameAsSingleArgumentOverload()
+    public void FindFirstUncoveredSale_WithNoCorporateActions_FindsTheCoveredSaleFine()
     {
         var transactions = new[]
         {
@@ -204,7 +204,6 @@ public class SaleCoverageRuleTests
             Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m),
         };
 
-        SaleCoverageRule.FindFirstUncoveredSale(transactions, Array.Empty<CorporateAction>())
-            .Should().Be(SaleCoverageRule.FindFirstUncoveredSale(transactions));
+        SaleCoverageRule.FindFirstUncoveredSale(transactions, Array.Empty<CorporateAction>()).Should().BeNull();
     }
 }

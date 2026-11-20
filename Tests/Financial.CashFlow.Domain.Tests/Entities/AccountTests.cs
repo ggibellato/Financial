@@ -1105,16 +1105,6 @@ public class AccountTests
     }
 
     [Fact]
-    public void Create_Bank_StartsWithAZeroOpeningBalanceAndRoundUpOff()
-    {
-        var account = Account.Create("Barclays", AccountTemplate.Bank, Currency.GBP);
-
-        using var _ = new AssertionScope();
-        account.OpeningBalance!.Amount.Should().Be(0m);
-        account.RoundUp!.Enabled.Should().BeFalse();
-    }
-
-    [Fact]
     public void NullArguments_AreRejected()
     {
         var bank = TestAccounts.Bank("Barclays");

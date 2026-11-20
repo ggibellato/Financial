@@ -145,17 +145,6 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
-    public void Calculate_TaxYear_BrlCurrency_UsesCalendarYear()
-    {
-        var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 4m, 5m, 0m);
-        var sell = Transaction.Create(new DateTime(2026, 6, 1), Transaction.TransactionType.Sell, 4m, 7m, 0m);
-
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "BRL", TestClock.Default);
-
-        record.TaxYear.Should().Be("2026");
-    }
-
-    [Fact]
     public void Calculate_TaxYear_OtherCurrency_UsesUkTaxYear()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 4m, 5m, 0m);

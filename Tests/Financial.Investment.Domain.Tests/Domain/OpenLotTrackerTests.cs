@@ -180,13 +180,13 @@ public class OpenLotTrackerTests
     }
 
     [Fact]
-    public void GetOpenLots_NoCorporateActions_SameAsSingleArgumentOverload()
+    public void GetOpenLots_WithNoCorporateActions_KeepsTheBuyAsOneLot()
     {
         var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
 
         var lots = OpenLotTracker.GetOpenLots(new[] { buy }, Array.Empty<CorporateAction>());
 
-        lots.Should().BeEquivalentTo(OpenLotTracker.GetOpenLots(new[] { buy }));
+        lots.Should().Equal(new OpenLot(buy.Id, new DateTime(2024, 1, 1), 10m, 5m));
     }
 
     [Fact]

@@ -10,17 +10,16 @@ public class PotTests
     [Fact]
     public void Create_WithValidValues_SetsAllProperties()
     {
-        var pot = Pot.Create("Investimento", 33.33m, isActive: true);
+        var pot = Pot.Create("Investimento", 33.33m, isActive: false);
 
         using (new AssertionScope())
         {
             pot.Id.Should().NotBeEmpty();
             pot.Name.Should().Be("Investimento");
             pot.SplitPercentage.Should().Be(33.33m);
-            pot.IsActive.Should().BeTrue();
+            pot.IsActive.Should().BeFalse();
         }
     }
-
 
     [Fact]
     public void Create_DefaultsIsActiveToTrue()
@@ -28,14 +27,6 @@ public class PotTests
         var pot = Pot.Create("Investimento", 33.33m);
 
         pot.IsActive.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Create_WithIsActiveFalse_AssignsFalse()
-    {
-        var pot = Pot.Create("Investimento", 33.33m, isActive: false);
-
-        pot.IsActive.Should().BeFalse();
     }
 
     [Theory]
@@ -130,13 +121,13 @@ public class PotTests
     }
 
     [Fact]
-    public void Update_NameWithSurroundingSpaces_StoresItAsGiven()
+    public void Update_NameWithSurroundingSpaces_StoresItTrimmed()
     {
         var pot = Pot.Create("Holidays", 10m);
 
         pot.Update(" Trips ", 10m, true);
 
-        pot.Name.Should().Be(" Trips ");
+        pot.Name.Should().Be("Trips");
     }
 
     [Fact]

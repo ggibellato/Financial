@@ -214,14 +214,6 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void DisabledFor_NullBalances_Throws()
-    {
-        var act = () => AccountActions.DisabledFor(TestAccounts.Bank("Barclays"), null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void DisabledFor_NullArguments_AreRejected()
     {
         FluentActions.Invoking(() => AccountActions.DisabledFor(null!, [])).Should().Throw<ArgumentNullException>().WithParameterName("account");

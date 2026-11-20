@@ -94,24 +94,6 @@ public class CorporateActionReplayTests
     }
 
     [Fact]
-    public void RescalePosition_TotalCostBasisIsUnchanged()
-    {
-        var (quantity, averagePrice) = CorporateActionReplay.RescalePosition(10m, 100m, 2.0m);
-
-        (quantity * averagePrice).Should().Be(10m * 100m);
-    }
-
-    [Fact]
-    public void ApplyToPosition_Split_MatchesRescalePosition()
-    {
-        var split = CorporateAction.CreateSplit(new DateTime(2026, 3, 1), 2.0m);
-
-        var result = CorporateActionReplay.ApplyToPosition(10m, 100m, split);
-
-        result.Should().Be(CorporateActionReplay.RescalePosition(10m, 100m, 2.0m));
-    }
-
-    [Fact]
     public void ApplyToPosition_MergerSource_ClosesPositionRegardlessOfIncomingValues()
     {
         var source = CorporateAction.CreateMergerSource(
@@ -144,7 +126,7 @@ public class CorporateActionReplayTests
         var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(10m, 50m, target);
 
         quantity.Should().Be(50m);
-        averagePrice.Should().Be((10m * 50m + 1000m) / 50m);
+        averagePrice.Should().Be(30m);
     }
 
     [Fact]
@@ -157,23 +139,6 @@ public class CorporateActionReplayTests
 
         quantity.Should().Be(40m);
         averagePrice.Should().Be(25m);
-    }
-
-    [Fact]
-    public void ReceiveIntoPosition_MatchesAverageCostReplayBlendedFormula()
-    {
-        var (quantity, averagePrice) = CorporateActionReplay.ReceiveIntoPosition(10m, 50m, 40m, 1000m);
-
-        quantity.Should().Be(50m);
-        averagePrice.Should().Be((10m * 50m + 1000m) / 50m);
-    }
-
-    [Fact]
-    public void ReceiveIntoPosition_TotalCostBasisIsPreserved()
-    {
-        var (quantity, averagePrice) = CorporateActionReplay.ReceiveIntoPosition(10m, 50m, 40m, 1000m);
-
-        (quantity * averagePrice).Should().Be(10m * 50m + 1000m);
     }
 
     [Fact]

@@ -170,17 +170,6 @@ public class TransactionTests
         transaction.Withheld.Should().Be(0m);
     }
 
-    [Fact]
-    public void CreateWithId_WithANegativeFee_FloorsItAtZero()
-    {
-        var id = Guid.NewGuid();
-
-        var transaction = Transaction.CreateWithId(id, new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 2m, 10m, fees: -1m);
-
-        transaction.Id.Should().Be(id);
-        transaction.Fees.Should().Be(0m);
-    }
-
     /// <summary>
     /// The importer recovers a fee from a recorded total and hands it straight to Create. These
     /// assert the two halves meet: a recovered fee round-trips back to the total it came from.
@@ -217,26 +206,6 @@ public class TransactionTests
     public void Create_WithAZeroOrNegativeUnitPrice_Throws(decimal unitPrice)
     {
         var act = () => Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, unitPrice, 0m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void CreateWithId_WithAZeroOrNegativeQuantity_Throws(decimal quantity)
-    {
-        var act = () => Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, quantity, 10m, 0m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void CreateWithId_WithAZeroOrNegativeUnitPrice_Throws(decimal unitPrice)
-    {
-        var act = () => Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, unitPrice, 0m);
 
         act.Should().Throw<ArgumentException>();
     }

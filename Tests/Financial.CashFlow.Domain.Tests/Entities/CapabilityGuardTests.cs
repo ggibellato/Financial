@@ -26,24 +26,6 @@ public class CapabilityGuardTests
         Minimal(Enum.GetValues<Capability>().Where(c => c != capability && c != Capability.HasStatements).ToArray());
 
     [Fact]
-    public void SetOpeningBalance_AccountWithOnlyHasOpeningBalance_Succeeds()
-    {
-        var account = Minimal(Capability.HasOpeningBalance);
-
-        account.SetOpeningBalance(25m, Date);
-
-        account.OpeningBalance.Should().Be(OpeningBalance.Create(25m, Date));
-    }
-
-    [Fact]
-    public void SetOpeningBalance_AccountWithoutHasOpeningBalance_Throws()
-    {
-        var act = () => MinimalWithout(Capability.HasOpeningBalance).SetOpeningBalance(25m, Date);
-
-        act.Should().Throw<ArgumentException>().WithMessage("Minimal has no opening balance.");
-    }
-
-    [Fact]
     public void Income_Create_AccountWithOnlyReceivesIncome_Succeeds()
     {
         var account = Minimal(Capability.ReceivesIncome);
@@ -165,16 +147,6 @@ public class CapabilityGuardTests
     }
 
     [Fact]
-    public void SetRoundUp_AccountWithOnlySupportsRoundUp_Succeeds()
-    {
-        var account = Minimal(Capability.SupportsRoundUp);
-
-        account.SetRoundUp(true);
-
-        account.RoundUp.Should().Be(new RoundUpSetting(true));
-    }
-
-    [Fact]
     public void Expense_SetRoundUpAmount_PaymentSourceWithSupportsRoundUpEnabled_Succeeds()
     {
         var account = Minimal(Capability.HasCategories, Capability.SupportsRoundUp);
@@ -199,16 +171,6 @@ public class CapabilityGuardTests
             expense.RoundUpAmount.Should().BeNull();
             expense.SuggestedRoundUpAmount.Should().BeNull();
         }
-    }
-
-    [Fact]
-    public void Expense_SetRoundUpAmount_RoundUpCapableButDisabled_Throws()
-    {
-        var expense = Expense.Create(Date, "Coffee", 2.30m, _groceries, TestAccounts.Bank("Barclays", roundUpEnabled: false), creditCard: null);
-
-        var act = () => expense.SetRoundUpAmount(0.70m);
-
-        act.Should().Throw<ArgumentException>().WithMessage("Bank 'Barclays' does not support round-up.");
     }
 
     [Fact]

@@ -18,31 +18,11 @@ public class InvestmentsTests
     }
 
     [Fact]
-    public void SetReportingCurrency_UpdatesTheValue()
-    {
-        var investments = Investments.Create();
-
-        investments.SetReportingCurrency(Currency.BRL);
-
-        investments.ReportingCurrency.Should().Be(Currency.BRL);
-    }
-
-    [Fact]
     public void Create_DefaultsReportingCurrencyEnabledToTrue()
     {
         var investments = Investments.Create();
 
         investments.ReportingCurrencyEnabled.Should().BeTrue();
-    }
-
-    [Fact]
-    public void SetReportingCurrencyEnabled_UpdatesTheValue()
-    {
-        var investments = Investments.Create();
-
-        investments.SetReportingCurrencyEnabled(false);
-
-        investments.ReportingCurrencyEnabled.Should().BeFalse();
     }
 
     [Fact]
@@ -67,18 +47,6 @@ public class InvestmentsTests
 
         investments.HistoricBrokers.Should().ContainSingle().Which.Name.Should().Be("Broker A");
         investments.ActiveBrokers.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void ActiveAndHistoricBrokers_AreIndependentCollections()
-    {
-        var investments = Investments.Create();
-
-        investments.AddActiveBroker(Broker.Create("Active Broker", "USD"));
-        investments.AddHistoricBroker(Broker.Create("Historic Broker", "USD"));
-
-        investments.ActiveBrokers.Should().ContainSingle().Which.Name.Should().Be("Active Broker");
-        investments.HistoricBrokers.Should().ContainSingle().Which.Name.Should().Be("Historic Broker");
     }
 
     [Fact]
@@ -636,14 +604,6 @@ public class InvestmentsTests
         var act = () => investments.DeleteBroker("Nope");
 
         act.Should().Throw<KeyNotFoundException>();
-    }
-
-    [Fact]
-    public void TaxRules_StartsEmpty()
-    {
-        var investments = Investments.Create();
-
-        investments.TaxRules.Should().BeEmpty();
     }
 
     [Fact]

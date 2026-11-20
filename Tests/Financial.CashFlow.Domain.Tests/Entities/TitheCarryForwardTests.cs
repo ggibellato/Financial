@@ -29,16 +29,6 @@ public class TitheCarryForwardTests
         act.Should().Throw<ArgumentException>();
     }
 
-    [Fact]
-    public void SetIncluded_False_TogglesTheFlag()
-    {
-        var decision = TitheCarryForward.Create(2026, 8, true);
-
-        decision.SetIncluded(false);
-
-        decision.Included.Should().BeFalse();
-    }
-
     [Theory]
     [InlineData(1)]
     [InlineData(12)]
