@@ -76,4 +76,27 @@ public class JsonStorageFactoryTests
             File.Delete(credentialsPath);
         }
     }
+
+    [Fact]
+    public async Task CreateRemote_WithATracer_RecordsTheSaveAndUploadSpansOnFlush()
+    {
+        var tracer = new RecordingTelemetryTracer();
+        var factory = new JsonStorageFactory(new StubRemoteFileClientFactory(new RecordingRemoteFileClient(() => "{}")), tracer);
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var storage = factory.CreateRemote(
+                credentialsPath, "Pessoais/Gleison/Financeiros", "Test:CredentialsPath", "TestProvider");
+
+            await storage.WriteAsync("{\"written\":true}");
+            await ((ISyncStatusProvider)storage).FlushAsync();
+
+            tracer.ShouldHaveSucceededSpan("JsonStorage.Save");
+            tracer.ShouldHaveSucceededSpan("RemoteStorage.Upload");
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
+        }
+    }
 }

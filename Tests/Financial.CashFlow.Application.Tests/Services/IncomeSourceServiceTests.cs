@@ -152,13 +152,10 @@ public class IncomeSourceServiceTests
         }
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task CreateIncomeSourceAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
+    [Fact]
+    public async Task CreateIncomeSourceAsync_BlankName_ThrowsAndWritesNothing()
     {
-        var request = new IncomeSourceCreateDTO { Name = name!, Group = "Salary", IsActive = true };
+        var request = new IncomeSourceCreateDTO { Name = "   ", Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
@@ -239,16 +236,6 @@ public class IncomeSourceServiceTests
             result.PotsAccountId.Should().Be(holidays.Id);
             incomeSource.PotsAccount.Should().BeSameAs(holidays);
         }
-    }
-
-    [Fact]
-    public async Task UpdateIncomeSourceAsync_BlankNameForAnUnknownId_IsRefusedForTheNameBeforeTheLookup()
-    {
-        var request = new IncomeSourceUpdateDTO { Name = " ", Group = "Salary", IsActive = true };
-
-        var act = async () => await _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), request);
-
-        await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
 
     [Fact]

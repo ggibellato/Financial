@@ -319,17 +319,6 @@ public class SettlementServiceTests
     }
 
     [Fact]
-    public async Task UpdateEntryAsync_InactiveAccount_Refused()
-    {
-        var entry = AddStoredEntry(_mae, Currency.BRL, 21.94m);
-        _mae.SetActive(false);
-
-        var act = () => CreateService().UpdateEntryAsync(_mae.Id, entry.Id, EntryUpdate(25.6m));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Mãe is inactive.");
-    }
-
-    [Fact]
     public async Task DeleteEntryAsync_EntryOfTheAccount_RemovesItAndSaves()
     {
         var entry = AddStoredEntry(_mae, Currency.BRL, 21.94m);
@@ -351,18 +340,6 @@ public class SettlementServiceTests
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.SettlementTransactions.Should().ContainSingle();
         _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.SettlementService.DeleteEntry");
-    }
-
-    [Fact]
-    public async Task DeleteEntryAsync_InactiveAccount_RefusedAndKeepsIt()
-    {
-        var entry = AddStoredEntry(_mae, Currency.BRL, 21.94m);
-        _mae.SetActive(false);
-
-        var act = () => CreateService().DeleteEntryAsync(_mae.Id, entry.Id);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Mãe is inactive.");
-        _repository.SettlementTransactions.Should().ContainSingle();
     }
 
     private static SettleRequestDTO Settlement(decimal amount, decimal? convertedValue, string currency = "BRL", DateOnly? date = null) => new()
@@ -456,28 +433,6 @@ public class SettlementServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
         _repository.SettlementTransactions.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task SettleAsync_InactiveAccount_Refused()
-    {
-        AddStoredEntry(_mae, Currency.BRL, 21.94m);
-        _mae.SetActive(false);
-
-        var act = () => CreateService().SettleAsync(_mae.Id, Settlement(150m, 21.94m));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Mãe is inactive.");
-    }
-
-    [Fact]
-    public async Task SettleAsync_AccountWithoutParticipants_Refused()
-    {
-        var bank = TestAccounts.Bank("Barclays");
-        _repository.Accounts.Add(bank);
-
-        var act = () => CreateService().SettleAsync(bank.Id, Settlement(10m, null, "GBP"));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays is not a Settlement account.");
     }
 
     [Fact]

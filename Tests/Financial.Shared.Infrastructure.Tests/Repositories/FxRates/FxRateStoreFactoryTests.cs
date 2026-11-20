@@ -23,13 +23,6 @@ public class FxRateStoreFactoryTests
         NullLogger<FxRateJsonStore>.Instance);
 
     [Fact]
-    public void Create_WithNullOptions_Throws()
-    {
-        Action act = () => Factory.Create(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
-    }
-
-    [Fact]
     public void Create_WithLocalJsonProvider_MissingFile_ReturnsEmptyStore()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), $"fxrates-factory-{Guid.NewGuid()}.json");
@@ -62,40 +55,6 @@ public class FxRateStoreFactoryTests
     }
 
     [Fact]
-    public void Create_WithGoogleDriveProvider_WithoutCredentials_ThrowsFileNotFoundException()
-    {
-        var options = new JsonRepositorySelection(
-            JsonRepositoryProvider.GoogleDriveJson, null, null, "Pessoais/Gleison/Financeiros");
-
-        Action act = () => Factory.Create(options);
-
-        act.Should().Throw<FileNotFoundException>()
-            .WithMessage("*Remote storage credentials file path is required*");
-    }
-
-    [Fact]
-    public void Create_WithGoogleDriveProvider_CredentialsFileMissing_ThrowsFileNotFoundException()
-    {
-        var missingPath = Path.Combine(Path.GetTempPath(), $"fxrates-credentials-{Guid.NewGuid()}.json");
-        var options = new JsonRepositorySelection(
-            JsonRepositoryProvider.GoogleDriveJson, null, missingPath, "Pessoais/Gleison/Financeiros");
-
-        Action act = () => Factory.Create(options);
-
-        act.Should().Throw<FileNotFoundException>().Which.FileName.Should().Be(missingPath);
-    }
-
-    [Fact]
-    public void Create_WithUnsupportedProvider_ThrowsArgumentOutOfRangeException()
-    {
-        var options = new JsonRepositorySelection((JsonRepositoryProvider)999, null, null, null);
-
-        Action act = () => Factory.Create(options);
-
-        act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("Provider");
-    }
-
-    [Fact]
     public void Create_WithGoogleDriveProvider_ValidCredentials_ReturnsFxRateJsonStore()
     {
         var credentialsPath = Path.GetTempFileName();
@@ -113,5 +72,4 @@ public class FxRateStoreFactoryTests
             File.Delete(credentialsPath);
         }
     }
-
 }

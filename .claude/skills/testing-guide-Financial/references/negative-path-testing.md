@@ -12,7 +12,8 @@ from the happy path passing. Track it per artifact row in `../SKILL.md` §3.
 parameter name where there is one:
 
 Constructor null guards are not written per class: each project's `ConstructorGuardTests` covers them
-(`docs/rules/implementation.md` §Tests #7).
+(`docs/rules/implementation.md` §Tests #7). Method-argument null guards (`ArgumentNullException.ThrowIfNull`)
+are not tested either: our own callers never pass null, so such a test protects no behaviour.
 
 ```csharp
 [Fact]

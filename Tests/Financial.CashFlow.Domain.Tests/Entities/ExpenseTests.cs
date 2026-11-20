@@ -69,7 +69,6 @@ public class ExpenseTests
         }
     }
 
-
     [Fact]
     public void Create_WithPaymentSourceOnly_ComputesImmediatePayment()
     {
@@ -963,6 +962,14 @@ public class ExpenseTests
         using var _ = new AssertionScope();
         charge.SuggestedRoundUpAmount.Should().BeNull();
         settled.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void SuggestedRoundUpAmount_BankWithoutRoundUp_IsNull()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Coffee", 2.30m, Casa, Barclays, null);
+
+        expense.SuggestedRoundUpAmount.Should().BeNull();
     }
 
     [Fact]

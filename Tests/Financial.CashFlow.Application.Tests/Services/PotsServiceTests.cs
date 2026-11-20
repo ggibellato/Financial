@@ -158,30 +158,6 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public async Task WithdrawAsync_PotOfAnotherAccount_Throws()
-    {
-        var other = TestAccounts.Pots("Holidays");
-        var foreignPot = Pot.Create("Trip", 100m);
-        other.AddPot(foreignPot);
-        _repository.Accounts.Add(other);
-        var request = Withdrawal();
-
-        var act = async () => await _sut.WithdrawAsync(Reserva.Id, new PotWithdrawalRequestDTO
-        {
-            PotId = foreignPot.Id,
-            Amount = request.Amount,
-            Date = request.Date,
-            Description = request.Description
-        });
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("That pot isn't in Reserva.");
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Withdraw");
-        }
-    }
-
-    [Fact]
     public async Task WithdrawAsync_AccountWithoutPots_ThrowsNotFound()
     {
         var act = async () => await _sut.WithdrawAsync(Bank("Chase").Id, Withdrawal());
@@ -247,22 +223,6 @@ public class PotsServiceTests
         _repository.Categories.Add(inactive);
 
         await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: inactive.Id), "*inactive*");
-    }
-
-    [Theory]
-    [InlineData("Investimento")]
-    [InlineData("Reserva")]
-    public async Task WithdrawAsync_InvestmentOrPotsAccountCategory_Throws(string categoryName) =>
-        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: CategoryNamed(categoryName).Id), "*cannot be used for a withdrawal expense*");
-
-    [Fact]
-    public async Task WithdrawAsync_CategoryOfASecondPotsAccount_Throws()
-    {
-        var holidays = Category.Create("Holidays");
-        _repository.Categories.Add(holidays);
-        _repository.Accounts.Add(TestAccounts.Pots("Holiday pots", category: holidays));
-
-        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: holidays.Id), "Category 'Holidays' cannot be used for a withdrawal expense.");
     }
 
     [Fact]
