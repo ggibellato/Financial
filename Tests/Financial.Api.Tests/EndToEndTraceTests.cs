@@ -35,8 +35,6 @@ public class EndToEndTraceTests
     // wrapping the same local temp file - the exact composition the GoogleDriveJson provider
     // uses in production, minus the Drive client.
     private static readonly TimeSpan TestDebounceWindow = TimeSpan.FromMilliseconds(50);
-    private static readonly TimeSpan SaveSpanTimeout = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan SaveSpanPollInterval = TimeSpan.FromMilliseconds(25);
 
     [Fact]
     public async Task AddExpense_ProducesOneCorrelatedTrace_ThroughServiceAndStorageSave()
@@ -108,18 +106,7 @@ public class EndToEndTraceTests
     private static async Task<RecordingTelemetryTracer.RecordedSpan> WaitForCompletedSpanAsync(
         RecordingTelemetryTracer tracer, string spanName)
     {
-        var deadline = DateTime.UtcNow + SaveSpanTimeout;
-        while (DateTime.UtcNow < deadline)
-        {
-            var span = tracer.Spans.FirstOrDefault(s => s.Name == spanName && s.Disposed);
-            if (span is not null)
-            {
-                return span;
-            }
-
-            await Task.Delay(SaveSpanPollInterval);
-        }
-
-        throw new TimeoutException($"Span '{spanName}' did not complete within {SaveSpanTimeout.TotalSeconds}s.");
+        await Eventually.HoldsAsync(() => tracer.Spans.Any(s => s.Name == spanName && s.Disposed));
+        return tracer.Spans.First(s => s.Name == spanName && s.Disposed);
     }
 }

@@ -16,7 +16,7 @@ interface AnnualSummaryFigures {
   historicSummaryAverage: CategoryAnnualAverageDto[]
 }
 
-const INITIAL_YEAR = new Date().getFullYear()
+const currentYear = () => new Date().getFullYear()
 
 const EMPTY_FIGURES: AnnualSummaryFigures = {
   categoryTotals: [],
@@ -59,7 +59,7 @@ export interface AnnualSummaryData extends AnnualSummaryFigures {
 }
 
 export function useAnnualSummary(): AnnualSummaryData {
-  const [year, setValidYear] = useState(INITIAL_YEAR)
+  const [year, setValidYear] = useState(currentYear)
 
   const { data, isLoading, error, retry } = useAsyncResource<AnnualSummaryFigures>(
     () => fetchAnnualSummaryFigures(year),

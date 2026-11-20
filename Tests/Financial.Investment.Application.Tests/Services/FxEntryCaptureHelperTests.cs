@@ -20,7 +20,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(0.15m);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TimeProvider.System, InvestmentScope.Active, "Trading212", new DateTime(2026, 7, 1));
+            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Trading212", new DateTime(2026, 7, 1));
 
         result.Should().NotBeNull();
         result!.Value.Currency.Should().Be(Currency.GBP);
@@ -55,7 +55,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(rate: null);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TimeProvider.System, InvestmentScope.Active, "XPI", new DateTime(2026, 7, 1));
+            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "XPI", new DateTime(2026, 7, 1));
 
         result.Should().NotBeNull();
         result!.Value.Currency.Should().Be(Currency.BRL);
@@ -69,7 +69,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(0.15m);
 
         var result = await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TimeProvider.System, InvestmentScope.Active, "Unknown", new DateTime(2026, 7, 1));
+            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Unknown", new DateTime(2026, 7, 1));
 
         result.Should().BeNull();
     }
@@ -81,7 +81,7 @@ public class FxEntryCaptureHelperTests
         var provider = new StubExchangeRateProvider(0.15m);
 
         var act = async () => await FxEntryCaptureHelper.CaptureAsync(
-            repository, provider, ReportingCurrencyProvider, TimeProvider.System, InvestmentScope.Active, "Bad", new DateTime(2026, 7, 1));
+            repository, provider, ReportingCurrencyProvider, TestClock.At(), InvestmentScope.Active, "Bad", new DateTime(2026, 7, 1));
 
         await act.Should().ThrowAsync<ArgumentException>();
     }

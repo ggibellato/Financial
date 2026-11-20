@@ -4,7 +4,7 @@ import { render } from '../../test/renderWithFluent'
 import ExpenseForm from '../ExpenseForm'
 import type { BankOption, CategoryDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
-import { todayIsoDate } from '../../utils/formatters'
+import { pinDate } from '../../test-utils/pinDate'
 import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANKS: BankOption[] = [
@@ -450,14 +450,19 @@ describe('ExpenseForm with a locked card', () => {
     const refundProps = { ...cardProps, isRefund: true, lockedCard: { id: 'card-baamex', name: 'BaAmex' } }
 
     it('titles the form New refund, labels the amount and limits the date to today', () => {
-      render(<ExpenseForm {...refundProps} date="2026-10-14" />)
+      pinDate('2026-10-20T12:00:00+01:00')
+      try {
+        render(<ExpenseForm {...refundProps} date="2026-10-14" />)
 
-      expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
-      expect(screen.getByLabelText(/^Amount/)).toBeInTheDocument()
-      expect(screen.queryByLabelText(/^Value/)).not.toBeInTheDocument()
-      expect(screen.getByLabelText(/^Date/)).toHaveAttribute('max', todayIsoDate())
-      expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
-      expect(screen.getByRole('button', { name: 'Add refund' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
+        expect(screen.getByLabelText(/^Amount/)).toBeInTheDocument()
+        expect(screen.queryByLabelText(/^Value/)).not.toBeInTheDocument()
+        expect(screen.getByLabelText(/^Date/)).toHaveAttribute('max', '2026-10-20')
+        expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
+        expect(screen.getByRole('button', { name: 'Add refund' })).toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('titles an edit Edit refund and saves with Save', () => {

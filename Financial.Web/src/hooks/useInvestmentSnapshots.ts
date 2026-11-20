@@ -31,8 +31,6 @@ type InvestmentSnapshotsAction =
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<SnapshotEditField, string>> } }
 
-const DEFAULT_MONTH = currentYearMonth()
-
 const INITIAL_STATE: InvestmentSnapshotsState = {
   snapshots: [],
   isLoading: true,
@@ -101,7 +99,7 @@ export interface InvestmentSnapshotsData {
 }
 
 export function useInvestmentSnapshots(): InvestmentSnapshotsData {
-  const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
+  const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const selectedMonth = useRef({ year, month })
 
