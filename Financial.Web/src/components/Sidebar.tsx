@@ -280,6 +280,7 @@ function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                 }}
                 type="button"
                 className={categoryHeaderClassName(category.label === activeCategoryLabel)}
+                aria-current={category.label === activeCategoryLabel ? 'true' : undefined}
                 aria-label={collapsed ? category.label : undefined}
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? flyoutId : undefined}

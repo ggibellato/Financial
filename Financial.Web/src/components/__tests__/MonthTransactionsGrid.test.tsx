@@ -351,7 +351,7 @@ describe('MonthTransactionsGrid', () => {
 
     expect(descriptions()).toEqual(['Description:BA Amex payment', 'Description:BA Amex payment'])
     expect(footer()).toHaveTextContent('2 of 7 rows')
-    expect(screen.getByRole('button', { name: 'Filter by Description' })).toHaveClass('column-filter-menu__trigger--active')
+    expect(screen.getByRole('button', { name: 'Filter by Description' })).toHaveAccessibleDescription('Filter applied')
 
     filterTo('Account', 'Barclays')
 

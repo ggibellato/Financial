@@ -60,7 +60,6 @@ describe('Sidebar rail', () => {
         .map((button) => button.textContent),
     ).toEqual(NAV_TREE.map((category) => category.label))
     expect(within(mainNav()).queryAllByRole('link')).toHaveLength(0)
-    expect([...mainNav().classList]).toEqual(['sidebar'])
   })
 
   it('sets the Admin category apart with a single divider before it', () => {
@@ -157,8 +156,8 @@ describe('Sidebar rail', () => {
   it('marks the category of the current page, and the page link inside its flyout', () => {
     renderSidebar('/cashflow/mensais')
 
-    expect(railButton('CashFlow')).toHaveClass('sidebar__category-header--active')
-    expect([...railButton('Investments').classList]).toEqual(['sidebar__category-header'])
+    expect(railButton('CashFlow')).toHaveAttribute('aria-current', 'true')
+    expect(railButton('Investments')).not.toHaveAttribute('aria-current')
 
     fireEvent.click(railButton('CashFlow'))
     expect(within(flyout()!).getByRole('link', { name: 'Mensais' })).toHaveAttribute('aria-current', 'page')
@@ -168,7 +167,7 @@ describe('Sidebar rail', () => {
   it('marks the parent category on a detail route nested under one of its pages', () => {
     renderSidebar('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
 
-    expect(railButton('CashFlow')).toHaveClass('sidebar__category-header--active')
+    expect(railButton('CashFlow')).toHaveAttribute('aria-current', 'true')
   })
 
   it('moving the pointer off both the rail button and flyout closes it after ~250ms unless re-entered', () => {
@@ -266,7 +265,6 @@ describe('Sidebar rail', () => {
     expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toHaveAttribute('aria-label', 'Collapse sidebar')
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
 
-    expect(mainNav()).toHaveClass('sidebar--collapsed')
     const toggle = screen.getByRole('button', { name: 'Expand sidebar' })
     expect(toggle).toHaveAttribute('aria-label', 'Expand sidebar')
     expect(toggle).toHaveAttribute('title', 'Expand sidebar')
@@ -275,7 +273,7 @@ describe('Sidebar rail', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }))
 
-    expect(mainNav()).not.toHaveClass('sidebar--collapsed')
+    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument()
     expect(within(mainNav()).getByText('CashFlow')).toBeInTheDocument()
   })
 
@@ -303,7 +301,8 @@ describe('Sidebar rail', () => {
 
     renderSidebar()
 
-    expect(mainNav()).toHaveClass('sidebar--collapsed')
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument()
+    expect(within(mainNav()).queryByText('CashFlow')).not.toBeInTheDocument()
   })
 
   it('the toggle button shows only its native tooltip, no flyout', () => {
@@ -346,15 +345,13 @@ describe('Sidebar on a phone', () => {
     expect(within(dialog).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Close navigation'])
   })
 
-  it('marks only the category of the current page', () => {
+  it('marks only the link of the current page', () => {
     renderSidebar('/cashflow/mensais', { mobileOpen: true })
 
-    const headings = [...screen.getByRole('dialog').querySelectorAll('.sidebar__category-header')]
-    expect(headings.map((heading) => heading.textContent)).toEqual(NAV_TREE.map((category) => category.label))
-    expect(headings.map((heading) => heading.classList.contains('sidebar__category-header--active'))).toEqual(
-      NAV_TREE.map((category) => category.id === 'cashflow'),
-    )
-    expect([...headings[0].classList]).toEqual(['sidebar__category-header'])
+    const current = within(screen.getByRole('dialog'))
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('aria-current') === 'page')
+    expect(current.map((link) => link.textContent)).toEqual(['Mensais'])
   })
 
   it('reports closing when Escape dismisses the menu', () => {

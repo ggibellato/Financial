@@ -17,7 +17,10 @@ function openDropdown() {
 }
 
 const input = () => screen.getByLabelText('Ticker')
-const activeOptions = () => screen.queryAllByRole('option').filter((option) => option.classList.contains('ticker-combobox__option--active'))
+const activeOption = () => {
+  const id = input().getAttribute('aria-activedescendant')
+  return id ? document.getElementById(id) : null
+}
 const pressKey = (key: string) => fireEvent.keyDown(input(), { key })
 
 describe('TickerCombobox', () => {
@@ -30,12 +33,15 @@ describe('TickerCombobox', () => {
     expect(screen.getByLabelText('Ticker')).toHaveValue('KLBN4')
   })
 
-  it('renders all three group labels when open', () => {
+  it('groups the options under each group label when open', () => {
     renderCombobox()
     openDropdown()
-    expect(screen.getByText('Ja possuidas')).toBeInTheDocument()
-    expect(screen.getByText('Outras Barse')).toBeInTheDocument()
-    expect(screen.getByText('Outras')).toBeInTheDocument()
+    expect(screen.getAllByRole('group').map((group) => group.textContent)).toEqual([
+      'Ja possuidasKLBN4TASA4TAEE3',
+      'Outras BarseUNIP6CMIG4TRPL4BBAS3',
+      'OutrasCSAN3',
+    ])
+    expect(screen.getByRole('group', { name: 'Outras Barse' })).toBeInTheDocument()
   })
 
   it('renders all 8 tickers across groups when open', () => {
@@ -83,7 +89,7 @@ describe('TickerCombobox', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' })
 
     expect(screen.getByRole('listbox')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'KLBN4' })).toHaveClass('ticker-combobox__option--active')
+    expect(activeOption()).toBe(screen.getByRole('option', { name: 'KLBN4' }))
   })
 
   it('pressing ArrowDown repeatedly moves the active option forward, capped at the last one', () => {
@@ -95,7 +101,7 @@ describe('TickerCombobox', () => {
       fireEvent.keyDown(input, { key: 'ArrowDown' })
     }
 
-    expect(screen.getByRole('option', { name: 'CSAN3' })).toHaveClass('ticker-combobox__option--active')
+    expect(activeOption()).toBe(screen.getByRole('option', { name: 'CSAN3' }))
   })
 
   it('pressing ArrowUp while closed opens the dropdown and activates the last option', () => {
@@ -104,7 +110,7 @@ describe('TickerCombobox', () => {
     pressKey('ArrowUp')
 
     expect(screen.getByRole('listbox')).toBeInTheDocument()
-    expect(activeOptions()).toEqual([screen.getByRole('option', { name: 'CSAN3' })])
+    expect(activeOption()).toBe(screen.getByRole('option', { name: 'CSAN3' }))
   })
 
   it('pressing ArrowUp moves the active option back, capped at the first one', () => {
@@ -118,7 +124,7 @@ describe('TickerCombobox', () => {
     fireEvent.keyDown(input, { key: 'ArrowUp' })
     fireEvent.keyDown(input, { key: 'ArrowUp' })
 
-    expect(screen.getByRole('option', { name: 'KLBN4' })).toHaveClass('ticker-combobox__option--active')
+    expect(activeOption()).toBe(screen.getByRole('option', { name: 'KLBN4' }))
   })
 
   it('pressing Enter on the active option calls onChange and closes the dropdown', () => {
@@ -147,8 +153,19 @@ describe('TickerCombobox', () => {
 
     expect(screen.getByRole('option', { name: 'TASA4' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('option', { name: 'KLBN4' })).toHaveAttribute('aria-selected', 'false')
-    expect(activeOptions()).toEqual([screen.getByRole('option', { name: 'KLBN4' })])
-    expect([...screen.getByRole('option', { name: 'TASA4' }).classList]).toEqual(['ticker-combobox__option'])
+    expect(activeOption()).toBe(screen.getByRole('option', { name: 'KLBN4' }))
+  })
+
+  it('opens an empty list with no active option and chooses nothing on Enter', () => {
+    const onChange = vi.fn()
+    render(<TickerCombobox groups={[]} value="" onChange={onChange} />)
+
+    pressKey('ArrowDown')
+    pressKey('Enter')
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(input()).not.toHaveAttribute('aria-activedescendant')
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('pressing Enter on the first option chooses it', () => {
@@ -230,7 +247,7 @@ describe('TickerCombobox', () => {
     openDropdown()
 
     expect(screen.getByRole('listbox')).toBeInTheDocument()
-    expect(activeOptions()).toEqual([])
+    expect(activeOption()).toBeNull()
   })
 
   it('offers the tickers and reports to the handler passed in after they change', () => {

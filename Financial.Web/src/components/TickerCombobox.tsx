@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import './TickerCombobox.css'
 
 export interface TickerGroup {
@@ -17,8 +17,11 @@ export default function TickerCombobox({ groups, value, onChange }: TickerCombob
   const [activeIndex, setActiveIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const listboxRef = useRef<HTMLUListElement>(null)
+  const listboxId = useId()
+  const optionId = (idx: number) => `${listboxId}-option-${idx}`
 
   const flatOptions = useMemo(() => groups.flatMap((g) => g.tickers), [groups])
+  const hasActiveOption = isOpen && activeIndex >= 0 && activeIndex < flatOptions.length
 
   const structuredGroups = useMemo(() => {
     let idx = 0
@@ -57,7 +60,7 @@ export default function TickerCombobox({ groups, value, onChange }: TickerCombob
         e.preventDefault()
         if (!isOpen) {
           setIsOpen(true)
-          setActiveIndex(0)
+          setActiveIndex(flatOptions.length > 0 ? 0 : -1)
         } else {
           setActiveIndex((prev) => Math.min(prev + 1, flatOptions.length - 1))
         }
@@ -73,12 +76,12 @@ export default function TickerCombobox({ groups, value, onChange }: TickerCombob
         }
         return
       }
-      if (e.key === 'Enter' && isOpen && activeIndex >= 0) {
+      if (e.key === 'Enter' && hasActiveOption) {
         e.preventDefault()
         select(flatOptions[activeIndex])
       }
     },
-    [isOpen, activeIndex, flatOptions, select],
+    [isOpen, activeIndex, hasActiveOption, flatOptions, select],
   )
 
   useEffect(() => {
@@ -103,23 +106,34 @@ export default function TickerCombobox({ groups, value, onChange }: TickerCombob
     <div ref={containerRef} className="ticker-combobox">
       <input
         type="text"
+        role="combobox"
         aria-label="Ticker"
         aria-haspopup="listbox"
+        aria-controls={listboxId}
         aria-expanded={isOpen}
+        aria-activedescendant={hasActiveOption ? optionId(activeIndex) : undefined}
         value={value}
         onChange={handleInputChange}
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
       />
       {isOpen && (
-        <ul ref={listboxRef} className="ticker-combobox__dropdown" role="listbox" aria-label="Ticker options">
-          {structuredGroups.map((group) => (
-            <li key={group.label} className="ticker-combobox__group">
-              <span className="ticker-combobox__group-label">{group.label}</span>
-              <ul>
+        <ul ref={listboxRef} id={listboxId} className="ticker-combobox__dropdown" role="listbox" aria-label="Ticker options">
+          {structuredGroups.map((group, groupIdx) => (
+            <li
+              key={group.label}
+              className="ticker-combobox__group"
+              role="group"
+              aria-labelledby={`${listboxId}-group-${groupIdx}`}
+            >
+              <span id={`${listboxId}-group-${groupIdx}`} className="ticker-combobox__group-label">
+                {group.label}
+              </span>
+              <ul role="none">
                 {group.options.map(({ ticker, idx }) => (
                   <li
                     key={ticker}
+                    id={optionId(idx)}
                     role="option"
                     aria-selected={ticker === value}
                     className={`ticker-combobox__option${idx === activeIndex ? ' ticker-combobox__option--active' : ''}`}
