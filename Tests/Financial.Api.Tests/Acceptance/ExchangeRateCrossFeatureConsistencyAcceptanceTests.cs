@@ -44,6 +44,7 @@ public class ExchangeRateCrossFeatureConsistencyAcceptanceTests : ApiEndpointTes
     }
 
     [Fact]
+    [Trait("AC", "P49-CF-cross-feature-01")]
     public async Task RateCapturedAtEntryByF02_MatchesTheRateF03UsesForTheSameDateOnDemand()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO

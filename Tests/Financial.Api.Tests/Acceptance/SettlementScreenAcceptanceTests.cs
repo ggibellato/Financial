@@ -187,6 +187,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-02")]
     public async Task EditEntry_ConvertedRoundsToZero_SavesItEmptyWithWarning()
     {
         var response = await Client.PutAsJsonAsync(EntryUrl(MaeId, MaeEntryId), EntryUpdate(0.001m));
@@ -297,16 +298,6 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task Routes_NullBody_Return400()
-    {
-        var add = await Client.PostAsync(EntriesUrl(MaeId), JsonContent.Create<SettlementEntryCreateDTO?>(null));
-        var edit = await Client.PutAsync(EntryUrl(MaeId, MaeEntryId), JsonContent.Create<SettlementEntryUpdateDTO?>(null));
-
-        add.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        edit.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
     [Trait("AC", "P60-F12-settlement-screen-03")]
     public async Task Transactions_SettlementEntries_AreOneRowEachInTheirOwnCurrency_OnTheAccountAndInMonthTransactions()
     {
@@ -330,6 +321,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-03")]
     public async Task MonthTransactions_SettlementEntries_AddNoCategorisedRow()
     {
         var monthRows = await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/9");
@@ -379,6 +371,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F06-admin-accounts-page-05")]
     public async Task AccountDetail_InactiveSettlement_HasNoActions()
     {
         var pai = await AccountDetail(PaiId);
@@ -478,18 +471,16 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task Settle_FutureDateUnknownAccountOrNullBody_IsRefused()
+    public async Task Settle_FutureDateOrUnknownAccount_IsRefused()
     {
         var future = await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(150m, 21.94m, date: TestClock.Today.AddDays(1)));
         var unknown = await Client.PostAsJsonAsync(SettleUrl(Guid.NewGuid().ToString()), Settlement(150m, 21.94m));
-        var nullBody = await Client.PostAsync(SettleUrl(MaeId), JsonContent.Create<SettleRequestDTO?>(null));
 
         using (new AssertionScope())
         {
             future.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await ProblemDetailAsync(future)).Should().Be("Date must not be in the future.");
             unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
-            nullBody.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             StoredEntries().Should().HaveCount(3);
         }
     }

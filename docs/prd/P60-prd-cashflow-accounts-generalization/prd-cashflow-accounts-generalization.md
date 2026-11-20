@@ -1037,19 +1037,19 @@ graph TD
 - [x] **P60-F16-month-transactions-view-05** Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed (test: `Parity.test.ps1` monthTransactions cases; parity run 0 differences in 14,452 figures across 122 months)
 
 ### Cross-Feature Integration
-- [x] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map (test: every feature's Definition-of-Done run of `Invoke-Parity.ps1 -Step All -LiveCopy …` with the same command line; figures added only through `Parity.psm1` and `figure-map.json`, pinned by `Parity.test.ps1`)
-- [x] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
-- [x] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
-- [x] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
-- [x] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
-- [x] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
-- [x] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
-- [x] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
-- [x] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog (test: `AccountHeader.test.tsx` "lists an active Settlement account under Settlement in the picker", F11's Admin tests)
-- [x] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header, with the shell's allowed-actions rendering extended only to show an action the API returns as disabled, with the API's reason (F12's Settle: "Nothing to settle.") (test: `AccountScreenPage.test.tsx`, `AccountActionBar.test.tsx` "[AC P60-F12-settlement-screen-07] keeps a disabled action focusable, does not run it, and describes it with its visible reason")
-- [x] F07's card accounts and charge filter give the statement totals F08 pays
-- [x] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
-- [x] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
-- [x] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
-- [x] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill (test: `SettlementEntryForm.test.tsx`, `useSettlementEntryForm.test.ts`)
-- [x] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it (test: `routes.test.ts`, `RetiredRoutesAcceptanceTests`, the E2E journeys `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts`, checklist row N4)
+- [x] **P60-CF-cross-feature-01** The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map (test: every feature's Definition-of-Done run of `Invoke-Parity.ps1 -Step All -LiveCopy …` with the same command line; figures added only through `Parity.psm1` and `figure-map.json`, pinned by `Parity.test.ps1`)
+- [x] **P60-CF-cross-feature-02** Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
+- [x] **P60-CF-cross-feature-03** The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
+- [x] **P60-CF-cross-feature-04** Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
+- [x] **P60-CF-cross-feature-05** The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
+- [x] **P60-CF-cross-feature-06** Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
+- [x] **P60-CF-cross-feature-07** The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
+- [x] **P60-CF-cross-feature-08** The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
+- [x] **P60-CF-cross-feature-09** An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog (test: `AccountHeader.test.tsx` "lists an active Settlement account under Settlement in the picker", F11's Admin tests)
+- [x] **P60-CF-cross-feature-10** F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header, with the shell's allowed-actions rendering extended only to show an action the API returns as disabled, with the API's reason (F12's Settle: "Nothing to settle.") (test: `AccountScreenPage.test.tsx`, `AccountActionBar.test.tsx` "[AC P60-F12-settlement-screen-07] keeps a disabled action focusable, does not run it, and describes it with its visible reason")
+- [x] **P60-CF-cross-feature-11** F07's card accounts and charge filter give the statement totals F08 pays
+- [x] **P60-CF-cross-feature-12** F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
+- [x] **P60-CF-cross-feature-13** F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
+- [x] **P60-CF-cross-feature-14** The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
+- [x] **P60-CF-cross-feature-15** F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill (test: `SettlementEntryForm.test.tsx`, `useSettlementEntryForm.test.ts`)
+- [x] **P60-CF-cross-feature-16** After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it (test: `routes.test.ts`, `RetiredRoutesAcceptanceTests`, the E2E journeys `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts`, checklist row N4)

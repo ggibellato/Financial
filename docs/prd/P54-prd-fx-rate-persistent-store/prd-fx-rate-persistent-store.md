@@ -259,6 +259,6 @@ graph TD
 - [x] `FrankfurterIsolationRuleTests` continues to pass, confirming no bounded context calls Frankfurter directly.
 
 ### Cross-Feature Integration
-- [x] A rate persisted by F01 for a historical date is correctly read back and used by F02's resolution logic to compute a requested currency pair, with no redundant Frankfurter call.
-- [x] Rates fetched by F03 for a historical date are correctly handed to F02, which persists them to F01 only when both BRL and GBP are present.
-- [x] A rate resolved by F02 — whether served from F01 or freshly fetched via F03 — is correctly returned through F04's provider chain to an existing caller (e.g., `ControleMaeService.CreateEntryAsync`) with no change to that caller's code.
+- [x] **P54-CF-cross-feature-01** A rate persisted by F01 for a historical date is correctly read back and used by F02's resolution logic to compute a requested currency pair, with no redundant Frankfurter call.
+- [x] **P54-CF-cross-feature-02** Rates fetched by F03 for a historical date are correctly handed to F02, which persists them to F01 only when both BRL and GBP are present.
+- [x] **P54-CF-cross-feature-03** A rate resolved by F02 — whether served from F01 or freshly fetched via F03 — is correctly returned through F04's provider chain to an existing caller (e.g., `ControleMaeService.CreateEntryAsync`) with no change to that caller's code.

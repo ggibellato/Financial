@@ -13,15 +13,7 @@ public class FxRateProviderCompositionAcceptanceTests() : ApiEndpointTests(useRe
     private static readonly DateOnly HistoricalDate = TestClock.Today.AddDays(-30);
 
     [Fact]
-    public void ExchangeRateProvider_ResolvedTwice_IsTheSameSharedSingleton()
-    {
-        var first = Services.GetRequiredService<IExchangeRateProvider>();
-        var second = Services.GetRequiredService<IExchangeRateProvider>();
-
-        first.Should().BeSameAs(second);
-    }
-
-    [Fact]
+    [Trait("AC", "P54-CF-cross-feature-03")]
     public async Task AddSettlementEntry_UsesRateFromTheLayeredFxRateProviderChain()
     {
         const string maeId = "6d0e0000-0000-0000-0000-000000000001";

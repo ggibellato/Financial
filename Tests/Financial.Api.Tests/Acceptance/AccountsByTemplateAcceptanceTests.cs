@@ -124,6 +124,7 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-07")]
     public async Task AccountDetail_Bank_HasNoTotalOwed()
     {
         (await AccountAsync(BarclaysId, 10)).TotalOwed.Should().BeNull();

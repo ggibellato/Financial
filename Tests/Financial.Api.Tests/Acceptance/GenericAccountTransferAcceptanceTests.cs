@@ -100,6 +100,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F03-generic-account-to-account-transfer-07")]
     public async Task PostAccountTransfer_SameCurrencyWithDestinationAmount_Returns400()
     {
         var response = await PostAccountTransferAsync(BarclaysId, ChaseId, destinationAmount: 100m);

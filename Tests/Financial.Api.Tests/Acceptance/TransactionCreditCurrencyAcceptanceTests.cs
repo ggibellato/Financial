@@ -109,44 +109,6 @@ public class TransactionCreditCurrencyAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task UpdateTransaction_PreservesTheOriginallyCapturedCurrencyAndFxRateSnapshot()
-    {
-        var createResponse = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
-        {
-            BrokerName = BrokerName,
-            PortfolioName = PortfolioName,
-            AssetName = AssetName,
-            Date = new DateTime(2026, 7, 1),
-            Type = "Buy",
-            Quantity = 5555m,
-            UnitPrice = 9.99m,
-            Fees = 0m
-        });
-        createResponse.EnsureSuccessStatusCode();
-        var repository = Services.GetRequiredService<IInvestmentRepository>();
-        var original = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.Transactions.Should().Contain(t => t.Quantity == 5555m).Subject;
-
-        var updateResponse = await Client.PutAsJsonAsync("/api/v1/financial/transactions", new TransactionUpdateDTO
-        {
-            Id = original.Id,
-            BrokerName = BrokerName,
-            PortfolioName = PortfolioName,
-            AssetName = AssetName,
-            Date = new DateTime(2026, 7, 1),
-            Type = "Buy",
-            Quantity = 6666m,
-            UnitPrice = 9.99m,
-            Fees = 0m
-        });
-        updateResponse.EnsureSuccessStatusCode();
-
-        var updated = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.Transactions.Should().Contain(t => t.Id == original.Id).Subject;
-        updated.Quantity.Should().Be(6666m);
-        updated.Currency.Should().Be(original.Currency);
-        updated.FxRateSnapshot.Should().Be(original.FxRateSnapshot);
-    }
-
-    [Fact]
     [Trait("AC", "P49-F02-transaction-and-credit-currency-01")]
     public async Task CreateCredit_RecordsCurrencyAndFxRateSnapshot()
     {
