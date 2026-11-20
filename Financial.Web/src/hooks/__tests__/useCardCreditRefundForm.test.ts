@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransferDto, CardCreditDto } from '../../api/types'
@@ -75,10 +75,6 @@ describe('useCardCreditRefundForm', () => {
     pinDate('2026-11-05T12:00:00Z')
     getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     createCardCreditRefundMock.mockReset().mockResolvedValue(SAVED)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('loads nothing until opened', () => {
@@ -313,10 +309,6 @@ describe('useCardCreditRefundForm in bank mode', () => {
     getAccountsMock.mockReset()
     getCardsInCreditMock.mockReset().mockResolvedValue(CARDS_IN_CREDIT)
     createCardCreditRefundMock.mockReset().mockResolvedValue(SAVED)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('[AC P60-F15-card-refunds-and-credit-05] lists the cards in credit in the bank currency, inactive ones marked, with no amount until a card is chosen', async () => {

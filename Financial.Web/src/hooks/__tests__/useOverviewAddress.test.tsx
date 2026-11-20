@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { pinDate } from '../../test-utils/pinDate'
 import { useOverviewAddress } from '../useOverviewAddress'
 
@@ -16,10 +16,6 @@ function renderAt(entry: string) {
 describe('useOverviewAddress', () => {
   beforeEach(() => {
     pinDate('2026-10-15T12:00:00+01:00')
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it(`${AC_01} uses the current month when the address has none`, () => {

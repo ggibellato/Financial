@@ -1,7 +1,7 @@
 import { act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { Toaster } from '@fluentui/react-components'
@@ -392,10 +392,6 @@ beforeEach(() => {
   deletePotOperationMock.mockReset()
   getIncomesByMonthMock.mockReset()
   sessionStorage.clear()
-})
-
-afterEach(() => {
-  vi.useRealTimers()
 })
 
 const operationForm = (name: string) => screen.findByRole('form', { name })
@@ -1488,7 +1484,6 @@ describe('AccountScreenPage on a Settlement account', () => {
 })
 
 describe('AccountScreenPage', () => {
-
   it('[AC P60-F05-bank-account-screen-02] switching account in the picker keeps the selected month', async () => {
     const user = userEvent.setup()
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)

@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryAnnualAverageDto, CategoryTotalsAnnualDto, InvestmentAnnualResultDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
@@ -78,10 +78,6 @@ const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
 ]
 
 describe('useAnnualSummary', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   beforeEach(() => {
     pinDate('2026-12-15T12:00:00Z')
     getCategoryTotalsAnnualForYearMock.mockReset()

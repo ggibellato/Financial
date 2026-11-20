@@ -1,5 +1,5 @@
 import { type InitialEntry, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountGroupMemberDto, AccountGroupSummaryDto, AccountTemplateGroupDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
@@ -199,10 +199,6 @@ describe('AccountsPage', () => {
     getIncomesByMonthMock.mockReset().mockResolvedValue([])
     getIncomeSourcesMock.mockReset().mockResolvedValue([])
     getAccountsMock.mockReset().mockResolvedValue([])
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-04] shows the moved notice above the grids when a redirect found no account', async () => {

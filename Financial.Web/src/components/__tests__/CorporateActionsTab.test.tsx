@@ -431,10 +431,6 @@ describe('CorporateActionsTab', () => {
       setMock({ corporateActions: [split({ id: 'ca1' }), split({ id: 'ca2' })] })
     })
 
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
     const highlighted = (id: string) => document.querySelector(`[data-corporate-action-id="${id}"]`)
 
     it('clears the highlight after two seconds', () => {

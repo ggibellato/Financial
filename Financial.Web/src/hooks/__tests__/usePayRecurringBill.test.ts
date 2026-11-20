@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { recurringBill } from '../../test/recurringBill'
@@ -61,10 +61,6 @@ describe('usePayRecurringBill', () => {
     getMensaisBillsMock.mockReset().mockResolvedValue(BILLS)
     markMensaisBillPaidMock.mockReset()
     sessionStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('loads the bills only once opened', async () => {

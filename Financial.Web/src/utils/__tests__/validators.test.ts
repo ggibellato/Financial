@@ -1,12 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { pinDate } from '../../test-utils/pinDate'
 import { futureDateError, paymentDateError } from '../validators'
 
 describe('futureDateError', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('flags only a date after today', () => {
     pinDate('2026-09-17T12:00:00+01:00')
 
@@ -16,10 +12,6 @@ describe('futureDateError', () => {
 })
 
 describe('paymentDateError', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('asks for a date when there is none', () => {
     expect(paymentDateError('')).toBe('Enter a date.')
   })

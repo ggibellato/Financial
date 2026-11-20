@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
 import { account, potsAccount } from '../../test/account'
@@ -88,10 +88,6 @@ describe('usePotWithdrawalForm', () => {
     getPotsMock.mockReset()
     getPotsMock.mockResolvedValue(POTS)
     sessionStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('clears the chosen pot when the pots account changes', async () => {

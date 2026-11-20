@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode, TransactionDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
@@ -20,7 +20,6 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteAssetPrice: deleteAssetPriceMock,
   } as Partial<FinancialApiClient>,
 }))
-
 
 const ASSET_NODE: SelectedNode = {
   nodeType: 'Asset',
@@ -104,10 +103,6 @@ const ASSET_DETAILS: AssetDetailsDto = {
 }
 
 describe('usePriceHistory', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
     setAssetPriceMock.mockReset()

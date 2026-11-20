@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SettlementEntryDto } from '../../api/types'
@@ -90,8 +90,6 @@ describe('useSettlementEntryForm in Settle mode', () => {
     sessionStorage.clear()
     settleAccountMock.mockReset().mockResolvedValue({ ...ENTRY, description: 'Settlement' })
   })
-
-  afterEach(() => vi.useRealTimers())
 
   it('[AC P60-F12-settlement-screen-05] pre-fills who pays, the amount and a same-direction converted value at 2 decimals', () => {
     const { result } = openSettle(maeWith(167.8768, 7.94214099))
@@ -306,10 +304,6 @@ describe('useSettlementEntryForm', () => {
     sessionStorage.clear()
     createSettlementEntryMock.mockReset().mockResolvedValue(ENTRY)
     updateSettlementEntryMock.mockReset().mockResolvedValue(ENTRY)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   describe('opening Add', () => {

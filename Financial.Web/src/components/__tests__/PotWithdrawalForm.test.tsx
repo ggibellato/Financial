@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, overdraftBalance } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountDto, BankOption, CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
@@ -160,10 +160,6 @@ beforeEach(() => {
   updatePotWithdrawalMock.mockReset().mockResolvedValue(OPERATION)
   getPotsMock.mockReset().mockImplementation((id) => Promise.resolve(id === 'holidays' ? HOLIDAY_POTS : POTS))
   sessionStorage.clear()
-})
-
-afterEach(() => {
-  vi.useRealTimers()
 })
 
 describe('overdraftMessage', () => {

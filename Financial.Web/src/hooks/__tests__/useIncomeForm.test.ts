@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BankOption, IncomeDto, IncomeSourceDto } from '../../api/types'
@@ -7,6 +7,7 @@ import { setStoredDefault } from '../../utils/createFormDefaults'
 import { comparableLines } from '../../utils/fundingLines'
 import { potsAccount } from '../../test/account'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { createIncomeMock, updateIncomeMock, getAccountsMock } = vi.hoisted(() => ({
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
@@ -59,10 +60,6 @@ describe('useIncomeForm', () => {
     // shouldAdvanceTime keeps real timers ticking so RTL's waitFor polling still resolves
     // while the split-confirmation dismiss timeout is driven by fake time.
     vi.useFakeTimers({ shouldAdvanceTime: true })
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('selectActiveIncomeSources filters out inactive sources and orders the rest', () => {
@@ -1253,7 +1250,7 @@ describe('useIncomeForm account settings', () => {
   })
 
   it('opens on today when viewing the current month and the last-used date is in another month', () => {
-    vi.setSystemTime(new Date('2026-10-15T12:00:00+01:00'))
+    pinDate('2026-10-15T12:00:00+01:00')
     setStoredDefault('income.date', '2026-08-30')
     const { result } = renderHook(() =>
       useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 10 } }),

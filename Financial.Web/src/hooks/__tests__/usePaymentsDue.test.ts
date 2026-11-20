@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { act, StrictMode } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PaymentDueDto } from '../../api/types'
 import { PAYMENT_DUE_BANNER_DISMISS_MS, usePaymentsDue } from '../usePaymentsDue'
@@ -25,10 +25,6 @@ describe('usePaymentsDue', () => {
     // shouldAdvanceTime keeps real timers ticking so RTL's waitFor polling still resolves
     // while the auto-dismiss timeout is driven by fake time.
     vi.useFakeTimers({ shouldAdvanceTime: true })
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('calls_getPaymentsDue_on_mount', async () => {

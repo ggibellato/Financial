@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PotOperationDto, PotsSummaryDto, TransferAccountOptionDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
@@ -65,10 +65,6 @@ describe('usePotDepositForm', () => {
     getPotsMock.mockReset()
     getPotsMock.mockResolvedValue(POTS)
     sessionStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('keeps a single funding line in step with the amount until it is edited', () => {

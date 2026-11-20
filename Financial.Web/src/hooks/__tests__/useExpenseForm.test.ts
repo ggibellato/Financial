@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { findInAncestors } from '../../test-utils/findInAncestors'
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankOption, CategoryDto, ExpenseDto } from '../../api/types'
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
@@ -64,10 +64,6 @@ const CARD_CHARGE: ExpenseDto = {
 
 describe('useExpenseForm', () => {
   let onSaved: () => void
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
 
   beforeEach(() => {
     createExpenseMock.mockReset()
@@ -999,10 +995,6 @@ describe('useExpenseForm with a locked card', () => {
 
     beforeEach(() => {
       pinDate('2026-10-15T12:00:00+01:00')
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
     })
 
     it('[AC P60-F15-card-refunds-and-credit-01] saves the positive amount as a negative charge on the statement of its date', async () => {

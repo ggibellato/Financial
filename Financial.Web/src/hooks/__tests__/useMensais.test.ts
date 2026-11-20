@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
@@ -80,10 +80,6 @@ const CATEGORIES: CategoryDto[] = [
 ]
 
 describe('useMensais', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   beforeEach(() => {
     pinDate('2026-12-15T12:00:00Z')
     getMensaisBillsMock.mockReset()
