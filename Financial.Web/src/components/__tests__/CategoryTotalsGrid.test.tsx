@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { afterEach, describe, expect, it } from 'vitest'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
 import CategoryTotalsGrid from '../CategoryTotalsGrid'

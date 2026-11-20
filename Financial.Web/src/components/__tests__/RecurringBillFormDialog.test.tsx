@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
 

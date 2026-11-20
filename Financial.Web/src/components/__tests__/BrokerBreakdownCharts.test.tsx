@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BrokerBreakdownData } from '../../hooks/useBrokerBreakdown'
 import type { PortfolioBreakdownItemDto } from '../../api/types'
@@ -142,6 +143,6 @@ describe('BrokerBreakdownCharts', () => {
   it('renders_nothing_extra_when_breakdown_is_null', () => {
     setMock({ breakdown: null })
     const { container } = render(<BrokerBreakdownCharts />)
-    expect(container).toBeEmptyDOMElement()
+    expect(container.firstElementChild).toBeEmptyDOMElement()
   })
 })

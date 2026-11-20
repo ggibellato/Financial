@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
+import { render } from '../../../test/renderWithFluent'
 import { Table, TableBody, TableRow } from '@fluentui/react-components'
 import { describe, expect, it, vi } from 'vitest'
 import RowActionsCell from '../RowActionsCell'

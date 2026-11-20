@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
+import { render } from '../../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import AllocationPieChart, { type AllocationChartEntry } from '../AllocationPieChart'
 

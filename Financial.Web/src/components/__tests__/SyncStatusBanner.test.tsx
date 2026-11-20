@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SyncStatusData } from '../../hooks/useSyncStatus'
 import type { SyncStatusResponseDto } from '../../api/types'
