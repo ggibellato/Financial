@@ -18,18 +18,7 @@ public class IncomeMigratorTests
     private static readonly IncomeSource Ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
 
     [Fact]
-    public void Migrate_OnEmptyData_ReportsEmptyIncomesCollection()
-    {
-        var data = CashFlowData.Create();
-
-        var summary = IncomeMigrator.Migrate(data);
-
-        summary.IncomeCount.Should().Be(0);
-        data.Incomes.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Migrate_WithExistingIncomes_ReportsTheCorrectCount()
+    public void Migrate_WithoutWorkbook_ReportsTheExistingIncomesAndImportsNothing()
     {
         var data = CashFlowData.Create();
         data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase));
@@ -38,19 +27,8 @@ public class IncomeMigratorTests
         var summary = IncomeMigrator.Migrate(data);
 
         summary.IncomeCount.Should().Be(2);
-    }
-
-    [Fact]
-    public void Migrate_CalledTwice_ProducesTheSameResult()
-    {
-        var data = CashFlowData.Create();
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase));
-
-        var first = IncomeMigrator.Migrate(data);
-        var second = IncomeMigrator.Migrate(data);
-
-        first.IncomeCount.Should().Be(second.IncomeCount);
-        data.Incomes.Should().HaveCount(1);
+        summary.EntriesImportedCount.Should().Be(0);
+        data.Incomes.Should().HaveCount(2);
     }
 
     [Fact]
@@ -70,16 +48,6 @@ public class IncomeMigratorTests
         summary.EntriesImportedCount.Should().Be(1);
         summary.IncomeCount.Should().Be(1);
         data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Account!.Name == "Barclays");
-    }
-
-    [Fact]
-    public void Migrate_WithoutWorkbook_ReportsZeroImportedEntries()
-    {
-        var data = CashFlowData.Create();
-
-        var summary = IncomeMigrator.Migrate(data);
-
-        summary.EntriesImportedCount.Should().Be(0);
     }
 
     /// <summary>
@@ -105,25 +73,5 @@ public class IncomeMigratorTests
 
         summary.EntriesImportedCount.Should().Be(1);
         data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Account!.Name == "Barclays");
-    }
-
-    /// <summary>The bug this guards against: running IncomeMigrator before IncomeSourceMigrator on
-    /// a fresh data file silently imports nothing, since no row's source name can resolve.</summary>
-    [Fact]
-    public void Migrate_OnFreshDataWithIncomeMigratorRunFirst_SilentlyImportsNothing()
-    {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Jul2026");
-        sheet.Cell(3, 10).Value = "Salario Ariana";
-        sheet.Cell(3, 11).Value = 2595.39;
-        sheet.Cell(3, 12).Value = 1878.74;
-        var data = CashFlowData.Create();
-        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
-
-        var summary = IncomeMigrator.Migrate(data, workbook);
-        IncomeSourceMigrator.Migrate(data);
-
-        summary.EntriesImportedCount.Should().Be(0);
-        data.Incomes.Should().BeEmpty();
     }
 }

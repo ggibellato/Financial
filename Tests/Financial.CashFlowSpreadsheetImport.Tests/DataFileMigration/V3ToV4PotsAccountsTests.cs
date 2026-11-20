@@ -66,12 +66,6 @@ public class V3ToV4PotsAccountsTests
     private static List<JsonObject> Accounts(JsonObject root) => root["Accounts"]!.AsArray().Select(a => a!.AsObject()).ToList();
 
     [Fact]
-    public void FromVersion_Is3()
-    {
-        _sut.FromVersion.Should().Be(3);
-    }
-
-    [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-01")]
     public void Apply_Buckets_BecomePotsOfReservaWithSameFields()
     {

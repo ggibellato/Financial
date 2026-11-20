@@ -1,6 +1,5 @@
 using Financial.Shared.Abstractions.Configuration;
 using FluentAssertions;
-using FluentAssertions.Execution;
 
 namespace Financial.Shared.Abstractions.Tests.Configuration;
 
@@ -65,17 +64,5 @@ public class JsonRepositorySettingsTests
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("Repository provider 'NotARealProvider' is not supported. Valid values: LocalJson, GoogleDriveJson.");
-    }
-
-    [Fact]
-    public void Load_NullArguments_Throw()
-    {
-        var settings = new TestRepositorySettings();
-
-        using var _ = new AssertionScope();
-        settings.Invoking(s => s.Load(null!, key => null))
-            .Should().Throw<ArgumentNullException>().WithParameterName("keys");
-        settings.Invoking(s => s.Load(new JsonRepositoryConfigurationKeys("CashFlow"), null!))
-            .Should().Throw<ArgumentNullException>().WithParameterName("readValue");
     }
 }

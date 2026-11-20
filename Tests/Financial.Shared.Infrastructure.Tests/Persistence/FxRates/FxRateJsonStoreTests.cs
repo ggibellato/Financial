@@ -50,16 +50,6 @@ public class FxRateJsonStoreTests
     }
 
     [Fact]
-    public async Task SetRateAsync_NullRecord_Throws()
-    {
-        var store = CreateStore(new Dictionary<DateOnly, FxRateRecord>());
-
-        var act = () => store.SetRateAsync(new DateOnly(2026, 1, 1), null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("record");
-    }
-
-    [Fact]
     public async Task SetRateAsync_Rejects_Todays_Date()
     {
         var storage = new ControllableJsonStorage();

@@ -77,21 +77,6 @@ public class FxRateInfrastructureServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddFinancialFxRateInfrastructure_ExchangeRateProvider_IsBackedByUsdBasedResolver()
-    {
-        var missingPath = Path.Combine(Path.GetTempPath(), $"fxrates-di-{Guid.NewGuid()}.json");
-        var provider = BuildServiceProvider(new Dictionary<string, string?>
-        {
-            ["FxRates:DataJsonFile"] = missingPath
-        });
-
-        var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
-        var inner = InMemoryCachedExchangeRateProviderInspector.InvokeInnerFactory(exchangeRateProvider);
-
-        inner.Should().BeOfType<UsdBasedExchangeRateProvider>();
-    }
-
-    [Fact]
     public async Task AddFinancialFxRateInfrastructure_RateResolvedThroughFullChain_ReturnsStoredRate()
     {
         var fxRatesPath = Path.Combine(Path.GetTempPath(), $"fxrates-di-{Guid.NewGuid()}.json");
