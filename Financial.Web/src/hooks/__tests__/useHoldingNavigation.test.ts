@@ -1,88 +1,82 @@
-import { renderHook } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import { EMPTY_TREE, treeWithAsset } from '../../test/navigationTree'
 import { useHoldingNavigation } from '../useHoldingNavigation'
 
-const { navigateMock, resolveHoldingLocationMock } = vi.hoisted(() => ({
-  navigateMock: vi.fn(),
-  resolveHoldingLocationMock: vi.fn(),
+const { getNavigationTreeMock } = vi.hoisted(() => ({
+  getNavigationTreeMock: vi.fn<FinancialApiClient['getNavigationTree']>(),
 }))
 
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => navigateMock,
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: {
+    getNavigationTree: getNavigationTreeMock,
+  } as Partial<FinancialApiClient>,
 }))
 
-vi.mock('../../utils/holdingNavigation', () => ({
-  resolveHoldingLocation: resolveHoldingLocationMock,
-}))
+function renderNavigation() {
+  return renderHook(() => ({ navigation: useHoldingNavigation(), location: useLocation() }), { wrapper: MemoryRouter })
+}
 
 describe('useHoldingNavigation', () => {
   beforeEach(() => {
-    navigateMock.mockReset()
-    resolveHoldingLocationMock.mockReset()
+    getNavigationTreeMock.mockReset()
   })
 
   it('navigates_to_the_resolved_route_carrying_the_pending_selection', async () => {
-    resolveHoldingLocationMock.mockResolvedValue({ scope: 'active', route: '/investments/active-investments' })
+    getNavigationTreeMock.mockResolvedValue(treeWithAsset('Trading212', 'ISA', 'VUSA'))
+    const { result } = renderNavigation()
 
-    const { result } = renderHook(() => useHoldingNavigation())
-    const navigated = await result.current.navigateToHolding('Trading212', 'ISA', 'VUSA')
+    let navigated = false
+    await act(async () => {
+      navigated = await result.current.navigation.navigateToHolding('Trading212', 'ISA', 'VUSA')
+    })
 
     expect(navigated).toBe(true)
-    expect(resolveHoldingLocationMock).toHaveBeenCalledWith('Trading212', 'ISA', 'VUSA')
-    expect(navigateMock).toHaveBeenCalledWith('/investments/active-investments', {
-      state: { pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' } },
+    expect(result.current.location.pathname).toBe('/investments/active-investments')
+    expect(result.current.location.state).toStrictEqual({
+      pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' },
     })
   })
 
-  it('includes_pendingCorporateActionId_in_router_state_when_provided', async () => {
-    resolveHoldingLocationMock.mockResolvedValue({ scope: 'active', route: '/investments/active-investments' })
+  it('carries_the_corporate_action_id_in_the_router_state_when_given', async () => {
+    getNavigationTreeMock.mockResolvedValue(treeWithAsset('Trading212', 'ISA', 'VUSA'))
+    const { result } = renderNavigation()
 
-    const { result } = renderHook(() => useHoldingNavigation())
-    await result.current.navigateToHolding('Trading212', 'ISA', 'VUSA', 'ca-123')
-
-    expect(navigateMock).toHaveBeenCalledWith('/investments/active-investments', {
-      state: {
-        pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' },
-        pendingCorporateActionId: 'ca-123',
-      },
+    await act(async () => {
+      await result.current.navigation.navigateToHolding('Trading212', 'ISA', 'VUSA', 'ca-123')
     })
-  })
 
-  it('omits_pendingCorporateActionId_entirely_when_not_provided', async () => {
-    resolveHoldingLocationMock.mockResolvedValue({ scope: 'active', route: '/investments/active-investments' })
-
-    const { result } = renderHook(() => useHoldingNavigation())
-    await result.current.navigateToHolding('Trading212', 'ISA', 'VUSA')
-
-    const stateArg = navigateMock.mock.calls[0][1].state
-    expect('pendingCorporateActionId' in stateArg).toBe(false)
-  })
-
-  it('navigates_to_the_historic_route_when_that_is_what_resolved', async () => {
-    resolveHoldingLocationMock.mockResolvedValue({ scope: 'historic', route: '/investments/historic-investments' })
-
-    const { result } = renderHook(() => useHoldingNavigation())
-    await result.current.navigateToHolding('XPI', 'Acoes', 'KLBN4')
-
-    expect(navigateMock).toHaveBeenCalledWith('/investments/historic-investments', expect.anything())
+    expect(result.current.location.state).toStrictEqual({
+      pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' },
+      pendingCorporateActionId: 'ca-123',
+    })
   })
 
   it('reports_failure_without_navigating_when_the_holding_cannot_be_resolved', async () => {
-    resolveHoldingLocationMock.mockResolvedValue(null)
+    getNavigationTreeMock.mockResolvedValue(EMPTY_TREE)
+    const { result } = renderNavigation()
 
-    const { result } = renderHook(() => useHoldingNavigation())
-    const navigated = await result.current.navigateToHolding('XPI', 'Acoes', 'KLBN4')
+    let navigated = true
+    await act(async () => {
+      navigated = await result.current.navigation.navigateToHolding('XPI', 'Acoes', 'KLBN4')
+    })
 
     expect(navigated).toBe(false)
-    expect(navigateMock).not.toHaveBeenCalled()
+    expect(result.current.location.pathname).toBe('/')
   })
 
   it('reports_failure_instead_of_throwing_when_the_tree_lookup_fails', async () => {
-    resolveHoldingLocationMock.mockRejectedValue(new Error('Service unavailable'))
+    getNavigationTreeMock.mockRejectedValue(new Error('Service unavailable'))
+    const { result } = renderNavigation()
 
-    const { result } = renderHook(() => useHoldingNavigation())
+    let navigated = true
+    await act(async () => {
+      navigated = await result.current.navigation.navigateToHolding('XPI', 'Acoes', 'KLBN4')
+    })
 
-    await expect(result.current.navigateToHolding('XPI', 'Acoes', 'KLBN4')).resolves.toBe(false)
-    expect(navigateMock).not.toHaveBeenCalled()
+    expect(navigated).toBe(false)
+    expect(result.current.location.pathname).toBe('/')
   })
 })

@@ -1,22 +1,41 @@
-import { fireEvent, render, screen } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { TaxWorkbookData } from '../../hooks/useTaxWorkbook'
-import type { TaxWorkbookDto } from '../../api/types'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { TaxWorkbookDto, TaxWorkbookOptionDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
 import TaxPage from '../TaxPage'
 
-const mockSelectJurisdiction = vi.fn()
-const mockSelectTaxYear = vi.fn()
-const mockRetryOptions = vi.fn()
-const mockRetryWorkbook = vi.fn()
-const mockExportCsv = vi.fn()
+const { getTaxWorkbookOptionsMock, getTaxWorkbookMock, downloadCsvMock } = vi.hoisted(() => ({
+  getTaxWorkbookOptionsMock: vi.fn<FinancialApiClient['getTaxWorkbookOptions']>(),
+  getTaxWorkbookMock: vi.fn<FinancialApiClient['getTaxWorkbook']>(),
+  downloadCsvMock: vi.fn(),
+}))
+
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: {
+    getTaxWorkbookOptions: getTaxWorkbookOptionsMock,
+    getTaxWorkbook: getTaxWorkbookMock,
+  } as Partial<FinancialApiClient>,
+}))
+
+vi.mock('../../utils/taxWorkbookCsv', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/taxWorkbookCsv')>()),
+  downloadCsv: downloadCsvMock,
+}))
+
+const OPTIONS: TaxWorkbookOptionDto[] = [
+  { jurisdiction: 'BR', taxYear: '2025' },
+  { jurisdiction: 'BR', taxYear: '2026' },
+  { jurisdiction: 'UK', taxYear: '2025/26' },
+]
 
 const WORKBOOK: TaxWorkbookDto = {
   jurisdiction: 'BR',
-  taxYear: '2026',
+  taxYear: '2025',
   entries: [
     {
       id: 'e1',
-      date: '2026-06-01',
+      date: '2025-06-01',
       eventCategory: 'Dividend',
       proceeds: null,
       costBasis: null,
@@ -30,7 +49,7 @@ const WORKBOOK: TaxWorkbookDto = {
     },
     {
       id: 'e2',
-      date: '2026-07-01',
+      date: '2025-07-01',
       eventCategory: 'CapitalGain',
       proceeds: 500,
       costBasis: 400,
@@ -44,7 +63,7 @@ const WORKBOOK: TaxWorkbookDto = {
     },
     {
       id: 'e3',
-      date: '2026-08-01',
+      date: '2025-08-01',
       eventCategory: 'Interest',
       proceeds: null,
       costBasis: null,
@@ -71,140 +90,103 @@ const WORKBOOK: TaxWorkbookDto = {
   calculationStatus: 'RequiresReview',
 }
 
-const mockHookValue: TaxWorkbookData = {
-  options: [
-    { jurisdiction: 'BR', taxYear: '2026' },
-    { jurisdiction: 'UK', taxYear: '2025/26' },
-  ],
-  isLoadingOptions: false,
-  optionsError: null,
-  retryOptions: mockRetryOptions,
-  jurisdictions: ['BR', 'UK'],
-  taxYearsForJurisdiction: ['2026'],
-  jurisdiction: 'BR',
-  taxYear: '2026',
-  selectJurisdiction: mockSelectJurisdiction,
-  selectTaxYear: mockSelectTaxYear,
-  workbook: WORKBOOK,
-  isLoadingWorkbook: false,
-  workbookError: null,
-  retryWorkbook: mockRetryWorkbook,
-  canExportCsv: true,
-  exportCsv: mockExportCsv,
-}
+const EMPTY_WORKBOOK: TaxWorkbookDto = { ...WORKBOOK, entries: [], categoryTotals: [] }
 
-vi.mock('../../hooks/useTaxWorkbook', () => ({
-  useTaxWorkbook: () => mockHookValue,
-}))
-
-function setMock(overrides: Partial<TaxWorkbookData>) {
-  Object.assign(mockHookValue, overrides)
+async function renderLoaded() {
+  render(<TaxPage />)
+  await screen.findByText('ev-1')
 }
 
 describe('TaxPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    setMock({
-      options: [
-        { jurisdiction: 'BR', taxYear: '2026' },
-        { jurisdiction: 'UK', taxYear: '2025/26' },
-      ],
-      isLoadingOptions: false,
-      optionsError: null,
-      jurisdictions: ['BR', 'UK'],
-      taxYearsForJurisdiction: ['2026'],
-      jurisdiction: 'BR',
-      taxYear: '2026',
-      workbook: WORKBOOK,
-      isLoadingWorkbook: false,
-      workbookError: null,
-      canExportCsv: true,
-    })
+    getTaxWorkbookOptionsMock.mockReset().mockResolvedValue(OPTIONS)
+    getTaxWorkbookMock.mockReset().mockResolvedValue(WORKBOOK)
+    downloadCsvMock.mockReset()
   })
 
   it('renders_loading_indicator_while_options_load', () => {
-    setMock({ isLoadingOptions: true })
+    getTaxWorkbookOptionsMock.mockReturnValue(never())
     render(<TaxPage />)
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
-  it('renders_error_state_with_retry_on_options_failure', () => {
-    setMock({ optionsError: 'Unable to load tax years.' })
+  it('renders_error_state_and_retry_loads_the_tax_years', async () => {
+    getTaxWorkbookOptionsMock.mockRejectedValueOnce(new Error('Unable to load tax years.'))
     render(<TaxPage />)
-    expect(screen.getByText('Unable to load tax years.')).toBeInTheDocument()
+
+    expect(await screen.findByText('Unable to load tax years.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(mockRetryOptions).toHaveBeenCalled()
+
+    expect(await screen.findByText('ev-1')).toBeInTheDocument()
+    expect(getTaxWorkbookOptionsMock).toHaveBeenCalledTimes(2)
   })
 
-  it('renders_explanatory_empty_state_when_no_jurisdictions_exist', () => {
-    setMock({ jurisdictions: [] })
+  it('renders_explanatory_empty_state_when_no_jurisdictions_exist', async () => {
+    getTaxWorkbookOptionsMock.mockResolvedValue([])
     render(<TaxPage />)
-    expect(screen.getByText(/No classified disposals or income events yet/)).toBeInTheDocument()
+    expect(await screen.findByText(/No classified disposals or income events yet/)).toBeInTheDocument()
   })
 
-  it('selecting_a_jurisdiction_calls_the_hook', () => {
-    render(<TaxPage />)
+  it('selecting_a_jurisdiction_loads_its_first_tax_year', async () => {
+    await renderLoaded()
     fireEvent.change(screen.getByLabelText('Jurisdiction'), { target: { value: 'UK' } })
-    expect(mockSelectJurisdiction).toHaveBeenCalledWith('UK')
+    await waitFor(() => expect(getTaxWorkbookMock).toHaveBeenLastCalledWith('UK', '2025/26'))
   })
 
-  it('selecting_a_tax_year_calls_the_hook', () => {
-    setMock({ taxYearsForJurisdiction: ['2025', '2026'] })
-    render(<TaxPage />)
-    fireEvent.change(screen.getByLabelText('Tax year'), { target: { value: '2025' } })
-    expect(mockSelectTaxYear).toHaveBeenCalledWith('2025')
+  it('selecting_a_tax_year_loads_that_year', async () => {
+    await renderLoaded()
+    fireEvent.change(screen.getByLabelText('Tax year'), { target: { value: '2026' } })
+    await waitFor(() => expect(getTaxWorkbookMock).toHaveBeenLastCalledWith('BR', '2026'))
   })
 
-  it('renders_every_entry_with_its_amounts_and_evidence_reference', () => {
-    render(<TaxPage />)
+  it('renders_every_entry_with_its_amounts_and_evidence_reference', async () => {
+    await renderLoaded()
     expect(screen.getAllByText('90.00').length).toBeGreaterThan(0)
     expect(screen.getAllByText('100.00').length).toBeGreaterThan(0)
-    expect(screen.getByText('ev-1')).toBeInTheDocument()
     expect(screen.getByText('ev-2')).toBeInTheDocument()
+    expect(screen.getByText('ev-3')).toBeInTheDocument()
   })
 
-  it('shows_no_calculation_status_on_entries_or_the_workbook', () => {
-    render(<TaxPage />)
+  it('shows_no_calculation_status_on_entries_or_the_workbook', async () => {
+    await renderLoaded()
     expect(screen.queryByRole('columnheader', { name: 'Status' })).not.toBeInTheDocument()
     expect(screen.queryByText('Incomplete')).not.toBeInTheDocument()
     expect(screen.queryByText(/Requires review/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Overall status/)).not.toBeInTheDocument()
   })
 
-  it('export_csv_is_disabled_when_the_selected_workbook_has_zero_entries', () => {
-    setMock({ workbook: { ...WORKBOOK, entries: [] }, canExportCsv: false })
+  it('export_csv_is_disabled_and_a_specific_empty_state_shows_when_the_selection_has_no_entries', async () => {
+    getTaxWorkbookMock.mockResolvedValue(EMPTY_WORKBOOK)
     render(<TaxPage />)
+    expect(await screen.findByText(/No classified events for BR 2025 yet/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled()
   })
 
-  it('export_csv_triggers_the_hooks_export_when_enabled', () => {
-    render(<TaxPage />)
+  it('export_csv_downloads_the_selected_workbook', async () => {
+    await renderLoaded()
     fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
-    expect(mockExportCsv).toHaveBeenCalled()
+    expect(downloadCsvMock).toHaveBeenCalledWith('tax-workbook-BR-2025.csv', expect.stringContaining('2025-06-01,BR,2025,Dividend'))
   })
 
-  it('renders_a_workbook_specific_empty_state_when_the_selection_has_no_entries', () => {
-    setMock({ workbook: { ...WORKBOOK, entries: [] }, canExportCsv: false })
+  it('renders_loading_indicator_while_the_workbook_loads', async () => {
+    getTaxWorkbookMock.mockReturnValue(never())
     render(<TaxPage />)
-    expect(screen.getByText(/No classified events for BR 2026 yet/)).toBeInTheDocument()
-  })
-
-  it('renders_loading_indicator_while_the_workbook_loads', () => {
-    setMock({ isLoadingWorkbook: true, workbook: null })
-    render(<TaxPage />)
+    await waitFor(() => expect(getTaxWorkbookMock).toHaveBeenCalled())
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
-  it('renders_error_state_with_retry_on_workbook_failure', () => {
-    setMock({ workbookError: 'Unable to load the tax workbook.', workbook: null })
+  it('renders_error_state_and_retry_loads_the_workbook', async () => {
+    getTaxWorkbookMock.mockRejectedValueOnce(new Error('Unable to load the tax workbook.'))
     render(<TaxPage />)
-    expect(screen.getByText('Unable to load the tax workbook.')).toBeInTheDocument()
+
+    expect(await screen.findByText('Unable to load the tax workbook.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(mockRetryWorkbook).toHaveBeenCalled()
+
+    expect(await screen.findByText('ev-1')).toBeInTheDocument()
   })
 
-  it('renders_category_totals', () => {
-    render(<TaxPage />)
+  it('renders_category_totals', async () => {
+    await renderLoaded()
     expect(screen.getByText('Category totals')).toBeInTheDocument()
     expect(screen.getAllByText('Dividend').length).toBeGreaterThan(0)
   })

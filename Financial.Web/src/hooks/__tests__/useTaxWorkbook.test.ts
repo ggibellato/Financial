@@ -20,9 +20,8 @@ const { downloadCsvMock } = vi.hoisted(() => ({
   downloadCsvMock: vi.fn(),
 }))
 
-vi.mock('../../utils/taxWorkbookCsv', () => ({
-  buildTaxWorkbookCsv: () => 'csv-content',
-  buildTaxWorkbookCsvFilename: (jurisdiction: string, taxYear: string) => `tax-workbook-${jurisdiction}-${taxYear}.csv`,
+vi.mock('../../utils/taxWorkbookCsv', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/taxWorkbookCsv')>()),
   downloadCsv: downloadCsvMock,
 }))
 
@@ -176,7 +175,11 @@ describe('useTaxWorkbook', () => {
 
     result.current.exportCsv()
 
-    expect(downloadCsvMock).toHaveBeenCalledWith('tax-workbook-BR-2025.csv', 'csv-content')
+    expect(downloadCsvMock).toHaveBeenCalledWith(
+      'tax-workbook-BR-2025.csv',
+      'Date,Jurisdiction,TaxYear,EventCategory,Proceeds,CostBasis,GainLoss,GrossAmount,WithheldAmount,NetAmount,Currency,EvidenceReference\r\n'
+        + '2025-06-01,BR,2025,Dividend,,,,100,10,90,BRL,evidence-1',
+    )
   })
 
   it('stops loading the tax years when they fail, naming a failure without a reason', async () => {
