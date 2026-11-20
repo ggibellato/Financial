@@ -99,9 +99,7 @@ public class RemoteJsonStorageTests
         var act = async () => await storage.ReadAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        var span = _tracer.Spans.Should().ContainSingle().Which;
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
-        span.RecordedException.Should().NotBeNull();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("RemoteStorage.Download");
     }
 
     [Fact]
@@ -116,9 +114,6 @@ public class RemoteJsonStorageTests
         var act = async () => await storage.WriteAsync("{}");
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        var span = _tracer.Spans.Should().ContainSingle().Which;
-        span.Name.Should().Be("RemoteStorage.Upload");
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
-        span.RecordedException.Should().NotBeNull();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("RemoteStorage.Upload");
     }
 }

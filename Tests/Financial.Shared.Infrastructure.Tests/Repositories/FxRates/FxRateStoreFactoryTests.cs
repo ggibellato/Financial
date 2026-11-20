@@ -6,6 +6,7 @@ using Financial.Shared.Infrastructure.Persistence.FxRates;
 using Financial.Shared.Infrastructure.Repositories.FxRates;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Shared.Infrastructure.Tests.Repositories.FxRates;
 
@@ -18,7 +19,8 @@ public class FxRateStoreFactoryTests
             new StubRemoteFileClientFactory(
                 new StubRemoteFileClient(() => new FxRateSerializerAdapter().Serialize(new Dictionary<DateOnly, FxRateRecord>()))),
             NoOpTelemetryTracer.Instance),
-        TestClock.At());
+        TestClock.At(),
+        NullLogger<FxRateJsonStore>.Instance);
 
     [Fact]
     public void Create_WithNullOptions_Throws()
@@ -37,6 +39,26 @@ public class FxRateStoreFactoryTests
 
         result.Should().BeOfType<FxRateJsonStore>();
         result.TryGetRate(new DateOnly(2026, 9, 18)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Create_WithLocalJsonProvider_ReloadsARateItStoredInTheFile()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"fxrates-factory-{Guid.NewGuid()}.json");
+        var options = new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, path, null, null);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", TestClock.Default);
+        try
+        {
+            var store = Factory.Create(options);
+            await store.SetRateAsync(new DateOnly(2026, 9, 18), record);
+            await store.FlushAsync();
+
+            Factory.Create(options).TryGetRate(new DateOnly(2026, 9, 18)).Should().Be(record);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]

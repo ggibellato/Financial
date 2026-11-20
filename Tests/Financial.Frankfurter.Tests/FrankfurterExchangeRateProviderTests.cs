@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using Financial.Integrations.Frankfurter;
 using Financial.Shared.Abstractions.Currencies;
@@ -6,6 +5,7 @@ using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Financial.Frankfurter.Tests;
 
@@ -282,13 +282,18 @@ public class FrankfurterExchangeRateProviderTests
     [InlineData(true)]
     public async Task Lookup_WhenUpstreamNeverAnswers_GivesUpWithinTheCallBudget(bool usdLookup)
     {
-        var provider = CreateHangingProvider();
+        var clock = new FakeTimeProvider(TestClock.Default);
+        var handler = new HangingHandler();
+        var provider = new FrankfurterExchangeRateProvider(
+            CreateClient(handler), NullLogger<FrankfurterExchangeRateProvider>.Instance, TimeSpan.FromSeconds(10), clock);
 
-        var stopwatch = Stopwatch.StartNew();
-        var found = await LookUpAsync(provider, usdLookup);
+        var lookup = LookUpAsync(provider, usdLookup);
+        await handler.RequestReceived;
+        lookup.IsCompleted.Should().BeFalse();
 
-        found.Should().BeFalse();
-        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
+        clock.Advance(TimeSpan.FromSeconds(10));
+
+        (await lookup).Should().BeFalse();
     }
 
     [Theory]
@@ -347,14 +352,16 @@ public class FrankfurterExchangeRateProviderTests
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) };
 
-    private static FrankfurterExchangeRateProvider CreateHangingProvider() =>
-        new(CreateClient(new HangingHandler()), NullLogger<FrankfurterExchangeRateProvider>.Instance, TimeSpan.FromMilliseconds(200));
-
     private sealed class HangingHandler : HttpMessageHandler
     {
+        private readonly TaskCompletionSource _requestReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task RequestReceived => _requestReceived.Task;
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            await Task.Delay(Timeout.Infinite, cancellationToken);
+            _requestReceived.TrySetResult();
+            await new TaskCompletionSource().Task.WaitAsync(cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
     }

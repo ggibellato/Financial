@@ -24,86 +24,43 @@ public class TransientRetryPolicyTests
         callCount.Should().Be(1);
     }
 
-    [Fact]
-    public async Task ExecuteWithRetryAsync_TransientStorageException_RetriesAndEventuallySucceeds()
+    public static TheoryData<Exception> TransientFailures() =>
+    [
+        new TransientStorageException("Drive request failed with a transient status.", new InvalidOperationException()),
+        new TaskCanceledException("Request timed out"),
+        new HttpRequestException("Connection reset"),
+        new SocketException((int)SocketError.ConnectionReset),
+    ];
+
+    [Theory]
+    [MemberData(nameof(TransientFailures))]
+    public async Task ExecuteWithRetryAsync_TransientFailure_RetriesAndEventuallySucceeds(Exception failure)
     {
         var callCount = 0;
+        var waits = new List<TimeSpan>();
         var logMessages = new List<string>();
 
         var result = await TransientRetryPolicy.ExecuteWithRetryAsync(
             () =>
             {
                 callCount++;
-                if (callCount <= 2)
+                if (callCount == 1)
                 {
-                    throw new TransientStorageException("Drive request failed with a transient status.", new InvalidOperationException());
+                    throw failure;
                 }
                 return Task.FromResult(7);
             },
-            logger: logMessages.Add);
-
-        result.Should().Be(7);
-        callCount.Should().Be(3);
-        logMessages.Should().HaveCount(2);
-        logMessages[0].Should().Contain("Retry 1/5");
-        logMessages[1].Should().Contain("Retry 2/5");
-    }
-
-    [Fact]
-    public async Task ExecuteWithRetryAsync_NetworkTimeout_RetriesAndEventuallySucceeds()
-    {
-        var callCount = 0;
-
-        var result = await TransientRetryPolicy.ExecuteWithRetryAsync(() =>
-        {
-            callCount++;
-            if (callCount == 1)
+            logger: logMessages.Add,
+            delay: (wait, _) =>
             {
-                throw new TaskCanceledException("Request timed out");
-            }
-            return Task.FromResult(7);
-        });
+                waits.Add(wait);
+                return Task.CompletedTask;
+            });
 
         result.Should().Be(7);
         callCount.Should().Be(2);
-    }
-
-    [Fact]
-    public async Task ExecuteWithRetryAsync_HttpRequestException_RetriesAndEventuallySucceeds()
-    {
-        var callCount = 0;
-
-        var result = await TransientRetryPolicy.ExecuteWithRetryAsync(() =>
-        {
-            callCount++;
-            if (callCount == 1)
-            {
-                throw new HttpRequestException("Connection reset");
-            }
-            return Task.FromResult(7);
-        });
-
-        result.Should().Be(7);
-        callCount.Should().Be(2);
-    }
-
-    [Fact]
-    public async Task ExecuteWithRetryAsync_SocketException_RetriesAndEventuallySucceeds()
-    {
-        var callCount = 0;
-
-        var result = await TransientRetryPolicy.ExecuteWithRetryAsync(() =>
-        {
-            callCount++;
-            if (callCount == 1)
-            {
-                throw new SocketException((int)SocketError.ConnectionReset);
-            }
-            return Task.FromResult(7);
-        });
-
-        result.Should().Be(7);
-        callCount.Should().Be(2);
+        waits.Should().ContainSingle();
+        logMessages.Should().ContainSingle().Which.Should().Contain("Retry 1/5").And.Contain(failure.GetType().Name);
     }
 
     [Fact]

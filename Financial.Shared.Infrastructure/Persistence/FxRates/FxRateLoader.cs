@@ -1,14 +1,14 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Shared.Infrastructure.Persistence.FxRates;
 
 public static class FxRateLoader
 {
     // Intentionally synchronous: called from DI factory at startup before the app's async loop begins.
-    public static Dictionary<DateOnly, FxRateRecord> LoadSync(IJsonStorage storage, IFxRateSerializer serializer)
+    public static Dictionary<DateOnly, FxRateRecord> LoadSync(IJsonStorage storage, IFxRateSerializer serializer, ILogger logger)
     {
         string json;
         try
@@ -29,8 +29,7 @@ public static class FxRateLoader
         }
         catch (JsonException ex)
         {
-            Trace.TraceWarning(
-                $"FxRateLoader: data-fx-rates.json contains invalid JSON ({ex.GetType().Name}); starting with an empty FX rate store.");
+            logger.LogWarning("{Operation} started with an empty FX rate store after {ErrorType}", "LoadFxRates", ex.GetType().Name);
             return new Dictionary<DateOnly, FxRateRecord>();
         }
     }

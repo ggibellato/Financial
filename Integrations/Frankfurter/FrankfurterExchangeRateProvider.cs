@@ -18,21 +18,24 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
     private readonly HttpClient _httpClient;
     private readonly ILogger<FrankfurterExchangeRateProvider> _logger;
     private readonly TimeSpan _callBudget;
+    private readonly TimeProvider _timeProvider;
 
     public FrankfurterExchangeRateProvider(
         HttpClient httpClient,
         ILogger<FrankfurterExchangeRateProvider> logger,
-        TimeSpan? callBudget = null)
+        TimeSpan? callBudget = null,
+        TimeProvider? timeProvider = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _callBudget = callBudget ?? DefaultCallBudget;
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _httpClient.BaseAddress ??= new Uri(BaseAddress);
     }
 
     public async Task<decimal?> GetHistoricalRateAsync(DateOnly date, Currency from, Currency to)
     {
-        using var budget = new CancellationTokenSource(_callBudget);
+        using var budget = new CancellationTokenSource(_callBudget, _timeProvider);
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
@@ -53,7 +56,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
     public async Task<UsdRateFetchResult> FetchAsync(DateOnly date)
     {
-        using var budget = new CancellationTokenSource(_callBudget);
+        using var budget = new CancellationTokenSource(_callBudget, _timeProvider);
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
