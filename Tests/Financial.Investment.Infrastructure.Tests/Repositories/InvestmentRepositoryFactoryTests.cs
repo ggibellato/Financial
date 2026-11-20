@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Financial.Investment.Domain.Entities;
 using Financial.Integrations.GoogleDrive;
 using Financial.Investment.Infrastructure.Persistence;
@@ -23,7 +22,7 @@ public class InvestmentRepositoryFactoryTests
     public InvestmentRepositoryFactoryTests()
     {
         _stubbedFactory = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance), TestClock.At());
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(new StubRemoteFileClient(EmptyFile)), NoOpTelemetryTracer.Instance), TestClock.At());
     }
 
     private static readonly InvestmentRepositoryFactory Factory =
@@ -131,27 +130,6 @@ public class InvestmentRepositoryFactoryTests
     }
 
     [Fact]
-    public async Task Create_WithGoogleDriveProvider_ApplyAndSaveAsync_ReturnsWithoutWaitingOnUpload()
-    {
-        var options = new JsonRepositorySelection(
-            JsonRepositoryProvider.GoogleDriveJson,
-            null,
-            TestDataPaths.DataJsonFile,
-            "Pessoais/Gleison/Financeiros");
-
-        var repository = _stubbedFactory.Create(options);
-
-        var stopwatch = Stopwatch.StartNew();
-        await repository.ApplyAndSaveAsync(() => true);
-        stopwatch.Stop();
-
-        // The debounce window is a real 10 seconds in production; returning near-instantly proves
-        // the write was only queued, not actually uploaded through StubRemoteFileClient (which
-        // throws NotSupportedException on upload if ever actually invoked).
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
-    }
-
-    [Fact]
     public async Task Create_WithGoogleDriveProvider_ResultImplementsISyncStatusProvider_ReportingPendingAfterAWrite()
     {
         var options = new JsonRepositorySelection(
@@ -183,7 +161,7 @@ public class InvestmentRepositoryFactoryTests
     }
 
     [Fact]
-    public async Task Create_WithGoogleDriveProvider_MutationEventuallyUploadsQueuedChangeViaDebouncedStorage()
+    public async Task Create_WithGoogleDriveProvider_QueuedMutationIsUploadedOnFlush()
     {
         var remoteFileClient = new RecordingRemoteFileClient();
         var factory = new InvestmentRepositoryFactory(
@@ -198,15 +176,8 @@ public class InvestmentRepositoryFactoryTests
 
         await repository.ApplyAndSaveAsync(() => true);
 
-        // The real production debounce window is 10 seconds (InvestmentRepositoryFactory.DebounceWindow, not
-        // configurable by design). Waiting past it with margin proves the queued write actually
-        // reaches the wrapped storage's upload call — not just that ApplyAndSaveAsync() returns quickly.
-        // Independence from any CashFlow activity is already established structurally: this instance's
-        // DebouncedJsonStorage is entirely separate from CashFlow's (see
-        // Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus below, and
-        // CashFlowInvestmentRepositoryFactoryTests' own equivalent eventual-upload test), so nothing CashFlow does
-        // could affect this repository's timer, retry state, or upload call.
-        await WaitForAsync(() => remoteFileClient.UploadCallCount > 0, TimeSpan.FromSeconds(15));
+        remoteFileClient.UploadCallCount.Should().Be(0, "the write is only queued until the debounce window or a flush");
+        await ((ISyncStatusProvider)repository).FlushAsync();
 
         remoteFileClient.UploadCallCount.Should().Be(1);
         ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Idle);
@@ -234,7 +205,7 @@ public class InvestmentRepositoryFactoryTests
     }
 
     [Fact]
-    public async Task Create_WithGoogleDriveProviderAndTracer_RecordsGoogleDriveUploadSpanOnEventualUpload()
+    public async Task Create_WithGoogleDriveProviderAndTracer_RecordsTheSaveAndUploadSpansOnFlush()
     {
         var remoteFileClient = new RecordingRemoteFileClient();
         var tracer = new RecordingTelemetryTracer();
@@ -249,40 +220,13 @@ public class InvestmentRepositoryFactoryTests
         var repository = factory.Create(options);
 
         await repository.ApplyAndSaveAsync(() => true);
-
-        await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "RemoteStorage.Upload"), TimeSpan.FromSeconds(15));
+        await ((ISyncStatusProvider)repository).FlushAsync();
 
         tracer.Spans.Should().Contain(s => s.Name == "JsonStorage.Save");
         tracer.Spans.Should().Contain(s => s.Name == "RemoteStorage.Upload");
     }
 
-    private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)
-    {
-        var deadline = DateTime.UtcNow + timeout;
-
-        while (!condition())
-        {
-            if (DateTime.UtcNow >= deadline)
-            {
-                throw new TimeoutException($"Condition not met within {timeout}.");
-            }
-
-            await Task.Delay(50);
-        }
-    }
-
-    private sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
-    {
-        public IRemoteFileClient Create(string credentialsPath) => new StubRemoteFileClient();
-    }
-
-    private sealed class StubRemoteFileClient : IRemoteFileClient
-    {
-        public string DownloadFileContent(string path) =>
-            new InvestmentSerializerAdapter().Serialize(Investments.Create());
-
-        public void UploadFileContent(string path, string content) => throw new NotSupportedException();
-    }
+    private static string EmptyFile() => new InvestmentSerializerAdapter().Serialize(Investments.Create());
 
     private sealed class RecordingRemoteFileClientFactory : IRemoteFileClientFactory
     {

@@ -219,7 +219,7 @@ public class TransactionServiceQueryTests
         buy.CashEffect.Should().Be("Out");
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);

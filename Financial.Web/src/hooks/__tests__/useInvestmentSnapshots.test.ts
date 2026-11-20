@@ -1,17 +1,17 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../../api/types'
 import { deferred, never } from '../../test-utils/deferred'
+import { pinDate } from '../../test-utils/pinDate'
 import { useInvestmentSnapshots } from '../useInvestmentSnapshots'
 
-const NOW = new Date()
-const CURRENT_YEAR = NOW.getFullYear()
-const CURRENT_MONTH = NOW.getMonth() + 1
-const CURRENT_MONTH_INPUT = `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}`
-const NEXT_MONTH = CURRENT_MONTH === 12 ? 1 : CURRENT_MONTH + 1
-const NEXT_MONTH_YEAR = CURRENT_MONTH === 12 ? CURRENT_YEAR + 1 : CURRENT_YEAR
-const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0')}`
+const CURRENT_YEAR = 2026
+const CURRENT_MONTH = 12
+const CURRENT_MONTH_INPUT = '2026-12'
+const NEXT_MONTH = 1
+const NEXT_MONTH_YEAR = 2027
+const NEXT_MONTH_INPUT = '2027-01'
 
 const { getInvestmentSnapshotsMock, updateInvestmentSnapshotValueMock } = vi.hoisted(() => ({
   getInvestmentSnapshotsMock: vi.fn<FinancialApiClient['getInvestmentSnapshots']>(),
@@ -31,7 +31,12 @@ const SNAPSHOTS: InvestmentSnapshotDto[] = [
 ]
 
 describe('useInvestmentSnapshots', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
+    pinDate('2026-12-15T12:00:00Z')
     getInvestmentSnapshotsMock.mockReset()
     updateInvestmentSnapshotValueMock.mockReset()
     getInvestmentSnapshotsMock.mockResolvedValue(SNAPSHOTS)

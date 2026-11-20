@@ -65,6 +65,7 @@ public class CreditServiceTests
         credit.Currency.Should().Be(Currency.BRL, "XPI's broker currency differs from the fixed GBP reporting currency");
         credit.FxRateSnapshot.Should().NotBeNull();
         credit.FxRateSnapshot!.ToCurrency.Should().Be(Currency.GBP);
+        credit.FxRateSnapshot.RetrievedAt.Should().Be(TestClock.Default);
     }
 
     [Fact]
@@ -223,7 +224,7 @@ public class CreditServiceTests
         asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m, currency: Currency.USD, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
-        var service = new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<CreditService>.Instance);
+        var service = new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<CreditService>.Instance);
 
         await service.UpdateCreditAsync(new CreditUpdateDTO
         {
@@ -606,7 +607,7 @@ public class CreditServiceTests
         asset.TaxClassifications.Should().BeEmpty();
     }
 
-    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<CreditService>.Instance);
+    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);

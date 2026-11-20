@@ -93,8 +93,6 @@ type MensaisAction =
   | { type: 'OPEN_EXPENSE_PROMPT'; payload: RecurringBillDto }
   | { type: 'CLOSE_EXPENSE_PROMPT' }
 
-const DEFAULT_MONTH = currentYearMonth()
-
 const ADD_FIELDS: readonly AddField[] = ['newDueDay', 'newDescription', 'newValue', 'newArea', 'newNote']
 const EDIT_FIELDS: readonly EditField[] = ['editStatus', 'editValue']
 
@@ -266,7 +264,7 @@ export interface MensaisData {
 }
 
 export function useMensais(notifySaved: (message: string) => void = () => {}): MensaisData {
-  const { monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
+  const { monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const beginRequest = useLatestRequestGuard()

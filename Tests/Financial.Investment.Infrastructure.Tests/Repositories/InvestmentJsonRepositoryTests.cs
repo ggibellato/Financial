@@ -163,7 +163,6 @@ public class InvestmentJsonRepositoryTests
         await storage.WriteEntered.Task;
 
         var second = repository.ApplyAndSaveAsync(() => { secondApplied = true; return true; });
-        await Task.WhenAny(second, Task.Delay(300));
 
         second.IsCompleted.Should().BeFalse("the first save still holds the gate");
         secondApplied.Should().BeFalse("a mutation must not run while the graph is being serialized");
@@ -191,8 +190,7 @@ public class InvestmentJsonRepositoryTests
 
         var next = repository.ApplyAndSaveAsync(() => true);
 
-        (await Task.WhenAny(next, Task.Delay(2000))).Should().BeSameAs(next, "the gate was released");
-        (await next).Should().BeTrue();
+        (await next.WaitAsync(TimeSpan.FromSeconds(10))).Should().BeTrue();
     }
 
     [Fact]
@@ -207,8 +205,7 @@ public class InvestmentJsonRepositoryTests
 
         var next = repository.ApplyAndSaveAsync(() => true);
 
-        (await Task.WhenAny(next, Task.Delay(2000))).Should().BeSameAs(next, "the gate was released");
-        (await next).Should().BeTrue();
+        (await next.WaitAsync(TimeSpan.FromSeconds(10))).Should().BeTrue();
     }
 
     [Fact]

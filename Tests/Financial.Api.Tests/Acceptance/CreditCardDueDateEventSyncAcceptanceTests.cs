@@ -40,23 +40,17 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
             "user@gmail.com", calendarId, "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>()));
     }
 
-    private async Task<CreditCardCalendarSyncStatusDTO?> WaitForResolvedSyncStatusAsync(Guid cardId, TimeSpan? timeout = null)
+    private async Task<CreditCardCalendarSyncStatusDTO> WaitForResolvedSyncStatusAsync(Guid cardId)
     {
-        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(5));
         CreditCardCalendarSyncStatusDTO? status = null;
-        while (DateTime.UtcNow < deadline)
+        await Eventually.HoldsAsync(async () =>
         {
             var statuses = await Client.GetFromJsonAsync<List<CreditCardCalendarSyncStatusDTO>>($"{CalendarRoute}/credit-cards/sync-status");
             status = statuses?.FirstOrDefault(s => s.CreditCardId == cardId);
-            if (status is not null && status.State != "Pending")
-            {
-                return status;
-            }
+            return status is not null && status.State != "Pending";
+        });
 
-            await Task.Delay(25);
-        }
-
-        return status;
+        return status!;
     }
 
     private Task<HttpResponseMessage> PutDueDateAsync(Guid cardId, int year, int month, DateOnly? dueDate) =>
@@ -106,7 +100,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         await SetDueDateAsync(cardId, new DateOnly(2026, 9, 10));
         var status = await WaitForResolvedSyncStatusAsync(cardId);
 
-        status!.State.Should().Be("Synced");
+        status.State.Should().Be("Synced");
         _provider.CreatedEvents.Should().ContainSingle();
         _provider.CreatedEvents[0].Title.Should().Be("BaAmex — Due 55.50");
         _provider.CreatedEvents[0].Description.Should().Contain("10 September 2026");
@@ -203,7 +197,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         response.EnsureSuccessStatusCode();
         var status = await WaitForResolvedSyncStatusAsync(cardId);
 
-        status!.State.Should().Be("Error");
+        status.State.Should().Be("Error");
         status.LastError.Should().NotBeNullOrEmpty();
 
         _provider.CreateEventThrows = false;

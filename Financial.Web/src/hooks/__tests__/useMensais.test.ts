@@ -1,17 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
+import { pinDate } from '../../test-utils/pinDate'
 import { useMensais } from '../useMensais'
 
-const NOW = new Date()
-const CURRENT_YEAR = NOW.getFullYear()
-const CURRENT_MONTH = NOW.getMonth() + 1
-const CURRENT_MONTH_INPUT = `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}`
-const NEXT_MONTH = CURRENT_MONTH === 12 ? 1 : CURRENT_MONTH + 1
-const NEXT_MONTH_YEAR = CURRENT_MONTH === 12 ? CURRENT_YEAR + 1 : CURRENT_YEAR
-const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0')}`
+const CURRENT_MONTH_INPUT = '2026-12'
+const NEXT_MONTH_INPUT = '2027-01'
 
 const {
   getMensaisBillsMock,
@@ -83,7 +79,12 @@ const CATEGORIES: CategoryDto[] = [
 ]
 
 describe('useMensais', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
+    pinDate('2026-12-15T12:00:00Z')
     getMensaisBillsMock.mockReset()
     createMensaisBillMock.mockReset()
     updateMensaisBillMock.mockReset()
