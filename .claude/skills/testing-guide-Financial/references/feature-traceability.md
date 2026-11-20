@@ -112,6 +112,11 @@ Both forms carry the same id grammar, so one grep answers both directions.
   and then dropped the prefix):
   - `Tests/Financial.Api.Tests/Acceptance/{FeatureName}AcceptanceTests.cs`
   - `Financial.Web/src/acceptance/{feature-slug}.test.tsx`
+- An acceptance file may also hold the same feature's error-path tests (unknown id 404, month out
+  of range 400, validation) when they need the feature's seeded data, untagged (decided
+  2026-11-20). Only tagged tests count as traceability. An untagged test there must still not repeat
+  a criterion test, a service test or the empty/null-body sweeps (`EmptyBodyEndpointsTests`,
+  `RetiredRoutesAcceptanceTests.KeptRoute_StillAnswers`).
 - The PR body's §9 checklist (see `feedback_pr_body_acceptance_criteria` in project memory)
   lists each id next to the test that proves it.
 

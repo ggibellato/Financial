@@ -193,6 +193,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-05")]
     public async Task Income_SplitFromASourceWithoutPotsAccount_Returns400AndSavesNothing()
     {
         var response = await Client.PostAsJsonAsync($"{Api}/incomes", IncomeFrom(GleisonId, netValue: 1000m, potsAccountId: ReservaId));
@@ -242,14 +243,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task OtherAccountsRoute_IsRemoved_Returns404()
-    {
-        var response = await Client.GetAsync($"{Api}/accounts/groups/other/2026/10");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-06")]
     public async Task ReservaTransactions_MonthWithMovements_ListsOnlyItsOwnPots()
     {
         var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{ReservaId}/transactions/2026/10");
@@ -258,6 +252,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F06-admin-accounts-page-04")]
     public async Task DeleteReserva_OwnsPots_Returns409WithTheDeactivateMessageAndKeepsIt()
     {
         var response = await Client.DeleteAsync($"{Api}/accounts/{ReservaId}");

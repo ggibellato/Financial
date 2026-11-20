@@ -221,6 +221,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
     public async Task PayableStatements_ListOnlyMonthsWithAnAmountToPay_AfterTheCredit()
     {
         await AddCardChargeAsync(10, 8, -35m);
@@ -252,6 +253,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-07")]
     public async Task CardStatement_OutstandingIsTheAmountToPay_ZeroWhileCreditCoversIt()
     {
         await AddCardChargeAsync(10, 3, 25m);

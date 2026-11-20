@@ -232,6 +232,7 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F06-admin-accounts-page-03")]
     public async Task AdminAccounts_MaeWithEntries_IsInUse_DeleteReturns409AndCurrenciesAreLocked()
     {
         SeedMigratedV4File();

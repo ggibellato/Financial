@@ -110,14 +110,6 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task UnmarkPaid_UnpaidStatement_Returns409()
-    {
-        var response = await Client.PostAsync($"{Api}/card-statements/{OctoberStatementId}/unmark-paid", null);
-
-        await ShouldBeProblemAsync(response, HttpStatusCode.Conflict, "This statement is not paid.");
-    }
-
-    [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-08")]
     public async Task StatementsGet_WritesNothing_AndOnlyStoredStatementsHaveAnId()
     {
@@ -182,6 +174,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
     public async Task UnpaidCharge_MovesToAnEarlierUnpaidStatementThroughTheExpenseRoute()
     {
         var response = await UpdateChargeAsync(OctoberChargeId, new DateOnly(2026, 10, 3), new DateOnly(2026, 8, 1), value: 30m, description: "Taxi");

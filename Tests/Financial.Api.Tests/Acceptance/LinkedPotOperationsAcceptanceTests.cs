@@ -165,6 +165,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-CF-cross-feature-13")]
     public async Task DepositOperation_ReadEditedAndDeleted_ChangesEveryRecordTogether()
     {
         var created = await (await DepositAsync(90m, null, (BarclaysId, 90m))).Content.ReadFromJsonAsync<PotOperationDTO>();
@@ -246,6 +247,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-CF-cross-feature-13")]
     public async Task WithdrawalOperation_ReadEditedAndDeleted_ChangesEveryRecordTogether()
     {
         var created = await (await WithdrawFromPotsAccountAsync(38.25m, withBank: true)).Content.ReadFromJsonAsync<PotOperationDTO>();
@@ -280,6 +282,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-CF-cross-feature-13")]
     public async Task LinkedRecords_EditedOrDeletedThroughTheOldRoutes_Return409AndStay()
     {
         var operation = await (await WithdrawFromPotsAccountAsync(38.25m, withBank: true)).Content.ReadFromJsonAsync<PotOperationDTO>();
@@ -367,28 +370,6 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             deleteWithdrawal.StatusCode.Should().Be(HttpStatusCode.OK);
             Repository.GetPotTransactions().Select(m => m.Id).Should().BeEquivalentTo(
                 [Guid.Parse(splitOfAnotherDay), Guid.Parse(LegacyWithdrawalId)]);
-        }
-    }
-
-    [Fact]
-    public async Task PotsRead_MonthEnd_ReturnsEachPotAndATotalMatchingTheHeader()
-    {
-        var september = await Client.GetFromJsonAsync<PotsSummaryDTO>($"{Api}/accounts/{ReservaId}/pots/2026/9");
-        var august = await Client.GetFromJsonAsync<PotsSummaryDTO>($"{Api}/accounts/{ReservaId}/pots/2026/8");
-        var header = await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{ReservaId}/2026/9");
-
-        using (new AssertionScope())
-        {
-            september!.PotsAccountId.Should().Be(Guid.Parse(ReservaId));
-            september.Currency.Should().Be("GBP");
-            september.Total.Should().Be(480m);
-            header!.Balance.Should().Be(480m);
-            september.Pots.Select(pot => (pot.Name, pot.SplitPercentage, pot.IsActive, pot.Balance)).Should().Equal(
-                ("HouseTreats", 40m, true, -20m),
-                ("Investimento", 60m, true, 500m),
-                ("Holidays", 0m, false, 0m));
-            august!.Total.Should().Be(0m);
-            august.Pots.Should().OnlyContain(pot => pot.Balance == 0m);
         }
     }
 
@@ -706,6 +687,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-01")]
     public async Task IncomeDeposit_AccountRows_CarryTheIncomeAndItsFundingLines()
     {
         var response = await AddSplitIncomeAsync(100m);
@@ -730,6 +712,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-10")]
     public async Task OlderSplitIncome_AccountRows_HaveNoLinkAndCannotBeEdited()
     {
         SeedOlderSplitIncome();
@@ -746,6 +729,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-08")]
     public async Task LegacyMovement_PotsAccountRow_HasNoLinkAndCanBeEdited()
     {
         var rows = await RowsAsync(ReservaId, month: 9);

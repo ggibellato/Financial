@@ -17,7 +17,6 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string AmexId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000001";
     private const string OldVisaId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000002";
-    private const string UnknownId = "8f3b1c1a-2e3a-4b1a-9a7f-999999999999";
     private static readonly TimeSpan SyncTimeout = TimeSpan.FromSeconds(10);
 
     private const string SeededData = $$"""
@@ -80,6 +79,7 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F13-consolidated-navigation-and-retirement-03")]
     public async Task GetAccounts_AfterSettingAStatementDueDate_ShowsItOnTheCardOnly()
     {
         (await PutDueDateAsync(AmexId, 2026, 11, new DateOnly(2026, 11, 18))).StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -130,56 +130,13 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task Set_EarlierMonth_ClearsTheLaterStatementsDates()
-    {
-        await PutDueDateAsync(AmexId, 2026, 11, new DateOnly(2026, 11, 20));
-
-        await PutDueDateAsync(AmexId, 2026, 10, new DateOnly(2026, 10, 25));
-
-        var dueDates = await DueDatesAsync();
-        dueDates[10].Should().Be(new DateOnly(2026, 10, 25));
-        dueDates[11].Should().BeNull();
-    }
-
-    [Fact]
-    public async Task Clear_MonthWithNoStatement_Returns204AndCreatesNothing()
-    {
-        var response = await PutDueDateAsync(AmexId, 2026, 12, null);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        var statements = await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements");
-        statements!.Single(statement => statement.Month == 12).Id.Should().BeNull();
-    }
-
-    public static TheoryData<string, int, int, string?, HttpStatusCode, string> Refusals => new()
-    {
-        { UnknownId, 2026, 10, null, HttpStatusCode.NotFound, $"Account '{UnknownId}' was not found." },
-        { BarclaysId, 2026, 10, null, HttpStatusCode.BadRequest, "Barclays is not a card account." },
-        { OldVisaId, 2026, 10, null, HttpStatusCode.BadRequest, "Old Visa is inactive." },
-        { AmexId, 2027, 1, null, HttpStatusCode.NotFound, "Card statement '2027-01' was not found." },
-        { AmexId, 2026, 9, "2026-09-25", HttpStatusCode.BadRequest, "The September 2026 statement is paid, so its due date can't change." },
-        { AmexId, 2026, 10, "2026-11-01", HttpStatusCode.BadRequest, "The due date must be in October 2026." }
-    };
-
-    [Theory]
-    [MemberData(nameof(Refusals))]
-    public async Task Refused_ReturnsTheStatusAndMessage(string accountId, int year, int month, string? dueDate, HttpStatusCode status, string message)
-    {
-        var response = await PutDueDateAsync(accountId, year, month, dueDate is null ? null : DateOnly.Parse(dueDate, System.Globalization.CultureInfo.InvariantCulture));
-
-        await ShouldBeProblemAsync(response, status, message);
-    }
-
-    [Theory]
-    [InlineData("null")]
-    [InlineData("{}")]
-    public async Task MissingBodyOrField_Returns400AndChangesNothing(string body)
+    public async Task MissingDueDateField_Returns400AndChangesNothing()
     {
         await PutDueDateAsync(AmexId, 2026, 10, new DateOnly(2026, 10, 25));
 
         var response = await Client.PutAsync(
             $"{Api}/accounts/{AmexId}/statements/2026/10/due-date",
-            new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DueDatesAsync())[10].Should().Be(new DateOnly(2026, 10, 25));

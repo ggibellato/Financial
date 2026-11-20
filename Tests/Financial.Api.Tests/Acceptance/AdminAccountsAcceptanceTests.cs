@@ -124,6 +124,7 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F04-default-account-group-and-summary-query-02")]
     public async Task PostAccount_EmptyPots_IsListedWithThePotActionsAndStaysOutOfTheDefaultGroup()
     {
         var response = await Client.PostAsJsonAsync(AccountsUrl, new AccountCreateDTO
