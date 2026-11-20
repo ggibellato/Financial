@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CategoriesPage from '../CategoriesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
+import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const { getCategoriesMock, createCategoryMock, updateCategoryMock, deleteCategoryMock } = vi.hoisted(() => ({
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
@@ -86,6 +88,26 @@ describe('CategoriesPage', () => {
       expect(createCategoryMock).toHaveBeenCalledWith({ name: 'Lazer', active: true, isInvestment: false, isTithe: false }),
     )
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'New category' })).not.toBeInTheDocument())
+  })
+
+  it('shows a loading state before data arrives', () => {
+    getCategoriesMock.mockReturnValue(never())
+    render(<CategoriesPage />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading')
+  })
+
+  it('keeps the New category dialog open with the duplicate under Name when the create is refused', async () => {
+    createCategoryMock.mockRejectedValue(duplicateNameRejection('A category named "Lazer" already exists.'))
+    render(<CategoriesPage />)
+    await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New category' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Lazer' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add category' }))
+
+    await expectDuplicateUnderName('A category named "Lazer" already exists.')
+    expect(screen.getByRole('heading', { name: 'New category' })).toBeInTheDocument()
   })
 
   it('edits a category through its row action', async () => {

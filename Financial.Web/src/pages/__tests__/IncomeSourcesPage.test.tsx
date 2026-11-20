@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { IncomeSourceDto } from '../../api/types'
 import { potsAccount } from '../../test/account'
 import { never } from '../../test-utils/deferred'
+import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const { getIncomeSourcesMock, createIncomeSourceMock, updateIncomeSourceMock, deleteIncomeSourceMock, getAccountsMock } =
   vi.hoisted(() => ({
@@ -130,6 +131,26 @@ describe('IncomeSourcesPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'New income source' })).not.toBeInTheDocument(),
     )
+  })
+
+  it('shows a loading state before data arrives', () => {
+    getIncomeSourcesMock.mockReturnValue(never())
+    render(<IncomeSourcesPage />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading')
+  })
+
+  it('keeps the New income source dialog open with the duplicate under Name when the create is refused', async () => {
+    createIncomeSourceMock.mockRejectedValue(duplicateNameRejection('An income source named "Freelance" already exists.'))
+    render(<IncomeSourcesPage />)
+    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New income source' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Freelance' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add income source' }))
+
+    await expectDuplicateUnderName('An income source named "Freelance" already exists.')
+    expect(screen.getByRole('heading', { name: 'New income source' })).toBeInTheDocument()
   })
 
   it('edits an income source through its row action', async () => {

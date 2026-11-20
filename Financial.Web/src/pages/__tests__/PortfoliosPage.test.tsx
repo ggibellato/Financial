@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PortfoliosPage from '../PortfoliosPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto, PortfolioDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
+import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const {
   getAdminPortfoliosMock,
@@ -82,6 +84,26 @@ describe('PortfoliosPage', () => {
       expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio' }),
     )
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'New portfolio' })).not.toBeInTheDocument())
+  })
+
+  it('shows a loading state before data arrives', () => {
+    getAdminPortfoliosMock.mockReturnValue(never())
+    render(<PortfoliosPage />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading')
+  })
+
+  it('keeps the New portfolio dialog open with the duplicate under Name when the create is refused', async () => {
+    createPortfolioMock.mockRejectedValue(duplicateNameRejection('Broker "XPI" already has a portfolio named "New Portfolio".'))
+    render(<PortfoliosPage />)
+    await waitFor(() => expect(screen.getByText('Default')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New portfolio' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'New Portfolio' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add portfolio' }))
+
+    await expectDuplicateUnderName('Broker "XPI" already has a portfolio named "New Portfolio".')
+    expect(screen.getByRole('heading', { name: 'New portfolio' })).toBeInTheDocument()
   })
 
   it('edits a portfolio through its row action', async () => {
