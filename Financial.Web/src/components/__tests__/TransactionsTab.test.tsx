@@ -15,6 +15,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import TransactionsTab from '../TransactionsTab'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { never } from '../../test-utils/deferred'
 
 vi.mock('recharts', () => ({
   BarChart: ({ children, accessibilityLayer }: { children: ReactNode; accessibilityLayer?: boolean }) => (
@@ -255,7 +256,7 @@ describe('TransactionsTab', () => {
   })
 
   it('renders_loading_state', async () => {
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
     renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
     expect(await screen.findByText('Loading…')).toBeInTheDocument()
   })
@@ -595,7 +596,7 @@ describe('TransactionsTab', () => {
   })
 
   it('save_button_disabled_while_saving', async () => {
-    addTransactionMock.mockReturnValue(new Promise(() => {}))
+    addTransactionMock.mockReturnValue(never())
     await renderAssetTab()
     await openNewForm()
     fillValidSale()
@@ -657,7 +658,7 @@ describe('TransactionsTab', () => {
   })
 
   it('keeps_focus_on_the_row_while_the_delete_is_in_progress', async () => {
-    deleteTransactionMock.mockReturnValue(new Promise(() => {}))
+    deleteTransactionMock.mockReturnValue(never())
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
     await confirmDelete(BUY_NAME)
@@ -689,7 +690,7 @@ describe('TransactionsTab', () => {
   })
 
   it('blocks_a_second_delete_while_one_is_in_progress', async () => {
-    deleteTransactionMock.mockReturnValue(new Promise(() => {}))
+    deleteTransactionMock.mockReturnValue(never())
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
     await confirmDelete(BUY_NAME)
 

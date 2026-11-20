@@ -144,10 +144,6 @@ describe('IncomeTab', () => {
     deleteIncomeMock.mockReset()
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('[AC P61-F02-income-tab-and-bankless-income-01] lists every income newest first with No bank, a dash for no gross value, and a count with Total net', async () => {
     renderTab()
     const table = await grid()

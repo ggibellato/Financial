@@ -8,6 +8,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import CreditsTab from '../CreditsTab'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { never } from '../../test-utils/deferred'
 
 const { getAssetDetailsMock, getCreditsByBrokerMock, addCreditMock, updateCreditMock, deleteCreditMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -204,7 +205,7 @@ describe('CreditsTab', () => {
   })
 
   it('renders_loading_state', () => {
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
     renderWithSelectedNode(<CreditsTab />, ASSET_NODE)
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
@@ -406,7 +407,7 @@ describe('CreditsTab', () => {
 
   it('save_button_is_disabled_and_reads_saving_while_the_save_is_pending', async () => {
     await renderAssetTab()
-    addCreditMock.mockReturnValue(new Promise(() => {}))
+    addCreditMock.mockReturnValue(never())
     await openNewForm()
 
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '10' } })
@@ -469,7 +470,7 @@ describe('CreditsTab', () => {
   })
 
   it('shows_the_row_as_deleting_and_keeps_focus_on_it_while_the_delete_is_in_progress', async () => {
-    deleteCreditMock.mockReturnValue(new Promise(() => {}))
+    deleteCreditMock.mockReturnValue(never())
     await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
 
     await confirmDelete(DIVIDEND_NAME)
@@ -479,7 +480,7 @@ describe('CreditsTab', () => {
   })
 
   it('blocks_a_second_delete_while_one_is_in_progress', async () => {
-    deleteCreditMock.mockReturnValue(new Promise(() => {}))
+    deleteCreditMock.mockReturnValue(never())
     await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
     await confirmDelete(DIVIDEND_NAME)
 

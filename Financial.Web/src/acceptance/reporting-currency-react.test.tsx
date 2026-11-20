@@ -6,6 +6,7 @@ import AggregatedSummaryTab from '../components/AggregatedSummaryTab'
 import TransactionsTab from '../components/TransactionsTab'
 import type { FinancialApiClient } from '../api/financialApiClient'
 import type { AggregatedSummaryDto, AssetDetailsDto } from '../api/types'
+import { never } from '../test-utils/deferred'
 
 const {
   getReportingCurrencyMock,
@@ -112,7 +113,7 @@ const ASSET: AssetDetailsDto = {
 function renderBrokerSummary(summary: AggregatedSummaryDto) {
   const { wrapper, setNode } = createSelectedNodeWrapper()
   getSummaryByBrokerMock.mockResolvedValue(summary)
-  getBrokerBreakdownMock.mockReturnValue(new Promise(() => {}))
+  getBrokerBreakdownMock.mockReturnValue(never())
   const result = render(<AggregatedSummaryTab />, { wrapper })
   setNode({ nodeType: 'Broker', brokerName: 'XPI', currency: 'BRL' })
   return result
@@ -126,7 +127,7 @@ describe('P49 F04 — React Reporting currency acceptance', () => {
     getBrokerBreakdownMock.mockReset()
     getAssetDetailsMock.mockReset()
     getTransactionTypeEffectsMock.mockReset()
-    getTransactionTypeEffectsMock.mockReturnValue(new Promise(() => {}))
+    getTransactionTypeEffectsMock.mockReturnValue(never())
   })
 
   it('[AC P49-F04-react-reporting-currency-01] a Reporting currency control appears under Settings, offering GBP/BRL/USD, and persists the chosen value via the setting endpoint', async () => {

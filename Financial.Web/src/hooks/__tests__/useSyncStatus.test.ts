@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SyncStatusResponseDto } from '../../api/types'
 import { useSyncStatus } from '../useSyncStatus'
@@ -34,10 +34,6 @@ describe('useSyncStatus', () => {
     // shouldAdvanceTime keeps real timers ticking so RTL's waitFor polling still resolves
     // while setInterval is driven by fake time.
     vi.useFakeTimers({ shouldAdvanceTime: true })
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('calls_getSyncStatus_on_mount', async () => {

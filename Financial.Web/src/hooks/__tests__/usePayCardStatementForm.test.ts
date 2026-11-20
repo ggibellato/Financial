@@ -1,10 +1,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CardStatementDto, PayableStatementDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { payableCardsOf, usePayCardStatementForm } from '../usePayCardStatementForm'
+import { never } from '../../test-utils/deferred'
 
 const { getPayableStatementsMock, markCardStatementPaidMock } = vi.hoisted(() => ({
   getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
@@ -65,10 +66,6 @@ describe('usePayCardStatementForm', () => {
     pinDate('2026-10-15T12:00:00+01:00')
     getPayableStatementsMock.mockReset().mockResolvedValue(STATEMENTS)
     markCardStatementPaidMock.mockReset().mockResolvedValue(PAID)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('loads nothing until opened', () => {
@@ -248,7 +245,7 @@ describe('usePayCardStatementForm', () => {
     act(() => result.current.setField('date', '2026-10-14'))
     const afterEdit = result.current.saveError
     await failPayment()
-    markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
+    markCardStatementPaidMock.mockReturnValue(never())
     act(() => {
       result.current.submit()
     })

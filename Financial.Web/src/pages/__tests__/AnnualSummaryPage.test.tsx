@@ -109,10 +109,6 @@ const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
 ]
 
 describe('AnnualSummaryPage', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   beforeEach(() => {
     pinDate('2026-06-15T12:00:00+01:00')
     getCategoryTotalsAnnualForYearMock.mockReset()

@@ -5,6 +5,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PotBalanceDto } from '../../api/types'
 import ManagePotsDialog from '../ManagePotsDialog'
+import { never } from '../../test-utils/deferred'
 
 const { updatePotsMock } = vi.hoisted(() => ({
   updatePotsMock: vi.fn<FinancialApiClient['updatePots']>(),
@@ -202,7 +203,7 @@ describe('ManagePotsDialog', () => {
   })
 
   it('disables every control and shows progress while saving', async () => {
-    updatePotsMock.mockReturnValue(new Promise(() => {}))
+    updatePotsMock.mockReturnValue(never())
     const { user } = renderDialog()
 
     await setText(user, 'Home', SPLIT, '55')

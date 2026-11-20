@@ -96,6 +96,10 @@ function setMock(overrides: Partial<CorporateActionsData>) {
 }
 
 describe('CorporateActionsTab', () => {
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView
+  })
+
   beforeEach(() => {
     mockRetry.mockReset()
     mockShowNewForm.mockReset()
@@ -425,10 +429,6 @@ describe('CorporateActionsTab', () => {
       vi.useFakeTimers()
       Element.prototype.scrollIntoView = vi.fn()
       setMock({ corporateActions: [split({ id: 'ca1' }), split({ id: 'ca2' })] })
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
     })
 
     const highlighted = (id: string) => document.querySelector(`[data-corporate-action-id="${id}"]`)

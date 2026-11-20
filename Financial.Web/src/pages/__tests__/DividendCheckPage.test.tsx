@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DividendCheckPage from '../DividendCheckPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
 
 const { getDividendSummaryMock, getDividendHistoryMock, getWatchlistMock } = vi.hoisted(() => ({
   getDividendSummaryMock: vi.fn<FinancialApiClient['getDividendSummary']>(),
@@ -229,8 +230,8 @@ describe('DividendCheckPage', () => {
   })
 
   it('shows Checking… and disables button during fetch', async () => {
-    getDividendSummaryMock.mockReturnValue(new Promise(() => {}))
-    getDividendHistoryMock.mockReturnValue(new Promise(() => {}))
+    getDividendSummaryMock.mockReturnValue(never())
+    getDividendHistoryMock.mockReturnValue(never())
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')

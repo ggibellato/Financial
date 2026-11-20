@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useEffect } from 'react'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -110,10 +110,6 @@ beforeEach(() => {
   updatePotDepositMock.mockReset().mockResolvedValue(SAVED_OPERATION)
   getPotsMock.mockReset().mockResolvedValue(POTS)
   sessionStorage.clear()
-})
-
-afterEach(() => {
-  vi.useRealTimers()
 })
 
 describe('PotDepositForm', () => {

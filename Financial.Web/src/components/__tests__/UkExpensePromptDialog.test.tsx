@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import UkExpensePromptDialog from '../UkExpensePromptDialog'
 import type { BankOption, CategoryDto, RecurringBillDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
@@ -43,10 +43,6 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof UkExpensePr
 describe('UkExpensePromptDialog', () => {
   beforeEach(() => {
     pinDate('2026-07-01T00:30:00+01:00')
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('renders prefilled Description, Value, and today\'s Date', () => {

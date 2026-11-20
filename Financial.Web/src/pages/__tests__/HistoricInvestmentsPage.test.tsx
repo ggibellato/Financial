@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HistoricInvestmentsPage from '../HistoricInvestmentsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TreeNodeDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
 
 const {
   getNavigationTreeMock,
@@ -74,10 +75,10 @@ function renderPage() {
 describe('HistoricInvestmentsPage', () => {
   beforeEach(() => {
     getNavigationTreeMock.mockReset()
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
-    getPortfolioAssetsSummaryMock.mockReturnValue(new Promise(() => {}))
-    getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
-    getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
+    getPortfolioAssetsSummaryMock.mockReturnValue(never())
+    getSummaryByBrokerMock.mockReturnValue(never())
+    getSummaryByPortfolioMock.mockReturnValue(never())
   })
 
   it('renders tree and empty detail state on load', async () => {

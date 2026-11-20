@@ -60,8 +60,7 @@ describe('TransferForm', () => {
   it('excludes the selected source bank from the destination dropdown', () => {
     render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-trading212" />)
 
-    const destinationOptions = screen.getByLabelText(/^To/).querySelectorAll('option')
-    const optionValues = Array.from(destinationOptions).map((o) => o.textContent)
+    const optionValues = optionNames(screen.getByLabelText(/^To/))
     expect(optionValues).not.toContain('Barclays')
     expect(optionValues).toContain('Trading212')
     expect(optionValues).toContain('Chase')

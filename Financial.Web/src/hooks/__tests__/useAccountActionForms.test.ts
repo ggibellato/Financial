@@ -7,6 +7,7 @@ import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { pinDate } from '../../test-utils/pinDate'
 import type { AccountFormOptions } from '../useAccountFormOptions'
 import { useAccountActionForms } from '../useAccountActionForms'
+import { never } from '../../test-utils/deferred'
 
 const {
   createExpenseMock,
@@ -163,10 +164,10 @@ describe('useAccountActionForms', () => {
     getMensaisBillsMock.mockReset()
     getMensaisBillsMock.mockResolvedValue([])
     getAccountsMock.mockReset().mockResolvedValue([potsAccount({ id: 'p1', name: 'Reserva' })])
-    getPayableStatementsMock.mockReset().mockReturnValue(new Promise(() => {}))
-    getAccountStatementsMock.mockReset().mockReturnValue(new Promise(() => {}))
-    getCardsInCreditMock.mockReset().mockReturnValue(new Promise(() => {}))
-    getPotsMock.mockReset().mockReturnValue(new Promise(() => {}))
+    getPayableStatementsMock.mockReset().mockReturnValue(never())
+    getAccountStatementsMock.mockReset().mockReturnValue(never())
+    getCardsInCreditMock.mockReset().mockReturnValue(never())
+    getPotsMock.mockReset().mockReturnValue(never())
     sessionStorage.clear()
   })
 

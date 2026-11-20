@@ -1,5 +1,4 @@
 import { render, screen, within } from '@testing-library/react'
-import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BrokerBreakdownData } from '../../hooks/useBrokerBreakdown'
 import type { PortfolioBreakdownItemDto } from '../../api/types'
@@ -18,49 +17,7 @@ vi.mock('../../hooks/useBrokerBreakdown', () => ({
   useBrokerBreakdown: () => mockHookValue,
 }))
 
-interface MockPieDatum {
-  name: string
-  value: number
-  percentage: number
-}
-
-vi.mock('recharts', () => ({
-  PieChart: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="pie-chart">{children}</div>
-  ),
-  Pie: ({ data, children }: { data: MockPieDatum[]; children?: React.ReactNode }) => (
-    <div data-testid="pie">
-      {data.map((d) => (
-        <span key={d.name} data-testid="pie-slice" data-percentage={d.percentage}>
-          {d.name}
-        </span>
-      ))}
-      {children}
-    </div>
-  ),
-  Cell: () => null,
-  Tooltip: ({
-    content,
-  }: {
-    content?: (props: {
-      active: boolean
-      payload: { payload: MockPieDatum }[]
-    }) => React.ReactNode
-  }) => (
-    <div data-testid="tooltip">
-      {content
-        ? content({
-            active: true,
-            payload: [{ payload: { name: 'Test Slice', value: 1234.5, percentage: 25.6 } }],
-          })
-        : null}
-    </div>
-  ),
-  Legend: () => <div data-testid="legend" />,
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="responsive-container">{children}</div>
-  ),
-}))
+vi.mock('recharts', () => import('../../test/rechartsPieMock'))
 
 function setMock(overrides: Partial<BrokerBreakdownData>) {
   Object.assign(mockHookValue, overrides)
@@ -141,7 +98,7 @@ describe('BrokerBreakdownCharts', () => {
   it('renders_tooltip_content_with_name_value_and_formatted_percentage', () => {
     setMock({ breakdown: BREAKDOWN })
     render(<BrokerBreakdownCharts />)
-    expect(screen.getAllByText('Test Slice').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Equity').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/1,234\.50|1234[.,]50/).length).toBeGreaterThan(0)
     expect(screen.getAllByText('25.6%').length).toBeGreaterThan(0)
   })

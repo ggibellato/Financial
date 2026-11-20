@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto } from '../../api/types'
-import { deferred } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { dueDateRangeOf, useStatementDueDateForm } from '../useStatementDueDateForm'
 
@@ -115,7 +115,7 @@ describe('useStatementDueDateForm', () => {
   })
 
   it('marks which action is pending and ignores a second submit or opening another row', () => {
-    setStatementDueDateMock.mockReturnValue(new Promise(() => {}))
+    setStatementDueDateMock.mockReturnValue(never())
     const { result } = renderForm()
 
     act(() => result.current.clear())

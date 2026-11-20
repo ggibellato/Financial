@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CardStatementDto } from '../../api/types'
@@ -65,10 +65,6 @@ describe('useCardStatements', () => {
     getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     markCardStatementPaidMock.mockReset()
     unmarkCardStatementPaidMock.mockReset()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('loads nothing without a card', () => {
@@ -219,7 +215,7 @@ describe('useCardStatements', () => {
   })
 
   it('ignores opening another payment while one is saving', async () => {
-    markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
+    markCardStatementPaidMock.mockReturnValue(never())
     const { result } = await renderLoaded()
     act(() => result.current.openPayForm(OCTOBER))
     act(() => result.current.setPayField('bankId', 'barclays'))

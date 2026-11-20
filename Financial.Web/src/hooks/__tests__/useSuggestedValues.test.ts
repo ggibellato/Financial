@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentSnapshotSuggestionsDto } from '../../api/types'
-import { deferred } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 import { useSuggestedValues } from '../useSuggestedValues'
 
 const { getInvestmentSnapshotSuggestionsMock, updateInvestmentSnapshotValueMock } = vi.hoisted(() => ({
@@ -201,7 +201,7 @@ describe('useSuggestedValues', () => {
   })
 
   it('shows which row is being applied out of how many', async () => {
-    updateInvestmentSnapshotValueMock.mockReturnValue(new Promise(() => {}))
+    updateInvestmentSnapshotValueMock.mockReturnValue(never())
     const result = await renderOpened()
 
     act(() => {

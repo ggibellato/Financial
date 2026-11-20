@@ -311,8 +311,8 @@ describe('useAssetSummary', () => {
   })
 
   it('returns_isLoadingAsset_true_while_fetching', async () => {
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
+    getCurrentPriceMock.mockReturnValue(never())
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
@@ -335,7 +335,7 @@ describe('useAssetSummary', () => {
 
   it('sets_asset_error_on_load_failure', async () => {
     getAssetDetailsMock.mockRejectedValue(new Error('Network error'))
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getCurrentPriceMock.mockReturnValue(never())
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
@@ -371,7 +371,7 @@ describe('useAssetSummary', () => {
 
   it('disables_refresh_while_price_is_loading', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getCurrentPriceMock.mockReturnValue(never())
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
@@ -386,8 +386,8 @@ describe('useAssetSummary', () => {
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset?.name).toBe('KLBN4'))
-    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
-    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getAssetDetailsMock.mockReturnValue(never())
+    getCurrentPriceMock.mockReturnValue(never())
     setNode(OTHER_ASSET_NODE)
     await waitFor(() => expect(result.current.isLoadingAsset).toBe(true))
     expect(result.current.asset).toBeNull()

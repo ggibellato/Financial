@@ -5,6 +5,7 @@ import type { IncomeSourceDto } from '../../api/types'
 import { account, potsAccount } from '../../test/account'
 import { optionNames as optionsOf } from '../../test-utils/optionNames'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
+import { never } from '../../test-utils/deferred'
 
 const RESERVA = potsAccount({ id: 'p1', name: 'Reserva' })
 const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })
@@ -204,7 +205,7 @@ describe('IncomeSourceFormDialog', () => {
         accounts={ACCOUNTS}
         accountsStatus="ready"
         onCancel={vi.fn()}
-        onSubmit={() => new Promise(() => {})}
+        onSubmit={() => never()}
       />,
     )
 

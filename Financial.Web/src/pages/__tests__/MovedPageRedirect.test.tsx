@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { account, potsAccount, settlementAccount } from '../../test/account'
 import MovedPageRedirect from '../MovedPageRedirect'
+import { never } from '../../test-utils/deferred'
 
 const { getAccountsMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -37,7 +38,7 @@ beforeEach(() => {
 
 describe('MovedPageRedirect', () => {
   it('shows the loading state while the accounts are read', () => {
-    getAccountsMock.mockReturnValue(new Promise(() => {}))
+    getAccountsMock.mockReturnValue(never())
     renderRedirect()
 
     expect(screen.getByText('Loading…')).toBeInTheDocument()

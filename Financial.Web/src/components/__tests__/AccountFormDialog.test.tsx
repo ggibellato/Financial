@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { AccountTemplateDto, CategoryDto } from '../../api/types'
 import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
@@ -6,6 +6,7 @@ import { fireEvent, render, screen, waitFor, within } from '../../test/renderWit
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 import AccountFormDialog from '../AccountFormDialog'
 import { findErrorAlert, getErrorAlert } from '../../test-utils/errorAlert'
+import { pinDate } from '../../test-utils/pinDate'
 
 const BANK: AccountTemplateDto = {
   name: 'Bank',
@@ -53,12 +54,7 @@ const save = (name = 'Add account') => fireEvent.click(screen.getByRole('button'
 
 describe('AccountFormDialog', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-10-24T12:00:00'))
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
+    pinDate('2026-10-24T12:00:00')
   })
 
   it('opens New account with the template first, then the Bank fields with their defaults, and no Active switch', () => {

@@ -182,10 +182,6 @@ describe('toInputDate', () => {
 })
 
 describe('todayIsoDate', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it.each([
     ['2026-07-01T00:30:00+01:00', '2026-07-01'],
     ['2026-01-31T23:59:00Z', '2026-01-31'],
@@ -199,12 +195,7 @@ describe('todayIsoDate', () => {
 
 describe('currentYearMonth', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 6, 15)) // 2026-07-15
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
+    pinDate('2026-07-15T12:00:00')
   })
 
   it('currentYearMonth_ReturnsCurrentYearAndOneIndexedMonth', () => {

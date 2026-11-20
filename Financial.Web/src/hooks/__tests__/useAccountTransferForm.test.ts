@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransferDto } from '../../api/types'
@@ -68,10 +68,6 @@ describe('useAccountTransferForm', () => {
     createAccountTransferMock.mockReset()
     updateAccountTransferMock.mockReset()
     sessionStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('Transfer to locks this account as the source and lists the destinations', () => {

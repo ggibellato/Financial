@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
 import { account, potsAccount } from '../../test/account'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault } from '../../utils/createFormDefaults'
 import { usePotWithdrawalForm } from '../usePotWithdrawalForm'
+import { never } from '../../test-utils/deferred'
 
 const { createPotWithdrawalMock, updatePotWithdrawalMock, getPotsMock } = vi.hoisted(() => ({
   createPotWithdrawalMock: vi.fn<FinancialApiClient['createPotWithdrawal']>(),
@@ -89,10 +90,6 @@ describe('usePotWithdrawalForm', () => {
     sessionStorage.clear()
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('clears the chosen pot when the pots account changes', async () => {
     const { result } = await openWithPotsLoaded()
     act(() => result.current.setField('potId', 'pot-b'))
@@ -136,7 +133,7 @@ describe('usePotWithdrawalForm', () => {
   })
 
   it('does not submit before the pots have loaded', () => {
-    getPotsMock.mockReturnValue(new Promise(() => {}))
+    getPotsMock.mockReturnValue(never())
     const { result } = renderForm()
     act(() => result.current.openFromPotsAccount('reserva'))
     fillValidWithdrawal(result)
@@ -173,7 +170,7 @@ describe('usePotWithdrawalForm', () => {
   })
 
   it('sends a second submit only once while the first is saving', async () => {
-    createPotWithdrawalMock.mockReturnValue(new Promise(() => {}))
+    createPotWithdrawalMock.mockReturnValue(never())
     const { result } = await openWithPotsLoaded()
     fillValidWithdrawal(result)
 

@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BalanceAdjustmentDto, BankOption } from '../../api/types'
@@ -41,10 +41,6 @@ const ADJUSTMENT: BalanceAdjustmentDto = {
 }
 
 describe('useBalanceAdjustmentForm', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   beforeEach(() => {
     createBalanceAdjustmentMock.mockReset()
     updateBalanceAdjustmentMock.mockReset()
@@ -326,10 +322,6 @@ describe('useBalanceAdjustmentForm', () => {
 describe('useBalanceAdjustmentForm account settings', () => {
   const LOCKED_CHASE = { id: 'bank-chase', name: 'Chase' }
   const CHASE_BALANCE = [{ bankId: 'bank-chase', bank: 'Chase', balance: 412.5 }]
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
 
   beforeEach(() => {
     createBalanceAdjustmentMock.mockReset()

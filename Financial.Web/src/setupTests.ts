@@ -9,6 +9,7 @@ process.env.TZ = 'Europe/London'
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
 })
 
 // Fluent UI React v9 (see docs/ui/decisions/ADR-004-fluent-component-library-adoption.md)

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import AssetFormDialog from '../AssetFormDialog'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../../api/types'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
+import { optionNames } from '../../test-utils/optionNames'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
   { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
@@ -39,8 +40,7 @@ describe('AssetFormDialog', () => {
     expect(screen.getByRole('heading', { name: 'New asset' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText(/^Broker/)).toHaveValue('XPI')
-    const portfolioOptions = screen.getByLabelText(/^Portfolio/).querySelectorAll('option')
-    expect(Array.from(portfolioOptions).map((o) => o.textContent)).toEqual(['Select a portfolio', 'Default'])
+    expect(optionNames(screen.getByLabelText(/^Portfolio/))).toEqual(['Select a portfolio', 'Default'])
   })
 
   it('changing the broker resets and rescopes the portfolio picker', () => {
@@ -50,8 +50,7 @@ describe('AssetFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Broker/), { target: { value: 'Avenue' } })
 
-    const portfolioOptions = screen.getByLabelText(/^Portfolio/).querySelectorAll('option')
-    expect(Array.from(portfolioOptions).map((o) => o.textContent)).toEqual(['Select a portfolio', 'ISA'])
+    expect(optionNames(screen.getByLabelText(/^Portfolio/))).toEqual(['Select a portfolio', 'ISA'])
     expect(screen.getByLabelText(/^Portfolio/)).toHaveValue('')
   })
 

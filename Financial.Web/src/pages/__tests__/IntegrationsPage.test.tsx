@@ -5,6 +5,7 @@ import IntegrationsPage from '../IntegrationsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CreditCardCalendarSyncStatusDto } from '../../api/types'
 import { cardAccount } from '../../test/account'
+import { never } from '../../test-utils/deferred'
 
 const {
   getCalendarStatusMock,
@@ -167,7 +168,7 @@ describe('IntegrationsPage', () => {
 
   it('a failed Retry names the card and shows the error until the next attempt', async () => {
     getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
-    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Rate limit exceeded again')).mockReturnValue(new Promise(() => {}))
+    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Rate limit exceeded again')).mockReturnValue(never())
     render(<IntegrationsPage />)
     const retryButton = await screen.findByRole('button', { name: 'Retry calendar sync for Nubank' })
 

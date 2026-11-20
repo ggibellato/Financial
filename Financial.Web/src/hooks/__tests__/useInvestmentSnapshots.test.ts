@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../../api/types'
 import { deferred, never } from '../../test-utils/deferred'
@@ -31,10 +31,6 @@ const SNAPSHOTS: InvestmentSnapshotDto[] = [
 ]
 
 describe('useInvestmentSnapshots', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   beforeEach(() => {
     pinDate('2026-12-15T12:00:00Z')
     getInvestmentSnapshotsMock.mockReset()

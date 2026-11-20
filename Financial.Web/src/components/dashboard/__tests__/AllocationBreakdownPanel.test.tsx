@@ -4,31 +4,7 @@ import { fireEvent, render, screen, within } from '../../../test/renderWithFluen
 import type { AllocationBreakdownDto } from '../../../api/types'
 import AllocationBreakdownPanel from '../AllocationBreakdownPanel'
 
-interface MockPieDatum {
-  name: string
-  value: number
-  percentage: number
-}
-
-vi.mock('recharts', () => ({
-  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
-  Pie: ({ data, children }: { data: MockPieDatum[]; children?: React.ReactNode }) => (
-    <div data-testid="pie">
-      {data.map((d) => (
-        <span key={d.name} data-testid="pie-slice">
-          {d.name}
-        </span>
-      ))}
-      {children}
-    </div>
-  ),
-  Cell: () => null,
-  Tooltip: () => null,
-  Legend: () => <div data-testid="legend" />,
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="responsive-container">{children}</div>
-  ),
-}))
+vi.mock('recharts', () => import('../../../test/rechartsPieMock'))
 
 const BREAKDOWN: AllocationBreakdownDto = {
   byClass: [

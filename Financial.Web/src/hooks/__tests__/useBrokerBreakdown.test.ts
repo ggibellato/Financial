@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PortfolioBreakdownItemDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useBrokerBreakdown } from '../useBrokerBreakdown'
+import { never } from '../../test-utils/deferred'
 
 const { getBrokerBreakdownMock } = vi.hoisted(() => ({
   getBrokerBreakdownMock: vi.fn<FinancialApiClient['getBrokerBreakdown']>(),
@@ -89,7 +90,7 @@ describe('useBrokerBreakdown', () => {
   })
 
   it('sets_isLoading_true_while_fetch_is_in_progress', async () => {
-    getBrokerBreakdownMock.mockReturnValue(new Promise(() => {}))
+    getBrokerBreakdownMock.mockReturnValue(never())
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useBrokerBreakdown(), { wrapper })
     setNode(BROKER_NODE)

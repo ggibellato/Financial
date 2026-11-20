@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import { useDialogSubmit } from '../useDialogSubmit'
+import { never } from '../../test-utils/deferred'
 
 describe('useDialogSubmit', () => {
   it('starts idle with no error', () => {
@@ -47,7 +48,7 @@ describe('useDialogSubmit', () => {
     await act(() => result.current.submit(() => Promise.reject(rejection)))
     expect(result.current.failure).toBe(rejection)
 
-    act(() => { void result.current.submit(() => new Promise(() => {})) })
+    act(() => { void result.current.submit(() => never()) })
     expect(result.current.failure).toBeNull()
   })
 
@@ -63,7 +64,7 @@ describe('useDialogSubmit', () => {
     const { result } = renderHook(() => useDialogSubmit('The bank could not be saved.'))
     await act(() => result.current.submit(() => Promise.reject(new Error('Server unavailable.'))))
 
-    act(() => { void result.current.submit(() => new Promise(() => {})) })
+    act(() => { void result.current.submit(() => never()) })
 
     expect(result.current.error).toBeNull()
     expect(result.current.isSaving).toBe(true)

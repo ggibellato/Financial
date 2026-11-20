@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SettlementEntryDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { useSettlementEntryForm, type SettlementEntryField } from '../useSettlementEntryForm'
+import { never } from '../../test-utils/deferred'
 
 const { createSettlementEntryMock, updateSettlementEntryMock, settleAccountMock } = vi.hoisted(() => ({
   settleAccountMock: vi.fn<FinancialApiClient['settleAccount']>(),
@@ -89,8 +90,6 @@ describe('useSettlementEntryForm in Settle mode', () => {
     sessionStorage.clear()
     settleAccountMock.mockReset().mockResolvedValue({ ...ENTRY, description: 'Settlement' })
   })
-
-  afterEach(() => vi.useRealTimers())
 
   it('[AC P60-F12-settlement-screen-05] pre-fills who pays, the amount and a same-direction converted value at 2 decimals', () => {
     const { result } = openSettle(maeWith(167.8768, 7.94214099))
@@ -307,10 +306,6 @@ describe('useSettlementEntryForm', () => {
     updateSettlementEntryMock.mockReset().mockResolvedValue(ENTRY)
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   describe('opening Add', () => {
     it('defaults to the main currency and the last day of a past month, with no payer chosen and nothing dirty', () => {
       const { result } = renderForm()
@@ -501,7 +496,7 @@ describe('useSettlementEntryForm', () => {
     })
 
     it('does not save twice while saving', () => {
-      createSettlementEntryMock.mockReturnValue(new Promise(() => {}))
+      createSettlementEntryMock.mockReturnValue(never())
       const { result } = renderForm()
       act(() => result.current.openAdd())
       fillValidEntry(result)

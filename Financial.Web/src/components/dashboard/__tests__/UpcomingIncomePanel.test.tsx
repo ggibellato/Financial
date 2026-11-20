@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '../../../test/renderWithFluent'
 import type { UpcomingIncomeDto } from '../../../api/types'
 import UpcomingIncomePanel from '../UpcomingIncomePanel'
@@ -33,10 +33,6 @@ function visibleAssets(): string[] {
 describe('UpcomingIncomePanel', () => {
   beforeEach(() => {
     pinDate(PINNED_NOW)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('defaults_to_the_ninety_day_window', () => {

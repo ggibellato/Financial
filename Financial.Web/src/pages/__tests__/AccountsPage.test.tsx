@@ -1,5 +1,5 @@
 import { type InitialEntry, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountGroupMemberDto, AccountGroupSummaryDto, AccountTemplateGroupDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
@@ -7,6 +7,7 @@ import { fireEvent, render, screen, waitFor, within } from '../../test/renderWit
 import { requestDelete } from '../../test-utils/confirmDelete'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
+import { never } from '../../test-utils/deferred'
 
 const {
   getAccountTemplateGroupsMock,
@@ -200,10 +201,6 @@ describe('AccountsPage', () => {
     getAccountsMock.mockReset().mockResolvedValue([])
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('[AC P60-F13-consolidated-navigation-and-retirement-04] shows the moved notice above the grids when a redirect found no account', async () => {
     renderPage({ pathname: '/cashflow/accounts', state: { movedNotice: true } })
 
@@ -375,7 +372,7 @@ describe('AccountsPage', () => {
   })
 
   it('shows one loading state while the groups are pending', () => {
-    getAccountTemplateGroupsMock.mockReturnValue(new Promise(() => {}))
+    getAccountTemplateGroupsMock.mockReturnValue(never())
 
     renderPage()
 
@@ -619,7 +616,7 @@ describe('AccountsPage', () => {
   it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-05] never shows the previous month's figures while the new month loads`, async () => {
     renderPage('/cashflow/accounts?tab=summary')
     await screen.findByRole('table', { name: 'Category totals' })
-    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+    getDefaultGroupSummaryMock.mockReturnValue(never())
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
@@ -664,7 +661,7 @@ describe('AccountsPage', () => {
   })
 
   it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-07] keeps the month picker and tabs usable while a tab loads', () => {
-    getAccountTemplateGroupsMock.mockReturnValue(new Promise(() => {}))
+    getAccountTemplateGroupsMock.mockReturnValue(never())
     renderPage()
 
     expect(screen.getByText('Loading…')).toBeInTheDocument()
