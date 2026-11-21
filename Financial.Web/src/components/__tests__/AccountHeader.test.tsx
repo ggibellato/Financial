@@ -16,7 +16,7 @@ const ACCOUNTS: AccountDto[] = [
 ]
 
 const OCTOBER_UNPAID: AccountStatementDto = {
-  id: 's-oct',
+  id: 's-oct', potWithdrawals: [],
   year: 2026,
   month: 10,
   total: 650.1,

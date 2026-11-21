@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
+internal delegate IReadOnlyList<StatementPotWithdrawalDTO> PotWithdrawalsOn(Account card, int year, int month);
+
 public sealed class AccountQueryService : IAccountQueryService
 {
     private const string EntityType = "Account";
@@ -178,10 +180,11 @@ public sealed class AccountQueryService : IAccountQueryService
             var expenses = _repository.GetExpenses().ToList();
             var transfers = _repository.GetTransfers().ToList();
             var today = _timeProvider.GetLocalToday();
+            var potWithdrawalsOn = PotWithdrawalsReader(expenses);
 
             var result = CardStatementLedger.For(card, expenses, _repository.GetCardStatements(), transfers, today.Year, today.Month)
                 .Reverse()
-                .Select(row => ToStatementDto(row, expenses, transfers))
+                .Select(row => ToStatementDto(card, row, expenses, transfers, potWithdrawalsOn))
                 .ToList();
 
             span.MarkSuccess();
@@ -204,11 +207,12 @@ public sealed class AccountQueryService : IAccountQueryService
             var statements = _repository.GetCardStatements().ToList();
             var transfers = _repository.GetTransfers().ToList();
             var today = _timeProvider.GetLocalToday();
+            var potWithdrawalsOn = PotWithdrawalsReader(expenses);
 
             var result = _repository.GetCreditCardAccounts()
                 .SelectMany(card => CardStatementLedger.For(card, expenses, statements, transfers, today.Year, today.Month))
                 .Where(row => row is { IsUnpaid: true, Statement: not null })
-                .Select(row => ToPayableDto(row.Statement!, row.AmountToPay))
+                .Select(row => ToPayableDto(row.Statement!, row.AmountToPay, potWithdrawalsOn))
                 .OrderBy(statement => statement.CreditCardName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(statement => statement.Year)
                 .ThenBy(statement => statement.Month)
@@ -225,7 +229,7 @@ public sealed class AccountQueryService : IAccountQueryService
         }
     }
 
-    private static PayableStatementDTO ToPayableDto(CardStatement statement, decimal total) => new()
+    private static PayableStatementDTO ToPayableDto(CardStatement statement, decimal total, PotWithdrawalsOn potWithdrawalsOn) => new()
     {
         Id = statement.Id,
         CreditCardId = statement.CreditCard.Id,
@@ -233,7 +237,8 @@ public sealed class AccountQueryService : IAccountQueryService
         Year = statement.Year,
         Month = statement.Month,
         Total = total,
-        Currency = statement.CreditCard.Currency.ToString()
+        Currency = statement.CreditCard.Currency.ToString(),
+        PotWithdrawals = potWithdrawalsOn(statement.CreditCard, statement.Year, statement.Month)
     };
 
     private AccountStatementDTO? ViewedStatementOf(Account card, int year, int month)
@@ -241,11 +246,12 @@ public sealed class AccountQueryService : IAccountQueryService
         var expenses = _repository.GetExpenses().ToList();
         var transfers = _repository.GetTransfers().ToList();
         return CardStatementLedger.MonthOf(card, expenses, _repository.GetCardStatements(), transfers, year, month) is { } row
-            ? ToStatementDto(row, expenses, transfers)
+            ? ToStatementDto(card, row, expenses, transfers, PotWithdrawalsReader(expenses))
             : null;
     }
 
-    private static AccountStatementDTO ToStatementDto(CardStatementLedgerMonth row, IReadOnlyList<Expense> expenses, IReadOnlyList<Transfer> transfers)
+    private static AccountStatementDTO ToStatementDto(
+        Account card, CardStatementLedgerMonth row, IReadOnlyList<Expense> expenses, IReadOnlyList<Transfer> transfers, PotWithdrawalsOn potWithdrawalsOn)
     {
         var payment = row.Statement is { } statement ? PaymentOf(statement, expenses, transfers) : null;
         return new AccountStatementDTO
@@ -262,8 +268,25 @@ public sealed class AccountQueryService : IAccountQueryService
             DueDate = row.Statement?.DueDate,
             PaidOn = payment?.Date,
             PaidAmount = row.PaidAmount,
-            PaidFromAccountName = payment?.Account.Name
+            PaidFromAccountName = payment?.Account.Name,
+            PotWithdrawals = potWithdrawalsOn(card, row.Year, row.Month)
         };
+    }
+
+    private PotWithdrawalsOn PotWithdrawalsReader(IReadOnlyList<Expense> expenses)
+    {
+        var linkedExpenses = expenses.Where(expense => expense.OperationId is not null).ToList();
+        var linkedTransactions = _repository.GetPotTransactions().Where(transaction => transaction.OperationId is not null).ToList();
+        var accounts = _repository.GetAccounts().ToList();
+        return (card, year, month) => PotOperation.ReadOnStatement(card, year, month, linkedTransactions, linkedExpenses, accounts)
+            .Select(operation => new StatementPotWithdrawalDTO
+            {
+                OperationId = operation.OperationId,
+                PotsAccountName = operation.PotsAccount.Name,
+                PotName = operation.Pot!.Name,
+                Amount = operation.Amount
+            })
+            .ToList();
     }
 
     private static (DateOnly Date, Account Account)? PaymentOf(CardStatement statement, IReadOnlyList<Expense> expenses, IReadOnlyList<Transfer> transfers)

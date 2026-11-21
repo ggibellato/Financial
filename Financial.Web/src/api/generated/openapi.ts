@@ -7204,6 +7204,7 @@ export interface components {
             paidFromAccountName?: null | string;
             /** Format: date */
             paidOn?: null | string;
+            potWithdrawals: components["schemas"]["StatementPotWithdrawalDTO"][];
             status: string;
             /** Format: double */
             total: number;
@@ -8440,6 +8441,7 @@ export interface components {
             id: string;
             /** Format: int32 */
             month: number;
+            potWithdrawals: components["schemas"]["StatementPotWithdrawalDTO"][];
             /** Format: double */
             total: number;
             /** Format: int32 */
@@ -8859,6 +8861,14 @@ export interface components {
         StatementDueDateUpdateDTO: {
             /** Format: date */
             dueDate: null | string;
+        };
+        StatementPotWithdrawalDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: uuid */
+            operationId: string;
+            potName: string;
+            potsAccountName: string;
         };
         /** @description One bounded context's current persistence status. */
         SyncStatusDTO: {

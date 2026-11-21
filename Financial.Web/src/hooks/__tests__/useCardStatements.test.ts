@@ -27,10 +27,10 @@ vi.mock('../../api/financialApiClient', () => ({
 const CARD_ID = 'card-amex'
 
 const OCTOBER: StoredStatement = {
-  creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
+  creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potWithdrawals: [],
 }
 const SEPTEMBER: StoredStatement = {
-  creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
+  creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [],
 }
 
 const ACCOUNTS = [

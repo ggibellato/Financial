@@ -20,9 +20,9 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const STATEMENTS: PayableStatementDto[] = [
-  { id: 'amex-oct', creditCardId: 'amex', creditCardName: 'Amex', year: 2026, month: 10, total: 75, currency: 'GBP' },
-  { id: 'amex-nov', creditCardId: 'amex', creditCardName: 'Amex', year: 2026, month: 11, total: 12, currency: 'GBP' },
-  { id: 'visa-oct', creditCardId: 'visa', creditCardName: 'Visa', year: 2026, month: 10, total: 20, currency: 'GBP' },
+  { id: 'amex-oct', creditCardId: 'amex', creditCardName: 'Amex', year: 2026, month: 10, total: 75, currency: 'GBP', potWithdrawals: [] },
+  { id: 'amex-nov', creditCardId: 'amex', creditCardName: 'Amex', year: 2026, month: 11, total: 12, currency: 'GBP', potWithdrawals: [] },
+  { id: 'visa-oct', creditCardId: 'visa', creditCardName: 'Visa', year: 2026, month: 10, total: 20, currency: 'GBP', potWithdrawals: [] },
 ]
 
 const PAID: CardStatementDto = {
@@ -96,7 +96,7 @@ describe('usePayCardStatementForm', () => {
   it('offers only cards in the bank currency, since a payment cannot cross currencies', async () => {
     getPayableStatementsMock.mockResolvedValue([
       ...STATEMENTS,
-      { id: 'nubank-oct', creditCardId: 'nubank', creditCardName: 'Nubank', year: 2026, month: 10, total: 300, currency: 'BRL' },
+      { id: 'nubank-oct', creditCardId: 'nubank', creditCardName: 'Nubank', year: 2026, month: 10, total: 300, currency: 'BRL', potWithdrawals: [] },
     ])
     const { result } = renderForm()
 
@@ -107,7 +107,7 @@ describe('usePayCardStatementForm', () => {
 
   it('has nothing to pay when every payable statement is in another currency', async () => {
     getPayableStatementsMock.mockResolvedValue([
-      { id: 'nubank-oct', creditCardId: 'nubank', creditCardName: 'Nubank', year: 2026, month: 10, total: 300, currency: 'BRL' },
+      { id: 'nubank-oct', creditCardId: 'nubank', creditCardName: 'Nubank', year: 2026, month: 10, total: 300, currency: 'BRL', potWithdrawals: [] },
     ])
     const { result } = renderForm()
 

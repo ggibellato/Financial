@@ -15,4 +15,5 @@ public sealed class AccountStatementDTO
     public DateOnly? PaidOn { get; init; }
     public decimal? PaidAmount { get; init; }
     public string? PaidFromAccountName { get; init; }
+    public required IReadOnlyList<StatementPotWithdrawalDTO> PotWithdrawals { get; init; }
 }

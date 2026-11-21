@@ -185,9 +185,9 @@ const TRANSACTIONS: AccountTransactionDto[] = [
 ]
 
 const CARD_STATEMENTS: AccountStatementDto[] = [
-  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
-  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
-  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
+  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [] },
 ]
 
 const CATEGORIES: CategoryDto[] = [
@@ -204,9 +204,9 @@ const BANK_ACTIONS = ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', '
 const VISA_ID = '8f3b1c1a-2e3a-4b1a-9a7f-500000000002'
 
 const PAYABLE_STATEMENTS: PayableStatementDto[] = [
-  { id: 's-oct', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 10, total: 210.45, currency: 'GBP' },
-  { id: 's-nov', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 11, total: 12, currency: 'GBP' },
-  { id: 'v-oct', creditCardId: VISA_ID, creditCardName: 'Platinum Visa 6007', year: 2026, month: 10, total: 80, currency: 'GBP' },
+  { id: 's-oct', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 10, total: 210.45, currency: 'GBP', potWithdrawals: [] },
+  { id: 's-nov', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 11, total: 12, currency: 'GBP', potWithdrawals: [] },
+  { id: 'v-oct', creditCardId: VISA_ID, creditCardName: 'Platinum Visa 6007', year: 2026, month: 10, total: 80, currency: 'GBP', potWithdrawals: [] },
 ]
 
 const CARD_PAYMENT_EDIT = /^Edit card payment BA Amex payment – Sep 2026 statement, /

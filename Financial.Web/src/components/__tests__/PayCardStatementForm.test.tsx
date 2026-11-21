@@ -10,7 +10,7 @@ function formState(overrides: Partial<PayCardStatementFormState> = {}): PayCardS
   return {
     isOpen: true,
     cards: [{ id: 'amex', name: 'Amex' }],
-    statements: [{ id: 'amex-oct', creditCardId: 'amex', creditCardName: 'Amex', year: 2026, month: 10, total: 75, currency: 'GBP' }],
+    statements: [{ id: 'amex-oct', creditCardId: 'amex', creditCardName: 'Amex', year: 2026, month: 10, total: 75, currency: 'GBP', potWithdrawals: [] }],
     statement: null,
     values: { cardId: 'amex', statementId: '', date: '2026-10-15' },
     isLoading: false,
@@ -27,6 +27,10 @@ function formState(overrides: Partial<PayCardStatementFormState> = {}): PayCardS
     submit: vi.fn(() => null),
     ...overrides,
   }
+}
+
+function potLine(text: string) {
+  return (_: string, element: Element | null) => element?.tagName === 'LI' && element.textContent === text
 }
 
 describe('PayCardStatementForm', () => {
@@ -80,5 +84,22 @@ describe('PayCardStatementForm', () => {
 
     expect(getErrorAlert()).toHaveTextContent('There is nothing to pay on this statement.')
     expect(getErrorAlert()).toHaveFocus()
+  })
+
+  it('[AC P62-F02-investment-withdrawal-on-statement-payment-06] names what paying the chosen statement takes from each pot on the locked bank', () => {
+    const statement = {
+      ...formState().statements[0],
+      potWithdrawals: [{ operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }],
+    }
+
+    render(<PayCardStatementForm payForm={formState({ statement })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
+
+    expect(screen.getByText(potLine('Also takes £120.00 from Reserva (Investimento) on Barclays.'))).toBeInTheDocument()
+  })
+
+  it('shows no pot note while no statement is chosen or the statement has none', () => {
+    render(<PayCardStatementForm payForm={formState()} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
+
+    expect(screen.queryByText(/^Also takes/)).not.toBeInTheDocument()
   })
 })
