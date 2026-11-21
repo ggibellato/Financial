@@ -61,4 +61,11 @@
   width: 10px;
   height: 10px;
   border-radius: var(--borderRadiusSmall);
+  forced-color-adjust: none;
+}
+
+@media (forced-colors: active) {
+  .allocation-chart__swatch {
+    outline: 1px solid CanvasText;
+  }
 }
