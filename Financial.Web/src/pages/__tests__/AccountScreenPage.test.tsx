@@ -346,6 +346,12 @@ function findDialog(title: string): Promise<HTMLElement> {
   })
 }
 
+async function enabledButton(name: string | RegExp, container: HTMLElement = document.body) {
+  const button = await within(container).findByRole('button', { name })
+  await waitFor(() => expect(button).toBeEnabled())
+  return button
+}
+
 async function dialogButton(dialogTitle: string, buttonName: string) {
   return within(await findDialog(dialogTitle)).getByText(buttonName, { selector: 'button' })
 }
@@ -397,6 +403,9 @@ beforeEach(() => {
 })
 
 const operationForm = (name: string) => screen.findByRole('form', { name })
+
+// These page journeys take 1-2 s alone and slow down several-fold under the full suite's parallel load.
+vi.setConfig({ testTimeout: 15_000 })
 
 describe('AccountScreenPage deposit and withdrawal forms', () => {
   const OPERATION_LINK = { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null }
@@ -2533,7 +2542,7 @@ describe('AccountScreenPage card screen', () => {
     createExpenseMock.mockResolvedValue({ ...TAXI, id: 'c2', description: 'Lunch' })
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-    await user.click(await screen.findByRole('button', { name: 'New charge' }))
+    await user.click(await enabledButton('New charge'))
     const form = screen.getByRole('heading', { name: 'New charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
     expect(within(form).queryByLabelText(/^Payment source/)).not.toBeInTheDocument()
@@ -2563,7 +2572,7 @@ describe('AccountScreenPage card screen', () => {
     updateExpenseMock.mockResolvedValue({ ...TAXI, value: 32 })
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-    await user.click(await screen.findByRole('button', { name: /^Edit card charge\b/ }))
+    await user.click(await enabledButton(/^Edit card charge\b/))
     const form = screen.getByRole('heading', { name: 'Edit charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
     expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
@@ -2880,7 +2889,7 @@ describe('AccountScreenPage card screen', () => {
       createExpenseMock.mockResolvedValue({ ...SHOES, id: 'r2' })
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: 'New refund' }))
+      await user.click(await enabledButton('New refund'))
       const form = screen.getByRole('heading', { name: 'New refund' }).closest('form') as HTMLElement
       expect(within(form).getByText('BA Amex')).toBeInTheDocument()
       expect(within(form).getByLabelText(/^Date/)).toHaveValue('2026-10-15')
@@ -2910,7 +2919,7 @@ describe('AccountScreenPage card screen', () => {
       expect(within(row).getByText('+40.00')).toBeInTheDocument()
       expect(within(row).getByRole('button', { name: /^Move refund\b.* to a later statement$/ })).toBeInTheDocument()
 
-      await user.click(within(row).getByRole('button', { name: /^Edit refund\b/ }))
+      await user.click(await enabledButton(/^Edit refund\b/, row))
       const form = screen.getByRole('heading', { name: 'Edit refund' }).closest('form') as HTMLElement
       expect(within(form).getByLabelText(/^Amount/)).toHaveValue(40)
       await user.clear(within(form).getByLabelText(/^Amount/))

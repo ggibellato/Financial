@@ -155,8 +155,8 @@ describe('AnnualSummaryPage', () => {
   it('defaults to the Category totals tab on load', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
-    expect(screen.getByText('Mercado')).toBeInTheDocument()
+    expect(await screen.findByText('Mercado')).toBeInTheDocument()
+    expect(screen.getByText('Category totals')).toBeInTheDocument()
     expect(screen.getByText('Salary')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Investments' })).not.toBeInTheDocument()
   })
@@ -179,7 +179,7 @@ describe('AnnualSummaryPage', () => {
   it('renders the combined table in the fixed row order', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
+    await screen.findByText('Mercado')
     const rowLabels = screen
       .getAllByRole('row')
       .map((row) => row.querySelector('td')?.textContent?.replace(/^(Category|Total):/, '') ?? '')
@@ -199,7 +199,7 @@ describe('AnnualSummaryPage', () => {
   it('renders Salary/Dividendo rows and category rows in the same table (no standalone Income Summary section)', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
+    await screen.findByText('Mercado')
     expect(screen.queryByText('Income Summary')).not.toBeInTheDocument()
 
     const salaryCell = screen.getByText('Salary')
@@ -213,7 +213,7 @@ describe('AnnualSummaryPage', () => {
   it('shows an Average column between the Dec and Annual total columns, using the server-computed value', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
+    await screen.findByText('Mercado')
     const headerCells = screen.getAllByRole('columnheader').map((th) => th.textContent)
     const decIndex = headerCells.indexOf('Dec')
     const averageIndex = headerCells.indexOf('Average')
@@ -231,7 +231,7 @@ describe('AnnualSummaryPage', () => {
   it('renders Resultado and Total despesas using the server-computed values, with emphasized styling', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
+    await screen.findByText('Mercado')
     // Total despesas annual total comes straight from the mocked API response, not a client recomputation.
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
     expect(totalDespesasRow.closest('tfoot')).not.toBeNull()
@@ -272,7 +272,7 @@ describe('AnnualSummaryPage', () => {
   it('shows only the Investments tab content after clicking Investments', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
+    await screen.findByText('Mercado')
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
 
     expect(screen.queryByText('Salary')).not.toBeInTheDocument()
@@ -410,8 +410,8 @@ describe('AnnualSummaryPage', () => {
   it('re-scopes the combined table, including Resultado and Total despesas, when the year changes', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Category totals')).toBeInTheDocument())
-    expect(screen.getByText('Mercado')).toBeInTheDocument()
+    expect(await screen.findByText('Mercado')).toBeInTheDocument()
+    expect(screen.getByText('Category totals')).toBeInTheDocument()
 
     const nextYearCategoryTotalsAnnual: CategoryTotalsAnnualDto = {
       ...CATEGORY_TOTALS_ANNUAL,
