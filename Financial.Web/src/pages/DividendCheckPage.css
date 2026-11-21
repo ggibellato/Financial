@@ -1,8 +1,8 @@
 .dividend-check {
-  padding: 20px;
+  padding: var(--spacingVerticalXL);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--spacingVerticalXL);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -15,22 +15,41 @@
 .dividend-check__form {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
+  gap: var(--spacingHorizontalM);
+  align-items: flex-start;
+}
+
+.dividend-check__form > button {
+  /* the height of a Fluent Field's label row, so the button stays level with the input when a message shows below it */
+  margin-top: calc(var(--lineHeightBase300) + 3 * var(--spacingVerticalXXS));
+}
+
+.dividend-check__ticker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalM);
+}
+
+.dividend-check__results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalXL);
+  flex: 1;
+  min-height: 0;
 }
 
 .dividend-check__summary-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: var(--borderRadiusXLarge);
+  padding: var(--spacingVerticalL);
   background: var(--social-bg);
   display: grid;
-  gap: 6px;
+  gap: var(--spacingVerticalS);
 }
 
 .summary-card__title {
-  font-weight: 700;
-  font-size: 1.1em;
+  font-weight: var(--fontWeightBold);
+  font-size: var(--fontSizeBase400);
   color: var(--text-h);
   margin: 0;
 }
@@ -49,7 +68,7 @@
 
 .dividend-check__tables {
   display: grid;
-  gap: 24px;
+  gap: var(--spacingHorizontalXXL);
   grid-template-columns: 2fr 1fr;
   flex: 1;
   min-height: 0;
@@ -63,7 +82,7 @@
 }
 
 .dividend-check__table-column h3 {
-  margin: 0 0 8px;
+  margin: 0 0 var(--spacingVerticalS);
 }
 
 .dividend-check__tables table {
