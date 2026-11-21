@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DividendCheckPage from '../DividendCheckPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -18,6 +19,8 @@ vi.mock('../../api/financialApiClient', () => ({
     getWatchlist: getWatchlistMock,
   } as Partial<FinancialApiClient>,
 }))
+
+const tickerField = () => screen.getByRole('combobox', { name: /Ticker/ })
 
 const baseSummary: DividendSummaryDto = {
   exchange: 'BVMF',
@@ -49,7 +52,7 @@ describe('DividendCheckPage', () => {
 
   it('shows placeholder text before first check', () => {
     render(<DividendCheckPage />)
-    expect(screen.getByText('Select a ticker and click Check.')).toBeInTheDocument()
+    expect(screen.getByText('Choose a ticker, then Check dividends.')).toBeInTheDocument()
   })
 
   it('defaults to first watchlist item on load', async () => {
@@ -62,8 +65,8 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue(baseHistory)
 
     render(<DividendCheckPage />)
-    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: '  klbn4  ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.change(tickerField(), { target: { value: '  klbn4  ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
 
     await waitFor(() => {
       expect(getDividendSummaryMock).toHaveBeenCalledWith('KLBN4', 'BVMF')
@@ -77,41 +80,15 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
 
     expect(await screen.findByText('KLBN4 - Klabin SA')).toBeInTheDocument()
-    expect(screen.getByText(/Current price:/)).toBeInTheDocument()
+    expect(screen.getByText(/Current price:/)).toHaveTextContent('R$')
     expect(screen.getByText(/Average dividend:/)).toBeInTheDocument()
     expect(screen.getByText(/Price max buy:/)).toBeInTheDocument()
   })
 
-  it('applies positive class when current price is below price max buy', async () => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 10, priceMaxBuy: 20 })
-    getDividendHistoryMock.mockResolvedValue([])
 
-    render(<DividendCheckPage />)
-    await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
-
-    const priceMaxText = await screen.findByText(/Price max buy:/)
-    expect(priceMaxText).toHaveClass('summary-card__price-max--positive')
-    expect(priceMaxText).not.toHaveClass('summary-card__price-max--negative')
-    expect(priceMaxText).toHaveTextContent('current price below max buy')
-  })
-
-  it('applies negative class when current price is above price max buy', async () => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 25, priceMaxBuy: 20 })
-    getDividendHistoryMock.mockResolvedValue([])
-
-    render(<DividendCheckPage />)
-    await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
-
-    const priceMaxText = await screen.findByText(/Price max buy:/)
-    expect(priceMaxText).toHaveClass('summary-card__price-max--negative')
-    expect(priceMaxText).not.toHaveClass('summary-card__price-max--positive')
-    expect(priceMaxText).toHaveTextContent('current price not below max buy')
-  })
 
   it('shows dividend history in date descending order', async () => {
     getDividendSummaryMock.mockResolvedValue(baseSummary)
@@ -122,7 +99,7 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
     await screen.findByText('Dividend history')
 
     const historyRows = within(screen.getByRole('table', { name: 'Dividend history' })).getAllByRole('row')
@@ -143,7 +120,7 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
     await screen.findByText('By year')
 
     const yearTable = screen.getByRole('table', { name: 'By year' })
@@ -165,7 +142,7 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
     await screen.findByText('Dividend history')
 
     const tables = screen.getAllByRole('table')
@@ -218,7 +195,7 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
     await screen.findByText('By year')
 
     const tables = screen.getAllByRole('table')
@@ -235,9 +212,10 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
 
-    expect(screen.getByRole('button', { name: 'Checking…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Checking…' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('status')).toHaveTextContent('Checking dividends…')
   })
 
   it('clears results and shows error on check failure', async () => {
@@ -246,12 +224,12 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
     await screen.findByText('KLBN4 - Klabin SA')
 
     getDividendSummaryMock.mockRejectedValue(new Error('API error'))
     getDividendHistoryMock.mockRejectedValue(new Error('API error'))
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
     await screen.findByRole('alert')
 
     expect(screen.queryByText('KLBN4 - Klabin SA')).not.toBeInTheDocument()
@@ -263,13 +241,13 @@ describe('DividendCheckPage', () => {
 
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Network error')
-    expect(screen.getByRole('button', { name: 'Check' })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Check dividends' })).not.toBeDisabled()
   })
 
-  const check = () => fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+  const check = () => fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
 
   it('offers the watchlist tickers under their groups', async () => {
     getWatchlistMock.mockResolvedValue([
@@ -280,11 +258,77 @@ describe('DividendCheckPage', () => {
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
 
-    fireEvent.focus(screen.getByLabelText('Ticker'))
+    await userEvent.click(tickerField())
 
-    const groupOf = (ticker: string) => screen.getByRole('option', { name: ticker }).closest('.ticker-combobox__group')!.firstChild!.textContent
-    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['KLBN4', 'TASA4', 'BBAS3'])
-    expect([groupOf('KLBN4'), groupOf('TASA4'), groupOf('BBAS3')]).toEqual(['Ja possuidas', 'Ja possuidas', 'Outras'])
+    const tickersOf = (group: string) =>
+      within(screen.getByRole('group', { name: group })).getAllByRole('option').map((option) => option.textContent)
+    expect(tickersOf('Ja possuidas')).toEqual(['KLBN4', 'TASA4'])
+    expect(tickersOf('Outras')).toEqual(['BBAS3'])
+  })
+
+  it('says the watchlist is loading while it is on its way, and still accepts a typed ticker', () => {
+    getWatchlistMock.mockReturnValue(never())
+    render(<DividendCheckPage />)
+
+    expect(tickerField()).toHaveAttribute('placeholder', 'Loading watchlist…')
+    expect(tickerField()).toBeEnabled()
+  })
+
+  it('offers to reload the watchlist when it fails to load, keeping the ticker typeable', async () => {
+    getWatchlistMock.mockRejectedValueOnce(new Error('Network error'))
+    render(<DividendCheckPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Network error')
+    expect(tickerField()).toBeEnabled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByDisplayValue('KLBN4')).toBeInTheDocument()
+    expect(screen.queryByText('Network error')).not.toBeInTheDocument()
+    await waitFor(() => expect(tickerField()).toHaveFocus())
+  })
+
+  it('checks the typed ticker when Enter is pressed in the field', async () => {
+    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, ticker: 'CXSE3', name: 'CXSE3 SA' })
+    getDividendHistoryMock.mockResolvedValue([])
+    render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
+
+    await userEvent.clear(tickerField())
+    await userEvent.type(tickerField(), 'CXSE3{Enter}')
+
+    expect(await screen.findByText('CXSE3 - CXSE3 SA')).toBeInTheDocument()
+    expect(getDividendSummaryMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('completes a partial ticker on the first Enter and checks it on the second, leaving the list closed', async () => {
+    getDividendSummaryMock.mockResolvedValue(baseSummary)
+    getDividendHistoryMock.mockResolvedValue([])
+    render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
+
+    await userEvent.clear(tickerField())
+    await userEvent.type(tickerField(), 'TAS{Enter}')
+    expect(tickerField()).toHaveValue('TASA4')
+    expect(getDividendSummaryMock).not.toHaveBeenCalled()
+
+    await userEvent.keyboard('{Enter}')
+
+    expect(getDividendSummaryMock).toHaveBeenCalledWith('TASA4', 'BVMF')
+    expect(tickerField()).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('keeps focus on the button and ignores another submit while a check runs', async () => {
+    getDividendSummaryMock.mockReturnValue(never())
+    getDividendHistoryMock.mockReturnValue(never())
+    render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Checking…' }))
+
+    expect(screen.getByRole('button', { name: 'Checking…' })).toHaveFocus()
+    expect(getDividendSummaryMock).toHaveBeenCalledTimes(1)
   })
 
   it('keeps a ticker typed before the watchlist arrives', async () => {
@@ -292,10 +336,10 @@ describe('DividendCheckPage', () => {
     getWatchlistMock.mockReturnValue(new Promise((resolve) => { resolveWatchlist = resolve }))
     render(<DividendCheckPage />)
 
-    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: 'CXSE3' } })
+    fireEvent.change(tickerField(), { target: { value: 'CXSE3' } })
     await act(async () => resolveWatchlist([{ group: 'Ja possuidas', name: 'KLBN4' }]))
 
-    expect(screen.getByLabelText('Ticker')).toHaveValue('CXSE3')
+    expect(tickerField()).toHaveValue('CXSE3')
   })
 
   it('loads an empty watchlist without failing, offering no ticker', async () => {
@@ -303,21 +347,26 @@ describe('DividendCheckPage', () => {
     render(<DividendCheckPage />)
 
     await act(async () => undefined)
-    fireEvent.focus(screen.getByLabelText('Ticker'))
 
-    expect(screen.getByLabelText('Ticker')).toHaveValue('')
-    expect(screen.queryAllByRole('option')).toEqual([])
+    expect(tickerField()).toHaveValue('')
+    expect(tickerField()).toHaveAccessibleDescription('Your watchlist is empty. Type a ticker to check it.')
   })
 
-  it('asks for a ticker instead of checking a blank one', async () => {
+  it.each(['', '   '])('asks for a ticker instead of checking %j', async (blank) => {
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
 
-    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: '   ' } })
+    fireEvent.change(tickerField(), { target: { value: blank } })
     check()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Ticker is required.')
+    expect(tickerField()).toHaveAccessibleDescription('Enter a ticker to check.')
+    expect(tickerField()).toHaveFocus()
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
     expect(getDividendSummaryMock).not.toHaveBeenCalled()
+
+    fireEvent.change(tickerField(), { target: { value: 'K' } })
+
+    expect(tickerField()).not.toHaveAccessibleDescription('Enter a ticker to check.')
   })
 
   it('clears the error when a later check succeeds', async () => {
@@ -391,8 +440,15 @@ describe('DividendCheckPage', () => {
     expect(headerOf(years, 'Total')).toHaveAttribute('aria-sort', 'ascending')
   })
 
-  it('reads a price equal to the max buy as not below it', async () => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 20, priceMaxBuy: 20 })
+
+
+  it.each([
+    ['below', 10, 20, 'summary-card__price-max--positive', 'current price below max buy'],
+    ['above', 25, 20, 'summary-card__price-max--negative', 'current price not below max buy'],
+    ['equal to', 20, 20, 'summary-card__price-max--negative', 'current price not below max buy'],
+    ['with no dividends to set', 10, 0, undefined, 'no dividends to set a max buy'],
+  ])('marks a current price %s the max buy', async (_, currentPrice, priceMaxBuy, colourClass, verdict) => {
+    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice, priceMaxBuy })
     getDividendHistoryMock.mockResolvedValue([])
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
@@ -400,8 +456,8 @@ describe('DividendCheckPage', () => {
     check()
 
     const priceMaxText = await screen.findByText(/Price max buy:/)
-    expect(priceMaxText).toHaveClass('summary-card__price-max--negative')
-    expect(priceMaxText.textContent).toMatch(/— current price not below max buy$/)
+    expect(priceMaxText.className).toBe(colourClass ?? '')
+    expect(priceMaxText.textContent).toMatch(new RegExp(`— ${verdict}$`))
   })
 
   it('says when there is no history and no annual totals', async () => {
@@ -425,11 +481,11 @@ describe('DividendCheckPage', () => {
 
     check()
     await screen.findByText('KLBN4 - Klabin SA')
-    expect(screen.queryByText('Select a ticker and click Check.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Choose a ticker, then Check dividends.')).not.toBeInTheDocument()
 
     check()
     await screen.findByRole('alert')
-    expect(screen.queryByText('Select a ticker and click Check.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Choose a ticker, then Check dividends.')).not.toBeInTheDocument()
   })
 
   it('sends freeform ticker not in watchlist to API', async () => {
@@ -437,8 +493,8 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue([])
 
     render(<DividendCheckPage />)
-    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: 'CXSE3' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    fireEvent.change(tickerField(), { target: { value: 'CXSE3' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
 
     await waitFor(() => {
       expect(getDividendSummaryMock).toHaveBeenCalledWith('CXSE3', 'BVMF')
