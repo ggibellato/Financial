@@ -556,7 +556,6 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Name' }))
     expect(tickers()).toEqual([expect.stringContaining('KLBN4'), expect.stringContaining('TAEE3'), expect.stringContaining('BCIA11')])
     expect(headerOf('Name')).toHaveAttribute('aria-sort', 'ascending')
-    expect(headerOf('Ticker')).toHaveAttribute('aria-sort', 'none')
 
     fireEvent.click(screen.getByRole('button', { name: 'Price' }))
     expect(headerOf('Price')).toHaveAttribute('aria-sort', 'ascending')

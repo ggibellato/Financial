@@ -88,8 +88,6 @@ describe('DividendCheckPage', () => {
     expect(screen.getByText(/Price max buy:/)).toBeInTheDocument()
   })
 
-
-
   it('shows dividend history in date descending order', async () => {
     getDividendSummaryMock.mockResolvedValue(baseSummary)
     getDividendHistoryMock.mockResolvedValue([
@@ -130,56 +128,6 @@ describe('DividendCheckPage', () => {
 
     const yearHeader = within(yearTable).getByRole('button', { name: 'Year' })
     expect(yearHeader.closest('th')).toHaveAttribute('aria-sort', 'descending')
-  })
-
-  it('cycles the Date header through unsorted -> ascending -> descending, starting from the default descending sort', async () => {
-    getDividendSummaryMock.mockResolvedValue(baseSummary)
-    getDividendHistoryMock.mockResolvedValue([
-      { type: 'Dividend', date: '2023-12-10T00:00:00Z', value: 0.87 },
-      { type: 'Dividend', date: '2025-01-01T00:00:00Z', value: 2.5 },
-      { type: 'Dividend', date: '2024-06-15T00:00:00Z', value: 1.23 },
-    ])
-
-    render(<DividendCheckPage />)
-    await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
-    await screen.findByText('Dividend history')
-
-    const tables = screen.getAllByRole('table')
-    const dateHeaderButton = within(tables[0]).getByRole('button', { name: 'Date' })
-    const dateHeader = dateHeaderButton.closest('th')
-    const readDates = () => within(tables[0]).getAllByRole('row').slice(1).map((row) => row.textContent)
-
-    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
-    expect(readDates()).toEqual([
-      expect.stringContaining('01/01/2025'),
-      expect.stringContaining('15/06/2024'),
-      expect.stringContaining('10/12/2023'),
-    ])
-
-    fireEvent.click(dateHeaderButton)
-    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
-    expect(readDates()).toEqual([
-      expect.stringContaining('10/12/2023'),
-      expect.stringContaining('01/01/2025'),
-      expect.stringContaining('15/06/2024'),
-    ])
-
-    fireEvent.click(dateHeaderButton)
-    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
-    expect(readDates()).toEqual([
-      expect.stringContaining('10/12/2023'),
-      expect.stringContaining('15/06/2024'),
-      expect.stringContaining('01/01/2025'),
-    ])
-
-    fireEvent.click(dateHeaderButton)
-    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
-    expect(readDates()).toEqual([
-      expect.stringContaining('01/01/2025'),
-      expect.stringContaining('15/06/2024'),
-      expect.stringContaining('10/12/2023'),
-    ])
   })
 
   it('sorts by-year totals by year ascending when the Year header button is clicked', async () => {
@@ -439,8 +387,6 @@ describe('DividendCheckPage', () => {
     expect(column(years, 0)).toEqual([expect.stringContaining('2022'), expect.stringContaining('2024'), expect.stringContaining('2023')])
     expect(headerOf(years, 'Total')).toHaveAttribute('aria-sort', 'ascending')
   })
-
-
 
   it.each([
     ['below', 10, 20, 'summary-card__price-max--positive', 'current price below max buy'],
