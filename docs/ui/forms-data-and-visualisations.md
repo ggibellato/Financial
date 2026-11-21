@@ -587,18 +587,23 @@ top of the text that already names the state.
 
 ### Series color
 
-Single-series bars and lines are **blue**, not grey/neutral — the same blue
-already established by the Investment Credits and Price History charts
-(`#4682b4`, a light-to-dark blue gradient `rgb(173,216,230)`→`rgb(8,81,156)`
-for multi-type bars). A chart is not exempt from this because it
-started out grey for an unrelated reason (e.g. reusing a neutral/disabled
-color) — match the existing chart blue, don't invent a new one.
+Single-series bars and lines are **blue**, not grey/neutral: the theme's
+`var(--colorBrandForeground1)`, as the Transactions, Credits and Price History
+charts use. A chart is not exempt from this because it started out grey for an
+unrelated reason (e.g. reusing a neutral/disabled color). Series colours are
+theme variables, never hex, so they follow light and dark mode (ADR-005's
+2026-11-21 addendum): Buy/Sell markers use the success and danger status
+variables, multi-type Credits bars use the per-type `--credit-type-*`
+variables, and categorical charts (the allocation pie) use Fluent
+`colorPalette*BorderActive` hues that clear 3:1 against the page in both
+themes. `styles/charts.css` themes the shared Recharts parts (axis text,
+axis lines, grid, tooltip, legend text).
 
 ### Value labels
 
 When a chart shows a value directly on/at a bar or point, position the label
 so it reads clearly regardless of the mark's own fill color — above/outside
-the mark in a fixed, explicit dark color, not inside a colored fill where
+the mark in `var(--colorNeutralForeground1)`, not inside a colored fill where
 contrast depends on which color in a gradient palette that particular bar
 happens to be. With Recharts' `LabelList` that means `position="top"` with
 an explicit `fill`, not `position="inside"` with no fill set

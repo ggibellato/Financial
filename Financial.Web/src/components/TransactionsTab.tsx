@@ -45,7 +45,7 @@ import './TransactionsTab.css'
 // Matches the blue already established by CreditsTab/PriceHistoryTab
 // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
 // neutral/grey, single-series charts are blue on both platforms.
-const CHART_COLOR = '#4682b4'
+const CHART_COLOR = 'var(--colorBrandForeground1)'
 
 const CHART_MODE_OPTIONS: { value: ChartDisplayMode; label: string }[] = [
   { value: 'Bar', label: 'Bar' },
@@ -356,7 +356,7 @@ function TransactionsChart({
                 <LabelList
                   dataKey="netInvested"
                   position="top"
-                  fill="#111"
+                  fill="var(--colorNeutralForeground1)"
                   formatter={(v: unknown) => (typeof v === 'number' && v !== 0 ? formatN2(v) : '')}
                   style={{ fontSize: 10 }}
                 />
