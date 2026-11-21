@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BankOption, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
-import { currentYearMonth, deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { useLatestRequestGuard } from './useAsyncResource'
-import { useMonthSelection } from './useMonthSelection'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -215,8 +214,6 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
 }
 
 export interface MensaisData {
-  monthInputValue: string
-  setMonthInputValue: (value: string) => void
   brasilBills: RecurringBillDto[]
   ukBills: RecurringBillDto[]
   isLoading: boolean
@@ -264,7 +261,6 @@ export interface MensaisData {
 }
 
 export function useMensais(notifySaved: (message: string) => void = () => {}): MensaisData {
-  const { monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const beginRequest = useLatestRequestGuard()
@@ -492,8 +488,6 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
   const ukBills = useMemo(() => state.bills.filter((b) => b.area === 'UK'), [state.bills])
 
   return {
-    monthInputValue,
-    setMonthInputValue,
     brasilBills,
     ukBills,
     isLoading: state.isLoading,
