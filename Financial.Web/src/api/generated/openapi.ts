@@ -8029,16 +8029,16 @@ export interface components {
             /** Format: double */
             currentPrice?: number;
             /** Format: double */
-            discountPercent?: number;
+            discountPercent?: null | number;
             /** Format: double */
-            dividendYieldPercent?: number;
+            dividendYieldPercent?: null | number;
             exchange: string;
             history: components["schemas"]["DividendHistoryItemDTO"][];
             name: string;
             /** Format: date-time */
             priceAsOf?: string;
             /** Format: double */
-            priceMaxBuy?: number;
+            priceMaxBuy?: null | number;
             ticker: string;
             yearTotals: components["schemas"]["DividendYearTotalDTO"][];
         };

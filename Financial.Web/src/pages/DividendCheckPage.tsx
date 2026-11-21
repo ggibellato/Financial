@@ -9,6 +9,7 @@ import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useAsyncResource } from '../hooks/useAsyncResource'
+import { orMissing } from '../utils/orMissing'
 import { useFocusReloadedContent } from '../hooks/useFocusReloadedContent'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { formatCurrency, formatPercentN2, formatShortDateUtc, getErrorMessage } from '../utils/formatters'
@@ -27,8 +28,9 @@ function toTickerGroups(items: WatchlistItemDto[]): TickerGroup[] {
   return Array.from(map, ([label, tickers]) => ({ label, tickers }))
 }
 
-function describeMaxBuy({ priceMaxBuy, currentPrice }: DividendSummaryDto) {
-  if (priceMaxBuy <= 0) return { className: undefined, text: 'no dividends to set a max buy' }
+function describeMaxBuy({ priceMaxBuy, discountPercent, currentPrice }: DividendSummaryDto) {
+  if (priceMaxBuy == null) return { className: undefined, text: 'no dividends to set a max buy' }
+  if (discountPercent == null) return { className: undefined, text: 'no current price to compare' }
   return currentPrice < priceMaxBuy
     ? { className: 'summary-card__price-max--positive', text: 'current price below max buy' }
     : { className: 'summary-card__price-max--negative', text: 'current price not below max buy' }
@@ -148,10 +150,10 @@ export default function DividendCheckPage() {
               </p>
               <p>Current price: <strong>{formatBrl(summary.currentPrice)}</strong></p>
               <p className="summary-card__avg-dividend">
-                Average dividend: <strong>{formatBrl(summary.averageDividendLastFiveYears)}</strong> (last 5 years) — Yield: <strong>{formatPercentN2(summary.dividendYieldPercent)}</strong>
+                Average dividend: <strong>{formatBrl(summary.averageDividendLastFiveYears)}</strong> (last 5 years) — Yield: <strong>{orMissing(summary.dividendYieldPercent, formatPercentN2, 'Not available: no current price')}</strong>
               </p>
               <p className={describeMaxBuy(summary).className}>
-                Price max buy: <strong>{formatBrl(summary.priceMaxBuy)}</strong> — Discount <strong>{formatPercentN2(summary.discountPercent)}</strong> —{' '}
+                Price max buy: <strong>{orMissing(summary.priceMaxBuy, formatBrl, 'Not set: no dividends')}</strong> — Discount <strong>{orMissing(summary.discountPercent, formatPercentN2, 'Not available: no max buy or current price')}</strong> —{' '}
                 {describeMaxBuy(summary).text}
               </p>
             </section>

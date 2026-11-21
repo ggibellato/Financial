@@ -171,7 +171,6 @@ public class DividendServiceTests
     [Fact]
     public void GetDividendSummary_ExcludesCurrentYearFromAverage()
     {
-        // Only current-year dividend — should be excluded → average and priceMax stay zero
         _dataSource.Dividends =
         [
             new DividendValue(DividendType.Dividend, new DateTime(TestClock.LocalToday.Year, 1, 1), 12.0m),
@@ -183,7 +182,7 @@ public class DividendServiceTests
         using (new AssertionScope())
         {
             result.AverageDividendLastFiveYears.Should().Be(0m);
-            result.PriceMaxBuy.Should().Be(0m);
+            result.PriceMaxBuy.Should().BeNull();
         }
     }
 
@@ -210,7 +209,27 @@ public class DividendServiceTests
     }
 
     [Fact]
-    public void GetDividendSummary_WithNoDividends_ReturnsZeroCalculations()
+    public void GetDividendSummary_WithNoCurrentPrice_LeavesYieldAndDiscountAbsent()
+    {
+        _dataSource.Dividends =
+        [
+            new DividendValue(DividendType.Dividend, new DateTime(2020, 1, 1), 6.0m),
+        ];
+        _snapshotSource.Snapshot = new AssetValueSnapshot("TICK", "Name", 0m, TestClock.Default);
+        var service = CreateService();
+
+        var result = service.GetDividendSummary(MakeRequest());
+
+        using (new AssertionScope())
+        {
+            result.PriceMaxBuy.Should().Be(6.0m / DividendValuationRules.RequiredYield);
+            result.DividendYieldPercent.Should().BeNull();
+            result.DiscountPercent.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetDividendSummary_WithNoDividends_LeavesTheValuationAbsent()
     {
         _dataSource.Dividends = [];
         var service = CreateService();
@@ -220,8 +239,8 @@ public class DividendServiceTests
         using (new AssertionScope())
         {
             result.AverageDividendLastFiveYears.Should().Be(0m);
-            result.PriceMaxBuy.Should().Be(0m);
-            result.DiscountPercent.Should().Be(0m);
+            result.PriceMaxBuy.Should().BeNull();
+            result.DiscountPercent.Should().BeNull();
             result.YearTotals.Should().BeEmpty();
             result.History.Should().BeEmpty();
         }
