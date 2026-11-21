@@ -1,0 +1,22 @@
+.recharts-cartesian-axis-tick-value {
+  fill: var(--colorNeutralForeground2);
+}
+
+.recharts-legend-item-text {
+  color: var(--colorNeutralForeground2) !important;
+}
+
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: var(--colorNeutralStroke1);
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--colorNeutralStroke2);
+}
+
+.recharts-default-tooltip {
+  background: var(--colorNeutralBackground1) !important;
+  border-color: var(--colorNeutralStroke1) !important;
+  color: var(--colorNeutralForeground1);
+}

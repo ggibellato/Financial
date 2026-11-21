@@ -48,3 +48,17 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.allocation-chart__label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  min-width: 0;
+}
+
+.allocation-chart__swatch {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--borderRadiusSmall);
+}

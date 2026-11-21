@@ -5,17 +5,21 @@ import TruncatedText from '../TruncatedText'
 import { formatN2, formatPercent1 } from '../../utils/formatters'
 import './AllocationPieChart.css'
 
-// Validated categorical palette (fixed hue order, CVD-safe adjacency).
+// Fluent palette hues chosen because each clears 3:1 against the page background in both themes.
 const CATEGORICAL_PALETTE = [
-  '#2a78d6',
-  '#1baf7a',
-  '#eda100',
-  '#008300',
-  '#4a3aa7',
-  '#e34948',
-  '#e87ba4',
-  '#eb6834',
+  'var(--colorPaletteBlueBorderActive)',
+  'var(--colorPaletteTealBorderActive)',
+  'var(--colorPaletteBrassBorderActive)',
+  'var(--colorPaletteGreenBorderActive)',
+  'var(--colorPaletteLavenderBorderActive)',
+  'var(--colorPaletteRedBorderActive)',
+  'var(--colorPalettePinkBorderActive)',
+  'var(--colorPalettePumpkinBorderActive)',
 ]
+
+function sliceColor(index: number): string {
+  return CATEGORICAL_PALETTE[index % CATEGORICAL_PALETTE.length]
+}
 
 export interface AllocationChartEntry {
   label: string
@@ -82,7 +86,7 @@ export default function AllocationPieChart({
             <PieChart accessibilityLayer={false}>
               <Pie data={sliceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
                 {sliceData.map((slice, index) => (
-                  <Cell key={slice.name} fill={CATEGORICAL_PALETTE[index % CATEGORICAL_PALETTE.length]} />
+                  <Cell key={slice.name} fill={sliceColor(index)} />
                 ))}
               </Pie>
               <Tooltip
@@ -106,10 +110,13 @@ export default function AllocationPieChart({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((entry) => (
+            {entries.map((entry, index) => (
               <TableRow key={entry.label}>
                 <DataTableCell label="Label">
-                  <TruncatedText text={entry.label} />
+                  <span className="allocation-chart__label">
+                    <span className="allocation-chart__swatch" style={{ background: sliceColor(index) }} aria-hidden="true" />
+                    <TruncatedText text={entry.label} />
+                  </span>
                 </DataTableCell>
                 <DataTableCell label={valueLabel} className="data-table__col--numeric">
                   {formatN2(entry.marketValue)}

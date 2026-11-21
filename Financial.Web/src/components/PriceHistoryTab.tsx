@@ -41,12 +41,12 @@ import './PriceHistoryTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
 const MIN_LEFT_WIDTH = 200
-const LINE_COLOR = '#4682b4'
+const LINE_COLOR = 'var(--colorBrandForeground1)'
 const MANUAL_DOT_COLOR = 'var(--colorStatusWarningForeground3)'
-const AUTOMATIC_DOT_COLOR = '#4682b4'
+const AUTOMATIC_DOT_COLOR = 'var(--colorBrandForeground1)'
 // Same Buy/Sell colors as TransactionsTab.css - keep the two in sync.
-const BUY_COLOR = '#2e7d32'
-const SELL_COLOR = '#c62828'
+const BUY_COLOR = 'var(--colorStatusSuccessForeground1)'
+const SELL_COLOR = 'var(--colorStatusDangerForeground3)'
 const MARKER_RADIUS = 4
 
 const SOURCE_LABELS: Record<AssetPriceSnapshotDto['source'], string> = {

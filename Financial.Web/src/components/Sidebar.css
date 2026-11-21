@@ -39,7 +39,7 @@
 }
 
 .sidebar__toggle:hover {
-  background: var(--colorBrandBackground2);
+  background: var(--colorNeutralBackground1Hover);
   color: var(--colorNeutralForeground1);
 }
 
@@ -65,7 +65,10 @@
   cursor: pointer;
 }
 
-button.sidebar__category-header:hover,
+button.sidebar__category-header:hover {
+  background: var(--colorNeutralBackground1Hover);
+}
+
 button.sidebar__category-header[aria-expanded='true'] {
   background: var(--colorBrandBackground2);
 }
@@ -104,7 +107,7 @@ button.sidebar__category-header[aria-expanded='true'] {
 }
 
 .sidebar__link:hover {
-  background: var(--colorBrandBackground2);
+  background: var(--colorNeutralBackground1Hover);
   color: var(--colorNeutralForeground1);
 }
 

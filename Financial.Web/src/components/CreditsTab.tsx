@@ -51,27 +51,17 @@ const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
   { value: 'Grouped', label: 'Grouped' },
 ]
 
-const SINGLE_TYPE_COLOR = '#4682b4'
-const PALETTE_START = { r: 173, g: 216, b: 230 }
-const PALETTE_END = { r: 8, g: 81, b: 156 }
+const SINGLE_TYPE_COLOR = 'var(--colorBrandForeground1)'
 
-function lerpByte(from: number, to: number, t: number): number {
-  return Math.round(from + (to - from) * t)
+const TYPE_COLORS: Record<string, string> = {
+  Dividend: 'var(--credit-type-dividend)',
+  SecuritiesLendingIncome: 'var(--credit-type-securities-lending-income)',
+  JCP: 'var(--credit-type-jcp)',
+  Coupon: 'var(--credit-type-coupon)',
 }
 
-function buildPalette(count: number): string[] {
-  if (count <= 0) return []
-  if (count === 1) return [SINGLE_TYPE_COLOR]
-
-  const colors: string[] = []
-  for (let i = 0; i < count; i++) {
-    const t = i / (count - 1)
-    const r = lerpByte(PALETTE_START.r, PALETTE_END.r, t)
-    const g = lerpByte(PALETTE_START.g, PALETTE_END.g, t)
-    const b = lerpByte(PALETTE_START.b, PALETTE_END.b, t)
-    colors.push(`rgb(${r}, ${g}, ${b})`)
-  }
-  return colors
+function typeColor(type: string): string {
+  return TYPE_COLORS[type] ?? SINGLE_TYPE_COLOR
 }
 
 const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
@@ -291,7 +281,6 @@ interface ChartPanelProps {
 function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, compact }: ChartPanelProps) {
   const chartTitleId = useId()
   const isStacked = selectedMode === 'Stacked'
-  const palette = buildPalette(creditTypes.length)
 
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
@@ -305,18 +294,18 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
               <Legend />
-              {creditTypes.map((type, index) => (
+              {creditTypes.map((type) => (
                 <Bar
                   key={type}
                   dataKey={typeValue(type)}
                   name={type}
-                  fill={palette[index]}
+                  fill={typeColor(type)}
                   stackId={isStacked ? 'credits' : undefined}
                 >
                   <LabelList
                     dataKey={typeValue(type)}
                     position="top"
-                    fill="#111"
+                    fill="var(--colorNeutralForeground1)"
                     formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
                     style={{ fontSize: 10 }}
                   />
@@ -331,13 +320,13 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
               <Legend />
               {isStacked ? (
-                creditTypes.map((type, index) => (
+                creditTypes.map((type) => (
                   <Line
                     key={type}
                     type="monotone"
                     dataKey={typeValue(type)}
                     name={type}
-                    stroke={palette[index]}
+                    stroke={typeColor(type)}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                   />
