@@ -210,6 +210,7 @@ public class InvestmentTypeInfoResolverTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-01")]
     public void GetTypeInfo_DeserializesBrokerJsonWithoutCostBasisMethodProperty_DefaultsToAverageCost()
     {
         // Simulates a data file written before this feature existed: no "CostBasisMethod"
@@ -229,18 +230,22 @@ public class InvestmentTypeInfoResolverTests
         deserialized!.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
     }
 
-    [Fact]
-    public void GetTypeInfo_RoundTripsBrokerCostBasisMethod()
+    [Theory]
+    [InlineData(CostBasisMethod.AverageCost)]
+    [InlineData(CostBasisMethod.FIFO)]
+    [InlineData(CostBasisMethod.SpecificId)]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-02")]
+    public void GetTypeInfo_RoundTripsBrokerCostBasisMethod(CostBasisMethod method)
     {
         var options = CreateOptions();
         var broker = Broker.Create("Broker A", "USD");
-        broker.SetCostBasisMethod(CostBasisMethod.FIFO);
+        broker.SetCostBasisMethod(method);
 
         var json = JsonSerializer.Serialize(broker, options);
         var deserialized = JsonSerializer.Deserialize<Broker>(json, options);
 
         deserialized.Should().NotBeNull();
-        deserialized!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+        deserialized!.CostBasisMethod.Should().Be(method);
     }
 
     [Fact]

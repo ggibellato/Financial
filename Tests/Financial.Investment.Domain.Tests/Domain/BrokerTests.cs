@@ -9,6 +9,7 @@ namespace Financial.Investment.Domain.Tests;
 public class BrokerTests
 {
     [Fact]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-01")]
     public void CostBasisMethod_DefaultsToAverageCost()
     {
         var broker = Broker.Create("Broker A", "USD");

@@ -21,6 +21,7 @@ public class TaxClassificationCalculatorTests
             "2026", TestClock.Default);
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-03")]
     public void CalculateForDisposal_DerivesJurisdictionFromCurrency_Brl()
     {
         var record = CreateDisposalRecord(Currency.BRL);
@@ -34,6 +35,7 @@ public class TaxClassificationCalculatorTests
     [Theory]
     [InlineData(Currency.GBP)]
     [InlineData(Currency.USD)]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-03")]
     public void CalculateForDisposal_DerivesJurisdictionFromCurrency_NonBrlIsUk(Currency currency)
     {
         var record = CreateDisposalRecord(currency);
@@ -101,6 +103,7 @@ public class TaxClassificationCalculatorTests
     [InlineData(Credit.CreditType.Coupon, EventCategory.Interest)]
     [InlineData(Credit.CreditType.JCP, EventCategory.Interest)]
     [InlineData(Credit.CreditType.SecuritiesLendingIncome, EventCategory.SecuritiesLendingIncome)]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-02")]
     public void CalculateForCredit_MapsEveryKnownCreditTypeToItsCategory(Credit.CreditType type, EventCategory expected)
     {
         var credit = Credit.Create(new DateTime(2026, 6, 1), type, 100m, 10m, Currency.BRL);
@@ -128,6 +131,7 @@ public class TaxClassificationCalculatorTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-05")]
     public void CalculateForCredit_NoApplicableRule_IsIncomplete()
     {
         var credit = Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL);
@@ -139,6 +143,7 @@ public class TaxClassificationCalculatorTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-05")]
     public void CalculateForCredit_ApplicableRule_IsFinalAndReferencesTheRule()
     {
         var credit = Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL);
@@ -156,6 +161,7 @@ public class TaxClassificationCalculatorTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-04")]
     public void CalculateForCredit_NonBrlUsesUkTaxYear()
     {
         var credit = Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.GBP);
@@ -164,6 +170,34 @@ public class TaxClassificationCalculatorTests
         var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         classification.TaxYear.Should().Be("2025/26");
+    }
+
+    [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-04")]
+    public void CalculateForCredit_BrlUsesTheCalendarYear()
+    {
+        var credit = Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL);
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
+
+        classification.TaxYear.Should().Be("2026");
+    }
+
+    [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-05")]
+    public void CalculateForCredit_UnrecognizedCreditType_RequiresReview()
+    {
+        var credit = Credit.Create(new DateTime(2026, 6, 1), (Credit.CreditType)99, 100m, 0m, Currency.BRL);
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
+
+        using (new AssertionScope())
+        {
+            classification.EventCategory.Should().Be(EventCategory.Unrecognized);
+            classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview);
+        }
     }
 
     private static CorporateAction CreateMergerTargetRecord(DateTime? effectiveDate = null) =>

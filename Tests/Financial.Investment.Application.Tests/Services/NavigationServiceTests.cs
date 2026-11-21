@@ -560,6 +560,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-07")]
     public void GetOpenLots_WithAPartiallyConsumedBuy_ReturnsItsRemainingQuantity()
     {
         var broker = Broker.Create("Broker", "BRL");

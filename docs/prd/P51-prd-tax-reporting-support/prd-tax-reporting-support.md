@@ -450,7 +450,7 @@ graph TD
 - [x] **P51-F01-tax-rules-02** Creating or editing a rule whose effective range overlaps an existing
       rule for the same jurisdiction and event category is rejected
 - [x] **P51-F01-tax-rules-03** A rule with `EffectiveFrom` on or after `EffectiveTo` is rejected
-- [ ] **P51-F01-tax-rules-04** No numeric rate, threshold or formula field exists anywhere on
+- [x] **P51-F01-tax-rules-04** No numeric rate, threshold or formula field exists anywhere on
       `TaxRule` — only classification/audit metadata
 - [x] **P51-F01-tax-rules-05** Deleting a rule that at least one `Final`-status `TaxClassification`
       currently resolves through is rejected, naming the affected tax year(s)
