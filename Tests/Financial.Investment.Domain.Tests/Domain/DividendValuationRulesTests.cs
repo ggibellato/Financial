@@ -9,9 +9,9 @@ public class DividendValuationRulesTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1.2)]
-    public void CalculatePriceMaxBuy_WhenAverageDividendNotPositive_ReturnsZero(decimal averageDividend)
+    public void CalculatePriceMaxBuy_WhenAverageDividendNotPositive_ReturnsNull(decimal averageDividend)
     {
-        DividendValuationRules.CalculatePriceMaxBuy(averageDividend).Should().Be(0m);
+        DividendValuationRules.CalculatePriceMaxBuy(averageDividend).Should().BeNull();
     }
 
     [Fact]
@@ -23,9 +23,15 @@ public class DividendValuationRulesTests
     }
 
     [Fact]
-    public void CalculateDiscountPercent_WhenPriceMaxBuyZero_ReturnsZero()
+    public void CalculateDiscountPercent_WhenNoPriceMaxBuy_ReturnsNull()
     {
-        DividendValuationRules.CalculateDiscountPercent(price: 10m, priceMaxBuy: 0m).Should().Be(0m);
+        DividendValuationRules.CalculateDiscountPercent(price: 10m, priceMaxBuy: null).Should().BeNull();
+    }
+
+    [Fact]
+    public void CalculateDiscountPercent_WhenPriceZero_ReturnsNull()
+    {
+        DividendValuationRules.CalculateDiscountPercent(price: 0m, priceMaxBuy: 100m).Should().BeNull();
     }
 
     [Fact]
@@ -37,9 +43,9 @@ public class DividendValuationRulesTests
     }
 
     [Fact]
-    public void CalculateDividendYieldPercent_WhenPriceZero_ReturnsZero()
+    public void CalculateDividendYieldPercent_WhenPriceZero_ReturnsNull()
     {
-        DividendValuationRules.CalculateDividendYieldPercent(averageDividend: 5m, price: 0m).Should().Be(0m);
+        DividendValuationRules.CalculateDividendYieldPercent(averageDividend: 5m, price: 0m).Should().BeNull();
     }
 
     [Fact]

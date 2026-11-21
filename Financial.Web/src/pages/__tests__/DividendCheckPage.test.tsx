@@ -446,9 +446,11 @@ describe('DividendCheckPage', () => {
     ['below', 10, 20, 'summary-card__price-max--positive', 'current price below max buy'],
     ['above', 25, 20, 'summary-card__price-max--negative', 'current price not below max buy'],
     ['equal to', 20, 20, 'summary-card__price-max--negative', 'current price not below max buy'],
-    ['with no dividends to set', 10, 0, undefined, 'no dividends to set a max buy'],
+    ['with no dividends to set', 10, null, undefined, 'no dividends to set a max buy'],
+    ['missing against', 0, 20, undefined, 'no current price to compare'],
   ])('marks a current price %s the max buy', async (_, currentPrice, priceMaxBuy, colourClass, verdict) => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice, priceMaxBuy })
+    const discountPercent = currentPrice > 0 && priceMaxBuy ? baseSummary.discountPercent : null
+    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice, priceMaxBuy, discountPercent })
     getDividendHistoryMock.mockResolvedValue([])
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
@@ -458,6 +460,19 @@ describe('DividendCheckPage', () => {
     const priceMaxText = await screen.findByText(/Price max buy:/)
     expect(priceMaxText.className).toBe(colourClass ?? '')
     expect(priceMaxText.textContent).toMatch(new RegExp(`— ${verdict}$`))
+  })
+
+  it('shows the max buy, discount and yield as not available when they are absent', async () => {
+    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, priceMaxBuy: null, discountPercent: null, dividendYieldPercent: null })
+    getDividendHistoryMock.mockResolvedValue([])
+    render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
+
+    check()
+
+    expect(await screen.findByRole('img', { name: 'Not set: no dividends' })).toHaveTextContent('—')
+    expect(screen.getByRole('img', { name: 'Not available: no max buy or current price' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Not available: no current price' })).toBeInTheDocument()
   })
 
   it('says when there is no history and no annual totals', async () => {

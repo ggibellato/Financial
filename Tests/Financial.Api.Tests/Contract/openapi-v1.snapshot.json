@@ -3376,11 +3376,17 @@
           },
           "discountPercent": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "dividendYieldPercent": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "exchange": {
             "type": "string"
@@ -3400,7 +3406,10 @@
           },
           "priceMaxBuy": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "ticker": {
             "type": "string"
