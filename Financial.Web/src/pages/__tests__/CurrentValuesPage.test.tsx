@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CurrentValuesPage from '../CurrentValuesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetPriceDto, BrokerNodeDto, PortfolioReferenceDto } from '../../api/types'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getBrokersMock, getCurrentPriceMock, getAssetPriceFetchScopeMock } = vi.hoisted(() => ({
   getBrokersMock: vi.fn<FinancialApiClient['getBrokers']>(),
@@ -573,14 +573,14 @@ describe('CurrentValuesPage', () => {
         },
       ]),
     ])
-    let resolveLast: (price: AssetPriceDto) => void = () => undefined
-    getCurrentPriceMock.mockResolvedValueOnce(makePrice('ZZZ3')).mockReturnValueOnce(new Promise((resolve) => { resolveLast = resolve }))
+    const pendingLast = deferred<AssetPriceDto>()
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('ZZZ3')).mockReturnValueOnce(pendingLast.promise)
 
     render(<CurrentValuesPage />)
     await checkPrices()
     fireEvent.click(await screen.findByRole('button', { name: 'Name' }))
     screen.getByText('ZZZ3 Name').focus()
-    await act(async () => resolveLast(makePrice('AAA3')))
+    await act(async () => pendingLast.resolve(makePrice('AAA3')))
 
     expect(screen.getAllByRole('row')[1]).toHaveTextContent('AAA3')
     expect(document.activeElement).toHaveTextContent('ZZZ3 Name')

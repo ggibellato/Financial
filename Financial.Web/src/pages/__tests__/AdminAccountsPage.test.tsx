@@ -1,9 +1,8 @@
-import { Toaster } from '@fluentui/react-components'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTemplateDto } from '../../api/types'
-import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
+import { WithAppToaster } from '../../test/withAppToaster'
 import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AdminAccountsPage from '../AdminAccountsPage'
@@ -47,12 +46,7 @@ const MONZO = account({ id: 'a3', name: 'Monzo' })
 const AMEX = cardAccount({ id: 'a4', name: 'BA Amex' })
 
 function renderPage() {
-  render(
-    <>
-      <Toaster toasterId={APP_TOASTER_ID} />
-      <AdminAccountsPage />
-    </>,
-  )
+  render(<AdminAccountsPage />, { wrapper: WithAppToaster })
 }
 
 const rowOf = (name: string) => screen.getByRole('row', { name: new RegExp(name) })

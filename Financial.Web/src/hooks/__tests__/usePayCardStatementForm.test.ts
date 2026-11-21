@@ -5,7 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CardStatementDto, PayableStatementDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { payableCardsOf, usePayCardStatementForm } from '../usePayCardStatementForm'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getPayableStatementsMock, markCardStatementPaidMock } = vi.hoisted(() => ({
   getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
@@ -271,14 +271,14 @@ describe('usePayCardStatementForm', () => {
   })
 
   it('has nothing to pay only once an open form has loaded an empty list', async () => {
-    let resolveLoad: (statements: PayableStatementDto[]) => void = () => {}
-    getPayableStatementsMock.mockReturnValue(new Promise((resolve) => { resolveLoad = resolve }))
+    const pendingLoad = deferred<PayableStatementDto[]>()
+    getPayableStatementsMock.mockReturnValue(pendingLoad.promise)
     const { result } = renderForm()
     const closed = result.current.hasNothingToPay
     act(() => result.current.open())
     const loading = result.current.hasNothingToPay
 
-    await act(async () => resolveLoad([]))
+    await act(async () => pendingLoad.resolve([]))
     const loaded = result.current.hasNothingToPay
     act(() => result.current.cancel())
 

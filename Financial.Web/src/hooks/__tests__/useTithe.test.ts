@@ -4,7 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TitheMonthDto, TitheSummaryDto } from '../../api/types'
 import { CARRY_FORWARD_UPDATE_ERROR, NO_CARRY_FORWARD_MESSAGE, useTithe } from '../useTithe'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getTitheSummaryByMonthMock, getTitheYearMock, updateTitheCarryForwardMock } = vi.hoisted(() => ({
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
@@ -88,8 +88,8 @@ describe('useTithe', () => {
   })
 
   it(`${AC_02} updates the carry-forward, marks it busy until done, then refreshes the detail and the history`, async () => {
-    let resolveUpdate!: (value: TitheSummaryDto) => void
-    updateTitheCarryForwardMock.mockReturnValue(new Promise((resolve) => { resolveUpdate = resolve }))
+    const pendingUpdate = deferred<TitheSummaryDto>()
+    updateTitheCarryForwardMock.mockReturnValue(pendingUpdate.promise)
     const { result } = await renderLoaded()
     getTitheSummaryByMonthMock.mockResolvedValue(EXCLUDED)
     getTitheYearMock.mockResolvedValue(year(EXCLUDED))
@@ -97,7 +97,7 @@ describe('useTithe', () => {
     act(() => result.current.updateCarryForwardInclusion(false))
     expect(result.current.carryForwardUpdating).toBe(true)
 
-    await act(async () => resolveUpdate(EXCLUDED))
+    await act(async () => pendingUpdate.resolve(EXCLUDED))
 
     await waitFor(() => expect(result.current.carryForwardUpdating).toBe(false))
     expect(updateTitheCarryForwardMock).toHaveBeenCalledWith(2026, 10, { included: false })
@@ -156,9 +156,9 @@ describe('useTithe', () => {
   })
 
   it(`${AC_02} keeps a later month busy when an earlier month's update finishes first`, async () => {
-    let resolveOctober!: (value: TitheSummaryDto) => void
+    const pendingOctober = deferred<TitheSummaryDto>()
     updateTitheCarryForwardMock
-      .mockReturnValueOnce(new Promise((resolve) => { resolveOctober = resolve }))
+      .mockReturnValueOnce(pendingOctober.promise)
       .mockReturnValueOnce(never())
     const { result, rerender } = renderHook(({ month }) => useTithe(2026, month), { initialProps: { month: 10 } })
     await waitFor(() => expect(result.current.detail.isLoading).toBe(false))
@@ -168,7 +168,7 @@ describe('useTithe', () => {
     act(() => result.current.updateCarryForwardInclusion(true))
     expect(result.current.carryForwardUpdating).toBe(true)
 
-    await act(async () => resolveOctober(EXCLUDED))
+    await act(async () => pendingOctober.resolve(EXCLUDED))
 
     expect(result.current.carryForwardUpdating).toBe(true)
   })

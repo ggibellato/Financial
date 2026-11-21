@@ -4,7 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
 import { useMensais } from '../useMensais'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const {
   getMensaisBillsMock,
@@ -385,15 +385,15 @@ describe('useMensais', () => {
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     const loadedBills = [...result.current.brasilBills, ...result.current.ukBills]
-    let resolveOlderReload!: (bills: typeof BILLS) => void
-    getMensaisBillsMock.mockReturnValueOnce(new Promise((resolve) => (resolveOlderReload = resolve)))
+    const pendingOlderReload = deferred<typeof BILLS>()
+    getMensaisBillsMock.mockReturnValueOnce(pendingOlderReload.promise)
     act(() => result.current.deleteBill('b1'))
     await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
     getMensaisBillsMock.mockRejectedValueOnce(new Error('Network down'))
 
     act(() => result.current.deleteBill('b2'))
     await waitFor(() => expect(result.current.error).toBe('Network down'))
-    await act(async () => resolveOlderReload([]))
+    await act(async () => pendingOlderReload.resolve([]))
 
     expect(result.current.error).toBe('Network down')
     expect([...result.current.brasilBills, ...result.current.ukBills]).toEqual(loadedBills)
@@ -571,11 +571,9 @@ describe('useMensais', () => {
   })
 
   it('tracks which bill is updating while the status call is in flight', async () => {
-    let resolveUpdate: (bill: RecurringBillDto) => void = () => {}
+    const pendingUpdate = deferred<RecurringBillDto>()
     updateMensaisBillStatusMock.mockReturnValue(
-      new Promise((resolve) => {
-        resolveUpdate = resolve
-      }),
+      pendingUpdate.promise,
     )
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -584,7 +582,7 @@ describe('useMensais', () => {
 
     expect(result.current.updatingStatusBillId).toBe('b1')
 
-    await act(async () => resolveUpdate({ ...BILLS[0], status: 'Paid' }))
+    await act(async () => pendingUpdate.resolve({ ...BILLS[0], status: 'Paid' }))
 
     expect(result.current.updatingStatusBillId).toBeNull()
   })

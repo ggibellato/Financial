@@ -4,7 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TitheMonthDto, TitheSummaryDto } from '../../api/types'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import TitheTab from '../TitheTab'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getTitheSummaryByMonthMock, getTitheYearMock, updateTitheCarryForwardMock } = vi.hoisted(() => ({
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
@@ -97,8 +97,8 @@ describe('TitheTab', () => {
   })
 
   it('[AC P61-F03-tithe-tab-and-history-02] keeps focus on the checkbox and shows progress while saving, then shows the refreshed figures', async () => {
-    let resolveUpdate!: (value: TitheSummaryDto) => void
-    updateTitheCarryForwardMock.mockReturnValue(new Promise((resolve) => { resolveUpdate = resolve }))
+    const pendingUpdate = deferred<TitheSummaryDto>()
+    updateTitheCarryForwardMock.mockReturnValue(pendingUpdate.promise)
     renderTab()
     const checkbox = await screen.findByRole('checkbox', { name: /Include September 2026/ })
     checkbox.focus()
@@ -114,7 +114,7 @@ describe('TitheTab', () => {
     fireEvent.click(checkbox)
     expect(updateTitheCarryForwardMock).toHaveBeenCalledOnce()
 
-    resolveUpdate(excluded)
+    pendingUpdate.resolve(excluded)
 
     await waitFor(() => expect(checkbox).not.toBeChecked())
     expect(await detail()).toHaveTextContent('Balance: 22.73 owed')
