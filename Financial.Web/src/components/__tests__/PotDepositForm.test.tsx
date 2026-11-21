@@ -56,6 +56,10 @@ const SAVED_OPERATION: PotOperationDto = {
   bankId: null,
   categoryId: null,
   incomeId: null,
+  creditCardId: null,
+  statementYear: null,
+  statementMonth: null,
+  investmentWithdrawal: null,
   fundingLines: [
     { bankId: 'b1', amount: 85 },
     { bankId: 'b2', amount: 5 },

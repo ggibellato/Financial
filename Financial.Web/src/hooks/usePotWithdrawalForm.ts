@@ -52,6 +52,9 @@ function toRequest(values: WithdrawalValues, confirmed: boolean): PotWithdrawalR
     description: values.description.trim(),
     bankId: values.bankId || null,
     categoryId: values.bankId ? values.categoryId : null,
+    creditCardId: null,
+    statementYear: null,
+    statementMonth: null,
     confirmed,
   }
 }

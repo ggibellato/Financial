@@ -29,6 +29,11 @@ public static class CashFlowReferenceResolver
         return account;
     }
 
+    public static Account ResolveCreditCard(IEnumerable<Account> creditCards, Guid creditCardId) =>
+        EntityIdResolver.TryResolve(creditCardId, creditCards, a => a.Id, out var card)
+            ? card
+            : throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
+
     public static Account? ResolvePotsAccount(IEnumerable<Account> accounts, Guid? potsAccountId)
     {
         if (potsAccountId is null)

@@ -5255,6 +5255,13 @@
               "string"
             ]
           },
+          "creditCardId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "date": {
             "format": "date",
             "type": "string"
@@ -5281,6 +5288,12 @@
               "string"
             ]
           },
+          "investmentWithdrawal": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "kind": {
             "type": "string"
           },
@@ -5298,6 +5311,20 @@
           "potsAccountId": {
             "format": "uuid",
             "type": "string"
+          },
+          "statementMonth": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "statementYear": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
+            ]
           }
         },
         "required": [
@@ -5360,6 +5387,13 @@
           "confirmed": {
             "type": "boolean"
           },
+          "creditCardId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "date": {
             "format": "date",
             "type": "string"
@@ -5370,6 +5404,20 @@
           "potId": {
             "format": "uuid",
             "type": "string"
+          },
+          "statementMonth": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "statementYear": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
+            ]
           }
         },
         "required": [

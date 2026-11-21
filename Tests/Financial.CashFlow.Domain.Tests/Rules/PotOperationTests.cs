@@ -19,6 +19,7 @@ public class PotOperationTests
     private readonly Account _bank = TestAccounts.Bank("Chase");
     private readonly Account _reserva = TestAccounts.Pots("Reserva", category: Category.Create("Reserva"));
     private readonly Pot _pot = Pot.Create("Investimento", 100m);
+    private readonly Account _card = TestAccounts.CreditCard("Barclaycard");
 
     public PotOperationTests()
     {
@@ -186,4 +187,82 @@ public class PotOperationTests
             operation.FundingLines.Should().BeEmpty();
         }
     }
+
+    [Fact]
+    public void Read_CardWithdrawal_ExposesTheCardStatementAndAPendingInvestmentWithdrawal()
+    {
+        var operation = ReadCardWithdrawal();
+
+        using (new AssertionScope())
+        {
+            operation.CreditCard.Should().BeSameAs(_card);
+            operation.StatementMonth.Should().Be(new DateOnly(2026, 11, 1));
+            operation.InvestmentWithdrawal.Should().Be(InvestmentWithdrawalStatus.Pending);
+            operation.Bank.Should().BeNull();
+            operation.Category.Should().BeSameAs(_health);
+        }
+    }
+
+    [Fact]
+    public void Read_CardWithdrawalWithANegativeExpenseInThePotsCategory_IsDone()
+    {
+        var records = BuildByCard();
+        var investmentWithdrawal = InvestmentWithdrawalExpense();
+
+        var operation = PotOperation.Read(OperationId, records.Transactions, [.. records.Expenses, investmentWithdrawal], [_bank, _card, _reserva]);
+
+        operation!.InvestmentWithdrawal.Should().Be(InvestmentWithdrawalStatus.Done);
+    }
+
+    [Fact]
+    public void Read_BankOrPotOnlyWithdrawal_HasNoCardOrInvestmentWithdrawalStatus()
+    {
+        var throughBank = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Boots", _bank, _health, OperationId, Today);
+        var potOnly = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, Guid.NewGuid(), Today);
+
+        var operations = new[]
+        {
+            PotOperation.Read(throughBank.OperationId, throughBank.Transactions, throughBank.Expenses, [_bank, _reserva])!,
+            PotOperation.Read(potOnly.OperationId, potOnly.Transactions, [], [_reserva])!
+        };
+
+        operations.Should().OnlyContain(operation =>
+            operation.CreditCard == null && operation.StatementMonth == null && operation.InvestmentWithdrawal == null);
+    }
+
+    [Fact]
+    public void Relabel_ChangesTheDescriptionOfEveryRecordAndTheChosenCategoryKeepingTheirIds()
+    {
+        var records = BuildByCard();
+        var investmentWithdrawal = InvestmentWithdrawalExpense();
+        var operation = PotOperation.Read(OperationId, records.Transactions, [.. records.Expenses, investmentWithdrawal], [_bank, _card, _reserva])!;
+        var ids = operation.Expenses.Select(expense => expense.Id).Append(operation.Transactions[0].Id).ToList();
+        var travel = Category.Create("Viagem");
+
+        operation.Relabel("Flights to Lisbon", travel);
+
+        using (new AssertionScope())
+        {
+            operation.Expenses.Select(expense => expense.Id).Append(operation.Transactions[0].Id).Should().Equal(ids);
+            operation.Transactions[0].Description.Should().Be("Flights to Lisbon");
+            operation.Expenses.Should().OnlyContain(expense => expense.Description == "Flights to Lisbon");
+            operation.Category.Should().BeSameAs(travel);
+            investmentWithdrawal.Category.Should().BeSameAs(_reserva.Category);
+            operation.Amount.Should().Be(120m);
+            operation.StatementMonth.Should().Be(new DateOnly(2026, 11, 1));
+        }
+    }
+
+    private PotOperation ReadCardWithdrawal()
+    {
+        var records = BuildByCard();
+        return PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_card, _reserva])!;
+    }
+
+    private PotOperation BuildByCard() =>
+        PotWithdrawal.Build(
+            _reserva, _pot, 120m, Date, "Flights", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 11, 1)));
+
+    private Expense InvestmentWithdrawalExpense() =>
+        Expense.Create(new DateOnly(2026, 11, 3), "Flights", -120m, _reserva.Category!, _bank, creditCard: null, operationId: OperationId);
 }
