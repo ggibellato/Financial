@@ -110,3 +110,10 @@ None.
 - `WithdrawFromPots` reuses one action for bank and card screens (spec-writer recommendation).
 - From the bank screen the form stays as today (bank locked, no Paid with choice).
 - Browser check on a dev data copy is part of the UI completion rule.
+
+## Implementation notes (deviations)
+
+- Field order follows `docs/ui/forms-data-and-visualisations.md` "Default field order" (UI review): Pots account (when opened from a bank or card), Date, Pot, Paid with, Bank or Card + Statement, Category, Description, Amount. The previous form put Pot before Date.
+- On a paid statement the record's own values (Date, Pot, Paid with, Card, Statement, Amount) render as `ReadOnlyInput` fields ("Read-only values"); `LockedValue` stays for the fixed context (the bank or card the form was opened from). The note reads "Its card statement is paid. Unmark the statement to change it." (the app's existing wording), and Delete stays focusable but inert with the tooltip "Unmark the statement to delete this withdrawal." (`PotFormFooter.deleteBlockedReason`).
+- The statement-month window lives in `utils/statementMonths.ts` (`statementMonthOptions`, built on `unpaidStatementMonths`), which `useMoveChargeForm` now shares; the hook reuses `STATEMENTS_LOAD_ERROR` from `useCardStatements`.
+- The form model exposes `isPaymentLocked` (opened from a bank or card) and `isStatementPaidLocked` (investment withdrawal `Done`) instead of `isBankLocked`.
