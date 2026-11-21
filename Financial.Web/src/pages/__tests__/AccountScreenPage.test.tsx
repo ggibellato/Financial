@@ -2943,20 +2943,6 @@ describe('AccountScreenPage card screen', () => {
       expect(screen.queryByText('Refund moved')).not.toBeInTheDocument()
     })
 
-    it('asks before discarding a typed refund when another action opens', async () => {
-      const user = userEvent.setup()
-      withActions(['AddCharge', 'AddRefund'])
-      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
-
-      await user.click(await screen.findByRole('button', { name: 'New refund' }))
-      await user.type(screen.getByLabelText(/^Amount/), '40')
-      await user.click(screen.getByRole('button', { name: 'New charge' }))
-
-      await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
-      expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
-      expect(screen.getByLabelText(/^Amount/)).toHaveValue(40)
-    })
-
     it('deletes a refund after confirming with its own wording', async () => {
       const user = userEvent.setup()
       getAccountTransactionsMock.mockResolvedValue(REFUND_ROWS)

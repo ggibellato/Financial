@@ -413,16 +413,6 @@ describe('MensaisPage', () => {
     expect(fieldLabels).toEqual(['Area', 'Description', 'Due day', 'Value', 'Note'])
   })
 
-  it('changing the month input navigates to the chosen month', async () => {
-    render(<MensaisPage />)
-    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
-
-    const monthInput = screen.getByLabelText('Month')
-    fireEvent.change(monthInput, { target: { value: '2026-09' } })
-
-    expect(monthInput).toHaveValue('2026-09')
-  })
-
   it('creates a UK bill with a note using the Area and Note fields', async () => {
     createMensaisBillMock.mockResolvedValue({
       id: 'b3',

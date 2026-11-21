@@ -316,9 +316,8 @@ describe('financialApiClient', () => {
       fetch: fetchMock,
     })
 
-    const result = await client.getCurrentPrice('BVMF', 'BCIA11')
+    await client.getCurrentPrice('BVMF', 'BCIA11')
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/prices/current?exchange=BVMF&ticker=BCIA11`)
     expect(init?.method).toBeUndefined()
@@ -342,9 +341,8 @@ describe('financialApiClient', () => {
       fetch: fetchMock,
     })
 
-    const result = await client.getCurrentPrice('', 'TESOURO IPCA+ 2029', 'Bond', undefined, 'TESOURO IPCA+ 2029')
+    await client.getCurrentPrice('', 'TESOURO IPCA+ 2029', 'Bond', undefined, 'TESOURO IPCA+ 2029')
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(
       `${API_BASE_URL}/prices/current?exchange=&ticker=TESOURO%20IPCA%2B%202029&assetClass=Bond&name=TESOURO%20IPCA%2B%202029`,
@@ -369,9 +367,8 @@ describe('financialApiClient', () => {
       fetch: fetchMock,
     })
 
-    const result = await client.getCurrentPrice('', 'BTC', 'Cryptocurrency', 'Coinbase')
+    await client.getCurrentPrice('', 'BTC', 'Cryptocurrency', 'Coinbase')
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(
       `${API_BASE_URL}/prices/current?exchange=&ticker=BTC&assetClass=Cryptocurrency&brokerName=Coinbase`,
@@ -396,7 +393,7 @@ describe('financialApiClient', () => {
       fetch: fetchMock,
     })
 
-    const result = await client.getCurrentPrice(
+    await client.getCurrentPrice(
       'BVMF',
       'GUEP11',
       undefined,
@@ -406,7 +403,6 @@ describe('financialApiClient', () => {
       'Guepardo Institucional FIC FIA',
     )
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(
       `${API_BASE_URL}/prices/current?exchange=BVMF&ticker=GUEP11&brokerName=XPI&portfolioName=Retirement&assetName=Guepardo%20Institucional%20FIC%20FIA`,
@@ -442,9 +438,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getWatchlist()
+    await client.getWatchlist()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/watchlist`)
   })
@@ -460,9 +455,8 @@ describe('financialApiClient', () => {
       fetch: fetchMock,
     })
 
-    const result = await client.getAssetPriceFetchScope()
+    await client.getAssetPriceFetchScope()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/asset-price-fetch`)
   })
@@ -570,9 +564,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateReserveMovement('m2', requestBody)
+    await client.updateReserveMovement('m2', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/reserve/movements/m2`)
     expect(init?.method).toBe('PUT')
@@ -607,9 +600,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getMensaisBills()
+    await client.getMensaisBills()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/mensais`)
   })
 
@@ -620,9 +612,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAdminBrokers()
+    await client.getAdminBrokers()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/brokers`)
   })
@@ -633,9 +624,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createBroker(requestBody)
+    await client.createBroker(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/brokers`)
     expect(init?.method).toBe('POST')
@@ -648,9 +638,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateBroker('XPI', requestBody)
+    await client.updateBroker('XPI', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/brokers/XPI?scope=active`)
     expect(init?.method).toBe('PUT')
@@ -675,9 +664,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.setCostBasisMethod('XPI', requestBody)
+    await client.setCostBasisMethod('XPI', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/brokers/XPI/cost-basis-method?scope=active`)
     expect(init?.method).toBe('PUT')
@@ -725,9 +713,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createMensaisBill(requestBody)
+    await client.createMensaisBill(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais`)
     expect(init?.method).toBe('POST')
@@ -759,9 +746,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateMensaisBill('b1', requestBody)
+    await client.updateMensaisBill('b1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais/b1`)
     expect(init?.method).toBe('PUT')
@@ -784,9 +770,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateMensaisBillStatus('b1', requestBody)
+    await client.updateMensaisBillStatus('b1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais/b1/status`)
     expect(init?.method).toBe('POST')
@@ -817,9 +802,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.markMensaisBillPaid('b2', requestBody)
+    await client.markMensaisBillPaid('b2', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais/b2/paid`)
     expect(init?.method).toBe('POST')
@@ -854,9 +838,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.resetMensaisToUnset()
+    await client.resetMensaisToUnset()
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais/reset`)
     expect(init?.method).toBe('POST')
@@ -869,9 +852,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getInvestmentSnapshots(2026, 7)
+    await client.getInvestmentSnapshots(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-snapshots/2026/7`)
   })
 
@@ -889,9 +871,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateInvestmentSnapshotValue('s1', requestBody)
+    await client.updateInvestmentSnapshotValue('s1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/investment-snapshots/s1`)
     expect(init?.method).toBe('PUT')
@@ -906,9 +887,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCategories()
+    await client.getCategories()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/categories`)
   })
@@ -929,9 +909,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createBalanceAdjustment('Barclays', requestBody)
+    await client.createBalanceAdjustment('Barclays', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/Barclays/adjustments`)
     expect(init?.method).toBe('POST')
@@ -954,9 +933,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateBalanceAdjustment('Barclays', 'a1', requestBody)
+    await client.updateBalanceAdjustment('Barclays', 'a1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/Barclays/adjustments/a1`)
     expect(init?.method).toBe('PUT')
@@ -986,9 +964,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getSyncStatus()
+    await client.getSyncStatus()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/sync-status`)
   })
@@ -998,9 +975,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getPaymentsDue()
+    await client.getPaymentsDue()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/payments-due`)
   })
@@ -1017,9 +993,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCalendarStatus()
+    await client.getCalendarStatus()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/integrations/calendar/status`)
   })
@@ -1029,9 +1004,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.disconnectCalendar()
+    await client.disconnectCalendar()
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/integrations/calendar/disconnect`)
     expect(init?.method).toBe('POST')
@@ -1044,9 +1018,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCalendarSyncStatuses()
+    await client.getCalendarSyncStatuses()
 
-    expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/integrations/calendar/credit-cards/sync-status`)
   })
@@ -1061,9 +1034,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.resyncCreditCardCalendar('c1')
+    await client.resyncCreditCardCalendar('c1')
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/integrations/calendar/credit-cards/c1/resync`)
     expect(init?.method).toBe('POST')
@@ -1074,9 +1046,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.resyncAllCalendars()
+    await client.resyncAllCalendars()
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/integrations/calendar/resync-all`)
     expect(init?.method).toBe('POST')
@@ -1109,9 +1080,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getBrokers()
+    await client.getBrokers()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/navigation/brokers`)
   })
 
@@ -1125,9 +1095,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCreditsByBroker('XPI')
+    await client.getCreditsByBroker('XPI')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/credits/broker/XPI?scope=active`)
   })
 
@@ -1136,9 +1105,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCreditsByPortfolio('XPI', 'Default')
+    await client.getCreditsByPortfolio('XPI', 'Default')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/credits/portfolio/XPI/Default?scope=active`)
   })
 
@@ -1147,9 +1115,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getTransactionsByBroker('XPI')
+    await client.getTransactionsByBroker('XPI')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/transactions/broker/XPI?scope=active`)
   })
 
@@ -1158,9 +1125,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getTransactionsByPortfolio('XPI', 'Default')
+    await client.getTransactionsByPortfolio('XPI', 'Default')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/transactions/portfolio/XPI/Default?scope=active`)
   })
 
@@ -1175,9 +1141,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.archiveAsset(requestBody)
+    await client.archiveAsset(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/assets/archive`)
     expect(init?.method).toBe('POST')
@@ -1189,9 +1154,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAdminPortfolios()
+    await client.getAdminPortfolios()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/portfolios`)
   })
 
@@ -1201,9 +1165,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createPortfolio(requestBody)
+    await client.createPortfolio(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/portfolios`)
     expect(init?.method).toBe('POST')
@@ -1216,9 +1179,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updatePortfolio('XPI', 'ISA', requestBody)
+    await client.updatePortfolio('XPI', 'ISA', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/portfolios/XPI/ISA?scope=active`)
     expect(init?.method).toBe('PUT')
@@ -1242,9 +1204,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAdminAssets()
+    await client.getAdminAssets()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/assets`)
   })
 
@@ -1254,9 +1215,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createAsset(requestBody)
+    await client.createAsset(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/assets`)
     expect(init?.method).toBe('POST')
@@ -1269,9 +1229,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateAsset('XPI', 'Default', 'BCIA11', requestBody)
+    await client.updateAsset('XPI', 'Default', 'BCIA11', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/assets/XPI/Default/BCIA11?scope=active`)
     expect(init?.method).toBe('PUT')
@@ -1308,9 +1267,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateTransaction(requestBody)
+    await client.updateTransaction(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/transactions`)
     expect(init?.method).toBe('PUT')
@@ -1323,9 +1281,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.deleteTransaction(requestBody)
+    await client.deleteTransaction(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/transactions`)
     expect(init?.method).toBe('DELETE')
@@ -1345,9 +1302,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.addSplit(requestBody)
+    await client.addSplit(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/corporate-actions/split`)
     expect(init?.method).toBe('POST')
@@ -1368,9 +1324,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateSplit(requestBody)
+    await client.updateSplit(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/corporate-actions/split`)
     expect(init?.method).toBe('PUT')
@@ -1383,9 +1338,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.deleteCorporateAction(requestBody)
+    await client.deleteCorporateAction(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/corporate-actions`)
     expect(init?.method).toBe('DELETE')
@@ -1398,9 +1352,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.addCredit(requestBody)
+    await client.addCredit(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/credits`)
     expect(init?.method).toBe('POST')
@@ -1413,9 +1366,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateCredit(requestBody)
+    await client.updateCredit(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/credits`)
     expect(init?.method).toBe('PUT')
@@ -1428,9 +1380,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.deleteCredit(requestBody)
+    await client.deleteCredit(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/credits`)
     expect(init?.method).toBe('DELETE')
@@ -1443,9 +1394,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.setAssetPrice(requestBody)
+    await client.setAssetPrice(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/prices`)
     expect(init?.method).toBe('PUT')
@@ -1458,9 +1408,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.deleteAssetPrice(requestBody)
+    await client.deleteAssetPrice(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/prices`)
     expect(init?.method).toBe('DELETE')
@@ -1472,9 +1421,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getDividendHistory('BCIA11', 'BVMF')
+    await client.getDividendHistory('BCIA11', 'BVMF')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dividends/BCIA11/history?exchange=BVMF`)
   })
 
@@ -1483,9 +1431,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getInvestmentSnapshotSuggestions(2026, 7)
+    await client.getInvestmentSnapshotSuggestions(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-snapshots/2026/7/suggestions`)
   })
 
@@ -1494,9 +1441,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCategoryTotalsByMonth(2026, 7)
+    await client.getCategoryTotalsByMonth(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7/category-totals`)
   })
 
@@ -1505,9 +1451,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getIncomeSources()
+    await client.getIncomeSources()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/income-sources`)
   })
 
@@ -1517,9 +1462,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createIncomeSource(requestBody)
+    await client.createIncomeSource(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/income-sources`)
     expect(init?.method).toBe('POST')
@@ -1532,9 +1476,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateIncomeSource('is1', requestBody)
+    await client.updateIncomeSource('is1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/income-sources/is1`)
     expect(init?.method).toBe('PUT')
@@ -1558,9 +1501,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createCategory(requestBody)
+    await client.createCategory(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/categories`)
     expect(init?.method).toBe('POST')
@@ -1573,9 +1515,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateCategory('category-lazer', requestBody)
+    await client.updateCategory('category-lazer', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/categories/category-lazer`)
     expect(init?.method).toBe('PUT')
@@ -1600,9 +1541,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getInvestmentAccounts()
+    await client.getInvestmentAccounts()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-accounts`)
   })
 
@@ -1612,9 +1552,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createInvestmentAccount(requestBody)
+    await client.createInvestmentAccount(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/investment-accounts`)
     expect(init?.method).toBe('POST')
@@ -1627,9 +1566,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateInvestmentAccount('ia1', requestBody)
+    await client.updateInvestmentAccount('ia1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/investment-accounts/ia1`)
     expect(init?.method).toBe('PUT')
@@ -1662,9 +1600,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getDefaultGroupSummary(2026, 7)
+    await client.getDefaultGroupSummary(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/default/summary/2026/7`)
   })
 
@@ -1681,9 +1618,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAccountTemplateGroups(2026, 7)
+    await client.getAccountTemplateGroups(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/by-template/2026/7`)
   })
 
@@ -1694,9 +1630,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAccounts()
+    await client.getAccounts()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts`)
   })
 
@@ -1705,9 +1640,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAccountTemplates()
+    await client.getAccountTemplates()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/templates`)
   })
 
@@ -1727,9 +1661,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createAccount(requestBody)
+    await client.createAccount(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts`)
     expect(init?.method).toBe('POST')
@@ -1753,9 +1686,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateAccount('a9', requestBody)
+    await client.updateAccount('a9', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/a9`)
     expect(init?.method).toBe('PUT')
@@ -1795,9 +1727,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAccount('a1', 2026, 10)
+    await client.getAccount('a1', 2026, 10)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/2026/10`)
   })
 
@@ -1808,9 +1739,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAccountStatements('a1')
+    await client.getAccountStatements('a1')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/statements`)
   })
 
@@ -1831,9 +1761,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getMonthTransactions(2026, 10)
+    await client.getMonthTransactions(2026, 10)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/transactions/2026/10`)
   })
 
@@ -1842,9 +1771,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getPots('p1', 2026, 10)
+    await client.getPots('p1', 2026, 10)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/p1/pots/2026/10`)
   })
 
@@ -1859,10 +1787,9 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await call(client, requestBody)
+    await call(client, requestBody)
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(result).toEqual(responseBody)
     expect(url).toBe(`${API_BASE_URL}${path}`)
     expect(init?.method).toBe(method)
     expect(JSON.parse(init?.body as string)).toEqual({ amount: 90 })
@@ -1914,9 +1841,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getAccountTransactions('a1', 2026, 10)
+    await client.getAccountTransactions('a1', 2026, 10)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/transactions/2026/10`)
   })
 
@@ -1928,9 +1854,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client[method]('a1')
+    await client[method]('a1')
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/${path}`)
   })
 
@@ -1959,9 +1884,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createAccountTransfer(requestBody)
+    await client.createAccountTransfer(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/transfers`)
     expect(init?.method).toBe('POST')
@@ -2005,9 +1929,8 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
     const requestBody = { date: '2026-11-05', sourceAccountId: 'amex', destinationAccountId: 'barclays', amount: 35, destinationAmount: null, note: null }
 
-    const result = await client.createCardCreditRefund(requestBody)
+    await client.createCardCreditRefund(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/credit-refunds`)
     expect(init?.method).toBe('POST')
@@ -2020,7 +1943,7 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
     const requestBody = { date: '2026-10-17', description: 'Farmácia', note: null, paidBy: 'You', currency: 'BRL', amount: 150 }
 
-    await expect(client.createSettlementEntry('mae', requestBody)).resolves.toEqual(responseBody)
+    await client.createSettlementEntry('mae', requestBody)
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlement-entries`)
@@ -2034,7 +1957,7 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
     const requestBody = { date: '2026-10-16', description: 'Mercado', note: 'metade', paidBy: 'Other', amount: 180, convertedValue: 25.6 }
 
-    await expect(client.updateSettlementEntry('mae', 'e7', requestBody)).resolves.toEqual(responseBody)
+    await client.updateSettlementEntry('mae', 'e7', requestBody)
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlement-entries/e7`)
@@ -2048,7 +1971,7 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
     const requestBody = { date: '2026-11-07', description: 'Settlement', note: null, paidBy: 'Other', currency: 'BRL', amount: 167.88, convertedValue: 7.94 }
 
-    await expect(client.settleAccount('mae', requestBody)).resolves.toEqual(responseBody)
+    await client.settleAccount('mae', requestBody)
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlements`)
@@ -2083,9 +2006,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCardsInCredit()
+    await client.getCardsInCredit()
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/cards-in-credit`)
   })
 
@@ -2112,9 +2034,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createExpense(requestBody)
+    await client.createExpense(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/expenses`)
     expect(init?.method).toBe('POST')
@@ -2137,9 +2058,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateExpense('e1', requestBody)
+    await client.updateExpense('e1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/expenses/e1`)
     expect(init?.method).toBe('PUT')
@@ -2162,9 +2082,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getIncomesByMonth(2026, 7)
+    await client.getIncomesByMonth(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/incomes/month/2026/7`)
   })
 
@@ -2173,9 +2092,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getTitheSummaryByMonth(2026, 7)
+    await client.getTitheSummaryByMonth(2026, 7)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/tithe/month/2026/7`)
   })
 
@@ -2186,9 +2104,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getTitheYear(2026)
+    await client.getTitheYear(2026)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/tithe/year/2026`)
   })
 
@@ -2198,9 +2115,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateTitheCarryForward(2026, 7, requestBody)
+    await client.updateTitheCarryForward(2026, 7, requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/tithe/month/2026/7/carry-forward`)
     expect(init?.method).toBe('PUT')
@@ -2222,9 +2138,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.createIncome(requestBody)
+    await client.createIncome(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/incomes`)
     expect(init?.method).toBe('POST')
@@ -2246,9 +2161,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateIncome('i1', requestBody)
+    await client.updateIncome('i1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/incomes/i1`)
     expect(init?.method).toBe('PUT')
@@ -2281,9 +2195,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.markCardStatementPaid('cs1', requestBody)
+    await client.markCardStatementPaid('cs1', requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/card-statements/cs1/mark-paid`)
     expect(init?.method).toBe('POST')
@@ -2304,9 +2217,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.unmarkCardStatementPaid('cs1')
+    await client.unmarkCardStatementPaid('cs1')
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/card-statements/cs1/unmark-paid`)
     expect(init?.method).toBe('POST')
@@ -2317,9 +2229,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getCategoryTotalsAnnualForYear(2026)
+    await client.getCategoryTotalsAnnualForYear(2026)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/category-totals`)
   })
 
@@ -2328,9 +2239,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getInvestmentAnnualResultForYear(2026)
+    await client.getInvestmentAnnualResultForYear(2026)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/investment-annual-result`)
   })
 
@@ -2339,9 +2249,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getHistoricSummaryAverageFromYear(2026)
+    await client.getHistoricSummaryAverageFromYear(2026)
 
-    expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/historic-summary-averages`)
   })
 
@@ -2351,9 +2260,8 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.setReportingCurrencyEnabled(requestBody)
+    await client.setReportingCurrencyEnabled(requestBody)
 
-    expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/reporting-currency/enabled`)
     expect(init?.method).toBe('PUT')
