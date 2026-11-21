@@ -245,14 +245,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Card-Paid Pot Withdrawal
-- [ ] **P62-F01-card-paid-pot-withdrawal-01** A withdrawal paid by card writes pot −X on the expense date and a card charge +X in the chosen category on the chosen statement month, both with one operation id, and no bank record
-- [ ] **P62-F01-card-paid-pot-withdrawal-02** The statement month defaults to the expense date's month; a paid statement or a month before the expense date is rejected with 400 and its message
-- [ ] **P62-F01-card-paid-pot-withdrawal-03** An inactive card and an excluded category (inactive, investment, any account's category) are rejected; an overdraft returns 409 without confirmation
-- [ ] **P62-F01-card-paid-pot-withdrawal-04** The +X counts in its statement month in category totals and tithe, and adds to that statement's amount to pay
-- [ ] **P62-F01-card-paid-pot-withdrawal-05** Before the statement is paid every field can be edited, including switching to none or a bank and back, and delete removes both records; moving the charge to a later unpaid statement keeps the link
-- [ ] **P62-F01-card-paid-pot-withdrawal-06** After the statement is paid, changing amount, date, pot, card or statement and deleting return 400; description and category changes apply to every record
-- [ ] **P62-F01-card-paid-pot-withdrawal-07** Editing or deleting the card charge or pot movement on its own returns F10's 409
-- [ ] **P62-F01-card-paid-pot-withdrawal-08** The operation shows "Investment withdrawal: Pending" until its statement is paid; a failed save writes nothing; the data file version is unchanged
+- [x] **P62-F01-card-paid-pot-withdrawal-01** A withdrawal paid by card writes pot −X on the expense date and a card charge +X in the chosen category on the chosen statement month, both with one operation id, and no bank record
+- [x] **P62-F01-card-paid-pot-withdrawal-02** The statement month defaults to the expense date's month; a paid statement or a month before the expense date is rejected with 400 and its message
+- [x] **P62-F01-card-paid-pot-withdrawal-03** An inactive card and an excluded category (inactive, investment, any account's category) are rejected; an overdraft returns 409 without confirmation
+- [x] **P62-F01-card-paid-pot-withdrawal-04** The +X counts in its statement month in category totals and tithe, and adds to that statement's amount to pay
+- [x] **P62-F01-card-paid-pot-withdrawal-05** Before the statement is paid every field can be edited, including switching to none or a bank and back, and delete removes both records; moving the charge to a later unpaid statement keeps the link
+- [x] **P62-F01-card-paid-pot-withdrawal-06** After the statement is paid, changing amount, date, pot, card or statement and deleting return 400; description and category changes apply to every record
+- [x] **P62-F01-card-paid-pot-withdrawal-07** Editing or deleting the card charge or pot movement on its own returns F10's 409
+- [x] **P62-F01-card-paid-pot-withdrawal-08** The operation shows "Investment withdrawal: Pending" until its statement is paid; a failed save writes nothing; the data file version is unchanged
 
 ### F02. Investment Withdrawal on Statement Payment
 - [ ] **P62-F02-investment-withdrawal-on-statement-payment-01** Marking a statement paid from bank B on date D writes, in the same save as the payment transfer, −X in the Pots account's category on B dated D with the withdrawal's operation id, one per pot charge
