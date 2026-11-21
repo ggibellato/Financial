@@ -4,7 +4,6 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-rou
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import { Toaster } from '@fluentui/react-components'
 import type {
   AccountDetailDto,
   AccountDto,
@@ -23,13 +22,13 @@ import type {
   RecurringBillDto,
   ReserveMovementDto,
 } from '../../api/types'
-import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
+import { WithAppToaster } from '../../test/withAppToaster'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
 import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const {
   getAccountsMock,
@@ -319,7 +318,6 @@ function renderScreen(entry: string, previousEntries: string[] = []) {
           path="/cashflow/accounts/:accountId"
           element={
             <>
-              <Toaster toasterId={APP_TOASTER_ID} />
               <AccountScreenPage />
               <LocationText />
               <BrowserBackButton />
@@ -329,6 +327,7 @@ function renderScreen(entry: string, previousEntries: string[] = []) {
         <Route path="/cashflow/accounts" element={<p>Accounts page</p>} />
       </Routes>
     </MemoryRouter>,
+    { wrapper: WithAppToaster },
   )
 }
 
@@ -681,8 +680,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
 
   it('asks before an opening operation replaces a changed form', async () => {
     const user = userEvent.setup()
-    let finishLoad: (operation: PotOperationDto) => void = () => undefined
-    getPotOperationMock.mockReturnValue(new Promise((resolve) => { finishLoad = resolve }))
+    const pendingLoad = deferred<PotOperationDto>()
+    getPotOperationMock.mockReturnValue(pendingLoad.promise)
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
     const deposit = await screen.findByRole('button', { name: 'New deposit' })
@@ -691,7 +690,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await user.click(deposit)
     await user.type(within(await operationForm('New deposit')).getByLabelText(/^Description/), 'typed')
 
-    finishLoad(DEPOSIT)
+    pendingLoad.resolve(DEPOSIT)
 
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
     const form = await operationForm('Edit deposit')
@@ -702,22 +701,22 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
   })
 
   it('says while the deposit named in the address loads', async () => {
-    let finishLoad: (operation: PotOperationDto) => void = () => undefined
-    getPotOperationMock.mockReturnValue(new Promise((resolve) => { finishLoad = resolve }))
+    const pendingLoad = deferred<PotOperationDto>()
+    getPotOperationMock.mockReturnValue(pendingLoad.promise)
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
 
     expect(await screen.findByText('Loading the deposit or withdrawal…')).toBeInTheDocument()
 
-    finishLoad(DEPOSIT)
+    pendingLoad.resolve(DEPOSIT)
 
     expect(await operationForm('Edit deposit')).toBeInTheDocument()
     expect(screen.queryByText('Loading the deposit or withdrawal…')).not.toBeInTheDocument()
   })
 
   it('reads the deposit named in the address only once the form options have loaded', async () => {
-    let finishCategories: (categories: CategoryDto[]) => void = () => undefined
-    getCategoriesMock.mockReturnValue(new Promise((resolve) => { finishCategories = resolve }))
+    const pendingCategories = deferred<CategoryDto[]>()
+    getCategoriesMock.mockReturnValue(pendingCategories.promise)
     getPotOperationMock.mockResolvedValue(DEPOSIT)
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
@@ -726,7 +725,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
 
     expect(getPotOperationMock).not.toHaveBeenCalled()
 
-    finishCategories(CATEGORIES)
+    pendingCategories.resolve(CATEGORIES)
 
     expect(await operationForm('Edit deposit')).toBeInTheDocument()
   })
@@ -1239,14 +1238,14 @@ describe('AccountScreenPage on a Pots account', () => {
 
   it('paints a neutral skeleton, with no Transactions heading, until the account is known', async () => {
     withPotsAccount()
-    let finishAccount: (account: AccountDetailDto) => void = () => {}
-    getAccountMock.mockReturnValueOnce(new Promise((resolve) => { finishAccount = resolve }))
+    const pendingAccount = deferred<AccountDetailDto>()
+    getAccountMock.mockReturnValueOnce(pendingAccount.promise)
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=pots`)
 
     expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
 
-    finishAccount({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: [], disabledActions: {}, currentBalances: [] })
+    pendingAccount.resolve({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: [], disabledActions: {}, currentBalances: [] })
 
     expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
   })
@@ -1789,10 +1788,10 @@ describe('AccountScreenPage actions', () => {
 
   it('[AC P60-F05-bank-account-screen-10] shows the loading, server error, saving and success states; validation and unsaved changes have their own tests', async () => {
     const user = userEvent.setup()
-    let finishSave: (expense: ExpenseDto) => void = () => {}
+    const pendingSave = deferred<ExpenseDto>()
     createExpenseMock
       .mockRejectedValueOnce(new ApiError('Failed to fetch.', 0))
-      .mockImplementationOnce(() => new Promise((resolve) => (finishSave = resolve)))
+      .mockImplementationOnce(() => pendingSave.promise)
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
@@ -1809,7 +1808,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
     expect(await screen.findByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
-    finishSave(SAVED_EXPENSE)
+    pendingSave.resolve(SAVED_EXPENSE)
     expect(await screen.findByText('Expense added')).toBeInTheDocument()
   })
 
@@ -2193,15 +2192,15 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     getAccountTransactionsMock.mockResolvedValue([])
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`, [`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&edit=TransferOut-t1`])
     expect(await screen.findByText('No transactions in September 2026.')).toBeInTheDocument()
-    let finishRows: (rows: AccountTransactionDto[]) => void = () => undefined
-    getAccountTransactionsMock.mockReturnValue(new Promise((resolve) => { finishRows = resolve }))
+    const pendingRows = deferred<AccountTransactionDto[]>()
+    getAccountTransactionsMock.mockReturnValue(pendingRows.promise)
 
     fireEvent.click(screen.getByRole('button', { name: 'Browser back' }))
 
     await waitFor(() => expect(getAccountTransactionsMock).toHaveBeenCalledTimes(2))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 
-    finishRows(ROWS)
+    pendingRows.resolve(ROWS)
 
     expect(await screen.findByRole('heading', { name: 'Edit transfer' })).toBeInTheDocument()
   })
@@ -2725,15 +2724,15 @@ describe('AccountScreenPage card screen', () => {
       await user.click(within(row).getByRole('button', { name: /^Delete credit refund\b/ }))
       const dialog = await findDialog('Delete credit refund')
       expect(dialog).toHaveTextContent("Delete this credit refund? The card's credit returns.")
-      let finishReload: (rows: AccountTransactionDto[]) => void = () => {}
-      getAccountTransactionsMock.mockImplementation(() => new Promise((resolve) => { finishReload = resolve }))
+      const pendingReload = deferred<AccountTransactionDto[]>()
+      getAccountTransactionsMock.mockImplementation(() => pendingReload.promise)
       await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
 
       await waitFor(() => expect(deleteCardCreditRefundMock).toHaveBeenCalledWith('cr1'))
       expect(deleteAccountTransferMock).not.toHaveBeenCalled()
       expect(await screen.findByText('Credit refund deleted')).toBeInTheDocument()
       await waitFor(() => expect(getAccountMock.mock.calls.length).toBeGreaterThan(loadsBefore))
-      act(() => finishReload([]))
+      act(() => pendingReload.resolve([]))
       await waitFor(() => expect(screen.queryByText('BA Amex credit refund')).not.toBeInTheDocument())
       await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
     })

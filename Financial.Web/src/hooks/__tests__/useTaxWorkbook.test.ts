@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TaxWorkbookDto, TaxWorkbookOptionDto } from '../../api/types'
 import { useTaxWorkbook } from '../useTaxWorkbook'
+import { deferred } from '../../test-utils/deferred'
 
 const { getTaxWorkbookOptionsMock, getTaxWorkbookMock } = vi.hoisted(() => ({
   getTaxWorkbookOptionsMock: vi.fn<FinancialApiClient['getTaxWorkbookOptions']>(),
@@ -185,15 +186,15 @@ describe('useTaxWorkbook', () => {
   })
 
   it('reports the workbook loading only while it loads', async () => {
-    let resolveWorkbook: (workbook: TaxWorkbookDto) => void = () => undefined
+    const pendingWorkbook = deferred<TaxWorkbookDto>()
     getTaxWorkbookOptionsMock.mockResolvedValue(OPTIONS)
-    getTaxWorkbookMock.mockReturnValue(new Promise((resolve) => { resolveWorkbook = resolve }))
+    getTaxWorkbookMock.mockReturnValue(pendingWorkbook.promise)
 
     const { result } = renderHook(() => useTaxWorkbook())
     expect(result.current.isLoadingWorkbook).toBe(false)
 
     await waitFor(() => expect(result.current.isLoadingWorkbook).toBe(true))
-    resolveWorkbook(buildWorkbook())
+    pendingWorkbook.resolve(buildWorkbook())
     await waitFor(() => expect(result.current.workbook).not.toBeNull())
     expect(result.current.isLoadingWorkbook).toBe(false)
   })

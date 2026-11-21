@@ -8,6 +8,7 @@ import { comparableLines } from '../../utils/fundingLines'
 import { potsAccount } from '../../test/account'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 import { pinDate } from '../../test-utils/pinDate'
+import { deferred } from '../../test-utils/deferred'
 
 const { createIncomeMock, updateIncomeMock, getAccountsMock } = vi.hoisted(() => ({
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
@@ -234,14 +235,14 @@ describe('useIncomeForm', () => {
   })
 
   it('clears an inactive default Pots account once the accounts arrive, without marking the form dirty', async () => {
-    let resolveAccounts: (accounts: typeof ACCOUNTS) => void = () => {}
-    getAccountsMock.mockReset().mockReturnValue(new Promise((resolve) => (resolveAccounts = resolve)))
+    const pendingAccounts = deferred<typeof ACCOUNTS>()
+    getAccountsMock.mockReset().mockReturnValue(pendingAccounts.promise)
     setStoredDefault('income.incomeSource', '5')
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     expect(result.current.incomePotsAccountId).toBe('p3')
 
-    await act(async () => resolveAccounts(ACCOUNTS))
+    await act(async () => pendingAccounts.resolve(ACCOUNTS))
 
     await waitFor(() => expect(result.current.incomePotsAccountId).toBe(''))
     expect(result.current.incomeSplitToReserve).toBe('true')

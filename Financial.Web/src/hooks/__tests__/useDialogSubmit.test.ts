@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import { useDialogSubmit } from '../useDialogSubmit'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 describe('useDialogSubmit', () => {
   it('starts idle with no error', () => {
@@ -13,8 +13,8 @@ describe('useDialogSubmit', () => {
   })
 
   it('reports saving while the save is pending and stays saving once it resolves', async () => {
-    let resolveSave: () => void = () => {}
-    const save = vi.fn(() => new Promise<void>((resolve) => { resolveSave = resolve }))
+    const pendingSave = deferred<void>()
+    const save = vi.fn(() => pendingSave.promise)
     const { result } = renderHook(() => useDialogSubmit('The bank could not be saved.'))
 
     let pending: Promise<void> = Promise.resolve()
@@ -23,7 +23,7 @@ describe('useDialogSubmit', () => {
     expect(result.current.isSaving).toBe(true)
 
     await act(async () => {
-      resolveSave()
+      pendingSave.resolve()
       await pending
     })
 

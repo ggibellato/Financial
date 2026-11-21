@@ -53,7 +53,7 @@ public static class CorporateActionReplay
             _ => throw new ArgumentOutOfRangeException(nameof(action), action.Type, "Unsupported corporate action type/role combination.")
         };
 
-    public static (decimal Quantity, decimal AveragePrice) ReceiveIntoPosition(decimal quantity, decimal averagePrice, decimal receivedQuantity, decimal carriedCostBasis) =>
+    private static (decimal Quantity, decimal AveragePrice) ReceiveIntoPosition(decimal quantity, decimal averagePrice, decimal receivedQuantity, decimal carriedCostBasis) =>
         (quantity + receivedQuantity, AverageCostReplay.Blend(quantity, averagePrice, receivedQuantity, carriedCostBasis));
 
     public static decimal RequireRatioFactor(CorporateAction action) =>

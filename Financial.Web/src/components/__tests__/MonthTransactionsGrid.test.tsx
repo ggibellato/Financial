@@ -1,9 +1,8 @@
-import { Toaster } from '@fluentui/react-components'
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
-import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
+import { WithAppToaster } from '../../test/withAppToaster'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
@@ -71,9 +70,9 @@ function renderGrid({ rows = ROWS, isLoading = false, error = null, onRetry = vi
   return render(
     <MemoryRouter initialEntries={[address]}>
       <MonthTransactionsGrid year={2026} month={10} rows={rows} isLoading={isLoading} error={error} onRetry={onRetry} onDeleted={onDeleted} />
-      <Toaster toasterId={APP_TOASTER_ID} />
       <LocationText />
     </MemoryRouter>,
+    { wrapper: WithAppToaster },
   )
 }
 

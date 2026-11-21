@@ -6,7 +6,7 @@ import { recurringBill } from '../../test/recurringBill'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
 import { ALREADY_PAID_ERROR, CHOOSE_BILL_ERROR, unpaidUkBills, usePayRecurringBill } from '../usePayRecurringBill'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getMensaisBillsMock, markMensaisBillPaidMock } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -207,14 +207,14 @@ describe('usePayRecurringBill', () => {
   }
 
   it('shows the bills as loading only while an open form waits for them', async () => {
-    let resolveLoad: (bills: typeof BILLS) => void = () => {}
-    getMensaisBillsMock.mockReturnValue(new Promise((resolve) => { resolveLoad = resolve }))
+    const pendingLoad = deferred<typeof BILLS>()
+    getMensaisBillsMock.mockReturnValue(pendingLoad.promise)
     const { result } = renderPayBill()
     const closed = result.current.isLoadingBills
     act(() => result.current.open())
     const waiting = result.current.isLoadingBills
 
-    await act(async () => resolveLoad(BILLS))
+    await act(async () => pendingLoad.resolve(BILLS))
 
     expect({ closed, waiting, loaded: result.current.isLoadingBills }).toEqual({ closed: false, waiting: true, loaded: false })
   })

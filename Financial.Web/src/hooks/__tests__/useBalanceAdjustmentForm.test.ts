@@ -5,7 +5,7 @@ import { ApiError } from '../../api/apiError'
 import type { BalanceAdjustmentDto, BankOption } from '../../api/types'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
 import { pinDate } from '../../test-utils/pinDate'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
 
 const { createBalanceAdjustmentMock, updateBalanceAdjustmentMock } = vi.hoisted(() => ({
@@ -182,8 +182,8 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('submit calls createBalanceAdjustment, sets isSaving, and sets savedDelta on success while staying open', async () => {
-    let resolveCreate!: (value: BalanceAdjustmentDto) => void
-    createBalanceAdjustmentMock.mockReturnValue(new Promise((resolve) => (resolveCreate = resolve)))
+    const pendingCreate = deferred<BalanceAdjustmentDto>()
+    createBalanceAdjustmentMock.mockReturnValue(pendingCreate.promise)
     const onSaved = vi.fn()
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, onSaved))
     act(() => result.current.openCreateForm())
@@ -200,7 +200,7 @@ describe('useBalanceAdjustmentForm', () => {
     })
 
     await act(async () => {
-      resolveCreate({ ...ADJUSTMENT, delta: -4.2 })
+      pendingCreate.resolve({ ...ADJUSTMENT, delta: -4.2 })
       await Promise.resolve()
     })
 

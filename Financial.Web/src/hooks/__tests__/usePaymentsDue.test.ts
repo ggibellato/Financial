@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PaymentDueDto } from '../../api/types'
 import { PAYMENT_DUE_BANNER_DISMISS_MS, usePaymentsDue } from '../usePaymentsDue'
+import { deferred } from '../../test-utils/deferred'
 
 const { getPaymentsDueMock } = vi.hoisted(() => ({
   getPaymentsDueMock: vi.fn<FinancialApiClient['getPaymentsDue']>(),
@@ -114,9 +115,9 @@ describe('usePaymentsDue', () => {
   })
 
   it('ignores the answer to a load that was cancelled, as StrictMode does on mount', async () => {
-    let resolveStale: (payments: PaymentDueDto[]) => void = () => undefined
+    const pendingStale = deferred<PaymentDueDto[]>()
     getPaymentsDueMock
-      .mockReturnValueOnce(new Promise((resolve) => { resolveStale = resolve }))
+      .mockReturnValueOnce(pendingStale.promise)
       .mockResolvedValueOnce(SAMPLE_PAYMENTS)
 
     const { result } = renderHook(() => usePaymentsDue(), { wrapper: StrictMode })
@@ -124,7 +125,7 @@ describe('usePaymentsDue', () => {
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000)
-      resolveStale([{ ...SAMPLE_PAYMENTS[0], name: 'Stale' }])
+      pendingStale.resolve([{ ...SAMPLE_PAYMENTS[0], name: 'Stale' }])
     })
     expect(result.current.payments).toEqual(SAMPLE_PAYMENTS)
 

@@ -5,7 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SettlementEntryDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { useSettlementEntryForm, type SettlementEntryField } from '../useSettlementEntryForm'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { createSettlementEntryMock, updateSettlementEntryMock, settleAccountMock } = vi.hoisted(() => ({
   settleAccountMock: vi.fn<FinancialApiClient['settleAccount']>(),
@@ -508,15 +508,15 @@ describe('useSettlementEntryForm', () => {
     })
 
     it('does not reopen a form cancelled while its save was running', async () => {
-      let finishSave: (entry: SettlementEntryDto) => void = () => {}
-      createSettlementEntryMock.mockReturnValue(new Promise((resolve) => { finishSave = resolve }))
+      const pendingSave = deferred<SettlementEntryDto>()
+      createSettlementEntryMock.mockReturnValue(pendingSave.promise)
       const { result, onSaved } = renderForm()
       act(() => result.current.openAdd())
       fillValidEntry(result)
       submit(result)
 
       act(() => result.current.cancel())
-      await act(async () => finishSave(ENTRY))
+      await act(async () => pendingSave.resolve(ENTRY))
 
       expect(onSaved).toHaveBeenCalledWith('Entry added')
       expect(result.current.isOpen).toBe(false)
