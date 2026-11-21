@@ -20,7 +20,7 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 function statement(year: number, month: number, isPaid: boolean): AccountStatementDto {
-  return { id: `s-${year}-${month}`, year, month, total: 10, creditIn: 0, outstandingTotal: isPaid ? 0 : 10, creditCarried: 0, status: isPaid ? 'Paid' : 'Unpaid', isPaid, dueDate: null, paidOn: null, paidAmount: isPaid ? 10 : null, paidFromAccountName: null }
+  return { id: `s-${year}-${month}`, year, month, total: 10, creditIn: 0, outstandingTotal: isPaid ? 0 : 10, creditCarried: 0, status: isPaid ? 'Paid' : 'Unpaid', isPaid, dueDate: null, paidOn: null, paidAmount: isPaid ? 10 : null, paidFromAccountName: null, potWithdrawals: [] }
 }
 
 describe('moveTargetsFor with a listed month that has no stored statement', () => {

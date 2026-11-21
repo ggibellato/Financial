@@ -24,17 +24,19 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
+const INVESTIMENTO_WITHDRAWAL = { operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }
+
 const NOVEMBER: AccountStatementDto = {
-  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null,
+  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 const OCTOBER: StoredStatement = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null,
+  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 const SEPTEMBER: StoredStatement = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays',
+  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays', potWithdrawals: [],
 }
 const CARRYING: AccountStatementDto = {
-  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null,
+  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 
 function dueDateHandle(overrides: Partial<StatementDueDateFormHandle> = {}): StatementDueDateFormHandle {
@@ -102,6 +104,10 @@ function rowOf(month: string) {
 
 function shownMonths() {
   return screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
+}
+
+function potLine(text: string) {
+  return (_: string, element: Element | null) => element?.tagName === 'LI' && element.textContent === text
 }
 
 describe('CardStatementsTab', () => {
@@ -616,5 +622,33 @@ describe('CardStatementsTab', () => {
       expect(statements.closeForms).toHaveBeenCalled()
       expect(opener).toHaveFocus()
     })
+  })
+
+  it('[AC P62-F02-investment-withdrawal-on-statement-payment-06] names what paying takes from each pot, on the chosen bank once there is one', () => {
+    const withPots = { ...OCTOBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }
+    const payForm = { statement: withPots, bankId: '', date: '2026-10-16', isSaving: false, error: null, fieldErrors: {} }
+    const { rerenderWith } = renderTab({ payForm })
+
+    expect(screen.getByText(potLine('Also takes £120.00 from Reserva (Investimento) on the paying bank.'))).toBeInTheDocument()
+
+    rerenderWith({ payForm: { ...payForm, bankId: 'barclays' } })
+
+    expect(screen.getByText(potLine('Also takes £120.00 from Reserva (Investimento) on Barclays.'))).toBeInTheDocument()
+  })
+
+  it('[AC P62-F02-investment-withdrawal-on-statement-payment-06] says how many investment withdrawals unmarking removes', () => {
+    const withPots = {
+      ...SEPTEMBER,
+      potWithdrawals: [
+        INVESTIMENTO_WITHDRAWAL,
+        { operationId: 'op2', potsAccountName: 'Reserva', potName: 'HouseTreats', amount: 30 },
+      ],
+    }
+
+    renderTab({ unmark: { statement: withPots, isBusy: false, error: null } })
+
+    expect(
+      screen.getByText('Unmark September 2026 as paid? The payment will be deleted. This also removes 2 investment withdrawals.'),
+    ).toBeInTheDocument()
   })
 })

@@ -30,6 +30,7 @@ import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ReadOnlyInput from './ReadOnlyInput'
 import StatementDueDateForm from './StatementDueDateForm'
+import StatementPotWithdrawalsNote from './StatementPotWithdrawalsNote'
 import TruncatedText from './TruncatedText'
 import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
@@ -108,6 +109,12 @@ interface CardStatementsTabProps {
 
 function monthOf(statement: AccountStatementDto): string {
   return formatLongMonthYear(statement.year, statement.month)
+}
+
+function unmarkMessage(statement: AccountStatementDto): string {
+  const removed = statement.potWithdrawals.length
+  const withdrawals = removed === 0 ? [] : [`This also removes ${removed} investment withdrawal${removed === 1 ? '' : 's'}.`]
+  return [`Unmark ${monthOf(statement)} as paid? The payment will be deleted.`, ...withdrawals].join(' ')
 }
 
 function statusOf(statement: AccountStatementDto): string {
@@ -194,6 +201,11 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
             <ReadOnlyInput value={formatCurrency(payForm.statement.outstandingTotal, currency)} />
           </Field>
         </div>
+        <StatementPotWithdrawalsNote
+          withdrawals={payForm.statement.potWithdrawals}
+          bankName={payers.find((bank) => bank.id === payForm.bankId)?.name}
+          currency={currency}
+        />
       </fieldset>
       <FormSaveActions saveLabel="Pay statement" isSaving={payForm.isSaving} onCancel={onCancel} />
     </form>
@@ -376,7 +388,7 @@ export default function CardStatementsTab({
       <ConfirmDialog
         open={unmark !== null}
         title="Unmark statement"
-        message={unmark ? `Unmark ${monthOf(unmark.statement)} as paid? The payment will be deleted.` : ''}
+        message={unmark ? unmarkMessage(unmark.statement) : ''}
         confirmLabel="Unmark"
         cancelLabel="Cancel"
         isBusy={unmark?.isBusy ?? false}

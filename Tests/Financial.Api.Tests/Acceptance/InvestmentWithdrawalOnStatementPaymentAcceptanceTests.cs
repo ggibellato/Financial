@@ -226,4 +226,34 @@ public class InvestmentWithdrawalOnStatementPaymentAcceptanceTests : ApiEndpoint
             withdrawal.ReportingDate.Should().Be(new DateOnly(flights.StatementYear!.Value, flights.StatementMonth!.Value, 1));
         }
     }
+
+    [Fact]
+    [Trait("AC", "P62-F02-investment-withdrawal-on-statement-payment-06")]
+    public async Task StatementReads_ListThePotWithdrawalsTheConfirmationsName()
+    {
+        var flights = await WithdrawByCardAsync(120m);
+
+        var cardStatements = await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements");
+        var payable = await Client.GetFromJsonAsync<List<PayableStatementDTO>>($"{Api}/accounts/payable-statements");
+        var viewed = await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{AmexId}/2026/9");
+
+        using (new AssertionScope())
+        {
+            foreach (var withdrawals in new[]
+            {
+                cardStatements!.Single(statement => statement.Year == 2026 && statement.Month == 9).PotWithdrawals,
+                payable!.Single(statement => statement.Year == 2026 && statement.Month == 9).PotWithdrawals,
+                viewed!.ViewedStatement!.PotWithdrawals
+            })
+            {
+                var withdrawal = withdrawals.Should().ContainSingle().Subject;
+                withdrawal.OperationId.Should().Be(flights.OperationId);
+                withdrawal.PotsAccountName.Should().Be("Reserva");
+                withdrawal.PotName.Should().Be("Investimento");
+                withdrawal.Amount.Should().Be(120m);
+            }
+
+            cardStatements.Where(statement => statement.Month != 9).Should().OnlyContain(statement => statement.PotWithdrawals.Count == 0);
+        }
+    }
 }

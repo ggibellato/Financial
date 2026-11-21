@@ -255,12 +255,12 @@ graph TD
 - [x] **P62-F01-card-paid-pot-withdrawal-08** The operation shows "Investment withdrawal: Pending" until its statement is paid; a failed save writes nothing; the data file version is unchanged
 
 ### F02. Investment Withdrawal on Statement Payment
-- [ ] **P62-F02-investment-withdrawal-on-statement-payment-01** Marking a statement paid from bank B on date D writes, in the same save as the payment transfer, −X in the Pots account's category on B dated D with the withdrawal's operation id, one per pot charge
-- [ ] **P62-F02-investment-withdrawal-on-statement-payment-02** The −X is the full charge amount even when card credit reduces the amount to pay
-- [ ] **P62-F02-investment-withdrawal-on-statement-payment-03** A statement for month M paid in M+1: M's category totals show +X in the chosen category and −X in the Pots category; M+1 shows neither; bank B's balance changes on D
-- [ ] **P62-F02-investment-withdrawal-on-statement-payment-04** Unmarking the statement paid removes the transfer and every −X in one save, and the operation returns to Pending
-- [ ] **P62-F02-investment-withdrawal-on-statement-payment-05** With no category on the Pots account, marking paid returns 400 and saves nothing
-- [ ] **P62-F02-investment-withdrawal-on-statement-payment-06** The mark-paid and unmark-paid confirmations list the investment withdrawals they add or remove
+- [x] **P62-F02-investment-withdrawal-on-statement-payment-01** Marking a statement paid from bank B on date D writes, in the same save as the payment transfer, −X in the Pots account's category on B dated D with the withdrawal's operation id, one per pot charge
+- [x] **P62-F02-investment-withdrawal-on-statement-payment-02** The −X is the full charge amount even when card credit reduces the amount to pay
+- [x] **P62-F02-investment-withdrawal-on-statement-payment-03** A statement for month M paid in M+1: M's category totals show +X in the chosen category and −X in the Pots category; M+1 shows neither; bank B's balance changes on D
+- [x] **P62-F02-investment-withdrawal-on-statement-payment-04** Unmarking the statement paid removes the transfer and every −X in one save, and the operation returns to Pending
+- [x] **P62-F02-investment-withdrawal-on-statement-payment-05** With no category on the Pots account, marking paid returns 400 and saves nothing
+- [x] **P62-F02-investment-withdrawal-on-statement-payment-06** The mark-paid and unmark-paid confirmations list the investment withdrawals they add or remove
 
 ### F03. Withdraw Forms on Pots Account and Card
 - [ ] **P62-F03-withdraw-forms-on-pots-account-and-card-01** The Pots account's Withdraw form has "Paid with" (None, Bank, Credit card; default None) showing Bank, or Card and Statement month, and Category as chosen; switching keeps Pot, Date, Description and Amount
@@ -276,7 +276,7 @@ graph TD
 - [ ] **P62-F04-settle-a-nothing-due-statement-04** A settled statement rejects new charges; a statement that now has an amount to pay returns 409; a future date returns 400
 
 ### Cross-Feature Integration
-- [ ] **P62-CF-cross-feature-01** The operation id, amount, category, card and statement month written by F01 are the ones F02 uses for the −X when the statement is paid
+- [x] **P62-CF-cross-feature-01** The operation id, amount, category, card and statement month written by F01 are the ones F02 uses for the −X when the statement is paid
 - [ ] **P62-CF-cross-feature-02** A withdrawal saved from F03's Pots account form and one saved from the card screen produce identical F01 records and are both picked up by F02
 - [ ] **P62-CF-cross-feature-03** F03's operation detail shows "Done" with F02's bank and payment date after mark paid, and "Pending" again after unmark
 - [ ] **P62-CF-cross-feature-04** F04 writes −X records indistinguishable from F02's (category, operation id, statement-month reporting) and removes them through the same rule

@@ -9,4 +9,5 @@ public sealed class PayableStatementDTO
     public required int Month { get; init; }
     public required decimal Total { get; init; }
     public required string Currency { get; init; }
+    public required IReadOnlyList<StatementPotWithdrawalDTO> PotWithdrawals { get; init; }
 }

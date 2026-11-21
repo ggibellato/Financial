@@ -478,6 +478,12 @@
               "string"
             ]
           },
+          "potWithdrawals": {
+            "items": {
+              "$ref": "#/components/schemas/StatementPotWithdrawalDTO"
+            },
+            "type": "array"
+          },
           "status": {
             "type": "string"
           },
@@ -499,7 +505,8 @@
           "outstandingTotal",
           "creditCarried",
           "status",
-          "isPaid"
+          "isPaid",
+          "potWithdrawals"
         ],
         "type": "object"
       },
@@ -4723,6 +4730,12 @@
             "format": "int32",
             "type": "integer"
           },
+          "potWithdrawals": {
+            "items": {
+              "$ref": "#/components/schemas/StatementPotWithdrawalDTO"
+            },
+            "type": "array"
+          },
           "total": {
             "format": "double",
             "type": "number"
@@ -4739,7 +4752,8 @@
           "year",
           "month",
           "total",
-          "currency"
+          "currency",
+          "potWithdrawals"
         ],
         "type": "object"
       },
@@ -6100,6 +6114,31 @@
         },
         "required": [
           "dueDate"
+        ],
+        "type": "object"
+      },
+      "StatementPotWithdrawalDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "operationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "potName": {
+            "type": "string"
+          },
+          "potsAccountName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operationId",
+          "potsAccountName",
+          "potName",
+          "amount"
         ],
         "type": "object"
       },

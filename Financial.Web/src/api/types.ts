@@ -154,6 +154,7 @@ export type AccountStatementDto = Schema<'AccountStatementDTO'>
 export type StatementDueDateUpdateDto = Schema<'StatementDueDateUpdateDTO'>
 export type AccountTransactionStatementDto = Schema<'AccountTransactionStatementDTO'>
 export type PayableStatementDto = Schema<'PayableStatementDTO'>
+export type StatementPotWithdrawalDto = Schema<'StatementPotWithdrawalDTO'>
 export type AccountTransferDto = Schema<'AccountTransferDTO'>
 export type AccountTransferCreateDto = Schema<'AccountTransferCreateDTO'>
 export type AccountTransferUpdateDto = Schema<'AccountTransferUpdateDTO'>

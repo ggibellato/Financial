@@ -9,6 +9,7 @@ import FormSaveActions from './FormSaveActions'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useFormPanelStyles } from './formPanelStyles'
 import LockedValue from './LockedValue'
+import StatementPotWithdrawalsNote from './StatementPotWithdrawalsNote'
 
 const NOTHING_TO_PAY_MESSAGE = 'No card statement is waiting to be paid.'
 
@@ -93,6 +94,9 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
             <ReadOnlyInput value={statement ? formatCurrency(statement.total, statement.currency) : '—'} />
           </Field>
         </div>
+        {statement && (
+          <StatementPotWithdrawalsNote withdrawals={statement.potWithdrawals} bankName={lockedBank.name} currency={statement.currency} />
+        )}
       </fieldset>
       <FormSaveActions
         saveLabel="Pay card statement"
