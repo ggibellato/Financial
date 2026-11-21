@@ -62,7 +62,8 @@ public class FailedSaveRollbackTests
 
     private IncomeService CreateIncomeService() => new(_repository, _tracer, NullLogger<IncomeService>.Instance);
 
-    private PotsService CreatePotsService() => new(_repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
+    private PotsService CreatePotsService() =>
+        new(_repository, new FakeCreditCardCalendarSyncService(), TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
 
     private Account Reserva => _repository.GetAccounts().Single(account => account.Has(Capability.HasPots));
 
