@@ -742,7 +742,7 @@ describe('TransactionsTab', () => {
     expect(getOpenLotsMock).not.toHaveBeenCalled()
   })
 
-  it('shows_the_lot_allocation_picker_for_a_sale_on_a_specific_id_asset', async () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-05] shows_the_lot_allocation_picker_for_a_sale_on_a_specific_id_asset', async () => {
     getOpenLotsMock.mockResolvedValue([OPEN_LOT])
     await renderAssetTab([TRANSACTION_BUY], 'SpecificId')
     await openNewForm()
@@ -780,7 +780,7 @@ describe('TransactionsTab', () => {
     expect(screen.getByText(/Allocated 4.00000000 of 10.00000000/)).toBeInTheDocument()
   })
 
-  it('disables_Save_until_the_allocation_exactly_matches_the_sale_quantity', async () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-05] disables_Save_until_the_allocation_exactly_matches_the_sale_quantity', async () => {
     const allocationInput = await openSpecificIdSaleForm()
 
     fireEvent.change(allocationInput, { target: { value: '4' } })
@@ -806,6 +806,20 @@ describe('TransactionsTab', () => {
         specificLotAllocations: [{ sourceTransactionId: 'lot-a', quantity: 10 }],
       }),
     )
+  })
+
+  it('[AC P50-F04-react-disposals-and-cost-basis-06] shows_a_refused_specific_id_sale_inline_and_keeps_the_entered_form', async () => {
+    addTransactionMock.mockRejectedValue(new Error('Lot lot-a has only 5 units left to sell.'))
+    const allocationInput = await openSpecificIdSaleForm()
+    fireEvent.change(allocationInput, { target: { value: '10' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
+
+    expect(await screen.findByText('Lot lot-a has only 5 units left to sell.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Quantity/)).toHaveValue(10)
+    expect(screen.getByLabelText(/^Unit price/)).toHaveValue(4.5)
+    expect(screen.getByRole('spinbutton', { name: /Allocate quantity/ })).toHaveValue(10)
   })
 
   it('clicking_total_header_sorts_rows_ascending_then_descending', async () => {

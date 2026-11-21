@@ -83,11 +83,13 @@ describe('DisposalsTab', () => {
     expect(screen.getByText(/nothing has been sold from this holding/)).toBeInTheDocument()
   })
 
-  it('lists active disposals with their fields', () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-01] lists active disposals with their fields', () => {
     const chain = { active: disposal({}), history: [] }
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
     render(<DisposalsTab />)
 
+    expect(screen.getByText('03/11/2025')).toBeInTheDocument()
+    expect(screen.getByText('5.00000000')).toBeInTheDocument()
     expect(screen.getByText('Average cost')).toBeInTheDocument()
     expect(screen.getByText('600.00')).toBeInTheDocument()
     expect(screen.getByText('500.00')).toBeInTheDocument()
@@ -104,7 +106,7 @@ describe('DisposalsTab', () => {
     expect(mockSetTaxYear).toHaveBeenCalledWith('2024/25')
   })
 
-  it('shows an explicit empty message when the selected tax year has no realised gains', () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-02] shows an explicit empty message when the selected tax year has no realised gains', () => {
     setMock({
       chains: [{ active: disposal({}), history: [] }],
       filteredChains: [],
@@ -122,7 +124,7 @@ describe('DisposalsTab', () => {
     expect(screen.queryByRole('button', { name: /audit trail/ })).not.toBeInTheDocument()
   })
 
-  it('defaults to sorting by date descending, with the header showing the active sort', () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-01] defaults to sorting by date descending, with the header showing the active sort', () => {
     const older = { active: disposal({ id: 'd1', transactionId: 't1', date: '2025-01-05T00:00:00' }), history: [] }
     const newer = { active: disposal({ id: 'd2', transactionId: 't2', date: '2025-11-03T00:00:00' }), history: [] }
     setMock({
@@ -153,7 +155,7 @@ describe('DisposalsTab', () => {
     expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
   })
 
-  it('expands and collapses the audit trail for a disposal with superseded history', () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-03] expands and collapses the audit trail for a disposal with superseded history', () => {
     const predecessor = disposal({
       id: 'd0',
       method: 'AverageCost',

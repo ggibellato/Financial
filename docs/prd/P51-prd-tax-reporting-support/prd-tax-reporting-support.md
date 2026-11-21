@@ -498,27 +498,27 @@ graph TD
 ### F04. React — Tax Reporting
 - [x] **P51-F04-react-tax-reporting-01** The Tax page's jurisdiction and tax-year selectors show only
       combinations with at least one classification, and selecting one shows its workbook
-- [x] **P51-F04-react-tax-reporting-02** Each of the 4 calculation statuses renders with a visually
-      distinct indicator, on both entries and the workbook's aggregate status
-- [x] **P51-F04-react-tax-reporting-03** Exporting a workbook produces a CSV with exactly the 13
-      specified columns and one row per entry
-- [x] **P51-F04-react-tax-reporting-04** The Admin Tax Rules screen supports create, edit and delete,
-      rejecting an invalid or overlapping range inline before submission
-- [x] **P51-F04-react-tax-reporting-05** A rejected rule deletion shows the server's message inline,
-      naming the affected tax year(s)
+- [x] ~~**P51-F04-react-tax-reporting-02** Each of the 4 calculation statuses renders with a visually
+      distinct indicator, on both entries and the workbook's aggregate status~~ Retired with the Tax rules screen and the calculation status display (dd840bf9, 2026-11-13).
+- [x] **P51-F04-react-tax-reporting-03** Exporting a workbook produces a CSV with exactly the 12
+      specified columns and one row per entry (13 until the CalculationStatus column was dropped in dd840bf9)
+- [x] ~~**P51-F04-react-tax-reporting-04** The Admin Tax Rules screen supports create, edit and delete,
+      rejecting an invalid or overlapping range inline before submission~~ Retired with the Tax rules screen and the calculation status display (dd840bf9, 2026-11-13).
+- [x] ~~**P51-F04-react-tax-reporting-05** A rejected rule deletion shows the server's message inline,
+      naming the affected tax year(s)~~ Retired with the Tax rules screen and the calculation status display (dd840bf9, 2026-11-13).
 - [x] **P51-F04-react-tax-reporting-06** An asset's detail view shows its `TaxProfile` jurisdiction(s)
 - [x] **P51-F04-react-tax-reporting-07** The CSV export action is disabled when the selected workbook
       has zero entries
 
 ### F05. WPF — Tax Reporting
-- [x] **P51-F05-wpf-tax-reporting-01** `Financial.App` includes an equivalent Tax page with the same
-      selectors, entries, category totals and status indicators as `Financial.Web`
-- [x] **P51-F05-wpf-tax-reporting-02** `Financial.App` includes the same CSV export producing
-      identical column output for the same selection
-- [x] **P51-F05-wpf-tax-reporting-03** `Financial.App` includes the same Admin Tax Rules screen with
-      equivalent create/edit/delete and validation behaviour
-- [x] **P51-F05-wpf-tax-reporting-04** `Financial.App`'s asset detail view shows the same `TaxProfile`
-      jurisdiction(s) as `Financial.Web`
+- [x] ~~**P51-F05-wpf-tax-reporting-01** `Financial.App` includes an equivalent Tax page with the same
+      selectors, entries, category totals and status indicators as `Financial.Web`~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P51-F05-wpf-tax-reporting-02** `Financial.App` includes the same CSV export producing
+      identical column output for the same selection~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P51-F05-wpf-tax-reporting-03** `Financial.App` includes the same Admin Tax Rules screen with
+      equivalent create/edit/delete and validation behaviour~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P51-F05-wpf-tax-reporting-04** `Financial.App`'s asset detail view shows the same `TaxProfile`
+      jurisdiction(s) as `Financial.Web`~~ Retired with the WPF front end (ADR-002).
 
 ### Cross-Feature Integration
 - [x] F02's classification correctly resolves F01's applicable tax rule (or its absence) for each
@@ -527,5 +527,5 @@ graph TD
       for evidence context
 - [x] F04 correctly renders F03's workbook, F02's `TaxProfile`, and F01's rules on the Admin screen,
       for the same underlying data
-- [ ] F05 renders identical data to F04 for F01/F02/F03, with no discrepancy between the two front
-      ends for the same jurisdiction/tax year
+- [ ] ~~F05 renders identical data to F04 for F01/F02/F03, with no discrepancy between the two front
+      ends for the same jurisdiction/tax year~~ Retired with the WPF front end (ADR-002).

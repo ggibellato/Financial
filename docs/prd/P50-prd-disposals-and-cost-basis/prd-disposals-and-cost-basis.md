@@ -494,19 +494,19 @@ graph TD
       list with the new record without a full page reload
 
 ### F05. WPF — Disposals and Cost Basis
-- [x] **P50-F05-wpf-disposals-and-cost-basis-01** `Financial.App`'s asset detail view includes an
+- [x] ~~**P50-F05-wpf-disposals-and-cost-basis-01** `Financial.App`'s asset detail view includes an
       equivalent Disposals section with the same fields, same tax-year filter behaviour and same
-      superseded audit trail as `Financial.Web`
-- [x] **P50-F05-wpf-disposals-and-cost-basis-02** `Financial.App`'s Admin Broker form includes the same
-      Cost Basis Method field, persisting via the same F01 setting
-- [x] **P50-F05-wpf-disposals-and-cost-basis-03** Selling from a SpecificId-broker holding in
+      superseded audit trail as `Financial.Web`~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P50-F05-wpf-disposals-and-cost-basis-02** `Financial.App`'s Admin Broker form includes the same
+      Cost Basis Method field, persisting via the same F01 setting~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P50-F05-wpf-disposals-and-cost-basis-03** Selling from a SpecificId-broker holding in
       `Financial.App` shows the same open-lot allocation control with the same validation behaviour as
-      `Financial.Web`
-- [x] **P50-F05-wpf-disposals-and-cost-basis-04** A rejected SpecificId sale shows the equivalent
-      inline error without discarding the rest of the entered form
-- [x] **P50-F05-wpf-disposals-and-cost-basis-05** Every state `Financial.Web` shows (empty, loading,
+      `Financial.Web`~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P50-F05-wpf-disposals-and-cost-basis-04** A rejected SpecificId sale shows the equivalent
+      inline error without discarding the rest of the entered form~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P50-F05-wpf-disposals-and-cost-basis-05** Every state `Financial.Web` shows (empty, loading,
       validation, success, server-error, saving/recalculating) has an equivalent presentation in
-      `Financial.App`
+      `Financial.App`~~ Retired with the WPF front end (ADR-002).
 
 ### Cross-Feature Integration
 - [x] F02's `DisposalRecord` computation correctly uses F01's configured `CostBasisMethod` and open-lot
@@ -515,5 +515,5 @@ graph TD
       existing `DisposalRecords` to determine exactly what becomes superseded
 - [x] F04 correctly renders F01's method options and open lots, F02's `DisposalRecord` fields, and
       F03's superseded chain for the same underlying disposal
-- [x] F05 renders identical data to F04 for F01/F02/F03, with no discrepancy between the two front ends
-      for the same holding's disposal history
+- [x] ~~F05 renders identical data to F04 for F01/F02/F03, with no discrepancy between the two front ends
+      for the same holding's disposal history~~ Retired with the WPF front end (ADR-002).
