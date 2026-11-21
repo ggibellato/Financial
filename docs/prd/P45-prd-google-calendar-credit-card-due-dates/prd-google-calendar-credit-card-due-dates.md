@@ -244,11 +244,11 @@ graph TD
 - [x] **P45-F03-integrations-settings-web-05** A failed `/status` request shows a retry affordance instead of an empty or broken panel.
 
 ### F04. Integrations Settings — WPF
-- [ ] **P45-F04-integrations-settings-wpf-01** The WPF Settings > Integrations view shows the same connection states, account details, and per-card sync list as F03, using WPF-native controls.
-- [x] **P45-F04-integrations-settings-wpf-02** Clicking "Connect" opens the system default browser to the Google consent URL; no embedded browser control is used.
-- [x] **P45-F04-integrations-settings-wpf-03** The view's status updates to "connected" after the user completes consent in the browser and returns to the app, without requiring an explicit manual refresh action.
-- [ ] **P45-F04-integrations-settings-wpf-04** Currency/balance values in the per-card list are right-aligned, consistent with the app's existing grid conventions.
-- [x] **P45-F04-integrations-settings-wpf-05** Disconnect requires the same explicit confirmation as F03 before proceeding.
+- [ ] ~~**P45-F04-integrations-settings-wpf-01** The WPF Settings > Integrations view shows the same connection states, account details, and per-card sync list as F03, using WPF-native controls.~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P45-F04-integrations-settings-wpf-02** Clicking "Connect" opens the system default browser to the Google consent URL; no embedded browser control is used.~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P45-F04-integrations-settings-wpf-03** The view's status updates to "connected" after the user completes consent in the browser and returns to the app, without requiring an explicit manual refresh action.~~ Retired with the WPF front end (ADR-002).
+- [ ] ~~**P45-F04-integrations-settings-wpf-04** Currency/balance values in the per-card list are right-aligned, consistent with the app's existing grid conventions.~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P45-F04-integrations-settings-wpf-05** Disconnect requires the same explicit confirmation as F03 before proceeding.~~ Retired with the WPF front end (ADR-002).
 
 ### Cross-Feature Integration
 - [x] After connecting via F01, F02's sync engine successfully creates events using the connection's dedicated calendar ID — no separate calendar ID configuration is needed.

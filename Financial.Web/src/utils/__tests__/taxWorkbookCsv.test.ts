@@ -14,7 +14,7 @@ function buildWorkbook(overrides: Partial<TaxWorkbookDto> = {}): TaxWorkbookDto 
 }
 
 describe('buildTaxWorkbookCsv', () => {
-  it('produces exactly the 12 specified columns in order', () => {
+  it('[AC P51-F04-react-tax-reporting-03] produces exactly the 12 specified columns in order', () => {
     const csv = buildTaxWorkbookCsv(buildWorkbook())
     const header = csv.split('\r\n')[0]
 
@@ -34,7 +34,7 @@ describe('buildTaxWorkbookCsv', () => {
     ])
   })
 
-  it('emits one row per entry, with the workbook\'s jurisdiction/taxYear/currency repeated on each', () => {
+  it('[AC P51-F04-react-tax-reporting-03] emits one row per entry, with the workbook\'s jurisdiction/taxYear/currency repeated on each', () => {
     const csv = buildTaxWorkbookCsv(
       buildWorkbook({
         jurisdiction: 'BR',

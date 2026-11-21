@@ -131,7 +131,7 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Equity')).toBeInTheDocument()
   })
 
-  it('renders_tax_jurisdictions_joined_by_comma', () => {
+  it('[AC P51-F04-react-tax-reporting-06] renders_tax_jurisdictions_joined_by_comma', () => {
     setMock({ asset: { ...ASSET, taxJurisdictions: ['BR', 'UK'] } })
     renderAssetSummaryTab()
     expect(screen.getByText('Tax jurisdiction').nextElementSibling).toHaveTextContent('BR, UK')

@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto } from '../../api/types'
 import { confirmDelete } from '../../test-utils/confirmDelete'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { optionNames } from '../../test-utils/optionNames'
 
 const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, setCostBasisMethodMock, deleteBrokerMock } =
   vi.hoisted(() => ({
@@ -152,7 +153,7 @@ describe('BrokersPage', () => {
     )
   })
 
-  it('also calls setCostBasisMethod when editing changes the cost basis method', async () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-04] also calls setCostBasisMethod when editing changes the cost basis method', async () => {
     updateBrokerMock.mockResolvedValue({
       name: 'XPI',
       currency: 'BRL',
@@ -171,6 +172,7 @@ describe('BrokersPage', () => {
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit XPI' }))
+    expect(optionNames(screen.getByRole('combobox', { name: /^Cost basis method/ }))).toEqual(['Average cost', 'FIFO', 'Specific ID'])
     fireEvent.change(screen.getByRole('combobox', { name: /^Cost basis method/ }), { target: { value: 'FIFO' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

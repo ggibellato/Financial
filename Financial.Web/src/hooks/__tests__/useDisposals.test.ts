@@ -167,7 +167,7 @@ describe('useDisposals', () => {
     expect(result.current.chains).toEqual([])
   })
 
-  it('derives tax year options from the active disposals, newest first', async () => {
+  it('[AC P50-F04-react-disposals-and-cost-basis-02] derives tax year options from the active disposals, newest first', async () => {
     const older = disposal({ id: 'd1', transactionId: 't1', taxYear: '2024/25', date: '2024-06-01T00:00:00' })
     const newer = disposal({ id: 'd2', transactionId: 't2', taxYear: '2025/26', date: '2025-11-03T00:00:00' })
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [older, newer] })

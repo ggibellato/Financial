@@ -431,13 +431,13 @@ graph TD
       while native-currency figures stay visible
 
 ### F05. WPF — Reporting Currency
-- [x] **P49-F05-wpf-reporting-currency-01** The same "Reporting Currency" control, same three options, and the same persistence via F03's
-      setting endpoint are present in `Financial.App`'s Settings area
-- [x] **P49-F05-wpf-reporting-currency-02** The portfolio dashboard and broker-level views show the same converted-total presentation and
-      labelling as `Financial.Web`, for the same underlying data
-- [x] **P49-F05-wpf-reporting-currency-03** The same provenance affordance (rate, source, retrieved-at) is available for a converted figure
-- [x] **P49-F05-wpf-reporting-currency-04** `Partial` and `ReportingCurrencyUnavailable` states are shown with the same meaning and the same
-      native-currency fallback behaviour as `Financial.Web`
+- [x] ~~**P49-F05-wpf-reporting-currency-01** The same "Reporting Currency" control, same three options, and the same persistence via F03's
+      setting endpoint are present in `Financial.App`'s Settings area~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P49-F05-wpf-reporting-currency-02** The portfolio dashboard and broker-level views show the same converted-total presentation and
+      labelling as `Financial.Web`, for the same underlying data~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P49-F05-wpf-reporting-currency-03** The same provenance affordance (rate, source, retrieved-at) is available for a converted figure~~ Retired with the WPF front end (ADR-002).
+- [x] ~~**P49-F05-wpf-reporting-currency-04** `Partial` and `ReportingCurrencyUnavailable` states are shown with the same meaning and the same
+      native-currency fallback behaviour as `Financial.Web`~~ Retired with the WPF front end (ADR-002).
 
 ### Cross-Feature Integration
 - [x] **P49-CF-cross-feature-01** A rate fetched via F01 for a given date/currency pair is the same rate F02's entry-time snapshot

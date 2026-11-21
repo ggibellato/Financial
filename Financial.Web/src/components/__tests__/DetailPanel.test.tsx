@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { SelectedNode } from '../../api/types'
+import type { AssetDetailsDto, DisposalRecordDto, SelectedNode } from '../../api/types'
 import { ApiError } from '../../api/apiError'
 import { never } from '../../test-utils/deferred'
 
@@ -110,6 +110,65 @@ const activeAssetNode: SelectedNode = {
   exchange: 'BVMF',
   positionType: 'Long',
 }
+const SALE_DISPOSAL: DisposalRecordDto = {
+  id: 'd-new',
+  transactionId: 't-new',
+  date: '2024-05-01T00:00:00',
+  method: 'AverageCost',
+  lotsConsumed: [{ sourceTransactionId: null, quantity: 10, unitCost: 20 }],
+  quantityDisposed: 10,
+  proceeds: 45,
+  costBasis: 200,
+  gainLoss: -155,
+  currency: 'BRL',
+  taxYear: '2024',
+  status: 'Active',
+  supersededByRecordId: null,
+  createdAt: '2024-05-01T09:00:00Z',
+}
+
+function assetDetails(disposalRecords: DisposalRecordDto[]): AssetDetailsDto {
+  return {
+    name: 'KLBN4',
+    brokerName: 'XPI',
+    portfolioName: 'Acoes',
+    ticker: 'KLBN4',
+    isin: 'BRKLBN',
+    exchange: 'BVMF',
+    currency: 'BRL',
+    country: 'BR',
+    localTypeCode: 'ON',
+    class: 'Equity',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
+    quantity: 100,
+    averagePrice: 20,
+    averageSellPrice: null,
+    positionType: 'Long',
+    totalBought: 2000,
+    totalSold: 0,
+    totalCredits: 0,
+    realizedGainLoss: 0,
+    realizedGainLossSharesOnly: 0,
+    marketValue: null,
+    costOfUnitsHeld: 2000,
+    unrealisedGain: null,
+    resultPercent: null,
+    resultWithCreditsPercent: null,
+    priceAsOfDate: null,
+    marketStatus: 'Current',
+    priceOnlyReturn: null,
+    totalReturn: null,
+    transactions: [],
+    credits: [],
+    priceSnapshots: [],
+    disposalRecords,
+    corporateActions: [],
+    costBasisMethod: 'AverageCost',
+    taxJurisdictions: [],
+  }
+}
+
 const flatAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Flat' }
 const shortAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Short' }
 const deepLinkedAssetNode: SelectedNode = { ...activeAssetNode, pendingCorporateActionId: 'ca-123' }
@@ -453,6 +512,21 @@ describe('DetailPanel', () => {
     await waitFor(() => expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('XPI', 'Stale', 'active'))
     // Nothing here describes anything once the portfolio is gone.
     await waitFor(() => expect(screen.getByText('Select an item to view details')).toBeInTheDocument())
+  })
+
+  it('[AC P50-F04-react-disposals-and-cost-basis-07] shows a newly recorded sale when Realised gains is opened again, without reloading the page', async () => {
+    getAssetDetailsMock.mockResolvedValue(assetDetails([]))
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    fireEvent.click(screen.getByRole('tab', { name: 'Realised gains' }))
+    await waitFor(() => expect(screen.getByText(/nothing has been sold from this holding/)).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
+    getAssetDetailsMock.mockResolvedValue(assetDetails([SALE_DISPOSAL]))
+    fireEvent.click(screen.getByRole('tab', { name: 'Realised gains' }))
+
+    await waitFor(() => expect(screen.getByText('01/05/2024')).toBeInTheDocument())
+    expect(screen.getByText('-155.00')).toBeInTheDocument()
   })
 
   it('opens the Move asset dialog for an asset node', () => {

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TaxWorkbookDto, TaxWorkbookOptionDto } from '../../api/types'
 import { never } from '../../test-utils/deferred'
+import { optionNames } from '../../test-utils/optionNames'
 import TaxPage from '../TaxPage'
 
 const { getTaxWorkbookOptionsMock, getTaxWorkbookMock, downloadCsvMock } = vi.hoisted(() => ({
@@ -127,6 +128,21 @@ describe('TaxPage', () => {
     expect(await screen.findByText(/No classified disposals or income events yet/)).toBeInTheDocument()
   })
 
+  it('[AC P51-F04-react-tax-reporting-01] offers only the classified jurisdiction and tax-year pairs, and shows the chosen workbook', async () => {
+    getTaxWorkbookMock.mockImplementation(async (jurisdiction, taxYear) =>
+      jurisdiction === 'UK' ? { ...WORKBOOK, jurisdiction, taxYear, entries: [{ ...WORKBOOK.entries[0], id: 'uk', evidenceReference: 'ev-uk' }] } : WORKBOOK,
+    )
+    await renderLoaded()
+
+    expect(optionNames(screen.getByLabelText('Jurisdiction'))).toEqual(['BR', 'UK'])
+    expect(optionNames(screen.getByLabelText('Tax year'))).toEqual(['2025', '2026'])
+
+    fireEvent.change(screen.getByLabelText('Jurisdiction'), { target: { value: 'UK' } })
+
+    expect(await screen.findByText('ev-uk')).toBeInTheDocument()
+    expect(optionNames(screen.getByLabelText('Tax year'))).toEqual(['2025/26'])
+  })
+
   it('selecting_a_jurisdiction_loads_its_first_tax_year', async () => {
     await renderLoaded()
     fireEvent.change(screen.getByLabelText('Jurisdiction'), { target: { value: 'UK' } })
@@ -155,7 +171,7 @@ describe('TaxPage', () => {
     expect(screen.queryByText(/Overall status/)).not.toBeInTheDocument()
   })
 
-  it('export_csv_is_disabled_and_a_specific_empty_state_shows_when_the_selection_has_no_entries', async () => {
+  it('[AC P51-F04-react-tax-reporting-07] export_csv_is_disabled_and_a_specific_empty_state_shows_when_the_selection_has_no_entries', async () => {
     getTaxWorkbookMock.mockResolvedValue(EMPTY_WORKBOOK)
     render(<TaxPage />)
     expect(await screen.findByText(/No classified events for BR 2025 yet/)).toBeInTheDocument()
