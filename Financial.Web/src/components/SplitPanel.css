@@ -11,24 +11,24 @@
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
-  border-right: 1px solid var(--border, #e0e0e0);
+  border-right: 1px solid var(--colorNeutralStroke2);
 }
 
 .split-panel__handle {
   width: 6px;
   flex-shrink: 0;
   cursor: col-resize;
-  background: var(--border, #e0e0e0);
+  background: var(--colorNeutralStrokeAccessible);
   transition: background 0.15s;
 }
 
 .split-panel__handle:hover,
 .split-panel__handle:focus-visible {
-  background: var(--accent, #007acc);
+  background: var(--colorBrandBackground);
 }
 
 .split-panel__handle:focus-visible {
-  outline: 2px solid var(--accent, #007acc);
+  outline: 2px solid var(--colorStrokeFocus2);
   outline-offset: 2px;
 }
 
@@ -49,7 +49,7 @@
   max-height: 40vh;
   overflow: auto;
   border-right: none;
-  border-bottom: 1px solid var(--border, #e0e0e0);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
 }
 
 .split-panel--mobile .split-panel__right {

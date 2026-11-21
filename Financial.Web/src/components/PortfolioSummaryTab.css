@@ -16,7 +16,7 @@
   margin: 0;
   font-size: 12px;
   font-style: italic;
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 @media (max-width: 599px) {

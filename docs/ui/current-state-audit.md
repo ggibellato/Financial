@@ -26,6 +26,8 @@ hand-built HTML + CSS + React, one `.css` file per component.
 
 ### Declared tokens vs. what's actually painted
 
+> Resolved 2026-11-21: the custom properties listed below are retired; component CSS uses the Fluent theme variables directly (see ADR-005's 2026-11-21 addendum).
+
 `src/index.css:1-51` is the only design-token file (CSS custom properties on
 `:root`, with a `@media (prefers-color-scheme: dark)` override). Its real
 tokens: `--text`, `--text-h`, `--bg`, `--border`, `--accent`/`--accent-bg`,

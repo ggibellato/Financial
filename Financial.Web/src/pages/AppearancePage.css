@@ -15,5 +15,5 @@
 
 .appearance-page__label {
   font-weight: 600;
-  color: var(--text-h, #242424);
+  color: var(--colorNeutralForeground1);
 }

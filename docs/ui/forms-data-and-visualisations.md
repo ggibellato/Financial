@@ -527,7 +527,7 @@ Totals must:
   footer, Annual Summary's Investments summary), so several totals on one
   page stay distinguishable. `data-table.css` makes `<tfoot>` cells bold on
   the page background (no zebra or hover); on desktop widths only, a single
-  1px `--text-muted` rule replaces the last body row's border above the first
+  1px `colorNeutralForeground3` rule replaces the last body row's border above the first
   footer row (stacked mobile cards keep their own borders). A footer row's
   first cell carries the card label "Total", not the column's name. Row
   borders go on the cells: the shared `border-collapse: separate` never draws

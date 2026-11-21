@@ -41,32 +41,32 @@
 }
 
 .portfolio-holdings__profit--green {
-  color: var(--success);
+  color: var(--colorStatusSuccessForeground1);
 }
 
 .portfolio-holdings__profit--red {
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .portfolio-holdings__loading-cell {
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   font-style: italic;
 }
 
 .portfolio-holdings__manual-badge {
-  color: var(--warning-text);
+  color: var(--colorStatusWarningForeground3);
   font-style: italic;
   font-size: 11px;
 }
 
 .portfolio-holdings__stale-badge {
-  color: var(--error);
+  color: var(--colorStatusDangerForeground3);
   font-style: italic;
   font-size: 11px;
 }
 
 .portfolio-holdings__credits-separator {
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--colorBrandForeground1);
   padding-left: 10px;
 }
 
@@ -76,7 +76,7 @@
   flex-wrap: wrap;
   gap: 16px 32px;
   padding: 12px 0;
-  background: var(--code-bg, #f4f3ec);
+  background: var(--colorNeutralBackground3);
   border-radius: 4px;
   padding-left: 12px;
 }
@@ -89,7 +89,7 @@
 
 .portfolio-holdings__footer-label {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -100,7 +100,7 @@
 
 .portfolio-holdings__footer-footnote {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   font-style: italic;
 }
 

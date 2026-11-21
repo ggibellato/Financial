@@ -9,7 +9,7 @@
 }
 
 .dividend-check__header p {
-  color: var(--text);
+  color: var(--colorNeutralForeground2);
 }
 
 .dividend-check__form {
@@ -39,10 +39,10 @@
 }
 
 .dividend-check__summary-card {
-  border: 1px solid var(--border);
+  border: 1px solid var(--colorNeutralStroke2);
   border-radius: var(--borderRadiusXLarge);
   padding: var(--spacingVerticalL);
-  background: var(--social-bg);
+  background: var(--colorNeutralBackground2);
   display: grid;
   gap: var(--spacingVerticalS);
 }
@@ -50,20 +50,20 @@
 .summary-card__title {
   font-weight: var(--fontWeightBold);
   font-size: var(--fontSizeBase400);
-  color: var(--text-h);
+  color: var(--colorNeutralForeground1);
   margin: 0;
 }
 
 .summary-card__avg-dividend {
-  color: var(--accent);
+  color: var(--colorBrandForeground1);
 }
 
 .summary-card__price-max--positive {
-  color: var(--success);
+  color: var(--colorStatusSuccessForeground1);
 }
 
 .summary-card__price-max--negative {
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .dividend-check__tables {
@@ -86,11 +86,11 @@
 }
 
 .dividend-check__tables table {
-  border: 1px solid var(--border);
+  border: 1px solid var(--colorNeutralStroke2);
 }
 
 .dividend-check__placeholder {
-  color: var(--text);
+  color: var(--colorNeutralForeground2);
 }
 
 @media (max-width: 599px) {

@@ -13,19 +13,19 @@
 
 .data-table th {
   text-align: left;
-  color: var(--text-h);
+  color: var(--colorNeutralForeground1);
   padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
   white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--bg);
+  background: var(--colorNeutralBackground1);
 }
 
 .data-table td {
   padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
   vertical-align: middle;
   white-space: nowrap;
   /* Neutralizes Fluent TableCell's hardcoded height: 44px default; this selector's higher
@@ -34,11 +34,11 @@
 }
 
 .data-table tbody tr:nth-child(even) {
-  background: var(--bg-subtle);
+  background: var(--colorNeutralBackground2);
 }
 
 .data-table tbody tr:hover {
-  background: var(--bg-hover);
+  background: var(--colorNeutralBackground1Hover);
 }
 
 .data-table .data-table__col--numeric,
@@ -92,7 +92,7 @@
 
 .data-table tfoot td {
   font-weight: bold;
-  background: var(--bg);
+  background: var(--colorNeutralBackground1);
 }
 
 @media (min-width: 600px) {
@@ -101,7 +101,7 @@
   }
 
   .data-table tfoot tr:first-child > td {
-    border-top: 1px solid var(--text-muted);
+    border-top: 1px solid var(--colorNeutralForeground3);
   }
 }
 
@@ -143,10 +143,10 @@
 
   .data-table tbody tr,
   .data-table tfoot tr {
-    border: 1px solid var(--border);
+    border: 1px solid var(--colorNeutralStroke2);
     border-radius: 4px;
     margin-bottom: 8px;
-    background: var(--bg);
+    background: var(--colorNeutralBackground1);
   }
 
   .data-table td {
@@ -163,7 +163,7 @@
   .data-table__cell-label {
     display: block;
     font-weight: 600;
-    color: var(--text-h);
+    color: var(--colorNeutralForeground1);
     text-align: left;
   }
 
