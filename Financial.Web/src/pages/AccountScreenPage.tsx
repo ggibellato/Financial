@@ -246,6 +246,7 @@ export default function AccountScreenPage() {
             form={withdrawalForm}
             banks={formOptions.options.banks}
             lockedBank={lockedBank}
+            lockedCard={lockedCard}
             onDelete={() => withdrawalForm.operationId && operationDelete.request({ operationId: withdrawalForm.operationId, noun: 'withdrawal' })}
             onCancel={closeActiveForm}
           />

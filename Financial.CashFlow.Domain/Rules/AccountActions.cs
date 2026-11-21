@@ -25,7 +25,7 @@ public static class AccountActions
         (AccountAction.Deposit, (account, _) => account.Has(Capability.HasPots)),
         (AccountAction.Withdraw, (account, _) => account.Has(Capability.CanWithdraw)),
         (AccountAction.ManagePots, (account, _) => account.Has(Capability.HasPots)),
-        (AccountAction.WithdrawFromPots, (account, _) => account.Has(Capability.CanPayBills)),
+        (AccountAction.WithdrawFromPots, (account, _) => account.Has(Capability.CanPayBills) || account.Has(Capability.HasStatements)),
         (AccountAction.AddEntry, (account, _) => account.Has(Capability.HasParticipants)),
         (AccountAction.Settle, (account, _) => account.Has(Capability.CanSettle))
     ];

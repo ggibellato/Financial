@@ -47,9 +47,9 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_HasStatements_ReturnsAddChargeAndAddRefund()
+    public void AllowedFor_HasStatements_ReturnsChargeRefundAndWithdrawFromPots()
     {
-        AccountActions.AllowedFor(Minimal(Capability.HasStatements)).Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund);
+        AccountActions.AllowedFor(Minimal(Capability.HasStatements)).Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.WithdrawFromPots);
     }
 
     [Fact]
@@ -95,9 +95,9 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_CreditCardAccount_ReturnsOnlyAddChargeAndAddRefund()
+    public void AllowedFor_CreditCardAccount_ReturnsChargeRefundAndWithdrawFromPots()
     {
-        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund);
+        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.WithdrawFromPots);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class AccountActionsTests
     public void AllowedFor_CreditCardInCredit_AddsRefundCreditToBankAfterAddRefund()
     {
         AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex"), isInCredit: true)
-            .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.RefundCreditToBank);
+            .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.RefundCreditToBank, AccountAction.WithdrawFromPots);
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class AccountActionsTests
     public void AllowedFor_AccountWithCategoriesAndStatements_HasAddChargeInsteadOfAddExpense()
     {
         AccountActions.AllowedFor(Minimal(Capability.HasCategories, Capability.HasStatements, Capability.ReceivesIncome))
-            .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.AddIncome);
+            .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.AddIncome, AccountAction.WithdrawFromPots);
     }
 
     [Fact]

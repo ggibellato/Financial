@@ -414,8 +414,8 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            offered.Should().Equal("AddCharge", "AddRefund", "RefundCreditToBank");
-            offeredAfter.Should().Equal("AddCharge", "AddRefund");
+            offered.Should().Equal("AddCharge", "AddRefund", "RefundCreditToBank", "WithdrawFromPots");
+            offeredAfter.Should().Equal("AddCharge", "AddRefund", "WithdrawFromPots");
             bankRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Should().BeEquivalentTo(
                 new { Kind = "CardCreditRefund", Description = "BA Amex credit refund", Counterpart = "BA Amex", Amount = 60m, CanEdit = false });
             cardRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Should().BeEquivalentTo(

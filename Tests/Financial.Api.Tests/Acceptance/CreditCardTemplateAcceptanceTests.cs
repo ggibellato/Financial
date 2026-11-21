@@ -105,7 +105,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            detail!.AllowedActions.Should().Equal("AddCharge", "AddRefund");
+            detail!.AllowedActions.Should().Equal("AddCharge", "AddRefund", "WithdrawFromPots");
             detail.Balance.Should().Be(-40m);
             await ShouldBeRefusedAsCardPayer(expense);
             await ShouldBeRefusedAsCardPayer(billPaid);

@@ -105,17 +105,19 @@ describe('usePotWithdrawalForm', () => {
     expect(result.current.values?.potId).not.toBe('pot-b')
   })
 
-  it('clears the category when the bank is cleared, and only then', async () => {
+  it('clears the bank and category when Paid with changes, and only then', async () => {
     const { result } = await openWithPotsLoaded()
+    act(() => result.current.setField('paidWith', 'bank'))
     act(() => result.current.setField('bankId', 'b1'))
     act(() => result.current.setField('categoryId', 'cat-saude'))
 
     act(() => result.current.setField('description', ''))
     const categoryAfterOtherFieldCleared = result.current.values?.categoryId
-    act(() => result.current.setField('bankId', ''))
+    act(() => result.current.setField('paidWith', 'none'))
 
     expect(categoryAfterOtherFieldCleared).toBe('cat-saude')
     expect(result.current.values?.categoryId).toBe('')
+    expect(result.current.values?.bankId).toBe('')
   })
 
   it('keeps the category when the bank changes to another bank', async () => {
@@ -204,7 +206,7 @@ describe('usePotWithdrawalForm', () => {
     act(() => result.current.openEdit(OPERATION))
     await waitFor(() => expect(result.current.pots).not.toBeNull())
 
-    expect(result.current).toMatchObject({ isBankLocked: false, openedBankId: 'b1', openedCategoryId: 'cat-saude', currency: 'GBP' })
+    expect(result.current).toMatchObject({ isPaymentLocked: false, openedBankId: 'b1', openedCategoryId: 'cat-saude', currency: 'GBP' })
   })
 
   it('opens from a bank with the bank locked', () => {
@@ -212,7 +214,7 @@ describe('usePotWithdrawalForm', () => {
 
     act(() => result.current.openFromBank('b1'))
 
-    expect(result.current).toMatchObject({ isBankLocked: true, openedBankId: 'b1' })
+    expect(result.current).toMatchObject({ isPaymentLocked: true, openedBankId: 'b1' })
     expect(result.current.values).toMatchObject({ potsAccountId: 'holidays', bankId: 'b1', amount: '' })
   })
 
@@ -237,6 +239,6 @@ describe('usePotWithdrawalForm', () => {
   it('reports no pots error and no saving state before anything is opened', () => {
     const { result } = renderForm()
 
-    expect(result.current).toMatchObject({ hasPotsError: false, isSaving: false, isBankLocked: false, openedBankId: '', openedCategoryId: '', currency: '' })
+    expect(result.current).toMatchObject({ hasPotsError: false, isSaving: false, isPaymentLocked: false, openedBankId: '', openedCategoryId: '', currency: '' })
   })
 })

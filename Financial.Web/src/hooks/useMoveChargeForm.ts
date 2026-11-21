@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto, ExpenseDto } from '../api/types'
-import { formatLongMonthYear, formatMonthInputValue, getSaveErrorMessage, parseMonthInputValue } from '../utils/formatters'
+import { getSaveErrorMessage, parseMonthInputValue } from '../utils/formatters'
+import { unpaidStatementMonths, type StatementMonthOption } from '../utils/statementMonths'
 import { useAsyncResource } from './useAsyncResource'
 import { STATEMENTS_LOAD_ERROR } from './useCardStatements'
 
 const LATER_MONTHS_OFFERED = 12
 
-export interface MoveTarget {
-  value: string
-  label: string
-}
+export type MoveTarget = StatementMonthOption
 
 interface MoveForm {
   charge: ExpenseDto
@@ -27,17 +25,10 @@ function invoiceMonthOf(invoiceDate: string): { year: number; month: number } | 
 export function moveTargetsFor(invoiceDate: string, statements: readonly AccountStatementDto[]): MoveTarget[] {
   const current = invoiceMonthOf(invoiceDate)
   if (!current) return []
-  const targets: MoveTarget[] = []
-  for (let offset = 1; offset <= LATER_MONTHS_OFFERED; offset++) {
-    const monthIndex = current.month - 1 + offset
-    const year = current.year + Math.floor(monthIndex / 12)
-    const month = (monthIndex % 12) + 1
-    const statement = statements.find((s) => s.year === year && s.month === month)
-    if (statement?.isPaid) continue
-    const label = formatLongMonthYear(year, month)
-    targets.push({ value: formatMonthInputValue(year, month), label: statement?.id ? label : `${label} (new)` })
-  }
-  return targets
+  return unpaidStatementMonths(current, 1, LATER_MONTHS_OFFERED, statements).map(({ value, label, isStored }) => ({
+    value,
+    label: isStored ? label : `${label} (new)`,
+  }))
 }
 
 export function moveRecordNoun(charge: ExpenseDto): 'charge' | 'refund' {

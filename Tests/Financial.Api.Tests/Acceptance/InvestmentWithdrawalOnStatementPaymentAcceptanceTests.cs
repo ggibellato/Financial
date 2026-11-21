@@ -253,7 +253,7 @@ public class InvestmentWithdrawalOnStatementPaymentAcceptanceTests : ApiEndpoint
                 withdrawal.Amount.Should().Be(120m);
             }
 
-            cardStatements.Where(statement => statement.Month != 9).Should().OnlyContain(statement => statement.PotWithdrawals.Count == 0);
+            cardStatements!.Where(statement => statement.Month != 9).Should().OnlyContain(statement => statement.PotWithdrawals.Count == 0);
         }
     }
 }
