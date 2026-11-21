@@ -27,6 +27,13 @@ function toTickerGroups(items: WatchlistItemDto[]): TickerGroup[] {
   return Array.from(map, ([label, tickers]) => ({ label, tickers }))
 }
 
+function describeMaxBuy({ priceMaxBuy, currentPrice }: DividendSummaryDto) {
+  if (priceMaxBuy <= 0) return { className: undefined, text: 'no dividends to set a max buy' }
+  return currentPrice < priceMaxBuy
+    ? { className: 'summary-card__price-max--positive', text: 'current price below max buy' }
+    : { className: 'summary-card__price-max--negative', text: 'current price not below max buy' }
+}
+
 export default function DividendCheckPage() {
   const historyHeadingId = useId()
   const yearHeadingId = useId()
@@ -102,8 +109,6 @@ export default function DividendCheckPage() {
 
   const isWatchlistEmpty = watchlist.data?.length === 0
 
-  const isBelowMaxBuy = !!summary && summary.priceMaxBuy > 0 && summary.currentPrice < summary.priceMaxBuy
-  const priceMaxBuyClass = isBelowMaxBuy ? 'summary-card__price-max--positive' : 'summary-card__price-max--negative'
 
   return (
     <section className="dividend-check">
@@ -145,9 +150,9 @@ export default function DividendCheckPage() {
               <p className="summary-card__avg-dividend">
                 Average dividend: <strong>{formatBrl(summary.averageDividendLastFiveYears)}</strong> (last 5 years) — Yield: <strong>{formatPercentN2(summary.dividendYieldPercent)}</strong>
               </p>
-              <p className={priceMaxBuyClass}>
+              <p className={describeMaxBuy(summary).className}>
                 Price max buy: <strong>{formatBrl(summary.priceMaxBuy)}</strong> — Discount <strong>{formatPercentN2(summary.discountPercent)}</strong> —{' '}
-                {isBelowMaxBuy ? 'current price below max buy' : 'current price not below max buy'}
+                {describeMaxBuy(summary).text}
               </p>
             </section>
 

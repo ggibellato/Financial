@@ -88,33 +88,7 @@ describe('DividendCheckPage', () => {
     expect(screen.getByText(/Price max buy:/)).toBeInTheDocument()
   })
 
-  it('applies positive class when current price is below price max buy', async () => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 10, priceMaxBuy: 20 })
-    getDividendHistoryMock.mockResolvedValue([])
 
-    render(<DividendCheckPage />)
-    await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
-
-    const priceMaxText = await screen.findByText(/Price max buy:/)
-    expect(priceMaxText).toHaveClass('summary-card__price-max--positive')
-    expect(priceMaxText).not.toHaveClass('summary-card__price-max--negative')
-    expect(priceMaxText).toHaveTextContent('current price below max buy')
-  })
-
-  it('applies negative class when current price is above price max buy', async () => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 25, priceMaxBuy: 20 })
-    getDividendHistoryMock.mockResolvedValue([])
-
-    render(<DividendCheckPage />)
-    await screen.findByDisplayValue('KLBN4')
-    fireEvent.click(screen.getByRole('button', { name: 'Check dividends' }))
-
-    const priceMaxText = await screen.findByText(/Price max buy:/)
-    expect(priceMaxText).toHaveClass('summary-card__price-max--negative')
-    expect(priceMaxText).not.toHaveClass('summary-card__price-max--positive')
-    expect(priceMaxText).toHaveTextContent('current price not below max buy')
-  })
 
   it('shows dividend history in date descending order', async () => {
     getDividendSummaryMock.mockResolvedValue(baseSummary)
@@ -466,8 +440,15 @@ describe('DividendCheckPage', () => {
     expect(headerOf(years, 'Total')).toHaveAttribute('aria-sort', 'ascending')
   })
 
-  it('reads a price equal to the max buy as not below it', async () => {
-    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 20, priceMaxBuy: 20 })
+
+
+  it.each([
+    ['below', 10, 20, 'summary-card__price-max--positive', 'current price below max buy'],
+    ['above', 25, 20, 'summary-card__price-max--negative', 'current price not below max buy'],
+    ['equal to', 20, 20, 'summary-card__price-max--negative', 'current price not below max buy'],
+    ['with no dividends to set', 10, 0, undefined, 'no dividends to set a max buy'],
+  ])('marks a current price %s the max buy', async (_, currentPrice, priceMaxBuy, colourClass, verdict) => {
+    getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice, priceMaxBuy })
     getDividendHistoryMock.mockResolvedValue([])
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
@@ -475,8 +456,8 @@ describe('DividendCheckPage', () => {
     check()
 
     const priceMaxText = await screen.findByText(/Price max buy:/)
-    expect(priceMaxText).toHaveClass('summary-card__price-max--negative')
-    expect(priceMaxText.textContent).toMatch(/— current price not below max buy$/)
+    expect(priceMaxText.className).toBe(colourClass ?? '')
+    expect(priceMaxText.textContent).toMatch(new RegExp(`— ${verdict}$`))
   })
 
   it('says when there is no history and no annual totals', async () => {
