@@ -38,6 +38,7 @@ import RowActionsCell from './grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './PriceHistoryTab.css'
+import { CHART_TEXT_STYLE } from '../styles/chartText'
 
 const DEFAULT_LEFT_WIDTH = 400
 const MIN_LEFT_WIDTH = 200
@@ -251,8 +252,8 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-            <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+            <XAxis dataKey="date" tick={CHART_TEXT_STYLE} />
+            <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
             <Tooltip content={<ChartTooltip />} />
             <Legend content={ChartLegendContent} />
             <Line

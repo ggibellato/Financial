@@ -609,6 +609,12 @@ happens to be. With Recharts' `LabelList` that means `position="top"` with
 an explicit `fill`, not `position="inside"` with no fill set
 (`CreditsTab.tsx` is the reference).
 
+Chart text (axis ticks and value labels) is 12px, Fluent's Caption 1 size
+(`fontSizeBase200`), through `styles/chartText.ts` (`CHART_TEXT_STYLE`); never a
+smaller inline `fontSize`. It is a literal rather than the token's CSS variable
+because Recharts measures tick text from the `fontSize` prop. Y axes use
+`width="auto"` so their labels are never clipped, whatever the value or locale.
+
 Every bar chart shows its value on top of the bar whenever there is room for
 it — this is the standard, not an enhancement one chart happens to have.
 A chart that currently shows no value labels at all (not just badly
