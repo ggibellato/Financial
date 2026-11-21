@@ -11,7 +11,7 @@ import { createSelectionPrefsStore } from './selectionPrefsStore'
 import { useSelectionGuard } from './useAsyncResource'
 
 export type ViewMode = 'Stacked' | 'Grouped'
-export type ChartType = 'Bar' | 'Line'
+export type ChartType = 'Bar' | 'Line' | 'Table'
 export type CreditFormField = 'formDate' | 'formType' | 'formValue' | 'formWithheld' | 'formIntermediationFee' | 'formSharesForDividend'
 
 const DATE_KEY = 'investmentCredit.date'

@@ -41,10 +41,13 @@ import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './CreditsTab.css'
 import { CHART_TEXT_STYLE } from '../styles/chartText'
+import ChartValueLabel from './ChartValueLabel'
+import MonthTotalsTable from './MonthTotalsTable'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
   { value: 'Bar', label: 'Bar' },
   { value: 'Line', label: 'Line' },
+  { value: 'Table', label: 'Table' },
 ]
 
 const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
@@ -279,72 +282,87 @@ interface ChartPanelProps {
   compact?: boolean
 }
 
+function creditLabel(value: number): string {
+  return value > 0 ? formatN2(value) : ''
+}
+
 function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, compact }: ChartPanelProps) {
   const chartTitleId = useId()
   const isStacked = selectedMode === 'Stacked'
 
+  const totalsColumns = [
+    ...creditTypes.map((type) => ({ label: typeLabel(type), value: (row: MonthBucket) => row.byType[type] ?? 0 })),
+    { label: 'Total', value: (row: MonthBucket) => row.total, isTotal: true },
+  ]
+
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
       <p id={chartTitleId} className="credits-tab__chart-title">Credits by month</p>
-      <div className="credits-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
-        <ResponsiveContainer width="100%" height="100%">
-          {selectedChartType === 'Bar' ? (
-            <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
-              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
-              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-              <Legend />
-              {creditTypes.map((type) => (
-                <Bar
-                  key={type}
-                  dataKey={typeValue(type)}
-                  name={type}
-                  fill={typeColor(type)}
-                  stackId={isStacked ? 'credits' : undefined}
-                >
-                  <LabelList
-                    dataKey={typeValue(type)}
-                    position="top"
-                    formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
-                    style={CHART_TEXT_STYLE}
-                  />
-                </Bar>
-              ))}
-            </BarChart>
-          ) : (
-            <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
-              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
-              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-              <Legend />
-              {isStacked ? (
-                creditTypes.map((type) => (
-                  <Line
+      {selectedChartType === 'Table' ? (
+        <MonthTotalsTable title="Credits by month" rows={chartData} columns={totalsColumns} />
+      ) : (
+        <div className="credits-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
+          <ResponsiveContainer width="100%" height="100%">
+            {selectedChartType === 'Bar' ? (
+              <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+                <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
+                <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+                <Legend />
+                {creditTypes.map((type, index) => (
+                  <Bar
                     key={type}
-                    type="monotone"
                     dataKey={typeValue(type)}
-                    name={type}
-                    stroke={typeColor(type)}
+                    name={typeLabel(type)}
+                    fill={typeColor(type)}
+                    stackId={isStacked ? 'credits' : undefined}
+                  >
+                    {(!isStacked || index === creditTypes.length - 1) && (
+                      <LabelList
+                        dataKey={isStacked ? 'total' : typeValue(type)}
+                        content={({ x, y, width, height, value }) => (
+                          <ChartValueLabel x={x} y={y} width={width} height={height} value={value} formatValue={creditLabel} />
+                        )}
+                      />
+                    )}
+                  </Bar>
+                ))}
+              </BarChart>
+            ) : (
+              <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+                <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
+                <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+                <Legend />
+                {isStacked ? (
+                  creditTypes.map((type) => (
+                    <Line
+                      key={type}
+                      type="monotone"
+                      dataKey={typeValue(type)}
+                      name={typeLabel(type)}
+                      stroke={typeColor(type)}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  ))
+                ) : (
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total"
+                    stroke={SINGLE_TYPE_COLOR}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                   />
-                ))
-              ) : (
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  name="Total"
-                  stroke={SINGLE_TYPE_COLOR}
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-              )}
-            </LineChart>
-          )}
-        </ResponsiveContainer>
-      </div>
+                )}
+              </LineChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }
@@ -406,7 +424,9 @@ export default function CreditsTab() {
     <div className="credits-tab__controls">
       <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
       <FilterTabList label="View:" options={CHART_TYPE_OPTIONS} selected={selectedChartType} onSelect={setChartType} />
-      <FilterTabList label="Group:" options={VIEW_MODE_OPTIONS} selected={selectedMode} onSelect={setMode} />
+      {selectedChartType !== 'Table' && (
+        <FilterTabList label="Group:" options={VIEW_MODE_OPTIONS} selected={selectedMode} onSelect={setMode} />
+      )}
     </div>
   )
 

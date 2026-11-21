@@ -26,7 +26,7 @@ export type TransactionFormField =
   | 'formFees'
   | 'formWithheld'
   | 'formLotAllocations'
-export type ChartDisplayMode = 'Bar' | 'Line'
+export type ChartDisplayMode = 'Bar' | 'Line' | 'Table'
 
 const DATE_KEY = 'investmentTransaction.date'
 const TYPE_KEY = 'investmentTransaction.type'

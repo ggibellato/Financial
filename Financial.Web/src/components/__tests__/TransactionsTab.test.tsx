@@ -301,6 +301,16 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
+  it('the_table_view_lists_each_months_net_invested_with_the_period_total', async () => {
+    await renderAssetTab()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Table' }))
+
+    const table = await screen.findByRole('table', { name: 'Net invested by month' })
+    const cells = within(table).getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]+:/, '')))
+    expect(cells).toEqual([['03/2024', '420.50'], ['Period total', '420.50']])
+  })
+
   it('renders_bar_line_toggle_defaulting_to_bar', async () => {
     await renderAssetTab()
     expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'true')
