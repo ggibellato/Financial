@@ -8,7 +8,7 @@
 }
 
 .column-filter-menu__trigger--active {
-  color: var(--accent, #0f6cbd);
+  color: var(--colorBrandForeground1);
 }
 
 .column-filter-menu__surface {

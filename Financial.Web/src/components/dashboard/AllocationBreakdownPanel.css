@@ -8,13 +8,13 @@
 .allocation-breakdown__empty {
   margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
 }
 
 .allocation-breakdown__currency-line {
   margin: 0;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
 }
 
 .allocation-breakdown__notice {
@@ -24,5 +24,5 @@
 }
 
 .allocation-breakdown__notice--partial {
-  color: var(--warning-text);
+  color: var(--colorStatusWarningForeground3);
 }

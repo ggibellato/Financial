@@ -8,5 +8,5 @@
 }
 
 .admin-entity-placeholder__notice {
-  color: var(--text, #333);
+  color: var(--colorNeutralForeground2);
 }

@@ -12,7 +12,7 @@
 }
 
 .broker-breakdown__empty {
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   font-size: 13px;
   margin-top: 24px;
 }

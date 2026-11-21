@@ -92,3 +92,22 @@ single canonical value for any status color on either platform today.
   hex values on WPF — do the same exact-value verification (screenshot both
   platforms, sample the rendered pixel) before considering a status color
   migrated, not just visual comparison by eye.
+
+## Addendum 2026-11-21: Fluent variables used directly
+
+The hand-rolled colour custom properties in `Financial.Web/src/index.css`
+(`--text`, `--text-h`, `--text-muted`, `--bg`, `--bg-subtle`, `--bg-hover`,
+`--border`, `--accent`, `--accent-bg`, `--success`, `--danger`, `--error`,
+`--warning-text` and the rest) are retired. Component CSS uses the Fluent
+theme's CSS variables directly (for example `var(--colorNeutralForeground2)`),
+so the FluentProvider theme is the only source of colour values. `index.css`
+keeps only `--text` and `--bg` for the page canvas, which sits outside the
+provider; their values equal the theme's Neutral Foreground2 and Background1.
+
+Status text on neutral surfaces uses `colorStatusSuccessForeground1`,
+`colorStatusDangerForeground3` and `colorStatusWarningForeground3`.
+Danger uses Foreground3 rather than Foreground1 because Foreground1 is only
+4.16:1 on the dark theme's background, below WCAG AA; Foreground3 is 6.07:1
+light and 7.74:1 dark. Warning Foreground3 is 5.06:1 light and 5.98:1 dark.
+Text on a status background (the sync error banner) uses that status's
+Background1/Border1/Foreground1 set, as Fluent designs them together.

@@ -15,9 +15,8 @@ const ColourModeContext = createContext<ColourModeContextValue | null>(null)
 export function ColourModeProvider({ children }: { children: ReactNode }) {
   const [colourMode, setColourModeState] = useState<ColourMode>(() => getStoredColourMode())
 
-  // Keeps the hand-rolled `index.css` custom-property palette (--text, --bg, --border, ...)
-  // in sync with the same single source of truth as the Fluent theme, instead of the two
-  // drifting apart now that only one of them still followed prefers-color-scheme.
+  // Keeps the page canvas colours in `index.css` (--text, --bg), which sit outside the
+  // FluentProvider, on the same colour mode as the Fluent theme.
   useEffect(() => {
     document.documentElement.dataset.theme = colourMode
   }, [colourMode])

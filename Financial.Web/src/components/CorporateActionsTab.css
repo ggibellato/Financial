@@ -14,6 +14,6 @@
 }
 
 .data-table tbody tr.corporate-actions-tab__row.corporate-actions-tab__row--highlighted {
-  background-color: var(--accent-bg);
+  background-color: var(--colorBrandBackground2);
   transition: background-color 1s ease-out;
 }

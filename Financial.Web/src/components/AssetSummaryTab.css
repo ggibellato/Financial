@@ -46,19 +46,19 @@
 }
 
 .asset-summary__value--green {
-  color: var(--success);
+  color: var(--colorStatusSuccessForeground1);
 }
 
 .asset-summary__value--red {
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .asset-summary__value--error {
-  color: var(--error);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .asset-summary__badge {
-  color: var(--warning-text);
+  color: var(--colorStatusWarningForeground3);
   font-style: italic;
   font-weight: var(--fontWeightRegular);
 }

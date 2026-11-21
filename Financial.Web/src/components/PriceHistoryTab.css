@@ -10,7 +10,7 @@
   align-items: center;
   gap: 16px;
   padding: 6px 16px;
-  border-bottom: 1px solid var(--border, #e5e4e7);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
   flex-shrink: 0;
   flex-wrap: wrap;
 }
@@ -42,7 +42,7 @@
   display: flex;
   align-items: center;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--border, #e5e4e7);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
   flex-shrink: 0;
 }
 
@@ -62,11 +62,11 @@
 }
 
 .price-history-tab__source--manual {
-  color: var(--warning-text);
+  color: var(--colorStatusWarningForeground3);
 }
 
 .price-history-tab__source--automatic {
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
 }
 
 .price-history-tab__delete-error {
@@ -86,7 +86,7 @@
   font-weight: bold;
   text-align: center;
   margin: 0 0 8px;
-  color: var(--text-h, #08060d);
+  color: var(--colorNeutralForeground1);
 }
 
 .price-history-tab__chart-container {
@@ -95,8 +95,8 @@
 }
 
 .price-history-tab__tooltip {
-  background: var(--bg, #fff);
-  border: 1px solid var(--border, #e5e4e7);
+  background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke2);
   border-radius: 3px;
   padding: 6px 10px;
   font-size: 12px;

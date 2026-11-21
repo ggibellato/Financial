@@ -1,7 +1,7 @@
 .move-asset-dialog__context {
   margin: 0 0 16px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
 }
 
 .move-asset-dialog__option {
@@ -26,6 +26,6 @@
 
 .move-asset-dialog__error {
   margin: 8px 0 0;
-  color: var(--danger, #c0392b);
+  color: var(--colorStatusDangerForeground3);
   font-size: 12px;
 }

@@ -25,7 +25,7 @@
 
 .aggregated-summary__label {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -37,40 +37,40 @@
 }
 
 .aggregated-summary__value--green {
-  color: var(--success);
+  color: var(--colorStatusSuccessForeground1);
 }
 
 .aggregated-summary__value--red {
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .aggregated-summary__value--blue {
-  color: var(--accent);
+  color: var(--colorBrandForeground1);
 }
 
 .aggregated-summary__incomplete-notice {
   margin: 10px 0 0;
   font-size: 12px;
   font-style: italic;
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .aggregated-summary__converted {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid var(--border, #e5e4e7);
+  border-top: 1px solid var(--colorNeutralStroke2);
 }
 
 .aggregated-summary__converted-heading {
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-h, #242424);
+  color: var(--colorNeutralForeground1);
 }
 
 .aggregated-summary__partial-notice {
   margin: 0 0 10px;
   font-size: 12px;
   font-style: italic;
-  color: var(--warning-text);
+  color: var(--colorStatusWarningForeground3);
 }

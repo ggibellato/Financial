@@ -6,6 +6,6 @@
 
 .filter-tab-list__label {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   margin-right: 4px;
 }

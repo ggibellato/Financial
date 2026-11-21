@@ -16,14 +16,14 @@
   gap: 4px;
   min-width: 0;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--colorNeutralStroke2);
   border-radius: 8px;
-  background: var(--bg-subtle);
+  background: var(--colorNeutralBackground2);
 }
 
 .dashboard-kpi-tiles__label {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -33,16 +33,16 @@
   line-height: 24px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--text-h);
+  color: var(--colorNeutralForeground1);
   word-break: break-word;
 }
 
 .dashboard-kpi-tiles__value--green {
-  color: var(--success);
+  color: var(--colorStatusSuccessForeground1);
 }
 
 .dashboard-kpi-tiles__value--red {
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .dashboard-kpi-tiles__notice {
@@ -52,11 +52,11 @@
 }
 
 .dashboard-kpi-tiles__notice--incomplete {
-  color: var(--danger);
+  color: var(--colorStatusDangerForeground3);
 }
 
 .dashboard-kpi-tiles__notice--partial {
-  color: var(--warning-text);
+  color: var(--colorStatusWarningForeground3);
 }
 
 @media (max-width: 1024px) {

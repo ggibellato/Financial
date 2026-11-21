@@ -12,5 +12,5 @@
 .upcoming-income__empty {
   margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
 }

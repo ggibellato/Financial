@@ -41,7 +41,7 @@
 }
 
 .annual-summary-page__section h2 {
-  color: var(--text-h);
+  color: var(--colorNeutralForeground1);
   margin-bottom: 12px;
 }
 
@@ -86,7 +86,7 @@
 }
 
 .annual-summary-page__investment-total span {
-  color: var(--text, #333);
+  color: var(--colorNeutralForeground2);
   font-size: 13px;
 }
 

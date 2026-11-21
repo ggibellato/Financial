@@ -5,8 +5,8 @@
   flex-direction: column;
   gap: 4px;
   padding: 12px 8px;
-  border-right: 1px solid var(--border);
-  background: var(--bg);
+  border-right: 1px solid var(--colorNeutralStroke2);
+  background: var(--colorNeutralBackground1);
   overflow-y: auto;
   overflow-x: hidden;
   transition: width 150ms ease;
@@ -34,13 +34,13 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--text);
+  color: var(--colorNeutralForeground2);
   cursor: pointer;
 }
 
 .sidebar__toggle:hover {
-  background: var(--accent-bg);
-  color: var(--text-h);
+  background: var(--colorBrandBackground2);
+  color: var(--colorNeutralForeground1);
 }
 
 .sidebar__category {
@@ -58,7 +58,7 @@
   border-left: 3px solid transparent;
   border-radius: 0 6px 6px 0;
   background: transparent;
-  color: var(--text-h);
+  color: var(--colorNeutralForeground1);
   font: inherit;
   font-weight: 600;
   text-align: left;
@@ -67,7 +67,7 @@
 
 button.sidebar__category-header:hover,
 button.sidebar__category-header[aria-expanded='true'] {
-  background: var(--accent-bg);
+  background: var(--colorBrandBackground2);
 }
 
 .sidebar--collapsed .sidebar__category-header {
@@ -75,8 +75,8 @@ button.sidebar__category-header[aria-expanded='true'] {
 }
 
 .sidebar__category-header--active {
-  border-left-color: var(--accent);
-  color: var(--accent);
+  border-left-color: var(--colorBrandForeground1);
+  color: var(--colorBrandForeground1);
 }
 
 .sidebar__category-label {
@@ -98,24 +98,24 @@ button.sidebar__category-header[aria-expanded='true'] {
   display: block;
   padding: 6px 8px;
   border-radius: 6px;
-  color: var(--text);
+  color: var(--colorNeutralForeground2);
   text-decoration: none;
   white-space: nowrap;
 }
 
 .sidebar__link:hover {
-  background: var(--accent-bg);
-  color: var(--text-h);
+  background: var(--colorBrandBackground2);
+  color: var(--colorNeutralForeground1);
 }
 
 .sidebar__link.active {
-  color: var(--accent);
+  color: var(--colorBrandForeground1);
   font-weight: 600;
 }
 
 .sidebar__divider {
   width: 100%;
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--colorNeutralStroke2);
   margin: 8px 0;
 }

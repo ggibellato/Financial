@@ -35,5 +35,5 @@
 
 .tax-page__evidence-cell {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--colorNeutralForeground3);
 }
