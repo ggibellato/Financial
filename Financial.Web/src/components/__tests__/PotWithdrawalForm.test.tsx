@@ -3,19 +3,20 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, overdraftBalance } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDto, BankOption, CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
+import type { AccountDto, AccountStatementDto, BankOption, CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
 import { overdraftMessage, usePotWithdrawalForm } from '../../hooks/usePotWithdrawalForm'
-import { account, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import PotWithdrawalForm from '../PotWithdrawalForm'
 import { findErrorAlert } from '../../test-utils/errorAlert'
 import { optionNames } from '../../test-utils/optionNames'
 
-const { createPotWithdrawalMock, updatePotWithdrawalMock, getPotsMock } = vi.hoisted(() => ({
+const { createPotWithdrawalMock, updatePotWithdrawalMock, getPotsMock, getAccountStatementsMock } = vi.hoisted(() => ({
   createPotWithdrawalMock: vi.fn<FinancialApiClient['createPotWithdrawal']>(),
   updatePotWithdrawalMock: vi.fn<FinancialApiClient['updatePotWithdrawal']>(),
   getPotsMock: vi.fn<FinancialApiClient['getPots']>(),
+  getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -23,6 +24,7 @@ vi.mock('../../api/financialApiClient', () => ({
     createPotWithdrawal: createPotWithdrawalMock,
     updatePotWithdrawal: updatePotWithdrawalMock,
     getPots: getPotsMock,
+    getAccountStatements: getAccountStatementsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -49,7 +51,28 @@ const ACCOUNTS: AccountDto[] = [
   potsAccount({ id: 'holidays', name: 'Holidays', categoryId: 'cat-holidays' }),
   potsAccount({ id: 'reserva', name: 'Reserva', categoryId: 'cat-reserva' }),
   potsAccount({ id: 'closed', name: 'Closed', isActive: false }),
+  cardAccount({ id: 'amex', name: 'Amex' }),
+  cardAccount({ id: 'old-card', name: 'Old card', isActive: false }),
 ]
+
+const NO_CARDS = ACCOUNTS.filter((candidate) => !candidate.capabilities.includes('HasStatements'))
+
+const paidStatement = (year: number, month: number): AccountStatementDto => ({
+  id: `s-${year}-${month}`,
+  year,
+  month,
+  total: 10,
+  creditIn: 0,
+  outstandingTotal: 0,
+  creditCarried: 0,
+  status: 'Paid',
+  isPaid: true,
+  dueDate: null,
+  paidOn: '2026-11-03',
+  paidAmount: 10,
+  paidFromAccountName: 'Barclays',
+  potWithdrawals: [],
+})
 
 const BANKS: BankOption[] = [
   { id: 'b1', name: 'Barclays', roundUpEnabled: false, isActive: true },
@@ -99,7 +122,7 @@ const OPERATION: PotOperationDto = {
 }
 
 interface HarnessProps {
-  mode?: 'pots' | 'bank'
+  mode?: 'pots' | 'bank' | 'card'
   edit?: PotOperationDto
   accounts?: AccountDto[]
   onSaved?: () => void
@@ -109,11 +132,12 @@ interface HarnessProps {
 
 function Harness({ mode = 'pots', edit, accounts = ACCOUNTS, onSaved = vi.fn(), onDelete = vi.fn(), onCancel = vi.fn() }: HarnessProps) {
   const form = usePotWithdrawalForm(accounts, CATEGORIES, { year: 2026, month: 10 }, onSaved)
-  const { openEdit, openFromBank, openFromPotsAccount } = form
+  const { openEdit, openFromBank, openFromCard, openFromPotsAccount } = form
 
   useEffect(() => {
     if (edit) openEdit(edit)
     else if (mode === 'bank') openFromBank('b1')
+    else if (mode === 'card') openFromCard('amex')
     else openFromPotsAccount('reserva')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- opens once, as the action button does
   }, [])
@@ -125,6 +149,7 @@ function Harness({ mode = 'pots', edit, accounts = ACCOUNTS, onSaved = vi.fn(), 
           form={form}
           banks={BANKS}
           lockedBank={mode === 'bank' ? { id: 'b1', name: 'Barclays' } : undefined}
+          lockedCard={mode === 'card' ? { id: 'amex', name: 'Amex' } : undefined}
           onDelete={onDelete}
           onCancel={onCancel}
         />
@@ -135,8 +160,16 @@ function Harness({ mode = 'pots', edit, accounts = ACCOUNTS, onSaved = vi.fn(), 
 }
 
 const setValue = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
-const throughBank = () => screen.getByRole('combobox', { name: /Through bank/ })
-const setThroughBank = (value: string) => fireEvent.change(throughBank(), { target: { value } })
+const throughBank = () => screen.getByRole('combobox', { name: /^Bank/ })
+const choosePaidWith = (name: 'None' | 'Bank' | 'Credit card') => fireEvent.click(screen.getByRole('radio', { name }))
+const setThroughBank = (value: string) => {
+  if (value === '') {
+    choosePaidWith('None')
+    return
+  }
+  if (!screen.queryByRole('combobox', { name: /^Bank/ })) choosePaidWith('Bank')
+  fireEvent.change(throughBank(), { target: { value } })
+}
 const potSelect = () => screen.getByLabelText(/^Pot\b/)
 const potsLoaded = () => waitFor(() => expect(screen.getByRole('button', { name: /^(Add withdrawal|Withdraw from pots|Save)$/ })).toBeEnabled())
 const save = (name = 'Add withdrawal') => fireEvent.click(screen.getByRole('button', { name }))
@@ -165,6 +198,7 @@ beforeEach(() => {
   createPotWithdrawalMock.mockReset().mockResolvedValue(OPERATION)
   updatePotWithdrawalMock.mockReset().mockResolvedValue(OPERATION)
   getPotsMock.mockReset().mockImplementation((id) => Promise.resolve(id === 'holidays' ? HOLIDAY_POTS : POTS))
+  getAccountStatementsMock.mockReset().mockResolvedValue([paidStatement(2026, 11)])
   sessionStorage.clear()
 })
 
@@ -202,10 +236,13 @@ describe('PotWithdrawalForm from the Pots account', () => {
     expect(screen.getByRole('heading', { name: 'New withdrawal' })).toBeInTheDocument()
     expect(potSelect()).toHaveValue('pot-a')
     expect(within(potSelect()).getAllByRole('option').map((option) => option.textContent)).toEqual(['Ariana', 'Casa', 'Old car (inactive)'])
-    expect(throughBank()).toHaveValue('')
+    expect(screen.getByRole('radio', { name: 'None' })).toBeChecked()
+    expect(screen.queryByRole('combobox', { name: /^Bank/ })).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Category/)).not.toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-15')
     expect(screen.getByLabelText(/^Amount \(GBP\)/)).toBeInTheDocument()
+    choosePaidWith('Bank')
+    expect(throughBank()).toHaveValue('')
     expect(within(throughBank()).queryByText('Old bank (inactive)')).not.toBeInTheDocument()
   })
 
@@ -415,7 +452,8 @@ describe('PotWithdrawalForm from a bank', () => {
 
     expect(screen.getByRole('heading', { name: 'Withdraw from pots' })).toBeInTheDocument()
     expect(screen.getByText('Barclays')).toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: /Through bank/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^Bank/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
     const potsAccountSelect = screen.getByLabelText(/^Pots account/)
     expect(within(potsAccountSelect).getAllByRole('option').map((option) => option.textContent)).toEqual(['Holidays', 'Reserva'])
 
@@ -516,5 +554,182 @@ describe('PotWithdrawalForm editing an operation', () => {
     expect(within(throughBank()).getByText('Old bank (inactive)')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Category/)).toHaveValue('cat-off')
     expect(within(screen.getByLabelText(/^Category/)).getByText('Saved category (no longer available)')).toBeInTheDocument()
+  })
+})
+
+const CARD_OPERATION: PotOperationDto = {
+  ...OPERATION,
+  bankId: null,
+  creditCardId: 'amex',
+  statementYear: 2026,
+  statementMonth: 10,
+  investmentWithdrawal: 'Pending',
+}
+
+const statementSelect = () => screen.getByRole('combobox', { name: /^Statement/ })
+
+describe('PotWithdrawalForm paid by credit card', () => {
+  it('[AC P62-F03-withdraw-forms-on-pots-account-and-card-01] shows Bank, or Card and Statement, and Category for the choice, keeping the shared fields when it changes', async () => {
+    render(<Harness />)
+    await potsLoaded()
+    fillWithdrawal()
+
+    choosePaidWith('Bank')
+    expect(throughBank()).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Category/)).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^Card/ })).not.toBeInTheDocument()
+
+    choosePaidWith('Credit card')
+    expect(screen.queryByRole('combobox', { name: /^Bank/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /^Card/ })).toBeInTheDocument()
+    expect(statementSelect()).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Category/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Boots')
+    expect(screen.getByLabelText(/^Amount/)).toHaveValue(38.25)
+    expect(potSelect()).toHaveValue('pot-a')
+
+    choosePaidWith('None')
+    expect(screen.queryByLabelText(/^Category/)).not.toBeInTheDocument()
+  })
+
+  it('[AC P62-F03-withdraw-forms-on-pots-account-and-card-01] sends the card, the chosen statement and the category', async () => {
+    const onSaved = vi.fn()
+    render(<Harness onSaved={onSaved} />)
+    await potsLoaded()
+    fillWithdrawal()
+    choosePaidWith('Credit card')
+    fireEvent.change(screen.getByRole('combobox', { name: /^Card/ }), { target: { value: 'amex' } })
+    await waitFor(() => expect(optionNames(statementSelect())).toEqual(['Select a statement', 'October 2026', 'December 2026', 'January 2027']))
+    expect(statementSelect()).toHaveValue('2026-10')
+    fireEvent.change(statementSelect(), { target: { value: '2026-12' } })
+
+    save()
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
+    expect(createPotWithdrawalMock).toHaveBeenCalledWith('reserva', {
+      potId: 'pot-a',
+      amount: 38.25,
+      date: '2026-10-15',
+      description: 'Boots',
+      bankId: null,
+      creditCardId: 'amex',
+      statementYear: 2026,
+      statementMonth: 12,
+      categoryId: 'cat-ariana',
+      confirmed: false,
+    })
+  })
+
+  it('asks for a card before saving', async () => {
+    render(<Harness />)
+    await potsLoaded()
+    fillWithdrawal()
+    choosePaidWith('Credit card')
+
+    save()
+
+    expect(await screen.findByText('Choose a card.')).toBeInTheDocument()
+    expect(createPotWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('[AC P62-F03-withdraw-forms-on-pots-account-and-card-03] offers only active cards, and disables Credit card with its hint when there is none', async () => {
+    const { unmount } = render(<Harness />)
+    await potsLoaded()
+    choosePaidWith('Credit card')
+    expect(optionNames(screen.getByRole('combobox', { name: /^Card/ }))).toEqual(['Select a card', 'Amex'])
+    unmount()
+
+    render(<Harness accounts={NO_CARDS} />)
+    await potsLoaded()
+
+    expect(screen.getByRole('radio', { name: 'Credit card' })).toBeDisabled()
+    expect(screen.getByText('No active credit card.')).toBeInTheDocument()
+  })
+
+  it('[AC P62-F03-withdraw-forms-on-pots-account-and-card-02] [AC P62-CF-cross-feature-02] from a card locks the card and sends the same request as the Pots account', async () => {
+    const onSaved = vi.fn()
+    render(<Harness mode="card" onSaved={onSaved} />)
+    await potsLoaded()
+
+    expect(screen.getByRole('heading', { name: 'Withdraw from pots' })).toBeInTheDocument()
+    expect(screen.getByText('Amex')).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/^Pots account/), { target: { value: 'reserva' } })
+    await waitFor(() => expect(potSelect()).toHaveValue('pot-a'))
+    await waitFor(() => expect(statementSelect()).toHaveValue('2026-10'))
+    fillWithdrawal()
+    save('Withdraw from pots')
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
+    expect(createPotWithdrawalMock).toHaveBeenCalledWith('reserva', {
+      potId: 'pot-a',
+      amount: 38.25,
+      date: '2026-10-15',
+      description: 'Boots',
+      bankId: null,
+      creditCardId: 'amex',
+      statementYear: 2026,
+      statementMonth: 10,
+      categoryId: 'cat-ariana',
+      confirmed: false,
+    })
+  })
+
+  it('[AC P62-CF-cross-feature-03] says the investment withdrawal is pending until the statement is paid', async () => {
+    render(<Harness edit={CARD_OPERATION} />)
+    await potsLoaded()
+
+    expect(screen.getByRole('radio', { name: 'Credit card' })).toBeChecked()
+    await waitFor(() => expect(statementSelect()).toHaveValue('2026-10'))
+    expect(screen.getByText('Investment withdrawal: Pending — taken when the October 2026 statement is paid')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete withdrawal' })).toBeEnabled()
+  })
+
+  it('[AC P62-F03-withdraw-forms-on-pots-account-and-card-04] [AC P62-CF-cross-feature-03] once the statement is paid, shows Done with bank and date, locks the paid fields and Delete, and saves description and category', async () => {
+    const onSaved = vi.fn()
+    const onDelete = vi.fn()
+    const done = { ...CARD_OPERATION, investmentWithdrawal: 'Done', investmentWithdrawalBankId: 'b1', investmentWithdrawalDate: '2026-11-03' }
+    render(<Harness edit={done} onSaved={onSaved} onDelete={onDelete} />)
+    await potsLoaded()
+
+    expect(screen.getByText('Investment withdrawal: Done — Barclays, 3 Nov 2026')).toBeInTheDocument()
+    expect(screen.getByText('Its card statement is paid. Unmark the statement to change it.')).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(screen.queryByRole('spinbutton', { name: /^Amount/ })).not.toBeInTheDocument()
+    expect(document.querySelector('input[type="date"]')).toBeNull()
+    expect(screen.getByRole('textbox', { name: 'Amount' })).toHaveAttribute('readonly')
+    expect(screen.queryByRole('combobox', { name: /^Statement/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Statement' })).toHaveValue('October 2026')
+    expect(screen.getByRole('textbox', { name: 'Amount' })).toHaveValue('£38.25')
+    expect(screen.getByRole('textbox', { name: 'Card' })).toHaveValue('Amex')
+    const deleteButton = screen.getByRole('button', { name: 'Delete withdrawal' })
+    expect(deleteButton).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(deleteButton)
+    expect(onDelete).not.toHaveBeenCalled()
+
+    setValue(/^Description/, 'Flights to Lisbon')
+    setValue(/^Category/, 'cat-casa')
+    save('Save')
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
+    expect(updatePotWithdrawalMock).toHaveBeenCalledWith('reserva', 'op1', expect.objectContaining({
+      description: 'Flights to Lisbon',
+      categoryId: 'cat-casa',
+      amount: 38.25,
+      date: '2026-10-12',
+      creditCardId: 'amex',
+      statementYear: 2026,
+      statementMonth: 10,
+    }))
+  })
+
+  it('shows the statements load error with Try again', async () => {
+    getAccountStatementsMock.mockRejectedValueOnce(new Error('down')).mockResolvedValue([])
+    render(<Harness mode="card" />)
+    await potsLoaded()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    await waitFor(() => expect(optionNames(statementSelect())).toContain('October 2026'))
   })
 })

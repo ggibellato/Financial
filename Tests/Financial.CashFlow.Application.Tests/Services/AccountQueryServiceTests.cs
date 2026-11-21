@@ -856,7 +856,7 @@ public class AccountQueryServiceTests
 
         using (new AssertionScope())
         {
-            detail.AllowedActions.Should().Equal("AddCharge", "AddRefund");
+            detail.AllowedActions.Should().Equal("AddCharge", "AddRefund", "WithdrawFromPots");
             detail.Balance.Should().Be(-39m);
             detail.BalanceIsOwed.Should().BeTrue();
             detail.HasStatements.Should().BeTrue();

@@ -140,7 +140,7 @@ export function useAccountActionForms(
     Deposit: () => depositForm.open(),
     Withdraw: () => withdrawalForm.openFromPotsAccount(routeAccountId),
     ManagePots: () => setIsManagePotsOpen(true),
-    WithdrawFromPots: () => withdrawalForm.openFromBank(routeAccountId),
+    WithdrawFromPots: () => (isCard ? withdrawalForm.openFromCard(routeAccountId) : withdrawalForm.openFromBank(routeAccountId)),
     AddEntry: () => settlementEntryForm.openAdd(),
     Settle: () => settlementEntryForm.openSettle(),
   }
@@ -149,7 +149,7 @@ export function useAccountActionForms(
     if (expenseForm.isOpen && !expenseForm.isEditing) return expenseForm.isRefund ? 'AddRefund' : isCard ? 'AddCharge' : 'AddExpense'
     if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return hasPots ? 'Deposit' : 'AddIncome'
     if (depositForm.isOpen && !depositForm.isEditing) return 'Deposit'
-    if (withdrawalForm.isOpen && !withdrawalForm.isEditing) return withdrawalForm.isBankLocked ? 'WithdrawFromPots' : 'Withdraw'
+    if (withdrawalForm.isOpen && !withdrawalForm.isEditing) return withdrawalForm.isPaymentLocked ? 'WithdrawFromPots' : 'Withdraw'
     if (transferForm.isOpen && !transferForm.isEditing) return transferForm.direction === 'to' ? 'TransferTo' : 'TransferFrom'
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'

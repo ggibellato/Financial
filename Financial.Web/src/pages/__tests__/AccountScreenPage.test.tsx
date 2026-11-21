@@ -589,7 +589,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await waitFor(() => expect(within(form).getByLabelText(/^Pot\b/)).toHaveValue('pot-home'))
     fireEvent.change(within(form).getByLabelText(/^Description/), { target: { value: 'Boots' } })
     fireEvent.change(within(form).getByLabelText(/^Amount/), { target: { value: '20' } })
-    fireEvent.change(within(form).getByRole('combobox', { name: /Through bank/ }), { target: { value: BARCLAYS_ID } })
+    await user.click(within(form).getByRole('radio', { name: 'Bank' }))
+    fireEvent.change(within(form).getByRole('combobox', { name: /^Bank/ }), { target: { value: BARCLAYS_ID } })
     await user.click(within(form).getByRole('button', { name: 'Add withdrawal' }))
 
     await waitFor(() =>
@@ -2571,6 +2572,38 @@ describe('AccountScreenPage card screen', () => {
       ),
     )
     expect(await screen.findByText('Charge added')).toBeInTheDocument()
+  })
+
+  it('[AC P62-F03-withdraw-forms-on-pots-account-and-card-02] Withdraw from pots on a card locks the card and saves a card-paid withdrawal', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    withActions(['AddCharge', 'WithdrawFromPots'])
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await enabledButton('Withdraw from pots'))
+    const form = await operationForm('Withdraw from pots')
+    expect(within(form).getByText('BA Amex')).toBeInTheDocument()
+    await waitFor(() => expect(within(form).getByLabelText(/^Pot\b/)).toHaveValue('pot-home'))
+    await waitFor(() => expect(within(form).getByRole('combobox', { name: /^Statement/ })).toHaveValue('2026-10'))
+    fireEvent.change(within(form).getByLabelText(/^Description/), { target: { value: 'Flights' } })
+    fireEvent.change(within(form).getByLabelText(/^Amount/), { target: { value: '20' } })
+    await user.click(within(form).getByRole('button', { name: 'Withdraw from pots' }))
+
+    await waitFor(() =>
+      expect(createPotWithdrawalMock).toHaveBeenCalledWith(RESERVA_ID, {
+        potId: 'pot-home',
+        amount: 20,
+        date: '2026-10-15',
+        description: 'Flights',
+        bankId: null,
+        creditCardId: AMEX_ID,
+        statementYear: 2026,
+        statementMonth: 10,
+        categoryId: 'category-home',
+        confirmed: false,
+      }),
+    )
+    expect(await screen.findByText('Withdrawal saved')).toBeInTheDocument()
   })
 
   it('edits an unpaid charge in card mode with the card locked', async () => {

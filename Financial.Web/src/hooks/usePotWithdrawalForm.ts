@@ -4,25 +4,42 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDto, CategoryDto, PotOperationDto, PotWithdrawalRequestDto } from '../api/types'
 import { accountsWith } from '../utils/accountCapabilities'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
-import { formatCurrency, getSaveErrorMessage, positiveAmount, toPence } from '../utils/formatters'
+import { formatCurrency, formatMonthInputValue, getSaveErrorMessage, parseMonthInputValue, positiveAmount, toPence } from '../utils/formatters'
 import { accountCategoryIds, defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
+import { useStatementMonthOptions } from './useStatementMonthOptions'
 import { futureDateError } from '../utils/validators'
 
 const DATE_KEY = 'potWithdrawal.date'
 const MINUS_SIGN = '−'
+const INVESTMENT_WITHDRAWAL_DONE = 'Done'
 
-const FIELDS = ['potsAccountId', 'potId', 'date', 'description', 'amount', 'bankId', 'categoryId'] as const
+const CATEGORY_REQUIRED: Record<PaidWith, string | null> = {
+  none: null,
+  bank: 'Category is required when a bank is selected.',
+  card: 'Category is required when a credit card is selected.',
+}
+
+const FIELDS = ['potsAccountId', 'potId', 'date', 'description', 'amount', 'paidWith', 'bankId', 'creditCardId', 'statementMonth', 'categoryId'] as const
 
 export type PotWithdrawalField = (typeof FIELDS)[number]
 
+export type PaidWith = 'none' | 'bank' | 'card'
+
 type WithdrawalValues = Record<PotWithdrawalField, string>
+
+export interface InvestmentWithdrawal {
+  status: string
+  bankId: string | null
+  date: string | null
+}
 
 interface WithdrawalFormState {
   operationId: string | null
-  isBankLocked: boolean
+  isPaymentLocked: boolean
+  investmentWithdrawal: InvestmentWithdrawal | null
   opened: WithdrawalValues
   values: WithdrawalValues
   isSaving: boolean
@@ -33,6 +50,17 @@ interface WithdrawalFormState {
 
 const NO_ERRORS: FieldErrors<PotWithdrawalField> = {}
 
+const PAYMENT_FIELDS_CLEARED: Pick<WithdrawalValues, 'bankId' | 'creditCardId' | 'statementMonth' | 'categoryId'> = {
+  bankId: '',
+  creditCardId: '',
+  statementMonth: '',
+  categoryId: '',
+}
+
+function paidWithIn(values: WithdrawalValues): PaidWith {
+  return values.paidWith === 'bank' || values.paidWith === 'card' ? values.paidWith : 'none'
+}
+
 function validate(values: WithdrawalValues): FieldErrors<PotWithdrawalField> {
   const errors: FieldErrors<PotWithdrawalField> = {}
   if (!values.potId) errors.potId = 'Choose a pot.'
@@ -40,23 +68,41 @@ function validate(values: WithdrawalValues): FieldErrors<PotWithdrawalField> {
   if (dateError) errors.date = dateError
   if (!values.description.trim()) errors.description = 'Enter a description.'
   if (positiveAmount(values.amount) === null) errors.amount = 'Amount must be greater than zero.'
-  if (values.bankId && !values.categoryId) errors.categoryId = 'Category is required when a bank is selected.'
+  if (values.paidWith === 'bank' && !values.bankId) errors.bankId = 'Choose a bank.'
+  if (values.paidWith === 'card') {
+    if (!values.creditCardId) errors.creditCardId = 'Choose a card.'
+    if (!values.statementMonth) errors.statementMonth = 'Choose a statement.'
+  }
+  const categoryRequired = CATEGORY_REQUIRED[paidWithIn(values)]
+  if (categoryRequired && !values.categoryId) errors.categoryId = categoryRequired
   return errors
 }
 
 function toRequest(values: WithdrawalValues, confirmed: boolean): PotWithdrawalRequestDto {
+  const statement = values.paidWith === 'card' ? parseMonthInputValue(values.statementMonth) : null
   return {
     potId: values.potId,
     amount: Number(values.amount),
     date: values.date,
     description: values.description.trim(),
-    bankId: values.bankId || null,
-    categoryId: values.bankId ? values.categoryId : null,
-    creditCardId: null,
-    statementYear: null,
-    statementMonth: null,
+    bankId: values.paidWith === 'bank' ? values.bankId : null,
+    creditCardId: values.paidWith === 'card' ? values.creditCardId : null,
+    statementYear: statement?.year ?? null,
+    statementMonth: statement?.month ?? null,
+    categoryId: values.paidWith === 'none' ? null : values.categoryId,
     confirmed,
   }
+}
+
+function paidWithOf(operation: PotOperationDto): PaidWith {
+  if (operation.creditCardId) return 'card'
+  return operation.bankId ? 'bank' : 'none'
+}
+
+function investmentWithdrawalOf(operation: PotOperationDto): InvestmentWithdrawal | null {
+  return operation.investmentWithdrawal
+    ? { status: operation.investmentWithdrawal, bankId: operation.investmentWithdrawalBankId, date: operation.investmentWithdrawalDate }
+    : null
 }
 
 export function overdraftMessage(balance: number | null, potName: string, amount: number, currency: string): string {
@@ -75,43 +121,63 @@ export function usePotWithdrawalForm(
   const potsRead = usePots(form?.values.potsAccountId || null, viewedMonth.year, viewedMonth.month)
   const pots = potsRead.data?.pots ?? null
   const eligibleCategories = eligibleWithdrawalCategories(categories, accountCategoryIds(accounts))
+  const statementMonths = useStatementMonthOptions(
+    form?.values.paidWith === 'card' ? form.values.creditCardId : '',
+    form?.values.date ?? '',
+    form?.opened.statementMonth ?? '',
+  )
 
   const potId = form ? form.values.potId || (pots?.find((pot) => pot.isActive)?.id ?? '') : ''
   const potName = pots?.find((pot) => pot.id === potId)?.name ?? ''
+  const isStatementOffered = (month: string) => statementMonths.options.some((option) => option.value === month)
   const values: WithdrawalValues | null = form && {
     ...form.values,
     potId,
-    categoryId: form.values.categoryId || (form.values.bankId ? defaultExpenseCategoryId(eligibleCategories, potName) : ''),
+    statementMonth: isStatementOffered(form.values.statementMonth) ? form.values.statementMonth : (statementMonths.options[0]?.value ?? ''),
+    categoryId: form.values.categoryId || (form.values.paidWith === 'none' ? '' : defaultExpenseCategoryId(eligibleCategories, potName)),
   }
 
-  const show = (operationId: string | null, isBankLocked: boolean, opened: WithdrawalValues) =>
-    setForm({ operationId, isBankLocked, opened, values: opened, isSaving: false, error: null, errorFields: {}, overdraftMessage: null })
+  const show = (operationId: string | null, isPaymentLocked: boolean, opened: WithdrawalValues, investmentWithdrawal: InvestmentWithdrawal | null = null) =>
+    setForm({ operationId, isPaymentLocked, investmentWithdrawal, opened, values: opened, isSaving: false, error: null, errorFields: {}, overdraftMessage: null })
 
-  const openNew = (potsAccountId: string, bankId: string, isBankLocked: boolean) =>
-    show(null, isBankLocked, {
+  const openNew = (paidWith: PaidWith, isPaymentLocked: boolean, payment: Partial<WithdrawalValues>, potsAccountId: string) =>
+    show(null, isPaymentLocked, {
       potsAccountId,
       potId: '',
       date: getCreateFormDate(DATE_KEY, viewedMonth),
       description: '',
       amount: '',
-      bankId,
-      categoryId: '',
+      paidWith,
+      ...PAYMENT_FIELDS_CLEARED,
+      ...payment,
     })
 
-  const openFromPotsAccount = (potsAccountId: string) => openNew(potsAccountId, '', false)
+  const firstPotsAccountId = () => accountsWith(accounts, 'HasPots')[0]?.id ?? ''
 
-  const openFromBank = (bankId: string) => openNew(accountsWith(accounts, 'HasPots')[0]?.id ?? '', bankId, true)
+  const openFromPotsAccount = (potsAccountId: string) => openNew('none', false, {}, potsAccountId)
+
+  const openFromBank = (bankId: string) => openNew('bank', true, { bankId }, firstPotsAccountId())
+
+  const openFromCard = (creditCardId: string) => openNew('card', true, { creditCardId }, firstPotsAccountId())
 
   const openEdit = (operation: PotOperationDto) =>
-    show(operation.operationId, false, {
-      potsAccountId: operation.potsAccountId,
-      potId: operation.potId ?? '',
-      date: operation.date,
-      description: operation.description,
-      amount: String(operation.amount),
-      bankId: operation.bankId ?? '',
-      categoryId: operation.categoryId ?? '',
-    })
+    show(
+      operation.operationId,
+      false,
+      {
+        potsAccountId: operation.potsAccountId,
+        potId: operation.potId ?? '',
+        date: operation.date,
+        description: operation.description,
+        amount: String(operation.amount),
+        paidWith: paidWithOf(operation),
+        bankId: operation.bankId ?? '',
+        creditCardId: operation.creditCardId ?? '',
+        statementMonth: operation.statementYear && operation.statementMonth ? formatMonthInputValue(operation.statementYear, operation.statementMonth) : '',
+        categoryId: operation.categoryId ?? '',
+      },
+      investmentWithdrawalOf(operation),
+    )
 
   const cancel = () => setForm(null)
 
@@ -122,9 +188,9 @@ export function usePotWithdrawalForm(
           ...current,
           values: {
             ...current.values,
+            ...(field === 'paidWith' ? PAYMENT_FIELDS_CLEARED : {}),
             [field]: value,
             ...(field === 'potsAccountId' ? { potId: '' } : {}),
-            ...(field === 'bankId' && value === '' ? { categoryId: '' } : {}),
           },
           error: null,
           errorFields: {},
@@ -182,15 +248,21 @@ export function usePotWithdrawalForm(
   return {
     isOpen: form !== null,
     isEditing: form?.operationId != null,
-    isBankLocked: form?.isBankLocked ?? false,
+    isPaymentLocked: form?.isPaymentLocked ?? false,
+    isStatementPaidLocked: form?.investmentWithdrawal?.status === INVESTMENT_WITHDRAWAL_DONE,
+    paidWith: values ? paidWithIn(values) : 'none',
+    investmentWithdrawal: form?.investmentWithdrawal ?? null,
     operationId: form?.operationId ?? null,
     values,
     openedBankId: form?.opened.bankId ?? '',
     openedCategoryId: form?.opened.categoryId ?? '',
     potsAccounts: accountsWith(accounts, 'HasPots'),
+    cards: accountsWith(accounts, 'HasStatements', form?.opened.creditCardId),
     categories: eligibleCategories,
+    statementMonths,
     currency: potsRead.data?.currency ?? '',
     pots,
+    potName,
     hasPotsError: potsRead.error !== null,
     retryPots: potsRead.retry,
     isSaving: form?.isSaving ?? false,
@@ -200,6 +272,7 @@ export function usePotWithdrawalForm(
     overdraftMessage: form?.overdraftMessage ?? null,
     openFromPotsAccount,
     openFromBank,
+    openFromCard,
     openEdit,
     cancel,
     setField,
