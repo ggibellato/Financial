@@ -15,7 +15,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import TransactionsTab from '../TransactionsTab'
 import { findErrorAlert } from '../../test-utils/errorAlert'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 vi.mock('recharts', () => ({
   BarChart: ({ children, accessibilityLayer }: { children: ReactNode; accessibilityLayer?: boolean }) => (
@@ -676,8 +676,8 @@ describe('TransactionsTab', () => {
   })
 
   it('keeps_a_new_form_open_when_a_delete_started_on_another_asset_finishes_late', async () => {
-    let finishDelete: (asset: AssetDetailsDto) => void = () => {}
-    deleteTransactionMock.mockReturnValue(new Promise((resolve) => (finishDelete = resolve)))
+    const pendingDelete = deferred<AssetDetailsDto>()
+    deleteTransactionMock.mockReturnValue(pendingDelete.promise)
     getAssetDetailsMock.mockResolvedValue(assetWith([TRANSACTION_BUY]))
     const { setNode } = renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
     await screen.findByRole('table')
@@ -687,7 +687,7 @@ describe('TransactionsTab', () => {
     await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledTimes(2))
     await screen.findByRole('table')
     await openNewForm()
-    await act(async () => finishDelete(assetWith([])))
+    await act(async () => pendingDelete.resolve(assetWith([])))
 
     expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
   })

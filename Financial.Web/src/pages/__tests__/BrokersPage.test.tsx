@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto } from '../../api/types'
 import { confirmDelete } from '../../test-utils/confirmDelete'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { deferred } from '../../test-utils/deferred'
 import { optionNames } from '../../test-utils/optionNames'
 
 const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, setCostBasisMethodMock, deleteBrokerMock } =
@@ -242,8 +243,8 @@ describe('BrokersPage', () => {
   })
 
   it('keeps focus on the deleting row, then moves it to the next row once the delete completes', async () => {
-    let completeDelete: () => void = () => {}
-    deleteBrokerMock.mockReturnValue(new Promise<void>((resolve) => (completeDelete = resolve)))
+    const pendingDelete = deferred<void>()
+    deleteBrokerMock.mockReturnValue(pendingDelete.promise)
     getAdminBrokersMock.mockResolvedValue([...BROKERS, INTER])
     render(<BrokersPage />)
     await confirmDelete('Avenue', 'broker')
@@ -251,7 +252,7 @@ describe('BrokersPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Deleting Avenue', hidden: true })).toHaveFocus())
 
     getAdminBrokersMock.mockResolvedValue([BROKERS[0], INTER])
-    completeDelete()
+    pendingDelete.resolve()
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Inter' })).toHaveFocus())
   })

@@ -165,6 +165,7 @@ public class BrokerServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-02")]
     public async Task SetCostBasisMethodAsync_ValidBroker_ChangesMethodAndRegeneratesDisposals()
     {
         var broker = Broker.Create("Trading 212", "GBP");
@@ -174,8 +175,14 @@ public class BrokerServiceTests
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m));
         portfolio.AddAsset(asset);
+        var otherAsset = Asset.Create("Asset B", "ISIN-B", "LSE", "BBB");
+        otherAsset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 20m, 0m));
+        otherAsset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 40m, 0m));
+        otherAsset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 80m, 0m));
+        broker.AddPortfolio("GIA").AddAsset(otherAsset);
         _repository.Investments!.AddActiveBroker(broker);
         var originalRecord = asset.DisposalRecords.Single();
+        var otherOriginalRecord = otherAsset.DisposalRecords.Single();
 
         var result = await CreateService().SetCostBasisMethodAsync("Trading 212", CostBasisMethod.FIFO);
 
@@ -185,6 +192,8 @@ public class BrokerServiceTests
             broker.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
             originalRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
             asset.DisposalRecords.Should().HaveCount(2);
+            otherOriginalRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
+            otherAsset.DisposalRecords.Should().HaveCount(2);
             _repository.WriteCallCount.Should().Be(1);
             _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.SetCostBasisMethod");
         }
@@ -240,6 +249,7 @@ public class BrokerServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-06")]
     public async Task SetCostBasisMethodAsync_RegenerationThrows_MethodAndDisposalsUnchangedAndWritesNothing()
     {
         var broker = Broker.Create("Trading 212", "GBP");

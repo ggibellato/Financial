@@ -263,6 +263,8 @@ public class PortfolioDashboardAggregateAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P52-F01-dashboard-aggregate-03")]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-01")]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-04")]
     public async Task RealisedGainLoss_CountsOnlyTheActiveDisposalRecord_NeverTheSupersededOne()
     {
         await SeedSecondBrokerAsync();

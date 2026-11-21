@@ -83,16 +83,16 @@ describe('useInvestmentSnapshots', () => {
   })
 
   it('ignores an older month that loads after the newer month failed', async () => {
-    let resolveCurrentMonth!: (snapshots: InvestmentSnapshotDto[]) => void
+    const pendingCurrentMonth = deferred<InvestmentSnapshotDto[]>()
     getInvestmentSnapshotsMock
-      .mockReturnValueOnce(new Promise((resolve) => (resolveCurrentMonth = resolve)))
+      .mockReturnValueOnce(pendingCurrentMonth.promise)
       .mockRejectedValueOnce(new Error('Network down'))
     const { result } = renderHook(() => useInvestmentSnapshots())
 
     act(() => result.current.setMonthInputValue(NEXT_MONTH_INPUT))
     await waitFor(() => expect(result.current.error).toBe('Network down'))
 
-    await act(async () => resolveCurrentMonth(SNAPSHOTS))
+    await act(async () => pendingCurrentMonth.resolve(SNAPSHOTS))
 
     expect(result.current.error).toBe('Network down')
     expect(result.current.snapshots).toEqual([])
@@ -103,8 +103,8 @@ describe('useInvestmentSnapshots', () => {
     getInvestmentSnapshotsMock.mockImplementation((year, month) =>
       Promise.resolve(year === NEXT_MONTH_YEAR && month === NEXT_MONTH ? nextMonthSnapshots : SNAPSHOTS),
     )
-    let finishSave!: () => void
-    updateInvestmentSnapshotValueMock.mockReturnValue(new Promise((resolve) => (finishSave = () => resolve(SNAPSHOTS[0]))))
+    const pendingSave = deferred<InvestmentSnapshotDto>()
+    updateInvestmentSnapshotValueMock.mockReturnValue(pendingSave.promise)
     const { result } = renderHook(() => useInvestmentSnapshots())
     await waitFor(() => expect(result.current.snapshots).toEqual(SNAPSHOTS))
     act(() => result.current.showEditForm(SNAPSHOTS[0]))
@@ -113,7 +113,7 @@ describe('useInvestmentSnapshots', () => {
 
     act(() => result.current.setMonthInputValue(NEXT_MONTH_INPUT))
     await waitFor(() => expect(result.current.snapshots).toEqual(nextMonthSnapshots))
-    await act(async () => finishSave())
+    await act(async () => pendingSave.resolve(SNAPSHOTS[0]))
 
     await waitFor(() => expect(getInvestmentSnapshotsMock).toHaveBeenLastCalledWith(NEXT_MONTH_YEAR, NEXT_MONTH))
     expect(getInvestmentSnapshotsMock).toHaveBeenCalledTimes(3)

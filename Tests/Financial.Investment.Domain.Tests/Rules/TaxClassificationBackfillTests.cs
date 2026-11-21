@@ -49,6 +49,7 @@ public class TaxClassificationBackfillTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-06")]
     public void Apply_CalledTwice_DoesNotDuplicateClassifications()
     {
         var investments = Investments.Create();

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DividendCheckPage from '../DividendCheckPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types'
-import { never } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getDividendSummaryMock, getDividendHistoryMock, getWatchlistMock } = vi.hoisted(() => ({
   getDividendSummaryMock: vi.fn<FinancialApiClient['getDividendSummary']>(),
@@ -280,12 +280,12 @@ describe('DividendCheckPage', () => {
   })
 
   it('keeps a ticker typed before the watchlist arrives', async () => {
-    let resolveWatchlist: (items: { group: string; name: string }[]) => void = () => undefined
-    getWatchlistMock.mockReturnValue(new Promise((resolve) => { resolveWatchlist = resolve }))
+    const pendingWatchlist = deferred<{ group: string; name: string }[]>()
+    getWatchlistMock.mockReturnValue(pendingWatchlist.promise)
     render(<DividendCheckPage />)
 
     fireEvent.change(tickerField(), { target: { value: 'CXSE3' } })
-    await act(async () => resolveWatchlist([{ group: 'Ja possuidas', name: 'KLBN4' }]))
+    await act(async () => pendingWatchlist.resolve([{ group: 'Ja possuidas', name: 'KLBN4' }]))
 
     expect(tickerField()).toHaveValue('CXSE3')
   })

@@ -1,10 +1,9 @@
-import { Toaster } from '@fluentui/react-components'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { IncomeDto, IncomeSourceDto } from '../../api/types'
-import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
+import { WithAppToaster } from '../../test/withAppToaster'
 import { account, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
@@ -84,9 +83,9 @@ function renderTab(entry = '/cashflow/accounts?month=2026-10&tab=income') {
   return render(
     <MemoryRouter initialEntries={[entry]}>
       <IncomeTab year={2026} month={10} />
-      <Toaster toasterId={APP_TOASTER_ID} />
       <LocationText />
     </MemoryRouter>,
+    { wrapper: WithAppToaster },
   )
 }
 

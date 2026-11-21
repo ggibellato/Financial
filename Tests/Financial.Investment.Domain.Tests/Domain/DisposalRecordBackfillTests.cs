@@ -31,6 +31,7 @@ public class DisposalRecordBackfillTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F02-disposal-record-06")]
     public void Apply_CalledTwice_DoesNotDuplicateRecords()
     {
         var investments = Investments.Create();

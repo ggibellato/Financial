@@ -518,6 +518,7 @@ public class CreditServiceTests
         credit.NetAmount.Should().Be(81m);
     }
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-02")]
     public async Task AddCreditAsync_ClassifiesItInTheSameCall()
     {
         var asset = MakeAsset();
@@ -536,6 +537,7 @@ public class CreditServiceTests
         var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
         classification.SourceType.Should().Be(SourceType.Credit);
         classification.EventCategory.Should().Be(EventCategory.Dividend);
+        classification.Status.Should().Be(TaxClassificationStatus.Active);
     }
 
     [Fact]

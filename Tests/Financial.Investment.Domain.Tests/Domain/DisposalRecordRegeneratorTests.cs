@@ -11,6 +11,7 @@ namespace Financial.Investment.Domain.Tests;
 public class DisposalRecordRegeneratorTests
 {
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-03")]
     public void RegenerateAsset_BackdatedBuyBeforeExistingSale_SupersedesAndReplacesTheSale()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
@@ -64,6 +65,7 @@ public class DisposalRecordRegeneratorTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-05")]
     public void RegenerateAsset_ChainOfTwoRegenerations_IsFollowableBackToOriginal()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
@@ -194,6 +196,7 @@ public class DisposalRecordRegeneratorTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-07")]
     public void RegenerateAsset_WithInvestments_BackdatedBuy_SupersedesOldClassificationAndCreatesNewOne()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
