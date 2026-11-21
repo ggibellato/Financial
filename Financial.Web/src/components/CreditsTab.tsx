@@ -305,7 +305,6 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
                   <LabelList
                     dataKey={typeValue(type)}
                     position="top"
-                    fill="var(--colorNeutralForeground1)"
                     formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
                     style={{ fontSize: 10 }}
                   />

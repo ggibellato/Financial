@@ -193,13 +193,13 @@ function ChartDot({ cx, cy, payload }: DotProps) {
   const r = MARKER_RADIUS
   switch (payload.kind) {
     case 'automatic':
-      return <circle cx={cx} cy={cy} r={3} fill={AUTOMATIC_DOT_COLOR} />
+      return <circle className="chart-marker" cx={cx} cy={cy} r={3} fill={AUTOMATIC_DOT_COLOR} />
     case 'manual':
-      return <rect x={cx - 3} y={cy - 3} width={6} height={6} fill={MANUAL_DOT_COLOR} />
+      return <rect className="chart-marker" x={cx - 3} y={cy - 3} width={6} height={6} fill={MANUAL_DOT_COLOR} />
     case 'buy':
-      return <polygon points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
+      return <polygon className="chart-marker" points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
     case 'sell':
-      return <polygon points={`${cx},${cy + r} ${cx - r},${cy - r} ${cx + r},${cy - r}`} fill={SELL_COLOR} />
+      return <polygon className="chart-marker" points={`${cx},${cy + r} ${cx - r},${cy - r} ${cx + r},${cy - r}`} fill={SELL_COLOR} />
   }
 }
 

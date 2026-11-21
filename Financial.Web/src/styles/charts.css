@@ -2,6 +2,10 @@
   fill: var(--colorNeutralForeground2);
 }
 
+.recharts-label-list text {
+  fill: var(--colorNeutralForeground1);
+}
+
 .recharts-legend-item-text {
   color: var(--colorNeutralForeground2) !important;
 }
@@ -19,4 +23,33 @@
   background: var(--colorNeutralBackground1) !important;
   border-color: var(--colorNeutralStroke1) !important;
   color: var(--colorNeutralForeground1);
+}
+
+@media (forced-colors: active) {
+  .recharts-surface {
+    forced-color-adjust: none;
+  }
+
+  .recharts-cartesian-axis-tick-value,
+  .recharts-label-list text {
+    fill: CanvasText;
+  }
+
+  .recharts-cartesian-axis-line,
+  .recharts-cartesian-axis-tick-line,
+  .recharts-cartesian-grid line {
+    stroke: GrayText;
+  }
+
+  .recharts-tooltip-cursor {
+    fill: transparent;
+    stroke: Highlight;
+  }
+
+  .recharts-bar-rectangle path,
+  .recharts-pie-sector path,
+  .chart-marker {
+    stroke: CanvasText;
+    stroke-width: 1px;
+  }
 }

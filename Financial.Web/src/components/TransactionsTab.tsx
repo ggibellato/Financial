@@ -356,7 +356,6 @@ function TransactionsChart({
                 <LabelList
                   dataKey="netInvested"
                   position="top"
-                  fill="var(--colorNeutralForeground1)"
                   formatter={(v: unknown) => (typeof v === 'number' && v !== 0 ? formatN2(v) : '')}
                   style={{ fontSize: 10 }}
                 />
