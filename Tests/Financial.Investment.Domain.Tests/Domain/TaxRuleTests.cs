@@ -23,6 +23,17 @@ public class TaxRuleTests
             effectiveTo);
 
     [Fact]
+    [Trait("AC", "P51-F01-tax-rules-04")]
+    public void TaxRule_HasNoNumericRateThresholdOrFormulaField()
+    {
+        Type[] numericTypes = [typeof(decimal), typeof(double), typeof(float), typeof(int), typeof(long)];
+
+        typeof(TaxRule).GetProperties()
+            .Select(property => Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType)
+            .Should().NotContain(type => numericTypes.Contains(type));
+    }
+
+    [Fact]
     public void Create_SetsProperties()
     {
         var rule = CreateRule(effectiveTo: new DateOnly(2027, 1, 1));

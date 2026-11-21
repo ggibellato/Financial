@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
 
@@ -13,6 +14,7 @@ namespace Financial.Investment.Infrastructure.Tests.Persistence;
 public class InvestmentLoaderTests
 {
     [Fact]
+    [Trait("AC", "P50-F02-disposal-record-05")]
     public void LoadSync_LegacyDocumentWithSellAndNoDisposalRecords_BackfillsActiveRecordOnLoad()
     {
         var investments = Investments.Create();
@@ -36,6 +38,42 @@ public class InvestmentLoaderTests
             var loadedAsset = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
             loadedAsset.DisposalRecords.Should().ContainSingle();
             loadedAsset.DisposalRecords.Single().Status.Should().Be(DisposalRecordStatus.Active);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-06")]
+    public void LoadSync_LegacyDocumentWithASaleAndADividend_ClassifiesBothOnLoad()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.AddCredits([Credit.Create(new DateTime(2022, 6, 1), Credit.CreditType.Dividend, 12m, 0m, Currency.BRL)]);
+        broker.AddPortfolio("Default").AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        var serializer = new InvestmentSerializerAdapter();
+        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
+        File.WriteAllText(tempFile, serializer.Serialize(investments));
+
+        try
+        {
+            var storage = new LocalJsonStorage(tempFile);
+
+            var loaded = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
+
+            var classifications = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single().TaxClassifications;
+            classifications.Select(c => (c.SourceType, c.Status)).Should().BeEquivalentTo(new[]
+            {
+                (SourceType.Disposal, TaxClassificationStatus.Active),
+                (SourceType.Credit, TaxClassificationStatus.Active),
+            });
         }
         finally
         {

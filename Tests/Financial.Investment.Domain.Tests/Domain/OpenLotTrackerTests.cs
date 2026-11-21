@@ -19,7 +19,8 @@ public class OpenLotTrackerTests
     }
 
     [Fact]
-    public void GetOpenLots_OrdersOldestFirst_WithSameDatePurchaseBeforeSaleTieBreak()
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-03")]
+    public void GetOpenLots_OrdersOldestFirst_KeepingSameDateBuysInEntryOrder()
     {
         var earlierBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
         var sameDateBuyOne = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 4m, 6m, 0m);
@@ -34,6 +35,22 @@ public class OpenLotTrackerTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-03")]
+    public void GetOpenLots_SaleAndPurchaseOnTheSameDate_CountsThePurchaseFirst()
+    {
+        var earlierBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+        var sameDateSell = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 12m, 7m, 0m);
+        var sameDateBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 5m, 6m, 0m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { earlierBuy, sameDateSell, sameDateBuy });
+
+        lots.Should().ContainSingle();
+        lots[0].SourceTransactionId.Should().Be(sameDateBuy.Id);
+        lots[0].RemainingQuantity.Should().Be(3m);
+    }
+
+    [Fact]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-04")]
     public void GetOpenLots_DisposalLargerThanOldestLot_SplitsAcrossNextLots()
     {
         var firstBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 5m, 0m);
@@ -48,6 +65,7 @@ public class OpenLotTrackerTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F01-cost-basis-method-strategy-05")]
     public void GetOpenLots_TransferOut_ReducesQuantityWithNoAssociatedGainLoss()
     {
         var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);

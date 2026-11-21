@@ -128,6 +128,7 @@ public class TransactionServiceTests : IDisposable
     }
 
     [Fact]
+    [Trait("AC", "P50-F02-disposal-record-01")]
     public async Task AddTransaction_Sell_PersistsADisposalRecordUsingTheBrokersCostBasisMethod()
     {
         var disposalsBefore = PersistedAsset().DisposalRecords.Count;

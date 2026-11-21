@@ -492,6 +492,7 @@ public class TransactionServiceMutationTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F02-tax-profile-and-classification-01")]
     public async Task AddTransactionAsync_DisposingTransaction_ClassifiesItInTheSameCall()
     {
         var asset = MakeAsset();
@@ -513,6 +514,8 @@ public class TransactionServiceMutationTests
         var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
         classification.SourceType.Should().Be(SourceType.Disposal);
         classification.SourceId.Should().Be(asset.DisposalRecords.Single().Id);
+        classification.EventCategory.Should().Be(EventCategory.CapitalGain);
+        classification.Status.Should().Be(TaxClassificationStatus.Active);
     }
 
     private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), _exchangeRateProvider, _reportingCurrencyProvider, TestClock.At(), _tracer, NullLogger<TransactionService>.Instance);

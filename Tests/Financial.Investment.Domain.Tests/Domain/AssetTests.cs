@@ -599,6 +599,7 @@ public class AssetTests
     [Theory]
     [InlineData(Transaction.TransactionType.Sell)]
     [InlineData(Transaction.TransactionType.Redemption)]
+    [Trait("AC", "P50-F02-disposal-record-01")]
     public void RecordTransaction_DisposingType_CreatesExactlyOneActiveDisposalRecord(Transaction.TransactionType type)
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -614,6 +615,7 @@ public class AssetTests
     [InlineData(Transaction.TransactionType.Buy)]
     [InlineData(Transaction.TransactionType.TransferIn)]
     [InlineData(Transaction.TransactionType.TransferOut)]
+    [Trait("AC", "P50-F02-disposal-record-02")]
     public void RecordTransaction_NonDisposingType_CreatesNoDisposalRecord(Transaction.TransactionType type)
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -661,6 +663,7 @@ public class AssetTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F02-disposal-record-07")]
     public void RecordTransaction_UnderFifo_TransactionsRealizedCapitalGainReflectsDisposalRecordsNotWeightedAverage()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -673,6 +676,7 @@ public class AssetTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F02-disposal-record-08")]
     public void RecordTransaction_SpecificIdAllocationMismatch_ThrowsAndAddsNothing()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -719,6 +723,7 @@ public class AssetTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-01")]
     public void ReviseTransaction_BackdatedEditAtOrBeforeLatestDisposal_RegeneratesExistingDisposal()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -735,6 +740,7 @@ public class AssetTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-01")]
     public void RetractTransaction_DeletingASaleAtOrBeforeLatestDisposal_RegeneratesAndRetiresItsRecord()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -752,6 +758,7 @@ public class AssetTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F03-disposal-recalculation-policy-06")]
     public void ReviseTransaction_RegenerationThrows_RevertsTheEditAndRethrows()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -1131,6 +1138,7 @@ public class AssetTests
     }
 
     [Fact]
+    [Trait("AC", "P50-F02-disposal-record-07")]
     public void RealizedGainLossSharesOnly_SumsEveryActiveDisposal()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
