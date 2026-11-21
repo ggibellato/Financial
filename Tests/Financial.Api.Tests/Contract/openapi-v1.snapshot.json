@@ -5294,6 +5294,20 @@
               "string"
             ]
           },
+          "investmentWithdrawalBankId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "investmentWithdrawalDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "kind": {
             "type": "string"
           },

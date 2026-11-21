@@ -697,6 +697,20 @@ public class ExpenseTests
     }
 
     [Fact]
+    public void ReportingDate_WithAReportingMonth_IsThatMonthNotTheDate()
+    {
+        var expense = Expense.Create(
+            new DateOnly(2026, 4, 3), "From the pot", -120m, Extras, Chase, creditCard: null, reportingMonth: new DateOnly(2026, 3, 17));
+
+        using (new AssertionScope())
+        {
+            expense.ReportingMonth.Should().Be(new DateOnly(2026, 3, 1));
+            expense.ReportingDate.Should().Be(new DateOnly(2026, 3, 1));
+            expense.ListingDate.Should().Be(new DateOnly(2026, 4, 3));
+        }
+    }
+
+    [Fact]
     public void ReportingDate_UnpaidCardCharge_IsInvoiceDate()
     {
         var expense = Expense.Create(new DateOnly(2026, 7, 28), "Charge near cutoff", 10m, Extras, null, ChaseMaster4023);

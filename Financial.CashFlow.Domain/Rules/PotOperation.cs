@@ -49,8 +49,10 @@ public sealed record PotOperation(
     public Account? CreditCard => ChosenExpense?.CreditCard;
     public DateOnly? StatementMonth => ChosenExpense?.InvoiceDate;
     public InvestmentWithdrawalStatus? InvestmentWithdrawal => CreditCard is null ? null
-        : Expenses.Any(expense => expense.Value < 0 && expense.Category.Id == PotsAccount.Category?.Id) ? InvestmentWithdrawalStatus.Done
-        : InvestmentWithdrawalStatus.Pending;
+        : InvestmentWithdrawalExpense is null ? InvestmentWithdrawalStatus.Pending
+        : InvestmentWithdrawalStatus.Done;
+    public Expense? InvestmentWithdrawalExpense =>
+        CreditCard is null ? null : Expenses.FirstOrDefault(expense => expense.PaymentSourceAccount is not null);
     public Guid? IncomeId => Transactions.Select(transaction => transaction.Income?.Id).FirstOrDefault(id => id is not null);
 
     private Expense? ChosenExpense =>
@@ -67,6 +69,18 @@ public sealed record PotOperation(
         || creditCardId != CreditCard?.Id
         || (statementMonth ?? StatementMonth) != StatementMonth;
 
+    public Expense WithdrawFromInvestment(Account bank, DateOnly date)
+    {
+        var charge = ChosenExpense is { CreditCard: not null } chosen
+            ? chosen
+            : throw new InvalidOperationException("Only a card-paid withdrawal is withdrawn from the investment at statement payment.");
+        var potsCategory = PotsAccount.Category
+            ?? throw new ArgumentException($"Set a category on {PotsAccount.Name} first.");
+
+        return Expense.Create(
+            date, charge.Description, -charge.Value, potsCategory, bank, creditCard: null, operationId: OperationId, reportingMonth: charge.InvoiceDate);
+    }
+
     public void Relabel(string description, Category category)
     {
         foreach (var transaction in Transactions)
@@ -80,6 +94,16 @@ public sealed record PotOperation(
             expense.Relabel(description, expense == chosen ? category : expense.Category);
         }
     }
+
+    public static IReadOnlyList<PotOperation> ReadOnStatement(
+        Account card, int year, int month, IEnumerable<PotTransaction> transactions, IEnumerable<Expense> expenses, IEnumerable<Account> accounts) =>
+        CardChargeFilter.ChargesFor(expenses, card, year, month)
+            .Select(charge => charge.OperationId)
+            .OfType<Guid>()
+            .Distinct()
+            .Select(operationId => Read(operationId, transactions, expenses, accounts))
+            .OfType<PotOperation>()
+            .ToList();
 
     public static PotOperation? Read(
         Guid operationId, IEnumerable<PotTransaction> transactions, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)

@@ -13,7 +13,7 @@
 
 **2. Operation's investment withdrawal** - Let a card-paid withdrawal operation build its −X for a bank and date, and recognise it by shape for the status. See spec §4 "Rules in detail".
 
-**3. Shared statement helper** - Add the helper that finds a statement's card-paid withdrawals and writes or removes their −X records. See spec §3 "Shared statement helper".
+**3. Statement reader** - Add the domain reader that finds the card-paid withdrawals on a statement. See spec §3 "Shared statement reader".
 
 **4. Mark and unmark paid** - Write the −X records in the payment's own save and remove them in the reversal's, failing first when a Pots account has no category. See spec §4 "Mark paid" and "Unmark paid".
 

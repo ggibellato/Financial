@@ -61,11 +61,17 @@ public sealed class CardStatementService : ICardStatementService
 
             var today = _timeProvider.GetLocalToday();
             var payment = Transfer.CreateStatementPayment(request.Date ?? today, bank!, statement.CreditCard, ledgerMonth.AmountToPay, today);
+            var investmentWithdrawals = PotWithdrawalsOn(statement).Select(operation => operation.WithdrawFromInvestment(bank!, payment.Date)).ToList();
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddTransfer(payment);
                 statement.MarkPaidBy(payment.Id);
+                foreach (var withdrawal in investmentWithdrawals)
+                {
+                    _repository.AddExpense(withdrawal);
+                }
+
                 return true;
             }).ConfigureAwait(false);
 
@@ -146,13 +152,23 @@ public sealed class CardStatementService : ICardStatementService
             throw new StatementPaymentConflictException(PaymentChangedElsewhereMessage);
         }
 
+        var investmentWithdrawals = PotWithdrawalsOn(statement).Select(operation => operation.InvestmentWithdrawalExpense).OfType<Expense>().ToList();
         return () =>
         {
             _repository.DeleteTransfer(paymentId);
             statement.MarkUnpaid();
+            foreach (var withdrawal in investmentWithdrawals)
+            {
+                _repository.DeleteExpense(withdrawal.Id);
+            }
+
             return true;
         };
     }
+
+    private IReadOnlyList<PotOperation> PotWithdrawalsOn(CardStatement statement) =>
+        PotOperation.ReadOnStatement(
+            statement.CreditCard, statement.Year, statement.Month, _repository.GetPotTransactions(), _repository.GetExpenses(), _repository.GetAccounts());
 
     private Func<bool> LegacyPaymentReversal(CardStatement statement)
     {

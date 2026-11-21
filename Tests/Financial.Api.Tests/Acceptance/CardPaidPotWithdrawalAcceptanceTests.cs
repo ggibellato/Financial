@@ -166,7 +166,7 @@ public class CardPaidPotWithdrawalAcceptanceTests : ApiEndpointTests
             defaulted.StatementMonth.Should().Be(10);
             await ShouldBeProblemAsync(onPaid, HttpStatusCode.BadRequest, "This statement is already paid; choose a later month.");
             await ShouldBeProblemAsync(earlier, HttpStatusCode.BadRequest, "The statement can't be before the expense date.");
-            Repository.GetExpenses().Should().ContainSingle();
+            Repository.GetExpenses().Should().ContainSingle(expense => expense.CreditCard != null);
         }
     }
 

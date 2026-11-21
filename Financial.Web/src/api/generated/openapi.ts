@@ -8623,6 +8623,10 @@ export interface components {
             incomeId?: null | string;
             into?: null | string;
             investmentWithdrawal?: null | string;
+            /** Format: uuid */
+            investmentWithdrawalBankId?: null | string;
+            /** Format: date */
+            investmentWithdrawalDate?: null | string;
             kind: string;
             /** Format: uuid */
             operationId: string;

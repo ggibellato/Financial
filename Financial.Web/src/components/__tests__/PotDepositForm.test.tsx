@@ -60,6 +60,8 @@ const SAVED_OPERATION: PotOperationDto = {
   statementYear: null,
   statementMonth: null,
   investmentWithdrawal: null,
+  investmentWithdrawalBankId: null,
+  investmentWithdrawalDate: null,
   fundingLines: [
     { bankId: 'b1', amount: 85 },
     { bankId: 'b2', amount: 5 },

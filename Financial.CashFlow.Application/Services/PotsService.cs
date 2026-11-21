@@ -426,6 +426,8 @@ public sealed class PotsService : IPotsService
         CreditCardId = operation.CreditCard?.Id,
         StatementYear = operation.StatementMonth?.Year,
         StatementMonth = operation.StatementMonth?.Month,
-        InvestmentWithdrawal = operation.InvestmentWithdrawal?.ToString()
+        InvestmentWithdrawal = operation.InvestmentWithdrawal?.ToString(),
+        InvestmentWithdrawalBankId = operation.InvestmentWithdrawalExpense?.PaymentSourceAccount?.Id,
+        InvestmentWithdrawalDate = operation.InvestmentWithdrawalExpense?.Date
     };
 }

@@ -264,5 +264,90 @@ public class PotOperationTests
             _reserva, _pot, 120m, Date, "Flights", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 11, 1)));
 
     private Expense InvestmentWithdrawalExpense() =>
-        Expense.Create(new DateOnly(2026, 11, 3), "Flights", -120m, _reserva.Category!, _bank, creditCard: null, operationId: OperationId);
+        ReadCardWithdrawal().WithdrawFromInvestment(_bank, new DateOnly(2026, 11, 3));
+
+    [Fact]
+    public void WithdrawFromInvestment_WritesMinusXOnTheBankInThePotsCategoryReportedInTheStatementMonth()
+    {
+        var operation = ReadCardWithdrawal();
+
+        var withdrawal = operation.WithdrawFromInvestment(_bank, new DateOnly(2026, 12, 3));
+
+        using (new AssertionScope())
+        {
+            withdrawal.Value.Should().Be(-120m);
+            withdrawal.Date.Should().Be(new DateOnly(2026, 12, 3));
+            withdrawal.PaymentSourceAccount.Should().BeSameAs(_bank);
+            withdrawal.CreditCard.Should().BeNull();
+            withdrawal.Category.Should().BeSameAs(_reserva.Category);
+            withdrawal.Description.Should().Be("Flights");
+            withdrawal.OperationId.Should().Be(OperationId);
+            withdrawal.ReportingMonth.Should().Be(new DateOnly(2026, 11, 1));
+            withdrawal.CountsAsTithe.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void WithdrawFromInvestment_PotsAccountWithoutACategory_Throws()
+    {
+        var uncategorised = TestAccounts.Pots("Savings");
+        var pot = Pot.Create("Car", 100m);
+        uncategorised.AddPot(pot);
+        var records = PotWithdrawal.Build(
+            uncategorised, pot, 50m, Date, "Tyres", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 10, 1)));
+        var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_card, uncategorised])!;
+
+        var act = () => operation.WithdrawFromInvestment(_bank, new DateOnly(2026, 11, 3));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Set a category on Savings first.");
+    }
+
+    [Fact]
+    public void WithdrawFromInvestment_BankWithdrawal_Throws()
+    {
+        var act = () => ReadBankWithdrawal().WithdrawFromInvestment(_bank, Date);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void InvestmentWithdrawal_IsRecognisedByItsBankEvenAfterThePotsCategoryChanges()
+    {
+        var records = BuildByCard();
+        var withdrawal = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_card, _reserva])!
+            .WithdrawFromInvestment(_bank, new DateOnly(2026, 12, 3));
+        _reserva.SetCategory(Category.Create("Savings"));
+
+        var operation = PotOperation.Read(OperationId, records.Transactions, [.. records.Expenses, withdrawal], [_bank, _card, _reserva])!;
+
+        using (new AssertionScope())
+        {
+            operation.InvestmentWithdrawal.Should().Be(InvestmentWithdrawalStatus.Done);
+            operation.InvestmentWithdrawalExpense.Should().BeSameAs(withdrawal);
+        }
+    }
+
+    [Fact]
+    public void InvestmentWithdrawalExpense_BankWithdrawal_IsNull() =>
+        ReadBankWithdrawal().InvestmentWithdrawalExpense.Should().BeNull();
+
+    [Fact]
+    public void ReadOnStatement_ReadsTheCardWithdrawalsWhoseChargeIsOnThatStatementOnly()
+    {
+        var november = BuildByCard();
+        var december = PotWithdrawal.Build(
+            _reserva, _pot, 30m, Date, "Hotel", bank: null, _health, Guid.NewGuid(), Today, new PotWithdrawalCard(_card, new DateOnly(2026, 12, 1)));
+        var unlinked = Expense.Create(Date, "Groceries", 12m, _health, paymentSourceAccount: null, _card, new DateOnly(2026, 11, 1));
+
+        var operations = PotOperation.ReadOnStatement(
+            _card, 2026, 11, [.. november.Transactions, .. december.Transactions], [.. november.Expenses, .. december.Expenses, unlinked], [_card, _reserva]);
+
+        operations.Select(operation => operation.OperationId).Should().Equal(OperationId);
+    }
+
+    private PotOperation ReadBankWithdrawal()
+    {
+        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Boots", _bank, _health, OperationId, Today);
+        return PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, _reserva])!;
+    }
 }

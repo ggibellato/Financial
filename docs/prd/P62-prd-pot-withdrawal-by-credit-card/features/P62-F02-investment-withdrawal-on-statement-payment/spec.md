@@ -12,7 +12,7 @@
 
 *Included*
 - Domain: optional `Expense.ReportingMonth` that `ReportingDate` prefers; `PotOperation` builds and recognises its investment withdrawal.
-- Application: mark paid writes the −X records, unmark paid removes them, both in the existing single save; a shared helper reused by F04; `PotOperationDTO` reports the investment withdrawal's bank and date; statement DTOs list pot withdrawals.
+- Application: mark paid writes the −X records, unmark paid removes them, both in the existing single save; a shared statement reader reused by F04; `PotOperationDTO` reports the investment withdrawal's bank and date; statement DTOs list pot withdrawals.
 - Infrastructure: the new field is left out of the data file when empty.
 - Web: the pot-withdrawal lines in the bank screen's Pay card statement form, the card screen's Pay form and the Unmark dialog.
 - Input contracts (PRD Consumes from F01): card-paid withdrawal operations (operation id, Pots account, amount, chosen category, card, statement month, description) read with `PotOperation.Read`.
@@ -31,7 +31,7 @@ graph TD
     U["Unmark dialog"] --> C["POST card-statements/{id}/unmark-paid"]
     B --> S["CardStatementService"]
     C --> S
-    S --> H["StatementPotWithdrawals (Application)"]
+    S --> H["PotOperation.ReadOnStatement (Domain)"]
     H --> O["PotOperation.WithdrawFromInvestment / InvestmentWithdrawalExpense (Domain)"]
     O --> E["Expense -X, ReportingMonth = statement"]
     Q["AccountQueryService statement reads"] --> H
@@ -47,7 +47,7 @@ graph TD
 | Reporting month of the −X | Store an optional `ReportingMonth` (first of month) on `Expense`; `ReportingDate` returns it when set (user, 2026-11-21) | Derive it in each report from the operation's card charge | One field, left out of the file when empty, and every report (Summary, annual, historic, tithe, category averages) follows without change; deriving would touch about 5 services |
 | Who builds the −X | `PotOperation.WithdrawFromInvestment(bank, date)`: amount, description, Pots category, operation id and statement month all come from the operation | Build it in `CardStatementService` | The rule stays with the entity that owns the operation's records (implementation.md §Domain rules) |
 | How the −X is recognised | In a card operation, the expense with a payment source (the charge never has one) | Match on the Pots category | The Pots account's category can change after payment (F09); the shape cannot. `InvestmentWithdrawal` (F01's `Done`) uses the same predicate |
-| Shared statement helper | Internal Application class `StatementPotWithdrawals`: operations on a statement, write the −X records, remove them | Private methods on `CardStatementService` | F04 settles a nothing-due statement with the same write and removal (PRD F02 Provides) |
+| Shared statement reader | `PotOperation.ReadOnStatement(card, year, month, …)` in Domain, next to `PotOperation.Read`; the services write each `WithdrawFromInvestment` and delete each `InvestmentWithdrawalExpense` inline | An Application helper class wrapping the write and removal | The only reusable piece is the lookup (F02 statement reads and F04 settle use it too); the write and removal are one-liners, so a wrapper was indirection (simplify review, 2026-11-21) |
 | Pots account without a category | 400 "Set a category on <Pots account> first." before anything is saved | Skip that charge | PRD F02 Error Handling: nothing is saved |
 | Web wording | A note under Amount in both Pay forms ("Also takes £120.00 from Reserva (Investimento) on Barclays."; "on the paying bank" until a bank is chosen), and one more sentence in the Unmark dialog | A second confirmation dialog | Paying has no confirmation step today; a note informs without adding a step |
 | Statement reads | `PotWithdrawals` list on `AccountStatementDTO` and `PayableStatementDTO` (operation id, Pots account name, pot name, amount) | A separate endpoint per statement | The forms already hold the statement; no extra request |
@@ -61,14 +61,14 @@ graph TD
 | `Financial.CashFlow.Domain/Entities/Transactions/Expense.cs` | Modified | Reporting month | Optional `ReportingMonth` (stored as first of month), set only through `Expense.Create`'s new optional argument; `ReportingDate` prefers it |
 | `Financial.CashFlow.Domain/Rules/PotOperation.cs` | Modified | Investment withdrawal | `WithdrawFromInvestment(Account bank, DateOnly date)` returns the −X expense (throws "Set a category on <Pots account> first." when the Pots account has none); `InvestmentWithdrawalExpense` (the card operation's expense with a payment source, or null); `InvestmentWithdrawal` derived from it |
 | `Financial.CashFlow.Infrastructure/Persistence/CashFlowTypeInfoResolver.cs` | Modified | Persistence | `Expense.ReportingMonth` added to the properties omitted when null |
-| `Financial.CashFlow.Application/Services/StatementPotWithdrawals.cs` | New | Shared helper | `OperationsOn(repository, card, year, month)` reads the card-paid withdrawal operations whose charge is on that statement; `Write(operations, bank, date)` adds each −X; `Remove(operations)` deletes each operation's investment withdrawal expense |
+| `Financial.CashFlow.Domain/Rules/PotOperation.cs` (`ReadOnStatement`) | Modified | Statement reader | The card-paid withdrawal operations whose charge is on a card's statement month |
 | `Financial.CashFlow.Application/Services/CardStatementService.cs` | Modified | Mark/unmark paid | Mark paid: build the −X records before the save (so a missing category fails first), add them in the same `ApplyAndSaveAsync` as the transfer; unmark paid (transfer reversal): remove them in the same save |
 | `Financial.CashFlow.Application/DTOs/PotOperationDTO.cs` | Modified | Response | Adds `InvestmentWithdrawalBankId`, `InvestmentWithdrawalDate` |
 | `Financial.CashFlow.Application/Services/PotsService.cs` | Modified | Response mapping | Fills the two new fields from `InvestmentWithdrawalExpense` |
 | `Financial.CashFlow.Application/DTOs/StatementPotWithdrawalDTO.cs` | New | Read model | `OperationId`, `PotsAccountName`, `PotName`, `Amount` |
 | `Financial.CashFlow.Application/DTOs/AccountStatementDTO.cs` | Modified | Card statements read | Adds `PotWithdrawals` |
 | `Financial.CashFlow.Application/DTOs/PayableStatementDTO.cs` | Modified | Payable statements read | Adds `PotWithdrawals` |
-| `Financial.CashFlow.Application/Services/AccountQueryService.cs` | Modified | Statement reads | Fills `PotWithdrawals` through `StatementPotWithdrawals.OperationsOn` |
+| `Financial.CashFlow.Application/Services/AccountQueryService.cs` | Modified | Statement reads | Fills `PotWithdrawals` through `PotOperation.ReadOnStatement` |
 
 **Frontend**
 

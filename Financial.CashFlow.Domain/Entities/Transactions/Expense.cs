@@ -23,6 +23,7 @@ public class Expense : IAccountTransaction
     public decimal? RoundUpAmount { get; private set; }
     public bool CountsAsTithe { get; private set; } = true;
     public Guid? OperationId { get; private set; }
+    public DateOnly? ReportingMonth { get; private set; }
 
     public ExpensePaymentStatus PaymentStatus =>
         CreditCard is null ? ExpensePaymentStatus.ImmediatePayment
@@ -50,9 +51,10 @@ public class Expense : IAccountTransaction
     public bool IsInvestment => Category.IsInvestment;
 
     public DateOnly ReportingDate =>
-        CreditCard is not null && InvoiceDate is not null
+        ReportingMonth
+        ?? (CreditCard is not null && InvoiceDate is not null
             ? InvoiceDate.Value
-            : Date;
+            : Date);
 
     public DateOnly ListingDate => InvoiceDate ?? ChargeDate ?? Date;
 
@@ -67,7 +69,8 @@ public class Expense : IAccountTransaction
         Account? creditCard,
         DateOnly? invoiceDate = null,
         bool countsAsTithe = true,
-        Guid? operationId = null)
+        Guid? operationId = null,
+        DateOnly? reportingMonth = null)
     {
         ValidateFields(description, value);
         ValidatePaymentShape(paymentSourceAccount, creditCard);
@@ -85,7 +88,8 @@ public class Expense : IAccountTransaction
             ChargeDate = creditCard is not null ? date : null,
             InvoiceDate = creditCard is not null ? FirstOfMonth(invoiceDate ?? date) : null,
             CountsAsTithe = countsAsTithe,
-            OperationId = operationId
+            OperationId = operationId,
+            ReportingMonth = reportingMonth is { } month ? FirstOfMonth(month) : null
         };
     }
 
