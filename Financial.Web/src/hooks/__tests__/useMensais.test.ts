@@ -3,12 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
-import { pinDate } from '../../test-utils/pinDate'
 import { useMensais } from '../useMensais'
 import { never } from '../../test-utils/deferred'
-
-const CURRENT_MONTH_INPUT = '2026-12'
-const NEXT_MONTH_INPUT = '2027-01'
 
 const {
   getMensaisBillsMock,
@@ -81,7 +77,6 @@ const CATEGORIES: CategoryDto[] = [
 
 describe('useMensais', () => {
   beforeEach(() => {
-    pinDate('2026-12-15T12:00:00Z')
     getMensaisBillsMock.mockReset()
     createMensaisBillMock.mockReset()
     updateMensaisBillMock.mockReset()
@@ -105,14 +100,13 @@ describe('useMensais', () => {
     expect(result.current.banks).toEqual([BARCLAYS, CLOSED])
   })
 
-  it('fetches the bill list once on mount, defaulting the display month to today', async () => {
+  it('fetches the bill list once on mount', async () => {
     const { result } = renderHook(() => useMensais())
 
     expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getMensaisBillsMock).toHaveBeenCalledTimes(1)
-    expect(result.current.monthInputValue).toBe(CURRENT_MONTH_INPUT)
   })
 
   it('groups bills into brasil and uk sections', async () => {
@@ -125,15 +119,6 @@ describe('useMensais', () => {
     expect(result.current.ukBills[0].description).toBe('Council Tax')
   })
 
-  it('changing the display month is purely local and does not re-fetch', async () => {
-    const { result } = renderHook(() => useMensais())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.setMonthInputValue(NEXT_MONTH_INPUT))
-
-    expect(result.current.monthInputValue).toBe(NEXT_MONTH_INPUT)
-    expect(getMensaisBillsMock).toHaveBeenCalledTimes(1)
-  })
 
   it.each([
     [new Error('Network down'), 'Network down'],

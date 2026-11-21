@@ -220,8 +220,6 @@ function BillTable({
 export default function MensaisPage() {
   const { showSuccess } = useSuccessToast()
   const {
-    monthInputValue,
-    setMonthInputValue,
     brasilBills,
     ukBills,
     isLoading,
@@ -322,37 +320,26 @@ export default function MensaisPage() {
 
   return (
     <div className="mensais-page">
-      <div className="mensais-page__header">
-        <div className="mensais-page__month-picker">
-          <label htmlFor="mensais-month">Month</label>
-          <input
-            id="mensais-month"
-            type="month"
-            value={monthInputValue}
-            onChange={(e) => setMonthInputValue(e.target.value)}
-          />
-        </div>
-        <div className="mensais-page__toolbar">
-          <Button
-            ref={addBillRef}
-            appearance="primary"
-            icon={<AddRegular />}
-            disabledFocusable={isFormSaving}
-            aria-describedby={isFormSaving ? newBillReasonId : undefined}
-            onClick={() => openForm(showAddForm)}
-          >
-            New bill
-          </Button>
-          {isFormSaving && <Text id={newBillReasonId}>{BILL_FORM_SAVING}</Text>}
-          <Button
-            appearance="primary"
-            icon={<ArrowResetRegular />}
-            disabledFocusable={isResetting}
-            onClick={() => setIsConfirmingReset(true)}
-          >
-            {isResetting ? 'Resetting…' : 'Reset all to Unset'}
-          </Button>
-        </div>
+      <div className="mensais-page__toolbar">
+        <Button
+          ref={addBillRef}
+          appearance="primary"
+          icon={<AddRegular />}
+          disabledFocusable={isFormSaving}
+          aria-describedby={isFormSaving ? newBillReasonId : undefined}
+          onClick={() => openForm(showAddForm)}
+        >
+          New bill
+        </Button>
+        {isFormSaving && <Text id={newBillReasonId}>{BILL_FORM_SAVING}</Text>}
+        <Button
+          appearance="primary"
+          icon={<ArrowResetRegular />}
+          disabledFocusable={isResetting}
+          onClick={() => setIsConfirmingReset(true)}
+        >
+          {isResetting ? 'Resetting…' : 'Reset all to Unset'}
+        </Button>
       </div>
 
       <ActionErrorAlert message={deleteError} />
