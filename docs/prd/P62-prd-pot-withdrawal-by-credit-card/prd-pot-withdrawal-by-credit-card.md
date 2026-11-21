@@ -263,11 +263,11 @@ graph TD
 - [x] **P62-F02-investment-withdrawal-on-statement-payment-06** The mark-paid and unmark-paid confirmations list the investment withdrawals they add or remove
 
 ### F03. Withdraw Forms on Pots Account and Card
-- [ ] **P62-F03-withdraw-forms-on-pots-account-and-card-01** The Pots account's Withdraw form has "Paid with" (None, Bank, Credit card; default None) showing Bank, or Card and Statement month, and Category as chosen; switching keeps Pot, Date, Description and Amount
-- [ ] **P62-F03-withdraw-forms-on-pots-account-and-card-02** The card screen's "Withdraw from pots" saves the same records as the Pots account form, with the card locked to the screen's card
-- [ ] **P62-F03-withdraw-forms-on-pots-account-and-card-03** Paid statements and inactive cards are not offered; with no active card the Credit card option is disabled with "No active credit card."
-- [ ] **P62-F03-withdraw-forms-on-pots-account-and-card-04** The card charge, pot movement and −X bank expense rows each open the operation, whose Edit and Delete follow F01's locks
-- [ ] **P62-F03-withdraw-forms-on-pots-account-and-card-05** Loading, validation, saving, success, server-error and unsaved-changes states, keyboard use, visible focus and narrow layout pass the review checklist
+- [x] **P62-F03-withdraw-forms-on-pots-account-and-card-01** The Pots account's Withdraw form has "Paid with" (None, Bank, Credit card; default None) showing Bank, or Card and Statement month, and Category as chosen; switching keeps Pot, Date, Description and Amount
+- [x] **P62-F03-withdraw-forms-on-pots-account-and-card-02** The card screen's "Withdraw from pots" saves the same records as the Pots account form, with the card locked to the screen's card
+- [x] **P62-F03-withdraw-forms-on-pots-account-and-card-03** Paid statements and inactive cards are not offered; with no active card the Credit card option is disabled with "No active credit card."
+- [x] **P62-F03-withdraw-forms-on-pots-account-and-card-04** The card charge, pot movement and −X bank expense rows each open the operation, whose Edit and Delete follow F01's locks
+- [x] **P62-F03-withdraw-forms-on-pots-account-and-card-05** Loading, validation, saving, success, server-error and unsaved-changes states, keyboard use, visible focus and narrow layout pass the review checklist
 
 ### F04. Settle a Nothing-Due Statement
 - [ ] **P62-F04-settle-a-nothing-due-statement-01** "Settle pot withdrawals" appears only on a Nothing due statement holding a pending card-paid withdrawal charge
@@ -277,6 +277,6 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] **P62-CF-cross-feature-01** The operation id, amount, category, card and statement month written by F01 are the ones F02 uses for the −X when the statement is paid
-- [ ] **P62-CF-cross-feature-02** A withdrawal saved from F03's Pots account form and one saved from the card screen produce identical F01 records and are both picked up by F02
-- [ ] **P62-CF-cross-feature-03** F03's operation detail shows "Done" with F02's bank and payment date after mark paid, and "Pending" again after unmark
+- [x] **P62-CF-cross-feature-02** A withdrawal saved from F03's Pots account form and one saved from the card screen produce identical F01 records and are both picked up by F02
+- [x] **P62-CF-cross-feature-03** F03's operation detail shows "Done" with F02's bank and payment date after mark paid, and "Pending" again after unmark
 - [ ] **P62-CF-cross-feature-04** F04 writes −X records indistinguishable from F02's (category, operation id, statement-month reporting) and removes them through the same rule
