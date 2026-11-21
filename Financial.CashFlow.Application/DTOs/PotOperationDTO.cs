@@ -14,4 +14,8 @@ public sealed class PotOperationDTO
     public Guid? BankId { get; init; }
     public Guid? CategoryId { get; init; }
     public Guid? IncomeId { get; init; }
+    public Guid? CreditCardId { get; init; }
+    public int? StatementYear { get; init; }
+    public int? StatementMonth { get; init; }
+    public string? InvestmentWithdrawal { get; init; }
 }

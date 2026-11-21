@@ -273,6 +273,10 @@ const SAVED_OPERATION: PotOperationDto = {
   bankId: null,
   categoryId: null,
   incomeId: null,
+  creditCardId: null,
+  statementYear: null,
+  statementMonth: null,
+  investmentWithdrawal: null,
   fundingLines: [],
 }
 
@@ -408,6 +412,10 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     bankId: null,
     categoryId: null,
     incomeId: null,
+    creditCardId: null,
+    statementYear: null,
+    statementMonth: null,
+    investmentWithdrawal: null,
     fundingLines: [{ bankId: BARCLAYS_ID, amount: 90 }],
   }
   const WITHDRAWAL: PotOperationDto = {
@@ -419,6 +427,10 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     amount: 20,
     into: null,
     incomeId: null,
+    creditCardId: null,
+    statementYear: null,
+    statementMonth: null,
+    investmentWithdrawal: null,
     potId: 'pot-trips',
     bankId: BARCLAYS_ID,
     categoryId: 'category-home',
@@ -540,6 +552,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
         description: 'Boots',
         bankId: BARCLAYS_ID,
         categoryId: 'category-home',
+        creditCardId: null,
+        statementYear: null,
+        statementMonth: null,
         confirmed: false,
       }),
     )
@@ -570,6 +585,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
         description: 'Boots',
         bankId: BARCLAYS_ID,
         categoryId: 'category-home',
+        creditCardId: null,
+        statementYear: null,
+        statementMonth: null,
         confirmed: false,
       }),
     )

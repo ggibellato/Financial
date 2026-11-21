@@ -86,6 +86,10 @@ const OPERATION: PotOperationDto = {
   amount: 38.25,
   into: null,
   incomeId: null,
+  creditCardId: null,
+  statementYear: null,
+  statementMonth: null,
+  investmentWithdrawal: null,
   potId: 'pot-b',
   bankId: 'b1',
   categoryId: 'cat-saude',
@@ -219,6 +223,9 @@ describe('PotWithdrawalForm from the Pots account', () => {
       description: 'Boots',
       bankId: null,
       categoryId: null,
+      creditCardId: null,
+      statementYear: null,
+      statementMonth: null,
       confirmed: false,
     })
   })
@@ -424,6 +431,9 @@ describe('PotWithdrawalForm from a bank', () => {
       description: 'Boots',
       bankId: 'b1',
       categoryId: 'cat-ariana',
+      creditCardId: null,
+      statementYear: null,
+      statementMonth: null,
       confirmed: false,
     })
   })
@@ -472,6 +482,9 @@ describe('PotWithdrawalForm editing an operation', () => {
       description: 'Boots',
       bankId: 'b1',
       categoryId: 'cat-saude',
+      creditCardId: null,
+      statementYear: null,
+      statementMonth: null,
       confirmed: false,
     })
   })

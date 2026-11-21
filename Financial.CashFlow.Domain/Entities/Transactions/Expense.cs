@@ -126,6 +126,13 @@ public class Expense : IAccountTransaction
         CountsAsTithe = countsAsTithe;
     }
 
+    public void Relabel(string description, Category category)
+    {
+        ValidateFields(description, Value);
+        Description = description;
+        Category = category;
+    }
+
     public DateOnly? InvoiceDateAfterUpdate(DateOnly date, Account? creditCard, DateOnly? requestedInvoiceDate = null)
     {
         if (creditCard is not null && requestedInvoiceDate is { } requested)

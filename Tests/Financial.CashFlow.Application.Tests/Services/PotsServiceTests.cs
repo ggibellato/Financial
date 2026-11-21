@@ -19,14 +19,17 @@ public class PotsServiceTests
 
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer = new();
+    private readonly FakeCreditCardCalendarSyncService _calendarSync = new();
+    private readonly Account _card = TestAccounts.CreditCard("Barclaycard");
     private readonly PotsService _sut;
 
     public PotsServiceTests()
     {
         _repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultPots: true, seedDefaultCategories: true);
         Reserva.SetCategory(CategoryNamed("Reserva"));
+        _repository.Accounts.Add(_card);
         _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("Investimento"), 100m, new DateOnly(2026, 1, 1), "Seed"));
-        _sut = new PotsService(_repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
+        _sut = new PotsService(_repository, _calendarSync, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
     }
 
     private Account Reserva => _repository.EnsureReserva();
@@ -206,7 +209,7 @@ public class PotsServiceTests
 
     [Fact]
     public async Task WithdrawAsync_CategoryWithoutBank_Throws() =>
-        await ShouldRefuseAndSaveNothing(Withdrawal(withBank: false, withCategory: true), "*bank is required*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(withBank: false, withCategory: true), "A bank or credit card is required when an expense category is given.");
 
     [Fact]
     public async Task WithdrawAsync_UnknownBank_Throws() =>
@@ -272,7 +275,7 @@ public class PotsServiceTests
     public async Task WithdrawAsync_Failure_LogsNoDescriptionOrExceptionMessage()
     {
         var logger = new RecordingLogger<PotsService>();
-        var sut = new PotsService(_repository, TestClock.At(), _tracer, logger);
+        var sut = new PotsService(_repository, _calendarSync, TestClock.At(), _tracer, logger);
 
         var act = async () => await sut.WithdrawAsync(Reserva.Id, Withdrawal(withCategory: false, description: "Secret dentist"));
 
@@ -826,6 +829,244 @@ public class PotsServiceTests
         {
             act.Should().Throw<ArgumentOutOfRangeException>();
             _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.PotsService.GetPots");
+        }
+    }
+
+    private PotWithdrawalRequestDTO CardWithdrawal(
+        decimal amount = 30m,
+        DateOnly? date = null,
+        string pot = "Investimento",
+        int? statementYear = 2026,
+        int? statementMonth = 10,
+        Guid? cardId = null,
+        Guid? bankId = null,
+        bool withCategory = true,
+        bool withCard = true,
+        string category = "Saude",
+        string description = "Flights") => new()
+    {
+        PotId = PotNamed(pot).Id,
+        Amount = amount,
+        Date = date ?? Date,
+        Description = description,
+        BankId = bankId,
+        CreditCardId = withCard ? cardId ?? _card.Id : null,
+        StatementYear = statementYear,
+        StatementMonth = statementMonth,
+        CategoryId = withCategory ? CategoryNamed(category).Id : null
+    };
+
+    private List<Guid> OperationRecordIds(Guid operationId) =>
+        _repository.Expenses.Where(expense => expense.OperationId == operationId).Select(expense => expense.Id)
+            .Concat(_repository.PotTransactions.Where(movement => movement.OperationId == operationId).Select(movement => movement.Id))
+            .ToList();
+
+    private CardStatement PaidStatement(int year, int month)
+    {
+        var statement = CardStatement.Create(_card, year, month);
+        statement.MarkPaidBy(Guid.NewGuid());
+        _repository.CardStatements.Add(statement);
+        return statement;
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_ByCard_SavesTheMovementAndTheChargeAndReturnsAPendingOperation()
+    {
+        var result = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal(statementMonth: 11));
+
+        var charge = _repository.Expenses.Single();
+        using (new AssertionScope())
+        {
+            charge.CreditCard.Should().BeSameAs(_card);
+            charge.PaymentSourceAccount.Should().BeNull();
+            charge.Value.Should().Be(30m);
+            charge.InvoiceDate.Should().Be(new DateOnly(2026, 11, 1));
+            charge.OperationId.Should().Be(result.OperationId);
+            _repository.PotTransactions.Should().ContainSingle(transaction => transaction.OperationId == result.OperationId && transaction.Amount == -30m);
+            result.BankId.Should().BeNull();
+            result.CreditCardId.Should().Be(_card.Id);
+            result.StatementYear.Should().Be(2026);
+            result.StatementMonth.Should().Be(11);
+            result.InvestmentWithdrawal.Should().Be("Pending");
+        }
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_ByCardWithoutAStatement_UsesTheExpenseMonth()
+    {
+        await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal(date: new DateOnly(2026, 10, 4), statementYear: null, statementMonth: null));
+
+        _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_ByCard_CreatesTheStatementAndTriggersTheCalendarSync()
+    {
+        await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal(statementMonth: 11));
+
+        using (new AssertionScope())
+        {
+            _repository.CardStatements.Should().ContainSingle(statement => statement.IsFor(_card.Id, 2026, 11));
+            _calendarSync.InvoiceChecks.Should().Equal((_card.Id, new DateOnly(2026, 11, 1)));
+        }
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_BankAndCard_Throws() =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(bankId: Bank("Chase").Id), "Choose a bank or a credit card, not both.");
+
+    [Fact]
+    public async Task WithdrawAsync_StatementWithoutCard_Throws() =>
+        await ShouldRefuseAndSaveNothing(
+            CardWithdrawal(withCard: false), "A statement month is only used when paying by card.");
+
+    [Theory]
+    [InlineData(2026, null)]
+    [InlineData(null, 10)]
+    [InlineData(2026, 13)]
+    [InlineData(2026, 0)]
+    [InlineData(0, 10)]
+    public async Task WithdrawAsync_HalfOrInvalidStatementMonth_Throws(int? year, int? month) =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(statementYear: year, statementMonth: month), "The statement month is not a valid month.");
+
+    [Fact]
+    public async Task WithdrawAsync_CardWithoutCategory_Throws() =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(withCategory: false), "Category is required when a credit card is selected.");
+
+    [Fact]
+    public async Task WithdrawAsync_UnknownCard_Throws() =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(cardId: Guid.NewGuid()), "Credit card '*' is not recognized.");
+
+    [Fact]
+    public async Task WithdrawAsync_InactiveCard_Throws()
+    {
+        var inactive = TestAccounts.CreditCard("Old card", isActive: false);
+        _repository.Accounts.Add(inactive);
+
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(cardId: inactive.Id), "*inactive*");
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_AccountThatIsNotACard_Throws() =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(cardId: Bank("Chase").Id), "Credit card '*' is not recognized.");
+
+    [Fact]
+    public async Task WithdrawAsync_ExcludedCategoryByCard_Throws() =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(category: "Reserva"), "*cannot be used for a withdrawal expense*");
+
+    [Fact]
+    public async Task WithdrawAsync_PaidStatement_Throws()
+    {
+        PaidStatement(2026, 10);
+
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(), "This statement is already paid; choose a later month.");
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_StatementBeforeTheExpenseMonth_Throws() =>
+        await ShouldRefuseAndSaveNothing(CardWithdrawal(statementMonth: 9), "The statement can't be before the expense date.");
+
+    [Fact]
+    public async Task UpdateWithdrawalAsync_Unlocked_SwitchesFromCardToBankAndBack()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal());
+
+        var throughBank = await _sut.UpdateWithdrawalAsync(Reserva.Id, created.OperationId, Withdrawal());
+        var bankExpenses = _repository.Expenses.ToList();
+        var byCard = await _sut.UpdateWithdrawalAsync(Reserva.Id, created.OperationId, CardWithdrawal(statementMonth: 12));
+
+        using (new AssertionScope())
+        {
+            throughBank.BankId.Should().Be(Bank("Chase").Id);
+            throughBank.CreditCardId.Should().BeNull();
+            bankExpenses.Should().HaveCount(2).And.OnlyContain(expense => expense.CreditCard == null);
+            byCard.CreditCardId.Should().Be(_card.Id);
+            byCard.StatementMonth.Should().Be(12);
+            _repository.Expenses.Should().ContainSingle(expense => expense.CreditCard == _card && expense.InvoiceDate == new DateOnly(2026, 12, 1));
+            _calendarSync.InvoiceChecks.Should().Contain((_card.Id, new DateOnly(2026, 10, 1)));
+        }
+    }
+
+    [Fact]
+    public async Task UpdateWithdrawalAsync_LockedDescriptionAndCategory_UpdatesTheRecordsInPlace()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal());
+        var ids = OperationRecordIds(created.OperationId);
+        PaidStatement(2026, 10);
+
+        var result = await _sut.UpdateWithdrawalAsync(
+            Reserva.Id, created.OperationId, CardWithdrawal(category: "Mercado", description: "Flights to Lisbon", statementYear: null, statementMonth: null));
+
+        using (new AssertionScope())
+        {
+            OperationRecordIds(created.OperationId).Should().Equal(ids);
+            result.Description.Should().Be("Flights to Lisbon");
+            result.CategoryId.Should().Be(CategoryNamed("Mercado").Id);
+            _repository.Expenses.Single().Description.Should().Be("Flights to Lisbon");
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.UpdateWithdrawal");
+        }
+    }
+
+    public static TheoryData<string> LockedChanges => new() { "pot", "amount", "date", "card", "statement", "bank" };
+
+    [Theory]
+    [MemberData(nameof(LockedChanges))]
+    public async Task UpdateWithdrawalAsync_LockedFieldChanged_ThrowsAndKeepsTheRecords(string field)
+    {
+        var otherCard = TestAccounts.CreditCard("Amex");
+        _repository.Accounts.Add(otherCard);
+        var created = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal());
+        PaidStatement(2026, 10);
+        var request = field switch
+        {
+            "pot" => CardWithdrawal(pot: "HouseTreats"),
+            "amount" => CardWithdrawal(amount: 31m),
+            "date" => CardWithdrawal(date: new DateOnly(2026, 10, 2)),
+            "card" => CardWithdrawal(cardId: otherCard.Id),
+            "statement" => CardWithdrawal(statementMonth: 11),
+            _ => CardWithdrawal(withCard: false, bankId: Bank("Chase").Id, statementYear: null, statementMonth: null)
+        };
+
+        var act = async () => await _sut.UpdateWithdrawalAsync(Reserva.Id, created.OperationId, request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Unmark the statement paid to change this.");
+            _repository.Expenses.Should().ContainSingle(expense => expense.CreditCard == _card && expense.Value == 30m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.UpdateWithdrawal");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteOperationAsync_LockedCardWithdrawal_ThrowsAndKeepsTheRecords()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal());
+        PaidStatement(2026, 10);
+
+        var act = async () => await _sut.DeleteOperationAsync(created.OperationId);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Unmark the statement paid before deleting this withdrawal.");
+            _repository.Expenses.Should().ContainSingle();
+            _repository.PotTransactions.Should().Contain(transaction => transaction.OperationId == created.OperationId);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.DeleteOperation");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteOperationAsync_UnpaidCardWithdrawal_RemovesBothRecordsAndTriggersTheCalendarSync()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal());
+        _calendarSync.InvoiceChecks.Clear();
+
+        await _sut.DeleteOperationAsync(created.OperationId);
+
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Should().BeEmpty();
+            _repository.PotTransactions.Should().NotContain(transaction => transaction.OperationId == created.OperationId);
+            _calendarSync.InvoiceChecks.Should().Equal((_card.Id, new DateOnly(2026, 10, 1)));
         }
     }
 }

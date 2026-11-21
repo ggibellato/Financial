@@ -18,6 +18,12 @@ public enum PotDepositTarget
     OnePot
 }
 
+public enum InvestmentWithdrawalStatus
+{
+    Pending,
+    Done
+}
+
 public sealed record PotOperation(
     Guid OperationId, Account PotsAccount, IReadOnlyList<PotTransaction> Transactions, IReadOnlyList<Expense> Expenses)
 {
@@ -40,10 +46,40 @@ public sealed record PotOperation(
         : [];
     public Account? Bank => ChosenExpense?.PaymentSourceAccount;
     public Category? Category => ChosenExpense?.Category;
+    public Account? CreditCard => ChosenExpense?.CreditCard;
+    public DateOnly? StatementMonth => ChosenExpense?.InvoiceDate;
+    public InvestmentWithdrawalStatus? InvestmentWithdrawal => CreditCard is null ? null
+        : Expenses.Any(expense => expense.Value < 0 && expense.Category.Id == PotsAccount.Category?.Id) ? InvestmentWithdrawalStatus.Done
+        : InvestmentWithdrawalStatus.Pending;
     public Guid? IncomeId => Transactions.Select(transaction => transaction.Income?.Id).FirstOrDefault(id => id is not null);
 
     private Expense? ChosenExpense =>
         Kind == PotOperationKind.Withdrawal ? Expenses.FirstOrDefault(expense => expense.Value > 0) : null;
+
+    public bool IsOnPaidStatement(IEnumerable<CardStatement> statements) =>
+        CreditCard is not null && Expenses.Any(expense => CardChargeFilter.IsOnPaidStatement(expense, statements));
+
+    public bool ChangesLockedFields(Guid potId, decimal amount, DateOnly date, Guid? bankId, Guid? creditCardId, DateOnly? statementMonth) =>
+        potId != Pot?.Id
+        || amount != Amount
+        || date != Date
+        || bankId is not null
+        || creditCardId != CreditCard?.Id
+        || (statementMonth ?? StatementMonth) != StatementMonth;
+
+    public void Relabel(string description, Category category)
+    {
+        foreach (var transaction in Transactions)
+        {
+            transaction.Update(PotsAccount, transaction.Pot, transaction.Amount, transaction.Date, description);
+        }
+
+        var chosen = ChosenExpense;
+        foreach (var expense in Expenses)
+        {
+            expense.Relabel(description, expense == chosen ? category : expense.Category);
+        }
+    }
 
     public static PotOperation? Read(
         Guid operationId, IEnumerable<PotTransaction> transactions, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)

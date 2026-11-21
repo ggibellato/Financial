@@ -18,7 +18,7 @@
 - Output contracts (PRD Provides, used by F02 and F03): card-paid withdrawal operations with operation id, Pots account, pot, amount, expense date, description, category, card, statement year/month and investment withdrawal status, read through `PotOperation.Read` and `GET /pots/operations/{operationId}`.
 
 *Excluded*
-- Every web form and view change, including showing the status (F03, per the user's 2026-11-21 scope decision). Today's Withdraw form keeps sending no card and keeps working.
+- Every web form and view change, including showing the status (F03, per the user's 2026-11-21 scope decision). Today's Withdraw form keeps working: `usePotWithdrawalForm` only sends the three new request fields as null, because the regenerated types make them required, and the web test fixtures of `PotOperationDto`/`PotWithdrawalRequestDto` gain the new nullable fields.
 - Writing or removing the Pots-category −X at statement payment (F02); in F01 a card operation is always `Pending`.
 - Nothing-due settlement (F04).
 
@@ -56,7 +56,7 @@ graph TD
 | Domain input | New record `PotWithdrawalCard(Account Card, DateOnly StatementMonth)` passed to `Build` as an optional argument beside `bank` | Two more loose parameters | `Build` already has 9 parameters; the record keeps card and statement together and makes "bank and card" unrepresentable inside the domain call |
 | Where the rules live | Statement-not-before-expense in Domain (`PotWithdrawal`); paid-statement checks in Application (needs `CardStatement` records), as `ExpenseService` does today | All in Application | Matches the existing split: pure rules in Domain, repository-backed checks in Application |
 | Edit after the statement is paid | In place: the operation's pot movement and expenses keep their ids; only description and category change | Today's remove-and-rebuild | Rebuilding would re-create the charge with a new id under a paid statement and, from F02, drop the bank −X; in-place keeps both stable |
-| Lock detection | The operation is locked when its card charge is on a paid statement (`CardChargeFilter.IsOnPaidStatement`) | A stored flag | Derived, so unmark paid unlocks it with no extra write ("derive, don't store") |
+| Lock detection | The operation is locked when its card charge is on a paid statement: `PotOperation.IsOnPaidStatement(statements)`, with `PotOperation.ChangesLockedFields(...)` deciding which request changes the lock refuses (both in Domain, next to `Relabel`) | A stored flag | Derived, so unmark paid unlocks it with no extra write ("derive, don't store") |
 | Investment withdrawal status | Derived on read: card operation with a negative expense in the Pots account's category → `Done`, otherwise `Pending`; null for non-card operations | Stored status | Nothing to keep in sync; F02 and F04 only add or remove that expense |
 | Calendar sync | Trigger `ICreditCardCalendarSyncService.TriggerSyncIfInvoiceSynced` for the old and new statement after a save, as `ExpenseService` does for charges | Skip | A pot charge changes the statement total like any other charge |
 
@@ -68,10 +68,13 @@ graph TD
 |---|---|---|---|
 | `Financial.CashFlow.Domain/Rules/PotWithdrawalCard.cs` | New | Card payment value | Holds the card account and the first-of-month statement date |
 | `Financial.CashFlow.Domain/Rules/PotWithdrawal.cs` | Modified | Build the withdrawal | Card branch: require category, reject statement before the expense month ("The statement can't be before the expense date."), write pot −X and `Expense.Create(date, description, X, category, paymentSourceAccount: null, creditCard: card, invoiceDate: statement, operationId)`; bank branch unchanged |
-| `Financial.CashFlow.Domain/Rules/PotOperation.cs` | Modified | Operation read-out | `CreditCard` and `StatementMonth` from the chosen (+X) expense; `InvestmentWithdrawalStatus` (`Pending`/`Done`/null); `UpdateDetails(description, category)` renames every record and re-categorises the chosen expense in place |
+| `Financial.CashFlow.Domain/Rules/PotOperation.cs` | Modified | Operation read-out | `CreditCard` and `StatementMonth` from the chosen (+X) expense; `InvestmentWithdrawalStatus` (`Pending`/`Done`/null); `Relabel(description, category)` renames every record and re-categorises the chosen expense in place |
 | `Financial.CashFlow.Application/DTOs/PotWithdrawalRequestDTO.cs` | Modified | Request | Adds `CreditCardId`, `StatementYear`, `StatementMonth` |
 | `Financial.CashFlow.Application/DTOs/PotOperationDTO.cs` | Modified | Response | Adds `CreditCardId`, `StatementYear`, `StatementMonth`, `InvestmentWithdrawal` |
-| `Financial.CashFlow.Application/Validation/PotWithdrawalValidator.cs` | Modified | Request validation | Resolves none / bank / card; bank and card exclusive; statement fields only with a card; valid month; target statement unpaid |
+| `Financial.CashFlow.Domain/Entities/Transactions/Expense.cs` | Modified | In-place relabel | `Relabel(description, category)` changes only description and category, so a charge on a paid statement keeps its card, statement and value |
+| `Financial.CashFlow.Application/Validation/StatementMonthParser.cs` | New | Statement month parsing | The year/month parser and its message, moved out of `ExpenseService` so the move-charge route and the withdrawal share one rule |
+| `Financial.CashFlow.Application/Validation/CashFlowReferenceResolver.cs` | Modified | Card lookup | `ResolveCreditCard` beside `ResolvePaymentSource` |
+| `Financial.CashFlow.Application/Validation/PotWithdrawalValidator.cs` | Modified | Request validation | Resolves none / bank / card into an internal `PotWithdrawalPayment` (the bank-and-card rule stays only in `PotWithdrawal.Build`); bank and card exclusive; statement fields only with a card; valid month; target statement unpaid |
 | `Financial.CashFlow.Application/Services/PotsService.cs` | Modified | Use cases | Card create; update with locks or in-place edit; delete lock; `CardStatementCreation.EnsureFor` inside the save; calendar sync after it |
 
 **Docs**
@@ -90,12 +93,12 @@ graph TD
   3. Only one of `StatementYear`/`StatementMonth` set, or an invalid month → 400 "The statement month is not a valid month." (the `ExpenseService` message).
   4. `CreditCardId` set and `CategoryId` missing → 400 "Category is required when a credit card is selected."
   5. `CategoryId` set with neither bank nor card → 400 "A bank or credit card is required when an expense category is given." (replaces today's bank-only wording).
-  6. Card id unknown → 400 "Credit card '<id>' is not recognized."; not a card or inactive → today's `Expense.Create` messages.
+  6. Card id unknown or not a card account → 400 "Credit card '<id>' is not recognized." (new `CashFlowReferenceResolver.ResolveCreditCard` over the card accounts); inactive → today's `Expense.Create` message.
   7. Category: `ResolveActiveCategory` + `PotWithdrawal.EnsureUsableCategory`, as the bank path.
   8. Target statement paid → 400 "This statement is already paid; choose a later month."
 - **Overdraft:** unchanged (`EnsureWithinBalance`, 409 without `Confirmed`).
 - **Update, operation not locked:** today's remove-and-rebuild, for any payment choice (switching card ↔ bank ↔ none included).
-- **Update, operation locked** (its card charge is on a paid statement): the request must keep `PotId`, `Amount`, `Date`, `CreditCardId` and the statement month (omitted counts as the current one) and send no `BankId`; any difference → 400 "Unmark the statement paid to change this.". Otherwise `PotOperation.UpdateDetails` applies the new description and category in place (category checked as at create).
+- **Update, operation locked** (its card charge is on a paid statement): the request must keep `PotId`, `Amount`, `Date`, `CreditCardId` and the statement month (omitted counts as the current one) and send no `BankId`; any difference → 400 "Unmark the statement paid to change this.". Otherwise `PotOperation.Relabel` applies the new description and category in place (category checked as at create).
 - **Delete, operation locked:** 400 "Unmark the statement paid before deleting this withdrawal."; otherwise today's delete.
 - **Single records:** unchanged; `ExpenseService` update/delete and the pot-transaction paths already return F10's 409 for any record with an operation id.
 - **Move charge:** unchanged; `MoveToStatementAsync` keeps the operation id, and the operation reads its new statement month.
@@ -199,7 +202,7 @@ The charge's `ReportingDate` is its `InvoiceDate`, so category totals and tithe 
 | Test File | Type | Target |
 |---|---|---|
 | `Tests/Financial.CashFlow.Domain.Tests/Rules/PotWithdrawalTests.cs` | Unit | Card branch of `Build` |
-| `Tests/Financial.CashFlow.Domain.Tests/Rules/PotOperationTests.cs` | Unit | Card read-out, status, `UpdateDetails` |
+| `Tests/Financial.CashFlow.Domain.Tests/Rules/PotOperationTests.cs` | Unit | Card read-out, status, `Relabel` |
 | `Tests/Financial.CashFlow.Application.Tests/Services/PotsServiceTests.cs` | Unit | Validation, locks, statement creation, calendar sync |
 | `Tests/Financial.Api.Tests/Acceptance/CardPaidPotWithdrawalAcceptanceTests.cs` | Integration (new) | PRD acceptance criteria through the API |
 | `Tests/Financial.Api.Tests/Contract/OpenApiContractTests.cs` | Contract | Regenerated snapshot |
@@ -216,7 +219,7 @@ The charge's `ReportingDate` is its `InvoiceDate`, so category totals and tithe 
 | `Read_CardOperation_ExposesCardStatementAndPending` | `CreditCard`, `StatementMonth`, status `Pending`, `Bank` null |
 | `Read_CardOperationWithPotsCategoryNegativeExpense_IsDone` | status `Done` |
 | `Read_BankOrNoBankOperation_HasNoInvestmentStatus` | status null |
-| `UpdateDetails_ChangesDescriptionAndCategoryKeepingIds` | ids unchanged; every record renamed; +X re-categorised |
+| `Relabel_ChangesTheDescriptionOfEveryRecordAndTheChosenCategoryKeepingTheirIds` | ids unchanged; every record renamed; +X re-categorised |
 
 **Application (`PotsServiceTests`)**
 

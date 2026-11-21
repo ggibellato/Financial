@@ -8613,6 +8613,8 @@ export interface components {
             bankId?: null | string;
             /** Format: uuid */
             categoryId?: null | string;
+            /** Format: uuid */
+            creditCardId?: null | string;
             /** Format: date */
             date: string;
             description: string;
@@ -8620,6 +8622,7 @@ export interface components {
             /** Format: uuid */
             incomeId?: null | string;
             into?: null | string;
+            investmentWithdrawal?: null | string;
             kind: string;
             /** Format: uuid */
             operationId: string;
@@ -8627,6 +8630,10 @@ export interface components {
             potId?: null | string;
             /** Format: uuid */
             potsAccountId: string;
+            /** Format: int32 */
+            statementMonth?: null | number;
+            /** Format: int32 */
+            statementYear?: null | number;
         };
         PotUpdateDTO: {
             /** Format: uuid */
@@ -8644,11 +8651,17 @@ export interface components {
             /** Format: uuid */
             categoryId?: null | string;
             confirmed?: boolean;
+            /** Format: uuid */
+            creditCardId?: null | string;
             /** Format: date */
             date: string;
             description: string;
             /** Format: uuid */
             potId: string;
+            /** Format: int32 */
+            statementMonth?: null | number;
+            /** Format: int32 */
+            statementYear?: null | number;
         };
         PotsSummaryDTO: {
             currency: string;

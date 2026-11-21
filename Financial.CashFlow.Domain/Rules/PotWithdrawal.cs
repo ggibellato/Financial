@@ -8,6 +8,10 @@ namespace Financial.CashFlow.Domain.Rules;
 
 public static class PotWithdrawal
 {
+    public const string BankAndCardMessage = "Choose a bank or a credit card, not both.";
+    public const string StatementBeforeExpenseMessage = "The statement can't be before the expense date.";
+    public const string CardWithoutCategoryMessage = "Category is required when a credit card is selected.";
+
     public static PotOperation Build(
         Account potsAccount,
         Pot pot,
@@ -17,7 +21,8 @@ public static class PotWithdrawal
         Account? bank,
         Category? category,
         Guid operationId,
-        DateOnly today)
+        DateOnly today,
+        PotWithdrawalCard? card = null)
     {
         TransactionDateRule.EnsureNotInFuture(date, today);
 
@@ -26,9 +31,19 @@ public static class PotWithdrawal
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
+        if (bank is not null && card is not null)
+        {
+            throw new ArgumentException(BankAndCardMessage);
+        }
+
         potsAccount.EnsureOwnsPot(pot.Id);
 
         var movement = PotTransaction.Create(pot, -amount, date, description, operationId: operationId);
+        if (card is not null)
+        {
+            return new(operationId, potsAccount, [movement], [CardCharge(card, amount, date, description, category, operationId)]);
+        }
+
         if (bank is null)
         {
             return new(operationId, potsAccount, [movement], []);
@@ -55,5 +70,22 @@ public static class PotWithdrawal
         {
             throw new ArgumentException($"Category '{category.Name}' cannot be used for a withdrawal expense.");
         }
+    }
+
+    private static Expense CardCharge(
+        PotWithdrawalCard card, decimal amount, DateOnly date, string description, Category? category, Guid operationId)
+    {
+        if (category is null)
+        {
+            throw new ArgumentException(CardWithoutCategoryMessage);
+        }
+
+        if (card.StatementMonth < new DateOnly(date.Year, date.Month, 1))
+        {
+            throw new ArgumentException(StatementBeforeExpenseMessage);
+        }
+
+        return Expense.Create(
+            date, description, amount, category, paymentSourceAccount: null, creditCard: card.Card, invoiceDate: card.StatementMonth, operationId: operationId);
     }
 }

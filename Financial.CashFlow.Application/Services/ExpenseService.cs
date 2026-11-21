@@ -1,4 +1,3 @@
-using System.Globalization;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
@@ -18,7 +17,6 @@ public sealed class ExpenseService : IExpenseService
     private const string EntityType = "Expense";
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
-    private const string InvalidStatementMonthMessage = "The statement month is not a valid month.";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -165,7 +163,7 @@ public sealed class ExpenseService : IExpenseService
             ArgumentNullException.ThrowIfNull(request);
 
             var expense = FindExpenseOrThrow(id);
-            var target = StatementMonth(request.Year, request.Month);
+            var target = StatementMonthParser.Parse(request.Year, request.Month);
             EnsureStatementsOpenForMove(expense, target);
             var previousInvoiceDate = expense.InvoiceDate;
 
@@ -280,10 +278,6 @@ public sealed class ExpenseService : IExpenseService
         }
     }
 
-    private static DateOnly StatementMonth(int year, int month) =>
-        DateOnly.TryParseExact($"{year:D4}-{month:D2}-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-            ? date
-            : throw new ArgumentException(InvalidStatementMonthMessage);
 
     private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(
         string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)

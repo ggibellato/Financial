@@ -18,6 +18,7 @@ public class PotWithdrawalTests
     private readonly Account _bank = TestAccounts.Bank("Chase");
     private readonly Account _reserva;
     private readonly Pot _pot = Pot.Create("Investimento", 100m);
+    private readonly Account _card = TestAccounts.CreditCard("Barclaycard");
 
     public PotWithdrawalTests()
     {
@@ -145,5 +146,65 @@ public class PotWithdrawalTests
         var act = () => PotWithdrawal.EnsureUsableCategory(_health, [_bank, _reserva]);
 
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Build_WithACard_WritesTheMovementAndOneUnpaidCardChargeOnTheStatement()
+    {
+        var statement = new DateOnly(2026, 11, 1);
+
+        var records = PotWithdrawal.Build(
+            _reserva, _pot, 120m, Date, "Flights", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, statement));
+
+        var charge = records.Expenses.Single();
+        using (new AssertionScope())
+        {
+            records.Transactions.Single().Amount.Should().Be(-120m);
+            records.Transactions.Single().Date.Should().Be(Date);
+            charge.Value.Should().Be(120m);
+            charge.Category.Should().BeSameAs(_health);
+            charge.CreditCard.Should().BeSameAs(_card);
+            charge.PaymentSourceAccount.Should().BeNull();
+            charge.ChargeDate.Should().Be(Date);
+            charge.InvoiceDate.Should().Be(statement);
+            charge.CountsAsTithe.Should().BeTrue();
+            charge.OperationId.Should().Be(OperationId);
+        }
+    }
+
+    [Fact]
+    public void Build_WithACardOnTheExpenseMonthsStatement_IsAccepted()
+    {
+        var records = PotWithdrawal.Build(
+            _reserva, _pot, 10m, Date, "Flights", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 10, 1)));
+
+        records.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
+    [Fact]
+    public void Build_WithACardOnAStatementBeforeTheExpenseMonth_Throws()
+    {
+        var act = () => PotWithdrawal.Build(
+            _reserva, _pot, 10m, Date, "Flights", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 9, 1)));
+
+        act.Should().Throw<ArgumentException>().WithMessage("The statement can't be before the expense date.");
+    }
+
+    [Fact]
+    public void Build_WithACardAndNoCategory_Throws()
+    {
+        var act = () => PotWithdrawal.Build(
+            _reserva, _pot, 10m, Date, "Flights", bank: null, category: null, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 10, 1)));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Category is required when a credit card is selected.");
+    }
+
+    [Fact]
+    public void Build_WithABankAndACard_Throws()
+    {
+        var act = () => PotWithdrawal.Build(
+            _reserva, _pot, 10m, Date, "Flights", _bank, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 10, 1)));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Choose a bank or a credit card, not both.");
     }
 }

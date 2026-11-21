@@ -16,14 +16,24 @@ public sealed class PotsService : IPotsService
     private const string EntityType = "PotOperation";
     private const string AccountEntityType = "Account";
 
+    private const string LockedChangeMessage = "Unmark the statement paid to change this.";
+    private const string LockedDeleteMessage = "Unmark the statement paid before deleting this withdrawal.";
+
     private readonly ICashFlowRepository _repository;
+    private readonly ICreditCardCalendarSyncService _calendarSync;
     private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<PotsService> _logger;
 
-    public PotsService(ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<PotsService> logger)
+    public PotsService(
+        ICashFlowRepository repository,
+        ICreditCardCalendarSyncService calendarSync,
+        TimeProvider timeProvider,
+        ITelemetryTracer tracer,
+        ILogger<PotsService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _calendarSync = calendarSync ?? throw new ArgumentNullException(nameof(calendarSync));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -106,9 +116,9 @@ public sealed class PotsService : IPotsService
             ArgumentNullException.ThrowIfNull(request);
 
             var existing = FindOperationOfKind(operationId, PotOperationKind.Withdrawal, potsAccountId);
-            var otherTransactions = _repository.GetPotTransactions().Where(transaction => transaction.OperationId != operationId);
-            var operation = BuildWithdrawal(potsAccountId, request, operationId, otherTransactions);
-            await SaveAsync(operation, existing).ConfigureAwait(false);
+            var operation = existing.IsOnPaidStatement(_repository.GetCardStatements())
+                ? await RelabelLockedAsync(existing, request).ConfigureAwait(false)
+                : await RebuildWithdrawalAsync(existing, request).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateWithdrawal");
@@ -148,12 +158,17 @@ public sealed class PotsService : IPotsService
         {
             var operation = FindOperation(operationId);
             EnsureNotAnIncomeDeposit(operation);
+            if (operation.IsOnPaidStatement(_repository.GetCardStatements()))
+            {
+                throw new ArgumentException(LockedDeleteMessage);
+            }
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 RemoveRecords(operation);
                 return true;
             }).ConfigureAwait(false);
+            NotifyStatementsChanged([operation]);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteOperation");
@@ -247,12 +262,55 @@ public sealed class PotsService : IPotsService
         var accounts = _repository.GetAccounts().ToList();
         var potsAccount = FindPotsAccount(accounts, potsAccountId);
         var pot = potsAccount.FindPot(request.PotId);
-        var (bank, category) = PotWithdrawalValidator.ResolveBankAndCategory(
-            request.BankId, request.CategoryId, request.Description, accounts, _repository.GetCategories());
-        var operation = PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId, _timeProvider.GetLocalToday());
+        var payment = PotWithdrawalValidator.ResolvePayment(
+            request, accounts, _repository.GetCreditCardAccounts(), _repository.GetCategories(), _repository.GetCardStatements());
+        var operation = PotWithdrawal.Build(
+            potsAccount, pot, request.Amount, request.Date, request.Description, payment.Bank, payment.Category, operationId, _timeProvider.GetLocalToday(), payment.Card);
         PotWithdrawalValidator.EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceTransactions);
 
         return operation;
+    }
+
+    private async Task<PotOperation> RebuildWithdrawalAsync(PotOperation existing, PotWithdrawalRequestDTO request)
+    {
+        var otherTransactions = _repository.GetPotTransactions().Where(transaction => transaction.OperationId != existing.OperationId);
+        var operation = BuildWithdrawal(existing.PotsAccount.Id, request, existing.OperationId, otherTransactions);
+        await SaveAsync(operation, existing).ConfigureAwait(false);
+        return operation;
+    }
+
+    private async Task<PotOperation> RelabelLockedAsync(PotOperation existing, PotWithdrawalRequestDTO request)
+    {
+        var changesLockedFields = existing.ChangesLockedFields(
+            request.PotId, request.Amount, request.Date, request.BankId, request.CreditCardId, PotWithdrawalValidator.RequestedStatementMonth(request));
+        if (changesLockedFields)
+        {
+            throw new ArgumentException(LockedChangeMessage);
+        }
+
+        EnsureDescription(request.Description);
+        var category = PotWithdrawalValidator.ResolveCategory(request.CategoryId, request.Description, _repository.GetAccounts(), _repository.GetCategories())
+            ?? throw new ArgumentException(PotWithdrawal.CardWithoutCategoryMessage);
+
+        await _repository.ApplyAndSaveAsync(() =>
+        {
+            existing.Relabel(request.Description, category);
+            return true;
+        }).ConfigureAwait(false);
+        return existing;
+    }
+
+    private void NotifyStatementsChanged(IEnumerable<PotOperation> operations)
+    {
+        var statements = operations
+            .SelectMany(operation => operation.Expenses)
+            .Where(expense => expense is { CreditCard: not null, InvoiceDate: not null })
+            .Select(charge => (CardId: charge.CreditCard!.Id, StatementMonth: charge.InvoiceDate!.Value))
+            .Distinct();
+        foreach (var (cardId, statementMonth) in statements)
+        {
+            _calendarSync.TriggerSyncIfInvoiceSynced(cardId, statementMonth);
+        }
     }
 
     private PotOperation BuildDeposit(Guid potsAccountId, PotDepositRequestDTO request, Guid operationId)
@@ -300,8 +358,9 @@ public sealed class PotsService : IPotsService
         PotOperation.Read(operationId, _repository.GetPotTransactions(), _repository.GetExpenses(), _repository.GetAccounts())
             ?? throw new KeyNotFoundException($"Operation '{operationId}' was not found.");
 
-    private Task SaveAsync(PotOperation operation, PotOperation? replaced = null) =>
-        _repository.ApplyAndSaveAsync(() =>
+    private async Task SaveAsync(PotOperation operation, PotOperation? replaced = null)
+    {
+        await _repository.ApplyAndSaveAsync(() =>
         {
             if (replaced is not null)
             {
@@ -310,7 +369,10 @@ public sealed class PotsService : IPotsService
 
             AddRecords(operation);
             return true;
-        });
+        }).ConfigureAwait(false);
+
+        NotifyStatementsChanged(replaced is null ? [operation] : [replaced, operation]);
+    }
 
     private void AddRecords(PotOperation operation)
     {
@@ -322,6 +384,7 @@ public sealed class PotsService : IPotsService
         foreach (var expense in operation.Expenses)
         {
             _repository.AddExpense(expense);
+            CardStatementCreation.EnsureFor(_repository, expense);
         }
     }
 
@@ -359,6 +422,10 @@ public sealed class PotsService : IPotsService
             .ToList(),
         BankId = operation.Bank?.Id,
         CategoryId = operation.Category?.Id,
-        IncomeId = operation.IncomeId
+        IncomeId = operation.IncomeId,
+        CreditCardId = operation.CreditCard?.Id,
+        StatementYear = operation.StatementMonth?.Year,
+        StatementMonth = operation.StatementMonth?.Month,
+        InvestmentWithdrawal = operation.InvestmentWithdrawal?.ToString()
     };
 }
