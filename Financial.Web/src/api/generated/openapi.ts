@@ -2808,6 +2808,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/card-statements/{id}/settle-pot-withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Settles a statement that has nothing to pay, writing its pot withdrawals' investment withdrawals without a card payment. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The statement's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/*+json": components["schemas"]["SettlePotWithdrawalsDTO"];
+                    "application/json": components["schemas"]["SettlePotWithdrawalsDTO"];
+                    "text/json": components["schemas"]["SettlePotWithdrawalsDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CardStatementDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/card-statements/{id}/unmark-paid": {
         parameters: {
             query?: never;
@@ -2818,6 +2890,63 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reverts a card statement back to unpaid. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The statement's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CardStatementDTO"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/card-statements/{id}/unsettle-pot-withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reverts a settled statement, removing the investment withdrawals its settlement wrote. */
         post: {
             parameters: {
                 query?: never;
@@ -7205,6 +7334,8 @@ export interface components {
             /** Format: date */
             paidOn?: null | string;
             potWithdrawals: components["schemas"]["StatementPotWithdrawalDTO"][];
+            /** Format: date */
+            settledOn?: null | string;
             status: string;
             /** Format: double */
             total: number;
@@ -7631,6 +7762,8 @@ export interface components {
             month: number;
             /** Format: double */
             outstandingTotal: number;
+            /** Format: date */
+            settledOn?: null | string;
             /** Format: int32 */
             year: number;
         };
@@ -8800,6 +8933,12 @@ export interface components {
         };
         SetReportingCurrencyEnabledRequestDTO: {
             enabled: boolean;
+        };
+        SettlePotWithdrawalsDTO: {
+            /** Format: date */
+            date: null | string;
+            /** Format: uuid */
+            paymentSourceBankId: null | string;
         };
         SettleRequestDTO: {
             /** Format: double */

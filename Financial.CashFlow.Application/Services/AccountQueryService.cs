@@ -265,6 +265,7 @@ public sealed class AccountQueryService : IAccountQueryService
             CreditCarried = row.CreditCarried,
             Status = row.Status.ToString(),
             IsPaid = row.Status == CardStatementLedgerStatus.Paid,
+            SettledOn = row.Statement?.SettledOn,
             DueDate = row.Statement?.DueDate,
             PaidOn = payment?.Date,
             PaidAmount = row.PaidAmount,

@@ -650,4 +650,162 @@ public class CardStatementServiceTests
             _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
         }
     }
+
+    private CardStatement SeedNothingDueStatementWithPotCharge(out PotOperation flights, string? potsCategory = "Reserva")
+    {
+        var reserva = AddPotsAccount(potsCategory is null ? null : Category.Create(potsCategory));
+        flights = AddCardPotWithdrawal(reserva, Visa, 120m, July);
+        AddCharge(_repository, new DateOnly(2026, 7, 12), -120m, Visa);
+        return SeedStatement(Visa, 2026, 7);
+    }
+
+    private SettlePotWithdrawalsDTO SettleFrom(DateOnly? date = null) =>
+        new() { PaymentSourceBankId = Bank("Barclays").Id, Date = date };
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_NothingDue_WritesEachMinusXAndSettlesWithoutAPaymentInOneSave()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out var flights);
+
+        var result = await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom(new DateOnly(2026, 8, 3)));
+
+        using (new AssertionScope())
+        {
+            var withdrawal = InvestmentWithdrawalsOf(flights).Should().ContainSingle().Subject;
+            withdrawal.Value.Should().Be(-120m);
+            withdrawal.PaymentSourceAccount!.Name.Should().Be("Barclays");
+            withdrawal.Date.Should().Be(new DateOnly(2026, 8, 3));
+            withdrawal.ReportingDate.Should().Be(July);
+            statement.SettledOn.Should().Be(new DateOnly(2026, 8, 3));
+            statement.IsPaid.Should().BeFalse();
+            result.SettledOn.Should().Be(new DateOnly(2026, 8, 3));
+            _repository.Transfers.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CardStatementService.SettlePotWithdrawals");
+        }
+    }
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_WithoutADate_SettlesToday()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out _);
+
+        await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        statement.SettledOn.Should().Be(TestClock.Today);
+    }
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_StatementWithAnAmountToPay_ThrowsConflictAndSavesNothing()
+    {
+        var reserva = AddPotsAccount(Category.Create("Reserva"));
+        AddCardPotWithdrawal(reserva, Visa, 120m, July);
+        var statement = SeedStatement(Visa, 2026, 7);
+
+        var act = async () => await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        await ShouldRefuseSettlement<StatementPaymentConflictException>(act, statement, "This statement now has an amount to pay; mark it paid instead.");
+    }
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_NoPotWithdrawals_ThrowsAndSavesNothing()
+    {
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Visa);
+        AddCharge(_repository, new DateOnly(2026, 7, 12), -30m, Visa);
+        var statement = SeedStatement(Visa, 2026, 7);
+
+        var act = async () => await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        await ShouldRefuseSettlement<ArgumentException>(act, statement, "This statement has no pot withdrawals to settle.");
+    }
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_AlreadySettled_ThrowsConflict()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out _);
+        await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        var act = async () => await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>().WithMessage("This statement is already paid or settled.");
+    }
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_FutureDate_ThrowsAndSavesNothing()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out _);
+
+        var act = async () => await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom(TestClock.Today.AddDays(1)));
+
+        await ShouldRefuseSettlement<ArgumentException>(act, statement, "Date must not be in the future.");
+    }
+
+    [Fact]
+    public async Task SettlePotWithdrawalsAsync_PotsAccountWithoutACategory_ThrowsAndSavesNothing()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out _, potsCategory: null);
+
+        var act = async () => await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        await ShouldRefuseSettlement<ArgumentException>(act, statement, "Set a category on Reserva first.");
+    }
+
+    [Fact]
+    public async Task UnsettlePotWithdrawalsAsync_RemovesEveryMinusXAndOpensTheStatementInOneSave()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out var flights);
+        await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        var result = await _sut.UnsettlePotWithdrawalsAsync(statement.Id);
+
+        using (new AssertionScope())
+        {
+            InvestmentWithdrawalsOf(flights).Should().BeEmpty();
+            statement.SettledOn.Should().BeNull();
+            result.SettledOn.Should().BeNull();
+            _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CardStatementService.UnsettlePotWithdrawals");
+        }
+    }
+
+    [Fact]
+    public async Task UnsettlePotWithdrawalsAsync_StatementNotSettled_ThrowsConflict()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out _);
+
+        var act = async () => await _sut.UnsettlePotWithdrawalsAsync(statement.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<StatementPaymentConflictException>().WithMessage("This statement is not settled.");
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.CardStatementService.UnsettlePotWithdrawals");
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_SettledStatement_ThrowsConflict()
+    {
+        var statement = SeedNothingDueStatementWithPotCharge(out _);
+        await _sut.SettlePotWithdrawalsAsync(statement.Id, SettleFrom());
+
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>().WithMessage("This statement is settled; unmark it as settled first.");
+    }
+
+    private async Task ShouldRefuseSettlement<TException>(Func<Task> act, CardStatement statement, string message)
+        where TException : Exception
+    {
+        var expensesBefore = _repository.Expenses.Count;
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<TException>().WithMessage(message);
+            statement.SettledOn.Should().BeNull();
+            _repository.Expenses.Should().HaveCount(expensesBefore);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<TException>("CashFlow.CardStatementService.SettlePotWithdrawals");
+        }
+    }
 }

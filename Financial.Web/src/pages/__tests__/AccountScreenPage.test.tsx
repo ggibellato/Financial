@@ -185,9 +185,9 @@ const TRANSACTIONS: AccountTransactionDto[] = [
 ]
 
 const CARD_STATEMENTS: AccountStatementDto[] = [
-  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
-  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
-  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, settledOn: null, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [] },
 ]
 
 const CATEGORIES: CategoryDto[] = [
@@ -3115,7 +3115,7 @@ describe('AccountScreenPage card screen', () => {
   it('[AC P60-F08-statement-payment-and-card-screen-11] pays a statement from the Statements tab and refreshes the screen', async () => {
     const user = userEvent.setup()
     markCardStatementPaidMock.mockResolvedValue({
-      id: 's-oct', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 10, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0,
+      id: 's-oct', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 10, isPaid: true, settledOn: null, outstandingTotal: 0, accumulatedOutstandingTotal: 0,
     })
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
 
@@ -3257,7 +3257,7 @@ describe('AccountScreenPage bank side card payments', () => {
       creditCardName: 'BA Amex',
       year: 2026,
       month: 10,
-      isPaid: true,
+      isPaid: true, settledOn: null,
       outstandingTotal: 0,
       accumulatedOutstandingTotal: 12,
     })

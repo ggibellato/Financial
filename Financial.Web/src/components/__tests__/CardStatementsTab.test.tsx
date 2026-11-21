@@ -27,16 +27,16 @@ vi.mock('../../api/financialApiClient', () => ({
 const INVESTIMENTO_WITHDRAWAL = { operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }
 
 const NOVEMBER: AccountStatementDto = {
-  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 const OCTOBER: StoredStatement = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 const SEPTEMBER: StoredStatement = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays', potWithdrawals: [],
+  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, settledOn: null, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays', potWithdrawals: [],
 }
 const CARRYING: AccountStatementDto = {
-  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 
 function dueDateHandle(overrides: Partial<StatementDueDateFormHandle> = {}): StatementDueDateFormHandle {

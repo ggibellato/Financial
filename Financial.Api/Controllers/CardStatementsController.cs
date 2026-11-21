@@ -43,4 +43,30 @@ public sealed class CardStatementsController : ControllerBase
         var result = await _cardStatementService.UnmarkStatementPaidAsync(id);
         return Ok(result);
     }
+
+    /// <summary>Settles a statement that has nothing to pay, writing its pot withdrawals' investment withdrawals without a card payment.</summary>
+    /// <param name="id">The statement's identifier.</param>
+    /// <param name="request">The bank and date of the investment withdrawals.</param>
+    [HttpPost("{id:guid}/settle-pot-withdrawals")]
+    [ProducesResponseType(typeof(CardStatementDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CardStatementDTO>> SettlePotWithdrawals(Guid id, [FromBody] SettlePotWithdrawalsDTO request)
+    {
+        var result = await _cardStatementService.SettlePotWithdrawalsAsync(id, request);
+        return Ok(result);
+    }
+
+    /// <summary>Reverts a settled statement, removing the investment withdrawals its settlement wrote.</summary>
+    /// <param name="id">The statement's identifier.</param>
+    [HttpPost("{id:guid}/unsettle-pot-withdrawals")]
+    [ProducesResponseType(typeof(CardStatementDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CardStatementDTO>> UnsettlePotWithdrawals(Guid id)
+    {
+        var result = await _cardStatementService.UnsettlePotWithdrawalsAsync(id);
+        return Ok(result);
+    }
 }

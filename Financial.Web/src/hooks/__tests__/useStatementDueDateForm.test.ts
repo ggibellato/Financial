@@ -19,7 +19,7 @@ const CARD_ID = 'card-amex'
 type SaveRequest = ReturnType<typeof deferred<void>>
 
 const OCTOBER: AccountStatementDto = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-10-25', paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, settledOn: null, dueDate: '2026-10-25', paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
 const NOVEMBER_UNSTORED: AccountStatementDto = { ...OCTOBER, id: null, month: 11, status: 'NothingDue', dueDate: null }
 

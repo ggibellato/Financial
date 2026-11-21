@@ -12,7 +12,10 @@ public class CardStatement
     public bool IsPaid { get; private set; }
     public DateOnly? DueDate { get; private set; }
     public Guid? PaymentTransferId { get; private set; }
+    public DateOnly? SettledOn { get; private set; }
     public bool IsPaidByTransfer => PaymentTransferId is not null;
+    public bool IsSettled => SettledOn is not null;
+    public bool IsClosed => IsPaid || IsSettled;
 
     private CardStatement() { }
 
@@ -36,6 +39,11 @@ public class CardStatement
 
     public void MarkPaidBy(Guid paymentTransferId)
     {
+        if (IsClosed)
+        {
+            throw new InvalidOperationException("Only an open statement can be marked paid.");
+        }
+
         IsPaid = true;
         PaymentTransferId = paymentTransferId;
     }
@@ -44,6 +52,28 @@ public class CardStatement
     {
         IsPaid = false;
         PaymentTransferId = null;
+    }
+
+    public void SettleWithoutPayment(DateOnly settledOn, DateOnly today)
+    {
+        if (IsClosed)
+        {
+            throw new InvalidOperationException("Only an open statement can be settled.");
+        }
+
+        TransactionDateRule.EnsureNotInFuture(settledOn, today);
+
+        SettledOn = settledOn;
+    }
+
+    public void UnsettleWithoutPayment()
+    {
+        if (!IsSettled)
+        {
+            throw new InvalidOperationException("Only a settled statement can be unsettled.");
+        }
+
+        SettledOn = null;
     }
 
     public void SetDueDate(DateOnly? dueDate)
