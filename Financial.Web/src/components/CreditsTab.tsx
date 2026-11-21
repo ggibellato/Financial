@@ -40,6 +40,7 @@ import RowActionsCell from './grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './CreditsTab.css'
+import { CHART_TEXT_STYLE } from '../styles/chartText'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
   { value: 'Bar', label: 'Bar' },
@@ -290,8 +291,8 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
           {selectedChartType === 'Bar' ? (
             <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
               <Legend />
               {creditTypes.map((type) => (
@@ -306,7 +307,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
                     dataKey={typeValue(type)}
                     position="top"
                     formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
-                    style={{ fontSize: 10 }}
+                    style={CHART_TEXT_STYLE}
                   />
                 </Bar>
               ))}
@@ -314,8 +315,8 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
           ) : (
             <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
               <Legend />
               {isStacked ? (

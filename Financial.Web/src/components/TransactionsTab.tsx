@@ -41,6 +41,7 @@ import RowActionsCell from './grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
+import { CHART_TEXT_STYLE } from '../styles/chartText'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
 // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
@@ -349,23 +350,23 @@ function TransactionsChart({
           {selectedChartMode === 'Bar' ? (
             <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
               <Bar dataKey="netInvested" fill={CHART_COLOR}>
                 <LabelList
                   dataKey="netInvested"
                   position="top"
                   formatter={(v: unknown) => (typeof v === 'number' && v !== 0 ? formatN2(v) : '')}
-                  style={{ fontSize: 10 }}
+                  style={CHART_TEXT_STYLE}
                 />
               </Bar>
             </BarChart>
           ) : (
             <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
               <Line
                 type="monotone"
