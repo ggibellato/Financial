@@ -62,6 +62,8 @@ const OPERATION: PotOperationDto = {
   statementYear: null,
   statementMonth: null,
   investmentWithdrawal: null,
+  investmentWithdrawalBankId: null,
+  investmentWithdrawalDate: null,
   potId: 'pot-b',
   bankId: 'b1',
   categoryId: 'cat-saude',

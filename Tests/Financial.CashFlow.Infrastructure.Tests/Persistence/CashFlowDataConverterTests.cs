@@ -132,6 +132,24 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
+    public void LoadAndSave_ExpenseWithAReportingMonth_KeepsItByteIdenticalAndOthersWriteNone()
+    {
+        var withReportingMonth = V5FileWithOperation.Replace(
+            "\"OperationId\":\"" + OperationId + "\",", "\"OperationId\":\"" + OperationId + "\",\"ReportingMonth\":\"2026-10-01\",");
+
+        var data = _serializer.Deserialize(withReportingMonth);
+        var saved = _serializer.Serialize(data);
+
+        using (new AssertionScope())
+        {
+            withReportingMonth.Should().NotBe(V5FileWithOperation);
+            data.Expenses.Single().ReportingMonth.Should().Be(new DateOnly(2026, 10, 1));
+            saved.Should().Be(withReportingMonth);
+            _serializer.Serialize(_serializer.Deserialize(V5FileWithOperation)).Should().NotContain("\"ReportingMonth\"");
+        }
+    }
+
+    [Fact]
     public void Load_StatementPaidByTransfer_LinksTheStatementToItsPayment()
     {
         var data = _serializer.Deserialize(V5FileWithPayment);

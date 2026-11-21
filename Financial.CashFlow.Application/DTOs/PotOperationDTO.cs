@@ -18,4 +18,6 @@ public sealed class PotOperationDTO
     public int? StatementYear { get; init; }
     public int? StatementMonth { get; init; }
     public string? InvestmentWithdrawal { get; init; }
+    public Guid? InvestmentWithdrawalBankId { get; init; }
+    public DateOnly? InvestmentWithdrawalDate { get; init; }
 }

@@ -6,6 +6,7 @@ using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -55,6 +56,32 @@ public class CardStatementServiceTests
     }
 
     private Account Bank(string name) => _repository.Accounts.Single(account => account.Name == name);
+
+    private static readonly DateOnly July = new(2026, 7, 1);
+
+    private Account Visa => Card(_repository, "BarclaysPlatinumVisa8003");
+
+    private Account AddPotsAccount(Category? category)
+    {
+        var potsAccount = TestAccounts.Pots("Reserva", category: category);
+        potsAccount.AddPot(Pot.Create("Investimento", 100m));
+        _repository.Accounts.Add(potsAccount);
+        return potsAccount;
+    }
+
+    private PotOperation AddCardPotWithdrawal(Account potsAccount, Account card, decimal amount, DateOnly statementMonth)
+    {
+        var pot = potsAccount.Pots![0];
+        var operation = PotWithdrawal.Build(
+            potsAccount, pot, amount, new DateOnly(2026, 7, 10), "Flights", bank: null, Category.Create("Viagem"), Guid.NewGuid(),
+            new DateOnly(2026, 10, 5), new PotWithdrawalCard(card, statementMonth));
+        _repository.PotTransactions.AddRange(operation.Transactions);
+        _repository.Expenses.AddRange(operation.Expenses);
+        return operation;
+    }
+
+    private List<Expense> InvestmentWithdrawalsOf(PotOperation operation) =>
+        _repository.Expenses.Where(expense => expense.OperationId == operation.OperationId && expense.PaymentSourceAccount != null).ToList();
 
     private static Expense AddCharge(
         StubCashFlowRepository repository, DateOnly date, decimal value, Account card)
@@ -532,6 +559,95 @@ public class CardStatementServiceTests
             statement.IsPaid.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_WithPotCharges_WritesOneMinusXEachInTheSameSave()
+    {
+                var reserva = AddPotsAccount(Category.Create("Reserva"));
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Visa);
+        var flights = AddCardPotWithdrawal(reserva, Visa, 120m, July);
+        var hotel = AddCardPotWithdrawal(reserva, Visa, 80m, July);
+        var nextMonth = AddCardPotWithdrawal(reserva, Visa, 15m, new DateOnly(2026, 8, 1));
+        var statement = SeedStatement(Visa, 2026, 7);
+
+        await _sut.MarkStatementPaidAsync(statement.Id, new MarkCardStatementPaidDTO { PaymentSourceBankId = Bank("Barclays").Id, Date = new DateOnly(2026, 8, 3) });
+
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle(transfer => transfer.Amount == 230m);
+            foreach (var (operation, amount) in new[] { (flights, 120m), (hotel, 80m) })
+            {
+                var withdrawal = InvestmentWithdrawalsOf(operation).Should().ContainSingle().Subject;
+                withdrawal.Value.Should().Be(-amount);
+                withdrawal.PaymentSourceAccount!.Name.Should().Be("Barclays");
+                withdrawal.Date.Should().Be(new DateOnly(2026, 8, 3));
+                withdrawal.Category.Name.Should().Be("Reserva");
+                withdrawal.ReportingDate.Should().Be(July);
+            }
+
+            InvestmentWithdrawalsOf(nextMonth).Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_CreditLowersTheAmountToPay_StillWritesTheFullX()
+    {
+                var reserva = AddPotsAccount(Category.Create("Reserva"));
+        var flights = AddCardPotWithdrawal(reserva, Visa, 120m, July);
+        AddCharge(_repository, new DateOnly(2026, 7, 12), -50m, Visa);
+        var statement = SeedStatement(Visa, 2026, 7);
+
+        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
+
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle(transfer => transfer.Amount == 70m);
+            InvestmentWithdrawalsOf(flights).Should().ContainSingle(withdrawal => withdrawal.Value == -120m);
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_PotsAccountWithoutACategory_ThrowsAndSavesNothing()
+    {
+                var reserva = AddPotsAccount(category: null);
+        AddCardPotWithdrawal(reserva, Visa, 120m, July);
+        var statement = SeedStatement(Visa, 2026, 7);
+        var expensesBefore = _repository.Expenses.Count;
+
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Set a category on Reserva first.");
+            statement.IsPaid.Should().BeFalse();
+            _repository.Transfers.Should().BeEmpty();
+            _repository.Expenses.Should().HaveCount(expensesBefore);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
+        }
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaidAsync_RemovesTheTransferAndEveryMinusXInOneSave()
+    {
+                var reserva = AddPotsAccount(Category.Create("Reserva"));
+        var flights = AddCardPotWithdrawal(reserva, Visa, 120m, July);
+        var statement = SeedStatement(Visa, 2026, 7);
+        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        await _sut.UnmarkStatementPaidAsync(statement.Id);
+
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeFalse();
+            _repository.Transfers.Should().BeEmpty();
+            InvestmentWithdrawalsOf(flights).Should().BeEmpty();
+            _repository.Expenses.Should().ContainSingle(expense => expense.OperationId == flights.OperationId && expense.Value == 120m);
+            _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
         }
     }
 }

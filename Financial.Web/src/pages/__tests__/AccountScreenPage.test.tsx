@@ -277,6 +277,8 @@ const SAVED_OPERATION: PotOperationDto = {
   statementYear: null,
   statementMonth: null,
   investmentWithdrawal: null,
+  investmentWithdrawalBankId: null,
+  investmentWithdrawalDate: null,
   fundingLines: [],
 }
 
@@ -416,6 +418,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     statementYear: null,
     statementMonth: null,
     investmentWithdrawal: null,
+    investmentWithdrawalBankId: null,
+    investmentWithdrawalDate: null,
     fundingLines: [{ bankId: BARCLAYS_ID, amount: 90 }],
   }
   const WITHDRAWAL: PotOperationDto = {
@@ -431,6 +435,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     statementYear: null,
     statementMonth: null,
     investmentWithdrawal: null,
+    investmentWithdrawalBankId: null,
+    investmentWithdrawalDate: null,
     potId: 'pot-trips',
     bankId: BARCLAYS_ID,
     categoryId: 'category-home',
