@@ -226,6 +226,15 @@ public class PotsServiceTests
     }
 
     [Fact]
+    public async Task WithdrawAsync_InvestmentCategory_Throws()
+    {
+        var investment = Category.Create("Investimentos", isInvestment: true);
+        _repository.Categories.Add(investment);
+
+        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: investment.Id), "*cannot be used for a withdrawal expense*");
+    }
+
+    [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-04")]
     public async Task WithdrawAsync_AfterRenamingThePotsAccountsCategory_BooksTheBankExpenseInIt()
     {
