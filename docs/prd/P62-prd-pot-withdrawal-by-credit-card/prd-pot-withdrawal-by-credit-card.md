@@ -270,13 +270,13 @@ graph TD
 - [x] **P62-F03-withdraw-forms-on-pots-account-and-card-05** Loading, validation, saving, success, server-error and unsaved-changes states, keyboard use, visible focus and narrow layout pass the review checklist
 
 ### F04. Settle a Nothing-Due Statement
-- [ ] **P62-F04-settle-a-nothing-due-statement-01** "Settle pot withdrawals" appears only on a Nothing due statement holding a pending card-paid withdrawal charge
-- [ ] **P62-F04-settle-a-nothing-due-statement-02** Settling with bank B and date D writes each charge's −X on B dated D and marks the statement settled, with no card payment transfer and no change to the card's credit or amount to pay
-- [ ] **P62-F04-settle-a-nothing-due-statement-03** "Unmark settled" removes every −X and returns the statement to Nothing due
-- [ ] **P62-F04-settle-a-nothing-due-statement-04** A settled statement rejects new charges; a statement that now has an amount to pay returns 409; a future date returns 400
+- [x] **P62-F04-settle-a-nothing-due-statement-01** "Settle pot withdrawals" appears only on a Nothing due statement holding a pending card-paid withdrawal charge
+- [x] **P62-F04-settle-a-nothing-due-statement-02** Settling with bank B and date D writes each charge's −X on B dated D and marks the statement settled, with no card payment transfer and no change to the card's credit or amount to pay
+- [x] **P62-F04-settle-a-nothing-due-statement-03** "Unmark settled" removes every −X and returns the statement to Nothing due
+- [x] **P62-F04-settle-a-nothing-due-statement-04** A settled statement rejects new charges; a statement that now has an amount to pay returns 409; a future date returns 400
 
 ### Cross-Feature Integration
 - [x] **P62-CF-cross-feature-01** The operation id, amount, category, card and statement month written by F01 are the ones F02 uses for the −X when the statement is paid
 - [x] **P62-CF-cross-feature-02** A withdrawal saved from F03's Pots account form and one saved from the card screen produce identical F01 records and are both picked up by F02
 - [x] **P62-CF-cross-feature-03** F03's operation detail shows "Done" with F02's bank and payment date after mark paid, and "Pending" again after unmark
-- [ ] **P62-CF-cross-feature-04** F04 writes −X records indistinguishable from F02's (category, operation id, statement-month reporting) and removes them through the same rule
+- [x] **P62-CF-cross-feature-04** F04 writes −X records indistinguishable from F02's (category, operation id, statement-month reporting) and removes them through the same rule
