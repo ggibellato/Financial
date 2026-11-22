@@ -1518,20 +1518,22 @@ describe('AccountScreenPage on a Settlement account', () => {
     })
 
     it('[AC P63-CF-cross-feature-01] saves a future-dated entry and lists it as Planned', async () => {
-      getAccountTransactionsMock.mockImplementation(() =>
-        Promise.resolve(createSettlementEntryMock.mock.calls.length > 0 ? [ENTRY_ROW, PLANNED_ROW] : [ENTRY_ROW]),
+      const inOctober = accountTransactionRow({ ...PLANNED_ROW, date: '2026-10-28', settlement: { ...PLANNED_ROW.settlement!, date: '2026-10-28' } })
+      createSettlementEntryMock.mockResolvedValue(inOctober.settlement!)
+      getAccountTransactionsMock.mockImplementation((_, year, month) =>
+        Promise.resolve(year === 2026 && month === 10 && createSettlementEntryMock.mock.calls.length > 0 ? [ENTRY_ROW, inOctober] : [ENTRY_ROW]),
       )
       const user = await openMaeScreen()
       await user.click(screen.getByRole('button', { name: 'New entry' }))
       const form = screen.getByRole('form', { name: 'New entry' })
-      fireEvent.change(within(form).getByLabelText(/^Date/), { target: { value: '2026-12-01' } })
+      fireEvent.change(within(form).getByLabelText(/^Date/), { target: { value: '2026-10-28' } })
       await user.click(within(form).getByRole('radio', { name: 'You' }))
       await user.type(within(form).getByLabelText(/^Description/), 'Pocket money')
       await user.type(within(form).getByLabelText(/^Amount/), '25')
       await user.click(within(form).getByRole('button', { name: 'Add entry' }))
 
       expect(await screen.findByText('Entry added')).toBeInTheDocument()
-      expect(createSettlementEntryMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ date: '2026-12-01', description: 'Pocket money' }))
+      expect(createSettlementEntryMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ date: '2026-10-28', description: 'Pocket money' }))
       const table = screen.getByRole('table', { name: 'Transactions' })
       const plannedRow = await waitFor(() => within(table).getByText('Pocket money').closest('tr') as HTMLElement)
       expect(within(plannedRow).getByText('Planned')).toBeInTheDocument()

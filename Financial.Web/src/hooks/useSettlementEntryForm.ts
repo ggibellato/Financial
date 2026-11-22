@@ -3,7 +3,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, SettlementEntryDto } from '../api/types'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
-import { formatCurrency, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
+import { formatCurrency, formatLongMonthYear, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import { paymentDateError } from '../utils/validators'
@@ -154,8 +154,13 @@ function impliedRateText(values: SettlementEntryValues, convertedCurrency: strin
   return `Implied rate: 1 ${unit.currency} = ${formatCurrency(quoted.value / unit.value, quoted.currency)}`
 }
 
-function settlementSavedMessage(warning: string | null): string {
-  return warning ? `Settlement saved. ${warning}` : 'Settlement saved'
+function savedMessage(saved: string, warning: string | null): string {
+  return warning ? `${saved}. ${warning}` : saved
+}
+
+function otherMonthSuffix(date: string, viewedMonth: { year: number; month: number }, preposition: string): string {
+  const [year, month] = date.split('-').map(Number)
+  return year === viewedMonth.year && month === viewedMonth.month ? '' : ` ${preposition} ${formatLongMonthYear(year, month)}`
 }
 
 export function useSettlementEntryForm(
@@ -225,7 +230,8 @@ export function useSettlementEntryForm(
       .then((saved) => {
         setStoredDefault(DATE_KEY, values.date)
         setState((previous) => (previous.isSaving ? afterSave(previous, saved) : previous))
-        onSaved(isSettling ? settlementSavedMessage(saved.warning) : isEditing ? 'Entry updated' : 'Entry added')
+        const [action, preposition] = isSettling ? ['Settlement saved', 'in'] : isEditing ? ['Entry updated', 'in'] : ['Entry added', 'to']
+        onSaved(savedMessage(action + otherMonthSuffix(saved.date, viewedMonth, preposition), isSettling ? saved.warning : null))
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, isSettling ? 'Failed to save the settlement.' : 'Failed to save the entry.')

@@ -70,11 +70,16 @@ A planned entry is an ordinary Settlement entry with a later date. It counts in 
 ### F02. Future Dates in the Settlement Entry Form
 - As the user, I want the date picker of a single-currency Settlement account to accept dates after today in New entry, Edit entry and Settle so that I can pick a planned date
 - As the user, I want the date picker of a multi-currency Settlement account to stay capped at today so that the form tells me the rule before I save
+- As the user, I want the saved message to name the month an entry went to when it is not the month I am viewing so that I know where to find it
 
 ### F03. Planned Badge in the Settlement Entries List
 - As the user, I want each future-dated row in the Settlement entries list to show "Planned" so that I can tell plans from things that already happened
 - As the user, I want the badge to disappear on the entry's date without any action from me so that a plan becomes a completed entry by itself
 - As the user, I want to edit and delete planned entries exactly like other entries so that I can change the plan
+- As the user, I want planned Settlement entries to show "Planned" on the Accounts page's All transactions tab too so that the same entry reads the same everywhere
+
+### F04. Planned Label on the Settlement Balance
+- As the user, I want the Settlement header to say when its balance includes planned entries so that I don't read a projected figure as what is owed today
 
 ## 6. Functionalities
 
@@ -115,7 +120,7 @@ A planned entry is an ordinary Settlement entry with a later date. It counts in 
 - The form's other fields, defaults (date defaults to today), validation and saving behaviour are unchanged.
 
 **Experience:**
-- Single-currency account: the user picks any date in the picker; saving a future date closes the form and the new row appears in the list with the "Planned" badge (F03).
+- Single-currency account: the user picks any date in the picker. A saved entry dated in the viewed month appears in the list with the "Planned" badge (F03). An entry saved, edited or settled into another month does not appear in the viewed month's list, so the saved message names that month: "Entry added to December 2026", "Entry updated in January 2027", "Settlement saved in December 2026". In the viewed month the messages stay "Entry added", "Entry updated" and "Settlement saved".
 - Multi-currency account: the picker stops at today; a typed future date shows the inline error on the date field, focus moves to it and Save sends nothing.
 - A server 400 is shown as the form's save error, as today, and the entered values are kept.
 
@@ -126,15 +131,28 @@ A planned entry is an ordinary Settlement entry with a later date. It counts in 
 
 **Capabilities:**
 - A row is planned when its date is after the local today (`todayIsoDate()`), worked out when the list renders.
-- Applies only to the entries list of Settlement accounts; other accounts' grids are unchanged.
+- Applies to Settlement entry rows: in a Settlement account's entries list and on the Accounts page's All transactions tab. Other rows and other accounts' grids are unchanged.
 - The badge is a Fluent `Badge` with the visible text "Planned", so the meaning is not carried by colour alone; screen readers read "Planned" with the row.
 - Planned rows sort with every other row by date, as today; no separate section and no separate total.
 - Edit and delete on a planned row are the same row actions, dialogs and confirmations as on any other row.
 
 **Experience:**
-- The badge sits next to the row's date.
+- The badge sits at the end of the row's Description cell, after the description, which truncates to make room; rows keep one height in both grids, whose columns share the width equally.
 - After midnight on the entry's date, the next render of the list shows the row without the badge; no save or action is needed.
 - Deleting a planned entry uses today's delete confirmation; the balance updates as it does for any entry.
+
+### F04. Planned Label on the Settlement Balance
+
+**Consumes:**
+- F01: Settlement entries with their dates
+
+**Capabilities:**
+- The account detail response says whether the account has any Settlement entry dated after the host's local today (`hasPlannedEntries`); this is an API shape change, so the OpenAPI snapshot and the generated web types are regenerated.
+- The header label above the Settlement balance reads "Balance (includes planned)" while that is true, and "Current balance" otherwise. The figure itself is unchanged (F01).
+- Other account types keep their header unchanged.
+
+**Experience:**
+- Adding the first planned entry, or deleting or moving the last one into the past, updates the label with the next account reload, as the balance already does.
 
 ## 7. Out of Scope
 
@@ -159,12 +177,13 @@ A planned entry is an ordinary Settlement entry with a later date. It counts in 
 | F01 | Future Dates in Single-Currency Settlement Accounts | 1 | None |
 | F02 | Future Dates in the Settlement Entry Form | 1 | F01 |
 | F03 | Planned Badge in the Settlement Entries List | 2 | F01 |
+| F04 | Planned Label on the Settlement Balance | 2 | F01 |
 
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
 
 - **Wave 1**: F01
-- **Wave 2**: F02, F03
+- **Wave 2**: F02, F03, F04
 
 ### Priority levels
 - **1** = Essential — product does not work without it
@@ -175,6 +194,7 @@ Features within the same wave can be built in parallel. A wave starts only after
 graph TD
   F01[Future dates] --> F02[Entry form]
   F01 --> F03[Planned badge]
+  F01 --> F04[Balance label]
 ```
 
 ## 9. Acceptance Criteria
@@ -195,6 +215,7 @@ graph TD
 - [ ] **P63-F02-settlement-entry-form-dates-01** On a single-currency Settlement account the date input in New entry, Edit entry and Settle has no `max` and a future date saves
 - [ ] **P63-F02-settlement-entry-form-dates-02** On a multi-currency Settlement account the date input has `max` set to today and a typed future date shows "Date must not be in the future." on the field without sending a request
 - [ ] **P63-F02-settlement-entry-form-dates-03** A server 400 on save is shown as the form's error and the entered values are kept
+- [ ] **P63-F02-settlement-entry-form-dates-04** Saving, editing or settling into a month other than the viewed one names that month in the saved message; within the viewed month the message is unchanged
 
 ### F03. Planned Badge in the Settlement Entries List
 - [ ] **P63-F03-settlement-planned-badge-01** A Settlement entry dated after today shows a "Planned" badge with visible text; an entry dated today or earlier shows none
@@ -202,6 +223,12 @@ graph TD
 - [ ] **P63-F03-settlement-planned-badge-03** A planned entry can be edited and deleted with the same row actions as any other entry
 - [ ] **P63-F03-settlement-planned-badge-04** Grids of non-Settlement accounts show no "Planned" badge, including for future-dated expenses
 - [ ] **P63-F03-settlement-planned-badge-05** The badge passes the `docs/ui/review-checklist.md` items for the entries list (text not colour alone, accessible name, zoom)
+- [ ] **P63-F03-settlement-planned-badge-06** On the Accounts page's All transactions tab a Settlement entry dated after today shows the same "Planned" badge; other rows show none
+
+### F04. Planned Label on the Settlement Balance
+- [ ] **P63-F04-settlement-balance-label-01** The account detail of a Settlement account with an entry dated after today returns `hasPlannedEntries` true; with none it returns false
+- [ ] **P63-F04-settlement-balance-label-02** The Settlement header reads "Balance (includes planned)" when `hasPlannedEntries` is true and "Current balance" when false
+- [ ] **P63-F04-settlement-balance-label-03** The OpenAPI snapshot and the generated web types include the new field, and their freshness tests pass
 
 ### Cross-Feature Integration
 - [ ] **P63-CF-cross-feature-01** A planned entry saved through the form (F02) is accepted by the API (F01) and appears in the list with the "Planned" badge (F03)

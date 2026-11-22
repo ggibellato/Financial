@@ -1,6 +1,5 @@
 import { useRef, type ReactNode } from 'react'
 import {
-  Badge,
   Button,
   Skeleton,
   SkeletonItem,
@@ -15,7 +14,7 @@ import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2, todayIsoDate } from '../utils/formatters'
+import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import ClearFiltersToolbar from './grid/ClearFiltersToolbar'
 import { focusFilterTrigger } from './grid/columnFilterText'
 import ColumnHeaderFilter, { type ColumnFilterKind } from './grid/ColumnHeaderFilter'
@@ -24,6 +23,7 @@ import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
+import SettlementEntryDescription from './SettlementEntryDescription'
 import { paidByLabel } from '../utils/paidBy'
 import {
   canMoveToStatement,
@@ -116,26 +116,16 @@ const CONVERTED_COLUMN: TransactionColumn = {
       : <MissingValue />,
 }
 
-const SETTLEMENT_DATE_COLUMN: TransactionColumn = {
-  ...DATE_COLUMN,
-  render: (row) =>
-    row.date > todayIsoDate() ? (
-      <span className="account-screen__planned-date">
-        {formatShortDateUtc(row.date)}
-        <Badge appearance="outline" color="informative" size="small">
-          Planned
-        </Badge>
-      </span>
-    ) : (
-      formatShortDateUtc(row.date)
-    ),
+const SETTLEMENT_DESCRIPTION_COLUMN: TransactionColumn = {
+  ...DESCRIPTION_COLUMN,
+  render: (row) => <SettlementEntryDescription text={shownDescription(row)} date={row.date} />,
 }
 
 function settlementColumns(otherParticipant: string, showsConverted: boolean): TransactionColumn[] {
   const paidByOf = (row: AccountTransactionDto) => paidByLabel(row.settlement?.paidBy, otherParticipant)
   return [
-    SETTLEMENT_DATE_COLUMN,
-    DESCRIPTION_COLUMN,
+    DATE_COLUMN,
+    SETTLEMENT_DESCRIPTION_COLUMN,
     { key: 'paidBy', header: 'Paid by', accessor: paidByOf, render: (row) => <TruncatedText text={paidByOf(row)} /> },
     {
       ...AMOUNT_COLUMN,
