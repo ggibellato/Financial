@@ -1284,7 +1284,7 @@ describe('AccountScreenPage on a Pots account', () => {
     expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
 
-    pendingAccount.resolve(accountDetail({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), balance: 1500.5 }))
+    pendingAccount.resolve(accountDetail({ id: RESERVA_ID, name: 'Reserva', templateName: 'Pots', balance: 1500.5 }))
 
     expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
   })

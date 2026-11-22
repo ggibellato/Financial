@@ -1709,7 +1709,7 @@ describe('financialApiClient', () => {
   })
 
   it('gets one account for a month', async () => {
-    const responseBody = accountDetail({ id: 'a1', name: 'Barclays', balance: 1234.56, allowedActions: ['AddExpense'] })
+    const responseBody = accountDetail({ id: 'a1', name: 'Barclays' })
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

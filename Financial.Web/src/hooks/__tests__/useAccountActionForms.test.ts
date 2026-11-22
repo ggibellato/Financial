@@ -212,8 +212,7 @@ describe('useAccountActionForms', () => {
   })
 
   describe('on a Settlement account', () => {
-    const MAE: AccountDetailDto = {
-      ...BARCLAYS,
+    const MAE = accountDetail({
       id: 'mae',
       name: 'Mãe',
       currency: 'BRL',
@@ -221,7 +220,7 @@ describe('useAccountActionForms', () => {
       allowedActions: ['AddEntry', 'Settle'],
       currentBalances: [{ currency: 'BRL', balance: 10 }, { currency: 'GBP', balance: 2 }],
       otherParticipant: 'Mãe',
-    }
+    })
     const ENTRY_ROW = accountTransactionRow({
       id: 's1',
       kind: 'SettlementEntry',

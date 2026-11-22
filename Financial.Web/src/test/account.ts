@@ -2,6 +2,8 @@ import type { AccountDetailDto, AccountDto } from '../api/types'
 
 type RequiredAccountFields = Pick<AccountDto, 'id' | 'name'>
 
+type RequiredAccountDetailFields = Pick<AccountDetailDto, 'id' | 'name'>
+
 const BANK_CAPABILITIES = [
   'HasOpeningBalance',
   'ReceivesIncome',
@@ -68,7 +70,7 @@ export function settlementAccount(fields: RequiredAccountFields & Partial<Accoun
   })
 }
 
-export function accountDetail(fields: Pick<AccountDetailDto, 'id' | 'name'> & Partial<AccountDetailDto>): AccountDetailDto {
+export function accountDetail(fields: RequiredAccountDetailFields & Partial<AccountDetailDto>): AccountDetailDto {
   return {
     templateName: 'Bank',
     currency: 'GBP',
