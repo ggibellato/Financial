@@ -180,16 +180,16 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Future Dates in Single-Currency Settlement Accounts
-- [ ] **P63-F01-settlement-future-dates-01** Creating an entry dated tomorrow on a single-currency Settlement account returns 201 and the entry is saved with that date
-- [ ] **P63-F01-settlement-future-dates-02** Creating an entry dated tomorrow on a multi-currency Settlement account returns 400 "Date must not be in the future." and no exchange rate is requested
-- [ ] **P63-F01-settlement-future-dates-03** Updating an entry to a future date on a single-currency account returns 200; on a multi-currency account it returns 400 and the entry is unchanged
-- [ ] **P63-F01-settlement-future-dates-04** Settling with a future date on a single-currency account returns 201; on a multi-currency account it returns 400 "Date must not be in the future."
-- [ ] **P63-F01-settlement-future-dates-05** The account's current balance includes a planned entry immediately after it is saved
-- [ ] **P63-F01-settlement-future-dates-06** The Settle amount and the "nothing to settle" check use the balance that includes planned entries
-- [ ] **P63-F01-settlement-future-dates-07** A balance as of today (for example a month view of the current month) does not include an entry dated next month
-- [ ] **P63-F01-settlement-future-dates-08** Transfers, pot deposits and withdrawals, card statements and card refunds still refuse future dates with today's message
-- [ ] **P63-F01-settlement-future-dates-09** The OpenAPI snapshot is unchanged and the data file version is unchanged
-- [ ] **P63-F01-settlement-future-dates-10** The "Settlement accounts" entry in `context.md` states that single-currency Settlement accounts accept future dates and that planned entries count in the current balance
+- [x] **P63-F01-settlement-future-dates-01** Creating an entry dated tomorrow on a single-currency Settlement account returns 201 and the entry is saved with that date
+- [x] **P63-F01-settlement-future-dates-02** Creating an entry dated tomorrow on a multi-currency Settlement account returns 400 "Date must not be in the future." and no exchange rate is requested
+- [x] **P63-F01-settlement-future-dates-03** Updating an entry to a future date on a single-currency account returns 200; on a multi-currency account it returns 400 and the entry is unchanged
+- [x] **P63-F01-settlement-future-dates-04** Settling with a future date on a single-currency account returns 201; on a multi-currency account it returns 400 "Date must not be in the future."
+- [x] **P63-F01-settlement-future-dates-05** The account's current balance includes a planned entry immediately after it is saved
+- [x] **P63-F01-settlement-future-dates-06** The Settle amount and the "nothing to settle" check use the balance that includes planned entries
+- [x] **P63-F01-settlement-future-dates-07** A balance as of today (for example a month view of the current month) does not include an entry dated next month
+- [x] **P63-F01-settlement-future-dates-08** Transfers, pot deposits and withdrawals, card statements and card refunds still refuse future dates with today's message
+- [x] **P63-F01-settlement-future-dates-09** The OpenAPI snapshot is unchanged and the data file version is unchanged
+- [x] **P63-F01-settlement-future-dates-10** The "Settlement accounts" entry in `context.md` states that single-currency Settlement accounts accept future dates and that planned entries count in the current balance
 
 ### F02. Future Dates in the Settlement Entry Form
 - [ ] On a single-currency Settlement account the date input in New entry, Edit entry and Settle has no `max` and a future date saves
