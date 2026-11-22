@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AccountTransactionDto, ExpenseDto, SettlementEntryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountTransactionsGrid from '../AccountTransactionsGrid'
@@ -175,10 +175,6 @@ describe('AccountTransactionsGrid', () => {
     })
 
     describe('a planned entry', () => {
-      afterEach(() => {
-        vi.useRealTimers()
-      })
-
       const datedRow = (id: string, date: string) => ({ ...entryRow(id, 25, 'GBP', { date }), date })
       const rowOf = (description: string) => bodyRows().find((row) => within(row).queryByText(description)) as HTMLElement
 

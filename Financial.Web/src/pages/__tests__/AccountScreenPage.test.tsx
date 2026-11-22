@@ -1514,7 +1514,6 @@ describe('AccountScreenPage on a Settlement account', () => {
     beforeEach(async () => {
       const detail = await getAccountMock(MAE_ID, 2026, 10)
       getAccountMock.mockResolvedValue({ ...detail, currency: 'GBP', currentBalances: [{ currency: 'GBP', balance: 15 }] })
-      createSettlementEntryMock.mockResolvedValue(PLANNED_ROW.settlement!)
     })
 
     it('[AC P63-CF-cross-feature-01] saves a future-dated entry and lists it as Planned', async () => {

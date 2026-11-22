@@ -171,16 +171,13 @@ describe('MonthTransactionsGrid', () => {
 
     it('[AC P63-F03-settlement-planned-badge-06] marks a settlement entry dated after today as Planned, and no other row', () => {
       pinDate('2026-10-10T12:00:00+01:00')
-      try {
-        renderGrid({ rows: ENTRY_ROWS })
 
-        const [taxa, farmacia, tesco] = bodyRows()
-        expect(within(taxa).getByText('Planned')).toBeInTheDocument()
-        expect(within(farmacia).queryByText('Planned')).not.toBeInTheDocument()
-        expect(within(tesco).queryByText('Planned')).not.toBeInTheDocument()
-      } finally {
-        vi.useRealTimers()
-      }
+      renderGrid({ rows: ENTRY_ROWS })
+
+      const [taxa, farmacia, tesco] = bodyRows()
+      expect(within(taxa).getByText('Planned')).toBeInTheDocument()
+      expect(within(farmacia).queryByText('Planned')).not.toBeInTheDocument()
+      expect(within(tesco).queryByText('Planned')).not.toBeInTheDocument()
     })
 
     it('leaves entries out of a category filter and its Spend', () => {

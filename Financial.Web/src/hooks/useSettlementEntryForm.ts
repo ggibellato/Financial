@@ -3,9 +3,10 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, SettlementEntryDto } from '../api/types'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
-import { formatCurrency, formatLongMonthYear, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
+import { formatCurrency, formatMonthInputValue, formatStatementMonthLabel, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
+import type { YearMonth } from './useMonthSelection'
 import { paymentDateError } from '../utils/validators'
 
 const DATE_KEY = 'settlementEntry.date'
@@ -73,8 +74,7 @@ function convertedValueError(convertedValue: string): string | undefined {
 }
 
 function dateError(date: string, acceptsFutureDates: boolean): string | undefined {
-  if (!acceptsFutureDates) return paymentDateError(date)
-  return date ? undefined : 'Enter a date.'
+  return acceptsFutureDates && date ? undefined : paymentDateError(date)
 }
 
 function validate(values: SettlementEntryValues, asksCurrency: boolean, hasConvertedValue: boolean, acceptsFutureDates: boolean): FieldErrors<SettlementEntryField> {
@@ -154,18 +154,22 @@ function impliedRateText(values: SettlementEntryValues, convertedCurrency: strin
   return `Implied rate: 1 ${unit.currency} = ${formatCurrency(quoted.value / unit.value, quoted.currency)}`
 }
 
-function savedMessage(saved: string, warning: string | null): string {
-  return warning ? `${saved}. ${warning}` : saved
+function otherMonthSuffix(date: string, viewedMonth: YearMonth, preposition: string): string {
+  return date.startsWith(formatMonthInputValue(viewedMonth.year, viewedMonth.month)) ? '' : ` ${preposition} ${formatStatementMonthLabel(date)}`
 }
 
-function otherMonthSuffix(date: string, viewedMonth: { year: number; month: number }, preposition: string): string {
-  const [year, month] = date.split('-').map(Number)
-  return year === viewedMonth.year && month === viewedMonth.month ? '' : ` ${preposition} ${formatLongMonthYear(year, month)}`
+function savedMessage(saved: SettlementEntryDto, viewedMonth: YearMonth, isSettling: boolean, isEditing: boolean): string {
+  const otherMonth = (preposition: string) => otherMonthSuffix(saved.date, viewedMonth, preposition)
+  if (isSettling) {
+    const settled = `Settlement saved${otherMonth('in')}`
+    return saved.warning ? `${settled}. ${saved.warning}` : settled
+  }
+  return isEditing ? `Entry updated${otherMonth('in')}` : `Entry added${otherMonth('to')}`
 }
 
 export function useSettlementEntryForm(
   account: SettlementEntryAccount | null,
-  viewedMonth: { year: number; month: number },
+  viewedMonth: YearMonth,
   onSaved: (message: string) => void,
 ) {
   const [state, setState] = useState<SettlementEntryFormState>(CLOSED_STATE)
@@ -230,8 +234,7 @@ export function useSettlementEntryForm(
       .then((saved) => {
         setStoredDefault(DATE_KEY, values.date)
         setState((previous) => (previous.isSaving ? afterSave(previous, saved) : previous))
-        const [action, preposition] = isSettling ? ['Settlement saved', 'in'] : isEditing ? ['Entry updated', 'in'] : ['Entry added', 'to']
-        onSaved(savedMessage(action + otherMonthSuffix(saved.date, viewedMonth, preposition), isSettling ? saved.warning : null))
+        onSaved(savedMessage(saved, viewedMonth, isSettling, isEditing))
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, isSettling ? 'Failed to save the settlement.' : 'Failed to save the entry.')
