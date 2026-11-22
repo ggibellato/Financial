@@ -1,5 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.TestUtilities;
 using FluentAssertions;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -24,29 +25,38 @@ public class InvestmentTypeInfoResolverTests
         typeInfo!.CreateObject.Should().NotBeNull();
     }
 
-    [Fact]
-    public void GetTypeInfo_ForManagedType_RemovesExcludedProperties()
+    public static TheoryData<Type> ManagedTypes => new(InvestmentTypeInfoResolver.ManagedTypes);
+
+    [Theory]
+    [MemberData(nameof(ManagedTypes))]
+    public void GetTypeInfo_ForManagedType_WritesExactlyThePropertiesWithASetter(Type type)
     {
         var options = CreateOptions();
 
-        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(Asset), options);
+        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(type, options);
 
-        typeInfo!.Properties.Should().NotContain(p => p.Name == nameof(Asset.AveragePrice));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.Quantity));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.AverageSellPrice));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.RealisedGainLoss));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.RealisedGainLossSharesOnly));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.PositionType));
+        StoredJsonProperties.Written(typeInfo!).Should().BeEquivalentTo(StoredJsonProperties.Settable(type));
     }
 
     [Fact]
-    public void GetTypeInfo_ForPortfolio_RemovesIsEmpty()
+    public void SaveLoadSave_DocumentWithEveryKindOfRecord_IsIdentical()
     {
-        var options = CreateOptions();
+        var serializer = new InvestmentSerializerAdapter();
+        var investments = Investments.Create();
+        var broker = Broker.Create("Broker A", "USD");
+        var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2022, 6, 1), 2.0m, "2-for-1 split"));
+        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: true);
+        broker.AddPortfolio("Default").AddAsset(asset);
+        investments.AddActiveBroker(broker);
 
-        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(Portfolio), options);
+        var saved = serializer.Serialize(investments);
+        var resaved = serializer.Serialize(serializer.Deserialize(saved));
 
-        typeInfo!.Properties.Should().NotContain(p => p.Name == nameof(Portfolio.IsEmpty));
+        resaved.Should().Be(saved);
     }
 
     [Fact]
@@ -117,10 +127,8 @@ public class InvestmentTypeInfoResolverTests
     }
 
     [Fact]
-    public void GetTypeInfo_RoundTripsAssetThroughPrivateConstructorAndExcludedProperties()
+    public void GetTypeInfo_RoundTripsAssetThroughPrivateConstructor_RecomputesPosition()
     {
-        // End-to-end: serializing then deserializing an Asset recomputes AveragePrice/Quantity
-        // from transactions rather than trusting the excluded JSON fields directly.
         var options = CreateOptions();
         var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
         asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 10m, 0m));
@@ -137,9 +145,6 @@ public class InvestmentTypeInfoResolverTests
     [Fact]
     public void GetTypeInfo_RoundTripsAssetWithSellTransaction_RecalculatesRealisedGainLossAndAverageSellPrice()
     {
-        // End-to-end: Transactions is a plain JSON array on disk (ICollection<Transaction>),
-        // and RealisedGainLoss/AverageSellPrice recompute from it on deserialize rather than
-        // trusting the excluded JSON fields directly.
         var options = CreateOptions();
         var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));

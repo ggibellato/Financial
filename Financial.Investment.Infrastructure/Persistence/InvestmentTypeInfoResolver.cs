@@ -7,8 +7,8 @@ namespace Financial.Investment.Infrastructure.Persistence;
 
 public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
 {
-    private static readonly HashSet<Type> ManagedTypes =
-    [
+    internal static readonly IReadOnlySet<Type> ManagedTypes = new HashSet<Type>
+    {
         typeof(Investments),
         typeof(Broker),
         typeof(Portfolio),
@@ -21,23 +21,7 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(TaxRule),
         typeof(TaxClassification),
         typeof(CorporateAction)
-    ];
-
-    private static readonly HashSet<(Type, string)> ExcludedProperties =
-    [
-        (typeof(Asset), nameof(Asset.AveragePrice)),
-        (typeof(Asset), nameof(Asset.Quantity)),
-        (typeof(Asset), nameof(Asset.AverageSellPrice)),
-        (typeof(Asset), nameof(Asset.RealisedGainLoss)),
-        (typeof(Asset), nameof(Asset.RealisedGainLossSharesOnly)),
-        (typeof(Asset), nameof(Asset.PositionType)),
-        (typeof(Portfolio), nameof(Portfolio.IsEmpty)),
-        (typeof(Transaction), nameof(Transaction.NetCash)),
-        (typeof(Credit), nameof(Credit.NetAmount)),
-        (typeof(AssetPriceSnapshot), nameof(AssetPriceSnapshot.IsManual)),
-        (typeof(RealisedGain), nameof(RealisedGain.CostBasis)),
-        (typeof(RealisedGain), nameof(RealisedGain.GainLoss))
-    ];
+    };
 
     public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
     {
@@ -47,27 +31,11 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
             return typeInfo;
 
         ReflectionJsonTypeInfoHelpers.EnablePrivateConstructor(type, typeInfo);
-        ConfigureProperties(type, typeInfo);
-
-        return typeInfo;
-    }
-
-    private static void ConfigureProperties(Type type, JsonTypeInfo typeInfo)
-    {
-        var toRemove = new List<JsonPropertyInfo>();
+        ReflectionJsonTypeInfoHelpers.RemoveSetterlessProperties(typeInfo);
 
         foreach (var jsonProp in typeInfo.Properties)
-        {
-            if (ExcludedProperties.Contains((type, jsonProp.Name)))
-            {
-                toRemove.Add(jsonProp);
-                continue;
-            }
-
             ReflectionJsonTypeInfoHelpers.WirePropertySetter(type, jsonProp);
-        }
 
-        foreach (var prop in toRemove)
-            typeInfo.Properties.Remove(prop);
+        return typeInfo;
     }
 }
