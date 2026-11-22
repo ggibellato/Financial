@@ -15,6 +15,7 @@ function addState(overrides: Partial<SettlementEntryFormModel> = {}): Settlement
     currencies: ['BRL', 'GBP'],
     otherParticipant: 'Mãe',
     asksCurrency: true,
+    acceptsFutureDates: false,
     convertedCurrency: null,
     isSaving: false,
     saveError: null,
@@ -161,10 +162,20 @@ describe('SettlementEntryForm', () => {
     expect(screen.getByLabelText(/^Amount \(GBP\)/)).toBeInTheDocument()
   })
 
-  it('caps the date at today', () => {
+  it('[AC P63-F02-settlement-entry-form-dates-02] caps the date at today on a two-currency account', () => {
     renderForm(addState())
 
     expect(screen.getByLabelText(/^Date/)).toHaveAttribute('max')
+  })
+
+  it.each([
+    ['New entry', addState],
+    ['Edit entry', editState],
+    ['Settle', settleState],
+  ])('[AC P63-F02-settlement-entry-form-dates-01] leaves the date open to future days in %s on a one-currency account', (_, state) => {
+    renderForm(state({ acceptsFutureDates: true }))
+
+    expect(screen.getByLabelText(/^Date/)).not.toHaveAttribute('max')
   })
 
   it('[AC P60-F12-settlement-screen-02] edits every field but the currency, which reads as text', () => {

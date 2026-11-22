@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AccountTransactionDto, ExpenseDto, SettlementEntryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountTransactionsGrid from '../AccountTransactionsGrid'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { pinDate } from '../../test-utils/pinDate'
 
 const ROWS: AccountTransactionDto[] = [
   accountTransactionRow({
@@ -171,6 +172,52 @@ describe('AccountTransactionsGrid', () => {
       fireEvent.click(screen.getByRole('button', { name: header }))
 
       expect(within(bodyRows()[0]).getByText(firstDescription)).toBeInTheDocument()
+    })
+
+    describe('a planned entry', () => {
+      afterEach(() => {
+        vi.useRealTimers()
+      })
+
+      const datedRow = (id: string, date: string) => ({ ...entryRow(id, 25, 'GBP', { date }), date })
+      const rowOf = (description: string) => bodyRows().find((row) => within(row).queryByText(description)) as HTMLElement
+
+      it('[AC P63-F03-settlement-planned-badge-01] marks an entry dated after today as Planned in text, and no entry dated today or earlier', () => {
+        pinDate('2026-11-07T12:00:00+00:00')
+
+        renderSettlement([datedRow('Pocket money', '2026-12-01'), datedRow('Trainers', '2026-11-07'), datedRow('Lunch', '2026-11-01')], false)
+
+        expect(within(rowOf('Pocket money')).getByText('Planned')).toBeInTheDocument()
+        expect(within(rowOf('Trainers')).queryByText('Planned')).not.toBeInTheDocument()
+        expect(within(rowOf('Lunch')).queryByText('Planned')).not.toBeInTheDocument()
+      })
+
+      it('[AC P63-F03-settlement-planned-badge-02] drops the badge once the entry date arrives', () => {
+        pinDate('2026-12-01T09:00:00+00:00')
+
+        renderSettlement([datedRow('Pocket money', '2026-12-01')], false)
+
+        expect(screen.queryByText('Planned')).not.toBeInTheDocument()
+      })
+
+      it('[AC P63-F03-settlement-planned-badge-03] offers Edit and Delete on a planned entry', () => {
+        pinDate('2026-11-07T12:00:00+00:00')
+
+        renderSettlement([datedRow('Pocket money', '2026-12-01')], false)
+
+        expect(within(rowOf('Pocket money')).getByRole('button', { name: /^Edit entry\b/ })).toBeInTheDocument()
+        expect(within(rowOf('Pocket money')).getByRole('button', { name: /^Delete entry\b/ })).toBeInTheDocument()
+      })
+
+      it('[AC P63-F03-settlement-planned-badge-04] shows no badge on a future-dated expense in an account grid', () => {
+        pinDate('2026-11-07T12:00:00+00:00')
+        const futureExpense = accountTransactionRow({ id: 'x1', kind: 'Expense', date: '2026-12-01', description: 'Insurance', amount: -40, canEdit: true })
+
+        render(<AccountTransactionsGrid accountId="bank-1" transactions={[futureExpense]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+        expect(screen.getByText('Insurance')).toBeInTheDocument()
+        expect(screen.queryByText('Planned')).not.toBeInTheDocument()
+      })
     })
 
     it('spans the message across the Settlement columns when the month has no entries', () => {

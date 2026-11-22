@@ -192,17 +192,17 @@ graph TD
 - [x] **P63-F01-settlement-future-dates-10** The "Settlement accounts" entry in `context.md` states that single-currency Settlement accounts accept future dates and that planned entries count in the current balance
 
 ### F02. Future Dates in the Settlement Entry Form
-- [ ] On a single-currency Settlement account the date input in New entry, Edit entry and Settle has no `max` and a future date saves
-- [ ] On a multi-currency Settlement account the date input has `max` set to today and a typed future date shows "Date must not be in the future." on the field without sending a request
-- [ ] A server 400 on save is shown as the form's error and the entered values are kept
+- [ ] **P63-F02-settlement-entry-form-dates-01** On a single-currency Settlement account the date input in New entry, Edit entry and Settle has no `max` and a future date saves
+- [ ] **P63-F02-settlement-entry-form-dates-02** On a multi-currency Settlement account the date input has `max` set to today and a typed future date shows "Date must not be in the future." on the field without sending a request
+- [ ] **P63-F02-settlement-entry-form-dates-03** A server 400 on save is shown as the form's error and the entered values are kept
 
 ### F03. Planned Badge in the Settlement Entries List
-- [ ] A Settlement entry dated after today shows a "Planned" badge with visible text; an entry dated today or earlier shows none
-- [ ] With the clock moved to the entry's date, the same entry renders without the badge
-- [ ] A planned entry can be edited and deleted with the same row actions as any other entry
-- [ ] Grids of non-Settlement accounts show no "Planned" badge, including for future-dated expenses
-- [ ] The badge passes the `docs/ui/review-checklist.md` items for the entries list (text not colour alone, accessible name, zoom)
+- [ ] **P63-F03-settlement-planned-badge-01** A Settlement entry dated after today shows a "Planned" badge with visible text; an entry dated today or earlier shows none
+- [ ] **P63-F03-settlement-planned-badge-02** With the clock moved to the entry's date, the same entry renders without the badge
+- [ ] **P63-F03-settlement-planned-badge-03** A planned entry can be edited and deleted with the same row actions as any other entry
+- [ ] **P63-F03-settlement-planned-badge-04** Grids of non-Settlement accounts show no "Planned" badge, including for future-dated expenses
+- [ ] **P63-F03-settlement-planned-badge-05** The badge passes the `docs/ui/review-checklist.md` items for the entries list (text not colour alone, accessible name, zoom)
 
 ### Cross-Feature Integration
-- [ ] A planned entry saved through the form (F02) is accepted by the API (F01) and appears in the list with the "Planned" badge (F03)
-- [ ] A planned entry returned by the entries endpoint (F01) renders with the badge (F03) and opens in Edit entry with its future date accepted (F02)
+- [ ] **P63-CF-cross-feature-01** A planned entry saved through the form (F02) is accepted by the API (F01) and appears in the list with the "Planned" badge (F03)
+- [ ] **P63-CF-cross-feature-02** A planned entry returned by the entries endpoint (F01) renders with the badge (F03) and opens in Edit entry with its future date accepted (F02)

@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from 'react'
 import {
+  Badge,
   Button,
   Skeleton,
   SkeletonItem,
@@ -14,7 +15,7 @@ import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2, todayIsoDate } from '../utils/formatters'
 import ClearFiltersToolbar from './grid/ClearFiltersToolbar'
 import { focusFilterTrigger } from './grid/columnFilterText'
 import ColumnHeaderFilter, { type ColumnFilterKind } from './grid/ColumnHeaderFilter'
@@ -115,10 +116,25 @@ const CONVERTED_COLUMN: TransactionColumn = {
       : <MissingValue />,
 }
 
+const SETTLEMENT_DATE_COLUMN: TransactionColumn = {
+  ...DATE_COLUMN,
+  render: (row) =>
+    row.date > todayIsoDate() ? (
+      <span className="account-screen__planned-date">
+        {formatShortDateUtc(row.date)}
+        <Badge appearance="outline" color="informative" size="small">
+          Planned
+        </Badge>
+      </span>
+    ) : (
+      formatShortDateUtc(row.date)
+    ),
+}
+
 function settlementColumns(otherParticipant: string, showsConverted: boolean): TransactionColumn[] {
   const paidByOf = (row: AccountTransactionDto) => paidByLabel(row.settlement?.paidBy, otherParticipant)
   return [
-    DATE_COLUMN,
+    SETTLEMENT_DATE_COLUMN,
     DESCRIPTION_COLUMN,
     { key: 'paidBy', header: 'Paid by', accessor: paidByOf, render: (row) => <TruncatedText text={paidByOf(row)} /> },
     {

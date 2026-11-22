@@ -72,9 +72,14 @@ function convertedValueError(convertedValue: string): string | undefined {
     : undefined
 }
 
-function validate(values: SettlementEntryValues, asksCurrency: boolean, hasConvertedValue: boolean): FieldErrors<SettlementEntryField> {
+function dateError(date: string, acceptsFutureDates: boolean): string | undefined {
+  if (!acceptsFutureDates) return paymentDateError(date)
+  return date ? undefined : 'Enter a date.'
+}
+
+function validate(values: SettlementEntryValues, asksCurrency: boolean, hasConvertedValue: boolean, acceptsFutureDates: boolean): FieldErrors<SettlementEntryField> {
   return {
-    date: paymentDateError(values.date),
+    date: dateError(values.date, acceptsFutureDates),
     paidBy: values.paidBy ? undefined : 'Choose who paid.',
     currency: asksCurrency && !values.currency ? 'Choose the currency.' : undefined,
     description: values.description.trim() ? undefined : 'Description is required.',
@@ -165,6 +170,7 @@ export function useSettlementEntryForm(
   const isEditing = editingId !== null
   const otherParticipant = account ? settlementCounterparty(account) : ''
   const asksCurrency = !isEditing && currencies.length > 1
+  const acceptsFutureDates = currencies.length === 1
 
   const openAdd = () => {
     if (!account) return
@@ -229,7 +235,7 @@ export function useSettlementEntryForm(
 
   const submit = (): SettlementEntryField | null => {
     if (isSaving || !account) return null
-    const errors = validate(values, asksCurrency, convertedCurrency !== null)
+    const errors = validate(values, asksCurrency, convertedCurrency !== null, acceptsFutureDates)
     const firstInvalid = VALUE_FIELDS.find((field) => errors[field])
     if (firstInvalid) {
       setState((previous) => ({ ...previous, fieldErrors: errors, saveError: null }))
@@ -259,6 +265,7 @@ export function useSettlementEntryForm(
     currencies,
     otherParticipant,
     asksCurrency,
+    acceptsFutureDates,
     convertedCurrency,
     isSaving,
     saveError: state.saveError,

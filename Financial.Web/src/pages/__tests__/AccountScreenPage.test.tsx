@@ -1486,7 +1486,7 @@ describe('AccountScreenPage on a Settlement account', () => {
     expect(screen.queryByRole('form', { name: 'Edit entry' })).not.toBeInTheDocument()
   })
 
-  it('[AC P60-F12-settlement-screen-08] shows the server refusal in the form and keeps the values', async () => {
+  it('[AC P60-F12-settlement-screen-08] [AC P63-F02-settlement-entry-form-dates-03] shows the server refusal in the form and keeps the values', async () => {
     createSettlementEntryMock.mockRejectedValue(new ApiError('Mãe is inactive.', 400))
     const user = await openMaeScreen()
     await user.click(screen.getByRole('button', { name: 'New entry' }))
@@ -1498,6 +1498,57 @@ describe('AccountScreenPage on a Settlement account', () => {
 
     expect(await screen.findByText('Mãe is inactive.')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
+  })
+
+  describe('a planned entry on a one-currency account', () => {
+    const PLANNED_ROW = accountTransactionRow({
+      ...ENTRY_ROW,
+      id: 'planned-1',
+      date: '2026-12-01',
+      description: 'Pocket money',
+      amount: 25,
+      currency: 'GBP',
+      settlement: { ...ENTRY_ROW.settlement!, id: 'planned-1', date: '2026-12-01', description: 'Pocket money', paidBy: 'You', currency: 'GBP', amount: 25, convertedCurrency: null },
+    })
+
+    beforeEach(async () => {
+      const detail = await getAccountMock(MAE_ID, 2026, 10)
+      getAccountMock.mockResolvedValue({ ...detail, currency: 'GBP', currentBalances: [{ currency: 'GBP', balance: 15 }] })
+      createSettlementEntryMock.mockResolvedValue(PLANNED_ROW.settlement!)
+    })
+
+    it('[AC P63-CF-cross-feature-01] saves a future-dated entry and lists it as Planned', async () => {
+      getAccountTransactionsMock.mockImplementation(() =>
+        Promise.resolve(createSettlementEntryMock.mock.calls.length > 0 ? [ENTRY_ROW, PLANNED_ROW] : [ENTRY_ROW]),
+      )
+      const user = await openMaeScreen()
+      await user.click(screen.getByRole('button', { name: 'New entry' }))
+      const form = screen.getByRole('form', { name: 'New entry' })
+      fireEvent.change(within(form).getByLabelText(/^Date/), { target: { value: '2026-12-01' } })
+      await user.click(within(form).getByRole('radio', { name: 'You' }))
+      await user.type(within(form).getByLabelText(/^Description/), 'Pocket money')
+      await user.type(within(form).getByLabelText(/^Amount/), '25')
+      await user.click(within(form).getByRole('button', { name: 'Add entry' }))
+
+      expect(await screen.findByText('Entry added')).toBeInTheDocument()
+      expect(createSettlementEntryMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ date: '2026-12-01', description: 'Pocket money' }))
+      const table = screen.getByRole('table', { name: 'Transactions' })
+      const plannedRow = await waitFor(() => within(table).getByText('Pocket money').closest('tr') as HTMLElement)
+      expect(within(plannedRow).getByText('Planned')).toBeInTheDocument()
+    })
+
+    it('[AC P63-CF-cross-feature-02] opens a listed planned entry in Edit entry with its future date open', async () => {
+      getAccountTransactionsMock.mockResolvedValue([PLANNED_ROW])
+      const user = await openMaeScreen()
+      const edit = screen.getByRole('button', { name: /^Edit entry Pocket money/ })
+      expect(within(edit.closest('tr') as HTMLElement).getByText('Planned')).toBeInTheDocument()
+
+      await user.click(edit)
+
+      const date = within(screen.getByRole('form', { name: 'Edit entry' })).getByLabelText(/^Date/)
+      expect(date).toHaveValue('2026-12-01')
+      expect(date).not.toHaveAttribute('max')
+    })
   })
 
   it('closes the form and returns focus to New entry on Cancel', async () => {
