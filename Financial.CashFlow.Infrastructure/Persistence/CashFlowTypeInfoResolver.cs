@@ -9,8 +9,8 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 {
-    private static readonly HashSet<Type> ManagedTypes =
-    [
+    internal static readonly IReadOnlySet<Type> ManagedTypes = new HashSet<Type>
+    {
         typeof(CashFlowData),
         typeof(Expense),
         typeof(PotTransaction),
@@ -27,7 +27,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Transfer),
         typeof(BalanceAdjustment),
         typeof(TitheCarryForward)
-    ];
+    };
 
     // Maps each reference-typed property to its wire name and whether the key must be present in
     // JSON; the reference converter itself is resolved separately per-property since it needs the
@@ -66,15 +66,6 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(PotTransaction), nameof(PotTransaction.OperationId))
     ];
 
-    private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesNeverWritten =
-    [
-        (typeof(CardStatement), nameof(CardStatement.IsPaidByTransfer)),
-        (typeof(CardStatement), nameof(CardStatement.IsClosed)),
-        (typeof(CardStatement), nameof(CardStatement.IsSettled)),
-        (typeof(Transfer), nameof(Transfer.IsStatementPayment)),
-        (typeof(Transfer), nameof(Transfer.IsCreditRefund))
-    ];
-
     private readonly ReferenceResolutionContext? _context;
 
     public CashFlowTypeInfoResolver(ReferenceResolutionContext? context = null)
@@ -90,6 +81,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
             return typeInfo;
 
         ReflectionJsonTypeInfoHelpers.EnablePrivateConstructor(type, typeInfo);
+        ReflectionJsonTypeInfoHelpers.RemoveSetterlessProperties(typeInfo);
         ConfigureProperties(type, typeInfo);
 
         return typeInfo;
@@ -101,7 +93,6 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         {
             ReflectionJsonTypeInfoHelpers.WirePropertySetter(type, jsonProp);
             OmitWhenNull(type, jsonProp);
-            NeverWrite(type, jsonProp);
             ConfigureReferenceProperty(type, jsonProp);
         }
     }
@@ -110,12 +101,6 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     {
         if (PropertiesOmittedWhenNull.Contains((type, jsonProp.Name)))
             jsonProp.ShouldSerialize = static (_, value) => value is not null;
-    }
-
-    private static void NeverWrite(Type type, JsonPropertyInfo jsonProp)
-    {
-        if (PropertiesNeverWritten.Contains((type, jsonProp.Name)))
-            jsonProp.ShouldSerialize = static (_, _) => false;
     }
 
     private void ConfigureReferenceProperty(Type type, JsonPropertyInfo jsonProp)

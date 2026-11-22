@@ -59,18 +59,17 @@ public class CashFlowTypeInfoResolverTests
         typeInfo!.CreateObject.Should().NotBeNull();
     }
 
-    [Fact]
-    public void GetTypeInfo_ForManagedType_LeavesReadOnlyComputedPropertyUnwired()
+    public static TheoryData<Type> ManagedTypes => new(CashFlowTypeInfoResolver.ManagedTypes);
+
+    [Theory]
+    [MemberData(nameof(ManagedTypes))]
+    public void GetTypeInfo_ForManagedType_WritesExactlyThePropertiesWithASetter(Type type)
     {
         var options = CreateOptions();
 
-        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(Expense), options);
+        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(type, options);
 
-        // PaymentStatus is a computed (get-only) property with no excluded-properties mechanism
-        // in this resolver, so it's still present in the JSON output but WirePropertySetter
-        // can't find a setter for it.
-        var paymentStatusProp = typeInfo!.Properties.Should().ContainSingle(p => p.Name == nameof(Expense.PaymentStatus)).Subject;
-        paymentStatusProp.Set.Should().BeNull();
+        StoredJsonProperties.Written(typeInfo!).Should().BeEquivalentTo(StoredJsonProperties.Settable(type));
     }
 
     [Fact]
@@ -120,8 +119,6 @@ public class CashFlowTypeInfoResolverTests
     [Fact]
     public void GetTypeInfo_RoundTripsExpense_RecomputesPaymentStatusFromCreditCardAndPaymentSource()
     {
-        // PaymentStatus is never in the JSON's Set path (it's excluded implicitly by having no
-        // setter) - it must be recomputed correctly on deserialize from CreditCard/PaymentSource alone.
         var creditCard = TestAccounts.CreditCard("Chase Mastercard 4023");
         var category = Category.Create("Extras");
         var context = new ReferenceResolutionContext();

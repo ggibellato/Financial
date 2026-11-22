@@ -24,7 +24,7 @@ public class CashFlowDataConverterTests
     private const string ArianaPotsAccount = "\"Group\":\"Salary\",\"PotsAccountId\":\"" + ReservaId + "\"}";
 
     private const string V5File =
-        "{\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true,\"PaymentStatus\":\"CreditCardCharge\",\"RoundUpSuggestion\":0.5,\"SuggestedRoundUpAmount\":null,\"IsInvestment\":false,\"ReportingDate\":\"2026-10-01\",\"ListingDate\":\"2026-10-01\"}],"
+        "{\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true}],"
         + "\"ReserveMovements\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000901\",\"BucketId\":\"" + PotId + "\",\"Amount\":40,\"Date\":\"2026-10-05\",\"Description\":\"Deposit\",\"IncomeId\":null}],"
         + "\"CardStatements\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000401\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null},"
         + "{\"Id\":\"5db5c88d-0000-0000-0000-000000000402\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":11,\"IsPaid\":false,\"DueDate\":\"2026-11-18\"}],"
@@ -58,7 +58,7 @@ public class CashFlowDataConverterTests
     private const string OperationId = "5db5c88d-0000-0000-0000-000000000a01";
 
     private static readonly string V5FileWithOperation = V5File
-        .Replace("\"CountsAsTithe\":true,", "\"CountsAsTithe\":true,\"OperationId\":\"" + OperationId + "\",")
+        .Replace("\"CountsAsTithe\":true}", "\"CountsAsTithe\":true,\"OperationId\":\"" + OperationId + "\"}")
         .Replace("\"IncomeId\":null}", "\"IncomeId\":null,\"OperationId\":\"" + OperationId + "\"}");
 
     private const string MaeId = "5db5c88d-0000-0000-0000-000000000b01";
@@ -135,7 +135,7 @@ public class CashFlowDataConverterTests
     public void LoadAndSave_ExpenseWithAReportingMonth_KeepsItByteIdenticalAndOthersWriteNone()
     {
         var withReportingMonth = V5FileWithOperation.Replace(
-            "\"OperationId\":\"" + OperationId + "\",", "\"OperationId\":\"" + OperationId + "\",\"ReportingMonth\":\"2026-10-01\",");
+            "\"OperationId\":\"" + OperationId + "\"}],\"ReserveMovements\"", "\"OperationId\":\"" + OperationId + "\",\"ReportingMonth\":\"2026-10-01\"}],\"ReserveMovements\"");
 
         var data = _serializer.Deserialize(withReportingMonth);
         var saved = _serializer.Serialize(data);

@@ -6,7 +6,8 @@ namespace Financial.Shared.Abstractions.Persistence;
 
 /// <summary>
 /// Reflection-based wiring shared by the CashFlow and Investment <c>JsonTypeInfoResolver</c>s:
-/// enabling a type's private constructor for deserialization, and wiring a JSON property to a
+/// enabling a type's private constructor for deserialization, dropping every property with no setter
+/// of any visibility so computed values never reach the data files, and wiring a JSON property to a
 /// property's private setter (case-insensitively) since <see cref="System.Text.Json"/> only
 /// wires public setters by default.
 /// </summary>
@@ -21,6 +22,15 @@ public static class ReflectionJsonTypeInfoHelpers
             Activator.CreateInstance(type, nonPublic: true)
             ?? throw new InvalidOperationException($"Failed to create instance of {type}.");
     }
+
+    public static void RemoveSetterlessProperties(JsonTypeInfo typeInfo)
+    {
+        foreach (var computed in typeInfo.Properties.Where(IsSetterless).ToList())
+            typeInfo.Properties.Remove(computed);
+    }
+
+    private static bool IsSetterless(JsonPropertyInfo jsonProp) =>
+        jsonProp.AttributeProvider is PropertyInfo { SetMethod: null };
 
     public static void WirePropertySetter(Type type, JsonPropertyInfo jsonProp)
     {

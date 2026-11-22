@@ -57,6 +57,17 @@ public class ReflectionJsonTypeInfoHelpersTests
     }
 
     [Fact]
+    public void RemoveSetterlessProperties_KeepsPrivatelySettablePropertiesAndDropsComputedOnes()
+    {
+        var typeInfo = new DefaultJsonTypeInfoResolver().GetTypeInfo(typeof(PrivatelyBuilt), new JsonSerializerOptions());
+
+        ReflectionJsonTypeInfoHelpers.RemoveSetterlessProperties(typeInfo);
+
+        typeInfo.Properties.Select(property => property.Name)
+            .Should().BeEquivalentTo(nameof(PrivatelyBuilt.Name), nameof(PrivatelyBuilt.Count));
+    }
+
+    [Fact]
     public void EnablePrivateConstructor_WhenAFactoryIsAlreadySet_KeepsIt()
     {
         var typeInfo = JsonTypeInfo.CreateJsonTypeInfo(typeof(PrivatelyBuilt), new JsonSerializerOptions());
