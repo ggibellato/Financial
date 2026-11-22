@@ -5,6 +5,7 @@ import type { BankOption, CategoryDto, ExpenseDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
+import { computeRoundUpSuggestion } from '../utils/roundUp'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -20,10 +21,6 @@ const DATE_KEY = 'expense.date'
 const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
 const MISSING_CARD_MESSAGE = "Add charges from the card's account screen."
 const CATEGORY_KEY = 'expense.categoryId'
-
-export function computeRoundUpSuggestion(value: number): number {
-  return Math.round((Math.ceil(value) - value) * 100) / 100
-}
 
 function notAfterToday(date: string): string {
   const today = todayIsoDate()

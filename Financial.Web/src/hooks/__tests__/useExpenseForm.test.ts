@@ -1,10 +1,8 @@
-import { readFileSync } from 'node:fs'
-import { findInAncestors } from '../../test-utils/findInAncestors'
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankOption, CategoryDto, ExpenseDto } from '../../api/types'
-import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
+import { useExpenseForm } from '../useExpenseForm'
 import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
 import { setStoredDefault } from '../../utils/createFormDefaults'
@@ -787,18 +785,6 @@ describe('useExpenseForm', () => {
 
     expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ roundUpAmount: null, invoiceDate: null }))
   })
-})
-
-describe('computeRoundUpSuggestion', () => {
-  const casesPath = findInAncestors('Tests/Financial.CashFlow.Domain.Tests/TestData/round-up-suggestion-cases.json', __dirname)
-  const cases: { value: string; suggestion: string }[] = JSON.parse(readFileSync(casesPath, 'utf8'))
-
-  it.each(cases.filter((c) => Number(c.value) > 0).map((c) => [c.value, c.suggestion]))(
-    'matches the committed Domain case %s -> %s',
-    (value, suggestion) => {
-      expect(computeRoundUpSuggestion(Number(value)).toFixed(2)).toBe(suggestion)
-    },
-  )
 })
 
 describe('useExpenseForm account settings', () => {
