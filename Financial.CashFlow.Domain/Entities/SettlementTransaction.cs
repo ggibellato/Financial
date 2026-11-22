@@ -87,9 +87,11 @@ public class SettlementTransaction : IAccountTransaction
         }
     }
 
+    private static bool NeedsExchangeRate(Account account) => account.Currencies.Count > 1;
+
     private static void EnsureDateAllowed(Account account, DateOnly date, DateOnly today)
     {
-        if (account.Currencies.Count > 1)
+        if (NeedsExchangeRate(account))
         {
             TransactionDateRule.EnsureNotInFuture(date, today);
         }

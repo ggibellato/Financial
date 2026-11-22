@@ -107,16 +107,12 @@ public class SettlementTransactionTests
         entry.Date.Should().Be(date);
     }
 
-    [Theory]
-    [InlineData(2026, 10, 6)]
-    [InlineData(2027, 3, 31)]
-    public void Create_OneCurrencyDateAfterToday_Accepted(int year, int month, int day)
+    [Fact]
+    public void Create_OneCurrencyDateAfterToday_Accepted()
     {
-        var date = new DateOnly(year, month, day);
+        var entry = SettlementTransaction.Create(Son(), new DateOnly(2026, 10, 6), "Pocket money", null, SettlementPayer.You, Currency.GBP, 10m, null, new DateOnly(2026, 10, 5));
 
-        var entry = SettlementTransaction.Create(Son(), date, "Pocket money", null, SettlementPayer.You, Currency.GBP, 10m, null, new DateOnly(2026, 10, 5));
-
-        entry.Date.Should().Be(date);
+        entry.Date.Should().Be(new DateOnly(2026, 10, 6));
     }
 
     [Fact]

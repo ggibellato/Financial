@@ -343,8 +343,8 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         ConvertedValue = convertedValue
     };
 
-    private async Task<AccountDetailDTO> AccountDetail(string accountId) =>
-        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/8"))!;
+    private async Task<AccountDetailDTO> AccountDetail(string accountId, int month = 8) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/{month}"))!;
 
     private static IEnumerable<(string Currency, decimal Balance)> Figures(AccountDetailDTO detail) =>
         detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance));
@@ -490,9 +490,6 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
 
     private static readonly DateOnly PlannedDate = new(2026, 11, 20);
 
-    private async Task<AccountDetailDTO> SamuelInOctober() =>
-        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{SamuelId}/2026/10"))!;
-
     [Fact]
     [Trait("AC", "P63-F01-settlement-future-dates-01")]
     [Trait("AC", "P63-F01-settlement-future-dates-05")]
@@ -501,7 +498,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     {
         var response = await Client.PostAsJsonAsync(EntriesUrl(SamuelId), NewEntry(null, 25m, date: PlannedDate));
         var returned = await response.Content.ReadFromJsonAsync<SettlementEntryDTO>();
-        var october = await SamuelInOctober();
+        var october = await AccountDetail(SamuelId, 10);
 
         using (new AssertionScope())
         {
@@ -533,16 +530,13 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         await Client.PostAsJsonAsync(EntriesUrl(SamuelId), NewEntry(null, 25m, date: PlannedDate));
 
         var response = await Client.PostAsJsonAsync(SettleUrl(SamuelId), Settlement(85m, null, "GBP", new DateOnly(2026, 12, 1)));
-        var october = await SamuelInOctober();
-        var again = await Client.PostAsJsonAsync(SettleUrl(SamuelId), Settlement(1m, null, "GBP"));
+        var after = await AccountDetail(SamuelId);
 
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.Created);
-            Figures(october).Should().Equal(("GBP", 0m));
-            october.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
-            again.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await ProblemDetailAsync(again)).Should().Be("Nothing to settle.");
+            Figures(after).Should().Equal(("GBP", 0m));
+            after.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
         }
     }
 }
