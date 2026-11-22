@@ -176,7 +176,7 @@ This PRD is the first of three planned together. Cashback for bank accounts (P65
 - ISA allowance tracking (yearly subscription limit)
 
 **Other features**
-- Cashback for bank accounts (P65) and round-up destinations, including a round-up-only savings account (P66)
+- Cashback for bank accounts (P65) and round-up destinations (P66). P66 adds a fourth kind, **Round-up saver** (Chase's round-up account): it earns interest at its own rate, accepts only round-ups and its own interest (no transfers in, no other income), and its balance is moved once a year to a Standard account
 - Converting an existing Bank account that already has transactions into a Savings account (today's template lock stays); such an account is replaced by a new Savings account with an opening balance
 - Currencies other than GBP for Savings accounts
 
