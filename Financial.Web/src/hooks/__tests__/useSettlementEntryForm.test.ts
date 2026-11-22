@@ -325,6 +325,18 @@ describe('useSettlementEntryForm', () => {
       expect(result.current.values.date).toBe('2026-11-07')
     })
 
+    it('falls back to today on a two-currency account when the last date used is in the future, and keeps it on a one-currency one', () => {
+      sessionStorage.setItem('financial.createFormDefault.settlementEntry.date', '2026-11-30')
+      const mae = renderForm(MAE, { year: 2026, month: 11 })
+      const samuel = renderForm(SAMUEL, { year: 2026, month: 11 })
+
+      act(() => mae.result.current.openAdd())
+      act(() => samuel.result.current.openAdd())
+
+      expect(mae.result.current.values.date).toBe('2026-11-07')
+      expect(samuel.result.current.values.date).toBe('2026-11-30')
+    })
+
     it('asks the currency only with two currencies and never offers a converted value', () => {
       const two = renderForm()
       const one = renderForm(SAMUEL)

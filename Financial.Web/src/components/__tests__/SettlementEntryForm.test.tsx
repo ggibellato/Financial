@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
+import type { SettlementEntryField, SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import SettlementEntryForm from '../SettlementEntryForm'
 import { getErrorAlert } from '../../test-utils/errorAlert'
@@ -245,6 +245,49 @@ describe('SettlementEntryForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
 
     expect(control()).toHaveFocus()
+  })
+
+  function ValidatingForm({ errors }: { errors: SettlementEntryFormModel['fieldErrors'] }) {
+    const [fieldErrors, setFieldErrors] = useState<SettlementEntryFormModel['fieldErrors']>({})
+    const state = addState({
+      fieldErrors,
+      submit: () => {
+        setFieldErrors(errors)
+        return Object.keys(errors)[0] as SettlementEntryField
+      },
+    })
+    return <SettlementEntryForm form={state} onCancel={vi.fn()} />
+  }
+
+  it('summarises several invalid fields at the top, focuses the summary and links each message to its field', () => {
+    render(<ValidatingForm errors={{ paidBy: 'Choose who paid.', amount: 'Amount must be greater than zero.' }} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+
+    const summary = screen.getByText('Fix 2 fields before saving').closest('[tabindex="-1"]') as HTMLElement
+    expect(summary).toHaveFocus()
+    fireEvent.click(within(summary).getByRole('button', { name: 'Choose who paid.' }))
+    expect(screen.getByRole('radio', { name: 'You' })).toHaveFocus()
+    fireEvent.click(within(summary).getByRole('button', { name: 'Amount must be greater than zero.' }))
+    expect(screen.getByLabelText(/^Amount/)).toHaveFocus()
+  })
+
+  it('focuses the one invalid field without a summary', () => {
+    render(<ValidatingForm errors={{ description: 'Description is required.' }} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+
+    expect(screen.queryByText(/before saving/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toHaveFocus()
+  })
+
+  it.each([
+    [false, "Today or earlier: a later date has no exchange rate yet."],
+    [true, 'A date after today records a planned entry.'],
+  ])('explains the date rule under Date when future dates are accepted: %s', (acceptsFutureDates, hint) => {
+    renderForm(addState({ acceptsFutureDates }))
+
+    expect(screen.getByLabelText(/^Date/)).toHaveAccessibleDescription(hint)
   })
 
   it('shows the field messages', () => {

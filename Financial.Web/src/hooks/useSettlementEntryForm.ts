@@ -3,7 +3,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, SettlementEntryDto } from '../api/types'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
-import { formatCurrency, formatMonthInputValue, formatStatementMonthLabel, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
+import { formatCurrency, formatMonthInputValue, formatStatementMonthLabel, getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate, toPence } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
@@ -180,10 +180,15 @@ export function useSettlementEntryForm(
   const otherParticipant = account ? settlementCounterparty(account) : ''
   const asksCurrency = !isEditing && currencies.length > 1
   const acceptsFutureDates = currencies.length === 1
+  const createDate = () => {
+    const date = getCreateFormDate(DATE_KEY, viewedMonth)
+    const today = todayIsoDate()
+    return acceptsFutureDates || date <= today ? date : today
+  }
 
   const openAdd = () => {
     if (!account) return
-    const opened = { ...BLANK_VALUES, date: getCreateFormDate(DATE_KEY, viewedMonth), currency: account.currency }
+    const opened = { ...BLANK_VALUES, date: createDate(), currency: account.currency }
     setState({ ...CLOSED_STATE, values: opened, openedValues: opened })
   }
 
@@ -195,7 +200,7 @@ export function useSettlementEntryForm(
   const openSettle = () => {
     if (!account) return
     const currency = balances.find((balance) => toPence(balance.balance) !== 0)?.currency ?? account.currency
-    const blank = { ...BLANK_VALUES, date: getCreateFormDate(DATE_KEY, viewedMonth), description: SETTLE_DESCRIPTION }
+    const blank = { ...BLANK_VALUES, date: createDate(), description: SETTLE_DESCRIPTION }
     const opened = withSettleCurrency({ ...CLOSED_STATE, isSettling: true, values: blank }, balances, currency)
     setState({ ...opened, openedValues: opened.values })
   }

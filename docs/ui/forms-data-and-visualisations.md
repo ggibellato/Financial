@@ -49,6 +49,11 @@ Documented exceptions:
   changes while that choice drives the amount (P60 F08 spec). Settling a
   Nothing due statement's pot withdrawals reuses the card's Pay form, so Bank
   comes before Date there too (P62 F04 spec).
+- **Settling a two-currency Settlement account** (`SettlementEntryForm` in
+  Settle mode): Currency comes before Date, because choosing it re-fills
+  Paid by, Amount and the converted value from that currency's balance,
+  while Date defaults and rarely changes (the same reasoning as paying a
+  card statement). New entry and Edit entry keep Date first.
 - **Paying a recurring bill** (`PayRecurringBillForm`): the Bill picker comes
   first, because the expense fields only appear, pre-filled, once a bill is
   chosen; the fields themselves (`BillExpenseFields`) follow the default
@@ -199,6 +204,7 @@ inventing a new one.
   field invalid, a summary at the top lists each message as a link to its
   field and takes focus instead of the first field; with one invalid field,
   focus goes straight to it.
+  The inline Settlement entry form (`SettlementEntryForm`) does the same.
 - Make messages specific and actionable.
 - Example: “Enter a quantity greater than 0.”
 - Do not use only “Invalid value” or “Required.”
