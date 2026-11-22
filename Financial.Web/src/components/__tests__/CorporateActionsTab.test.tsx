@@ -194,12 +194,12 @@ describe('CorporateActionsTab', () => {
   })
 
   it('announces a delete error and moves focus to it without hiding the history list', async () => {
-    deleteCorporateActionMock.mockRejectedValue(new ApiError('Cannot delete: a later disposal depends on lots created by this split', 409))
+    deleteCorporateActionMock.mockRejectedValue(new ApiError('Cannot delete: a later sale depends on lots created by this split', 409))
     await renderLoaded([split({})])
 
     await confirmDelete(SPLIT_NAME, 'corporate action')
 
-    await waitFor(() => expect(getErrorAlert()).toHaveTextContent('Cannot delete: a later disposal depends on lots created by this split'))
+    await waitFor(() => expect(getErrorAlert()).toHaveTextContent('Cannot delete: a later sale depends on lots created by this split'))
     await waitFor(() => expect(getErrorAlert()).toHaveFocus())
     expect(screen.getAllByRole('row')).toHaveLength(2)
   })

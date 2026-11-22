@@ -125,7 +125,7 @@ describe('TaxPage', () => {
   it('renders_explanatory_empty_state_when_no_jurisdictions_exist', async () => {
     getTaxWorkbookOptionsMock.mockResolvedValue([])
     render(<TaxPage />)
-    expect(await screen.findByText(/No classified disposals or income events yet/)).toBeInTheDocument()
+    expect(await screen.findByText(/No classified realised gains or income events yet/)).toBeInTheDocument()
   })
 
   it('[AC P51-F04-react-tax-reporting-01] offers only the classified jurisdiction and tax-year pairs, and shows the chosen workbook', async () => {

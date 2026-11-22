@@ -278,8 +278,8 @@ public class PortfolioDashboardAggregateAcceptanceTests : ApiEndpointTests
 
         var asset = await Client.GetFromJsonAsync<AssetDetailsDTO>(
             $"/api/v1/financial/assets/{NewBroker}/{NewPortfolio}/{NewAsset}");
-        var activeRecords = asset!.DisposalRecords.Where(record => record.Status == RealisedGainStatus.Active).ToList();
-        var supersededGainLoss = asset.DisposalRecords
+        var activeRecords = asset!.RealisedGains.Where(record => record.Status == RealisedGainStatus.Active).ToList();
+        var supersededGainLoss = asset.RealisedGains
             .Where(record => record.Status == RealisedGainStatus.Superseded)
             .Sum(record => record.GainLoss);
 

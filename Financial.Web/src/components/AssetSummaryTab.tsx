@@ -54,7 +54,7 @@ function Field({ label, children, valueClassName, full = false }: FieldProps) {
 export default function AssetSummaryTab() {
   const { scope } = useSelectedNode()
   const hidden = useVisuallyHiddenStyles()
-  const realizedTitleId = useId()
+  const realisedTitleId = useId()
   const currentTitleId = useId()
   const {
     asset,
@@ -112,18 +112,18 @@ export default function AssetSummaryTab() {
       </dl>
 
       {scope === 'historic' && (
-        <section className="asset-summary__group" aria-labelledby={realizedTitleId}>
+        <section className="asset-summary__group" aria-labelledby={realisedTitleId}>
           <div className="asset-summary__section-header">
-            <h3 id={realizedTitleId} className="asset-summary__section-title">
-              Realized
+            <h3 id={realisedTitleId} className="asset-summary__section-title">
+              Realised
             </h3>
           </div>
           <dl className="asset-summary__grid">
-            <Field label={inCurrency('Realized gain/loss')} valueClassName={signedClass(asset.realizedGainLoss)}>
-              {formatN2(asset.realizedGainLoss)}
+            <Field label={inCurrency('Realised gain/loss')} valueClassName={signedClass(asset.realisedGainLoss)}>
+              {formatN2(asset.realisedGainLoss)}
             </Field>
-            <Field label={inCurrency('Realized (shares only)')} valueClassName={signedClass(asset.realizedGainLossSharesOnly)}>
-              {formatN2(asset.realizedGainLossSharesOnly)}
+            <Field label={inCurrency('Realised (shares only)')} valueClassName={signedClass(asset.realisedGainLossSharesOnly)}>
+              {formatN2(asset.realisedGainLossSharesOnly)}
             </Field>
             <Field label="XIRR with credits" valueClassName={signedClass(xirrWithCredits)}>
               {orMissing(xirrWithCredits, formatPercentFraction)}

@@ -143,7 +143,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
         items.Should().NotBeNull();
         items!.Should().ContainSingle(i => i.AssetName == "CLOSEDASSET");
         // CLOSEDASSET: bought 5 x 60 = 300, sold 5 x 50 = 250, no credits — RealisedGainLoss = 250 - 300 + 0 = -50
-        items!.Single().RealizedGainLoss.Should().Be(-50m);
+        items!.Single().RealisedGainLoss.Should().Be(-50m);
         items!.Single().PortfolioWeight.Should().Be(100m);
     }
 
@@ -197,7 +197,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
         // BCIA11 has no recorded price in this fixture: its market value is unavailable, so its
         // share must read unknown (null), never 100% from the old cost-based basis (FR-047).
         bcia11.PortfolioWeight.Should().BeNull();
-        bcia11.RealizedGainLoss.Should().Be(31m);
+        bcia11.RealisedGainLoss.Should().Be(31m);
     }
 
     [Fact]

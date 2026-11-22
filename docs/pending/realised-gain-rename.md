@@ -1,6 +1,6 @@
 # Rename "disposal" to "realised gain" in the back end
 
-Status: PR 1 in progress (branch `refactor/realised-gain-domain`), PR 2 not started.
+Status: PR 1 merged (#1423); PR 2 in progress (branch `refactor/realised-gain-api-web`).
 
 ## Why
 
@@ -156,6 +156,16 @@ vitest) and the local Playwright smoke (`--workers=2`) since the tab is renamed.
 Done when: backend and web CI green, grep for `(?i)dispos|realiz` in `Financial.Investment.*`,
 `Financial.Api` and `Financial.Web/src` (excluding `Dispose`/`IDisposable` and the generated file's
 history) finds nothing, and the "Realised gains" tab shows the same rows as before on the dev data.
+
+As built:
+- The grep finds only the version 6 migration step and its tests, which must keep the old JSON names,
+  and the `P50-F04-react-disposals-and-cost-basis-*` acceptance-criteria ids.
+- Visible labels follow the spelling decision: "Realized gain/loss" and "Realized (shares only)" now
+  read "Realised …" on the asset summary and holdings grid, and the Tax page's empty state says "No
+  classified realised gains or income events yet".
+- No Playwright spec opens the realised gains tab, so the local smoke was left to CI's `web-e2e` job.
+  The dev API reads the live investment file, so there was no local browser check on the dev data; the
+  component and hook tests assert the renamed labels and tab.
 
 ## Follow-ups found in PR 1's review (not part of this rename)
 

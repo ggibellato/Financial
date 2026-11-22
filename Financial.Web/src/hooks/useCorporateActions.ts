@@ -253,7 +253,7 @@ export interface CorporateActionsData {
   deleteCorporateAction: (id: string) => void
 }
 
-// Asset-only, like useDisposals - a broker/portfolio has no single corporate-action history to show.
+// Asset-only, like useRealisedGains - a broker/portfolio has no single corporate-action history to show.
 export function useCorporateActions(): CorporateActionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)

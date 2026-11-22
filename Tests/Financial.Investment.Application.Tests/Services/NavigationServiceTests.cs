@@ -179,8 +179,8 @@ public class NavigationServiceTests
         details.Should().NotBeNull();
         using var _ = new AssertionScope();
         details!.PositionType.Should().Be(PositionType.Long);
-        details.RealizedGainLoss.Should().Be(62m);
-        details.RealizedGainLossSharesOnly.Should().Be(50m);
+        details.RealisedGainLoss.Should().Be(62m);
+        details.RealisedGainLossSharesOnly.Should().Be(50m);
         details.AverageSellPrice.Should().Be(110m);
     }
 
@@ -389,10 +389,10 @@ public class NavigationServiceTests
         var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
         details.Should().NotBeNull();
-        var record = details!.DisposalRecords.Should().ContainSingle().Which;
+        var record = details!.RealisedGains.Should().ContainSingle().Which;
         record.TransactionId.Should().Be(sale.Id);
         record.Method.Should().Be(CostBasisMethod.AverageCost);
-        record.QuantityDisposed.Should().Be(5m);
+        record.QuantitySold.Should().Be(5m);
         record.Proceeds.Should().Be(sale.NetCash);
         record.GainLoss.Should().Be(record.Proceeds - record.CostBasis);
         record.Status.Should().Be(RealisedGainStatus.Active);
@@ -449,7 +449,7 @@ public class NavigationServiceTests
         var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
         details.Should().NotBeNull();
-        details!.DisposalRecords.Should().BeEmpty();
+        details!.RealisedGains.Should().BeEmpty();
     }
 
     [Fact]

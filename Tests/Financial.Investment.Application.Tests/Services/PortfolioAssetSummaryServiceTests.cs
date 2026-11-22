@@ -53,7 +53,7 @@ public class PortfolioAssetSummaryServiceTests
         item.TotalBought.Should().Be(2500m);
         item.TotalSold.Should().Be(550m);
         item.TotalInvested.Should().Be(2000m);
-        item.RealizedGainLoss.Should().Be(50m);
+        item.RealisedGainLoss.Should().Be(50m);
         item.PortfolioWeight.Should().Be(100m);
         item.MarketStatus.Should().Be(Financial.Investment.Domain.Rules.MarketStatus.Current);
     }
@@ -298,8 +298,8 @@ public class PortfolioAssetSummaryServiceTests
         item.EstimatedAnnualCredits.Should().Be(20m);
         item.EstimatedAnnualPercent.Should().Be(25m);
         item.CurrentMonthCredits.Should().Be(5m);
-        item.RealizedGainLoss.Should().Be(36m);
-        item.RealizedGainLossSharesOnly.Should().Be(10m);
+        item.RealisedGainLoss.Should().Be(36m);
+        item.RealisedGainLossSharesOnly.Should().Be(10m);
         item.AverageSellPrice.Should().Be(15m);
     }
 

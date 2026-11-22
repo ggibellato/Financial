@@ -1,21 +1,21 @@
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DisposalsData } from '../../hooks/useDisposals'
-import type { DisposalRecordDto } from '../../api/types'
-import DisposalsTab from '../DisposalsTab'
+import type { RealisedGainsData } from '../../hooks/useRealisedGains'
+import type { RealisedGainDto } from '../../api/types'
+import RealisedGainsTab from '../RealisedGainsTab'
 
 const mockRetry = vi.fn()
 const mockSetTaxYear = vi.fn()
 const mockToggleExpanded = vi.fn()
 
-function disposal(overrides: Partial<DisposalRecordDto>): DisposalRecordDto {
+function realisedGain(overrides: Partial<RealisedGainDto>): RealisedGainDto {
   return {
-    id: 'd1',
+    id: 'g1',
     transactionId: 't1',
     date: '2025-11-03T00:00:00',
     method: 'AverageCost',
     lotsConsumed: [{ sourceTransactionId: null, quantity: 5, unitCost: 100 }],
-    quantityDisposed: 5,
+    quantitySold: 5,
     proceeds: 600,
     costBasis: 500,
     gainLoss: 100,
@@ -28,7 +28,7 @@ function disposal(overrides: Partial<DisposalRecordDto>): DisposalRecordDto {
   }
 }
 
-const DEFAULT_HOOK: DisposalsData = {
+const DEFAULT_HOOK: RealisedGainsData = {
   chains: [],
   filteredChains: [],
   taxYearOptions: [],
@@ -41,21 +41,21 @@ const DEFAULT_HOOK: DisposalsData = {
   toggleExpanded: mockToggleExpanded,
 }
 
-let mockHookValue: DisposalsData = { ...DEFAULT_HOOK }
+let mockHookValue: RealisedGainsData = { ...DEFAULT_HOOK }
 
-vi.mock('../../hooks/useDisposals', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../hooks/useDisposals')>()
+vi.mock('../../hooks/useRealisedGains', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../hooks/useRealisedGains')>()
   return {
     ...actual,
-    useDisposals: () => mockHookValue,
+    useRealisedGains: () => mockHookValue,
   }
 })
 
-function setMock(overrides: Partial<DisposalsData>) {
+function setMock(overrides: Partial<RealisedGainsData>) {
   mockHookValue = { ...DEFAULT_HOOK, ...overrides }
 }
 
-describe('DisposalsTab', () => {
+describe('RealisedGainsTab', () => {
   beforeEach(() => {
     mockRetry.mockReset()
     mockSetTaxYear.mockReset()
@@ -65,13 +65,13 @@ describe('DisposalsTab', () => {
 
   it('shows a loading state', () => {
     setMock({ isLoading: true })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('shows an error state with retry', () => {
     setMock({ error: 'Network down' })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
     expect(screen.getByRole('alert')).toHaveTextContent('Network down')
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(mockRetry).toHaveBeenCalledTimes(1)
@@ -79,14 +79,14 @@ describe('DisposalsTab', () => {
 
   it('shows the initial empty message when nothing has ever been sold', () => {
     setMock({ chains: [], filteredChains: [] })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
     expect(screen.getByText(/nothing has been sold from this holding/)).toBeInTheDocument()
   })
 
-  it('[AC P50-F04-react-disposals-and-cost-basis-01] lists active disposals with their fields', () => {
-    const chain = { active: disposal({}), history: [] }
+  it('[AC P50-F04-react-disposals-and-cost-basis-01] lists active realised gains with their fields', () => {
+    const chain = { active: realisedGain({}), history: [] }
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
 
     expect(screen.getByText('03/11/2025')).toBeInTheDocument()
     expect(screen.getByText('5.00000000')).toBeInTheDocument()
@@ -98,9 +98,9 @@ describe('DisposalsTab', () => {
   })
 
   it('shows the tax-year filter and calls setTaxYear on selection', () => {
-    const chain = { active: disposal({}), history: [] }
+    const chain = { active: realisedGain({}), history: [] }
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26', '2024/25'] })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
 
     fireEvent.click(screen.getByRole('tab', { name: '2024/25' }))
     expect(mockSetTaxYear).toHaveBeenCalledWith('2024/25')
@@ -108,31 +108,31 @@ describe('DisposalsTab', () => {
 
   it('[AC P50-F04-react-disposals-and-cost-basis-02] shows an explicit empty message when the selected tax year has no realised gains', () => {
     setMock({
-      chains: [{ active: disposal({}), history: [] }],
+      chains: [{ active: realisedGain({}), history: [] }],
       filteredChains: [],
       taxYearOptions: ['2025/26'],
       selectedTaxYear: '2024/25',
     })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
     expect(screen.getByText('No realised gains in 2024/25.')).toBeInTheDocument()
   })
 
-  it('does not show an expand toggle for a disposal with no superseded history', () => {
-    const chain = { active: disposal({ id: 'd1' }), history: [] }
+  it('does not show an expand toggle for a realised gain with no superseded history', () => {
+    const chain = { active: realisedGain({ id: 'g1' }), history: [] }
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
     expect(screen.queryByRole('button', { name: /audit trail/ })).not.toBeInTheDocument()
   })
 
   it('[AC P50-F04-react-disposals-and-cost-basis-01] defaults to sorting by date descending, with the header showing the active sort', () => {
-    const older = { active: disposal({ id: 'd1', transactionId: 't1', date: '2025-01-05T00:00:00' }), history: [] }
-    const newer = { active: disposal({ id: 'd2', transactionId: 't2', date: '2025-11-03T00:00:00' }), history: [] }
+    const older = { active: realisedGain({ id: 'g1', transactionId: 't1', date: '2025-01-05T00:00:00' }), history: [] }
+    const newer = { active: realisedGain({ id: 'g2', transactionId: 't2', date: '2025-11-03T00:00:00' }), history: [] }
     setMock({
       chains: [older, newer],
       filteredChains: [older, newer],
       taxYearOptions: ['2025/26'],
     })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
     const table = screen.getByRole('table')
     const dateHeaderButton = within(table).getByRole('button', { name: 'Date' })
     const dateHeader = dateHeaderButton.closest('th')
@@ -155,28 +155,28 @@ describe('DisposalsTab', () => {
     expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
   })
 
-  it('[AC P50-F04-react-disposals-and-cost-basis-03] expands and collapses the audit trail for a disposal with superseded history', () => {
-    const predecessor = disposal({
-      id: 'd0',
+  it('[AC P50-F04-react-disposals-and-cost-basis-03] expands and collapses the audit trail for a realised gain with superseded history', () => {
+    const predecessor = realisedGain({
+      id: 'g0',
       method: 'AverageCost',
       proceeds: 550,
       costBasis: 500,
       gainLoss: 50,
       createdAt: '2025-10-01T09:00:00Z',
     })
-    const active = disposal({ id: 'd1' })
+    const active = realisedGain({ id: 'g1' })
     const chain = { active, history: [predecessor] }
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
 
-    const { rerender } = render(<DisposalsTab />)
+    const { rerender } = render(<RealisedGainsTab />)
     const toggle = screen.getByRole('button', { name: /Show audit trail/ })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
     fireEvent.click(toggle)
-    expect(mockToggleExpanded).toHaveBeenCalledWith('d1')
+    expect(mockToggleExpanded).toHaveBeenCalledWith('g1')
 
-    setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'], expandedIds: new Set(['d1']) })
-    rerender(<DisposalsTab />)
+    setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'], expandedIds: new Set(['g1']) })
+    rerender(<RealisedGainsTab />)
 
     expect(screen.getByRole('button', { name: /Hide audit trail/ })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText(/Audit trail for the/)).toBeInTheDocument()
@@ -186,31 +186,31 @@ describe('DisposalsTab', () => {
     expect(document.getElementById(panelId)).toContainElement(history)
   })
 
-  it('shows no audit trail for a disposal marked expanded that has no history', () => {
-    const chain = { active: disposal({ id: 'd1' }), history: [] }
-    setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'], expandedIds: new Set(['d1']) })
+  it('shows no audit trail for a realised gain marked expanded that has no history', () => {
+    const chain = { active: realisedGain({ id: 'g1' }), history: [] }
+    setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'], expandedIds: new Set(['g1']) })
 
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
 
     expect(screen.queryByText(/Audit trail for the/)).not.toBeInTheDocument()
   })
 
   it('colours a gain green and a loss red, in the sale and its audit trail', () => {
-    const gain = { active: disposal({ id: 'd1', gainLoss: 100 }), history: [disposal({ id: 'd0', gainLoss: -40 })] }
-    const loss = { active: disposal({ id: 'd2', transactionId: 't2', date: '2025-10-01T00:00:00', gainLoss: -25 }), history: [] }
-    setMock({ chains: [gain, loss], filteredChains: [gain, loss], taxYearOptions: ['2025/26'], expandedIds: new Set(['d1']) })
+    const gain = { active: realisedGain({ id: 'g1', gainLoss: 100 }), history: [realisedGain({ id: 'g0', gainLoss: -40 })] }
+    const loss = { active: realisedGain({ id: 'g2', transactionId: 't2', date: '2025-10-01T00:00:00', gainLoss: -25 }), history: [] }
+    setMock({ chains: [gain, loss], filteredChains: [gain, loss], taxYearOptions: ['2025/26'], expandedIds: new Set(['g1']) })
 
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
 
-    expect(screen.getByText('100.00').closest('td')).toHaveClass('disposals-tab__value--green')
-    expect(screen.getByText('-40.00').closest('td')).toHaveClass('disposals-tab__value--red')
-    expect(screen.getByText('-25.00').closest('td')).toHaveClass('disposals-tab__value--red')
+    expect(screen.getByText('100.00').closest('td')).toHaveClass('realised-gains-tab__value--green')
+    expect(screen.getByText('-40.00').closest('td')).toHaveClass('realised-gains-tab__value--red')
+    expect(screen.getByText('-25.00').closest('td')).toHaveClass('realised-gains-tab__value--red')
   })
 
   it.each(['Quantity', 'Method', 'Proceeds', 'Cost basis', 'Gain/loss', 'Tax year'])('marks the %s header when it sorts the sales', (name) => {
-    const chain = { active: disposal({}), history: [] }
+    const chain = { active: realisedGain({}), history: [] }
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
-    render(<DisposalsTab />)
+    render(<RealisedGainsTab />)
 
     fireEvent.click(screen.getByRole('button', { name }))
 

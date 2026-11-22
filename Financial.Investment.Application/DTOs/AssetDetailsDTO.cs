@@ -40,12 +40,12 @@ public class AssetDetailsDTO
     public decimal TotalCredits { get; set; }
 
     /// <summary>
-    /// Realized gain/loss from closed (sold) quantity plus credits, computed via
+    /// Realised gain/loss from closed (sold) quantity plus credits, computed via
     /// weighted-average cost-basis replay of the asset's transaction history
     /// </summary>
-    public decimal RealizedGainLoss { get; set; }
+    public decimal RealisedGainLoss { get; set; }
 
-    public decimal RealizedGainLossSharesOnly { get; set; }
+    public decimal RealisedGainLossSharesOnly { get; set; }
 
     public decimal? MarketValue { get; set; }
     public decimal CostOfUnitsHeld { get; set; }
@@ -61,7 +61,7 @@ public class AssetDetailsDTO
     public decimal? TotalReturn { get; set; }
     public List<TransactionDTO> Transactions { get; set; } = new();
     public List<CreditDTO> Credits { get; set; } = new();
-    public List<DisposalRecordDTO> DisposalRecords { get; set; } = new();
+    public List<RealisedGainDTO> RealisedGains { get; set; } = new();
     public List<CorporateActionDTO> CorporateActions { get; set; } = new();
 
     [JsonConverter(typeof(JsonStringEnumConverter))]

@@ -1,21 +1,21 @@
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { ChevronDownRegular, ChevronRightRegular } from '@fluentui/react-icons'
 import EmptyState from './EmptyState'
-import type { DisposalRecordDto } from '../api/types'
+import type { RealisedGainDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
-import { ALL_TAX_YEARS, useDisposals, type DisposalChain } from '../hooks/useDisposals'
+import { ALL_TAX_YEARS, useRealisedGains, type RealisedGainChain } from '../hooks/useRealisedGains'
 import { COST_BASIS_METHOD_LABELS } from '../utils/costBasisMethod'
 import { formatDateTime, formatN2, formatN8, formatShortDate, signClass } from '../utils/formatters'
-import './DisposalsTab.css'
+import './RealisedGainsTab.css'
 
-const SORT_ACCESSORS: Record<string, SortAccessor<DisposalChain>> = {
+const SORT_ACCESSORS: Record<string, SortAccessor<RealisedGainChain>> = {
   date: (chain) => new Date(chain.active.date),
-  quantity: (chain) => chain.active.quantityDisposed,
+  quantity: (chain) => chain.active.quantitySold,
   method: (chain) => COST_BASIS_METHOD_LABELS[chain.active.method],
   proceeds: (chain) => chain.active.proceeds,
   costBasis: (chain) => chain.active.costBasis,
@@ -24,7 +24,7 @@ const SORT_ACCESSORS: Record<string, SortAccessor<DisposalChain>> = {
 }
 
 interface HistoryRowProps {
-  record: DisposalRecordDto
+  record: RealisedGainDto
 }
 
 function HistoryRow({ record }: HistoryRowProps) {
@@ -36,7 +36,7 @@ function HistoryRow({ record }: HistoryRowProps) {
       <DataTableCell label="Cost basis" className="data-table__col--numeric">{formatN2(record.costBasis)}</DataTableCell>
       <DataTableCell
         label="Gain/loss"
-        className={`data-table__col--numeric ${signClass(record.gainLoss, 'disposals-tab__value')}`}
+        className={`data-table__col--numeric ${signClass(record.gainLoss, 'realised-gains-tab__value')}`}
       >
         {formatN2(record.gainLoss)}
       </DataTableCell>
@@ -44,23 +44,23 @@ function HistoryRow({ record }: HistoryRowProps) {
   )
 }
 
-interface DisposalRowProps {
-  chain: DisposalChain
+interface RealisedGainRowProps {
+  chain: RealisedGainChain
   isExpanded: boolean
   onToggleExpand: (id: string) => void
 }
 
-function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
+function RealisedGainRow({ chain, isExpanded, onToggleExpand }: RealisedGainRowProps) {
   const { active, history } = chain
   const hasHistory = history.length > 0
-  const historyPanelId = `disposal-history-${active.id}`
+  const historyPanelId = `realised-gain-history-${active.id}`
   const historyTitleId = `${historyPanelId}-title`
   const dateLabel = formatShortDate(active.date)
 
   return (
     <>
       <TableRow>
-        <TableCell className="disposals-tab__col--expand">
+        <TableCell className="realised-gains-tab__col--expand">
           {hasHistory && (
             <Button
               appearance="subtle"
@@ -74,26 +74,26 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
           )}
         </TableCell>
         <DataTableCell label="Date">{dateLabel}</DataTableCell>
-        <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(active.quantityDisposed)}</DataTableCell>
+        <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(active.quantitySold)}</DataTableCell>
         <DataTableCell label="Method">{COST_BASIS_METHOD_LABELS[active.method]}</DataTableCell>
         <DataTableCell label="Proceeds" className="data-table__col--numeric">{formatN2(active.proceeds)}</DataTableCell>
         <DataTableCell label="Cost basis" className="data-table__col--numeric">{formatN2(active.costBasis)}</DataTableCell>
         <DataTableCell
           label="Gain/loss"
-          className={`data-table__col--numeric ${signClass(active.gainLoss, 'disposals-tab__value')}`}
+          className={`data-table__col--numeric ${signClass(active.gainLoss, 'realised-gains-tab__value')}`}
         >
           {formatN2(active.gainLoss)}
         </DataTableCell>
         <DataTableCell label="Tax year">{active.taxYear}</DataTableCell>
       </TableRow>
       {hasHistory && isExpanded && (
-        <TableRow className="disposals-tab__history-row">
+        <TableRow className="realised-gains-tab__history-row">
           <TableCell className="data-table__cell--message" colSpan={8}>
             <div id={historyPanelId}>
-              <p id={historyTitleId} className="disposals-tab__history-title">
+              <p id={historyTitleId} className="realised-gains-tab__history-title">
                 Audit trail for the {dateLabel} sale
               </p>
-              <Table className="disposals-tab__history-table data-table" aria-labelledby={historyTitleId}>
+              <Table className="realised-gains-tab__history-table data-table" aria-labelledby={historyTitleId}>
                 <TableHeader>
                   <TableRow>
                     <TableHeaderCell>Computed on</TableHeaderCell>
@@ -117,7 +117,7 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
   )
 }
 
-export default function DisposalsTab() {
+export default function RealisedGainsTab() {
   const {
     chains,
     filteredChains,
@@ -129,7 +129,7 @@ export default function DisposalsTab() {
     setTaxYear,
     expandedIds,
     toggleExpanded,
-  } = useDisposals()
+  } = useRealisedGains()
 
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredChains, SORT_ACCESSORS, DATE_DESC_SORT)
 
@@ -143,7 +143,7 @@ export default function DisposalsTab() {
 
   if (chains.length === 0) {
     return (
-      <div className="disposals-tab">
+      <div className="realised-gains-tab">
         <EmptyState>No realised gains yet — nothing has been sold from this holding.</EmptyState>
       </div>
     )
@@ -155,19 +155,19 @@ export default function DisposalsTab() {
   ]
 
   return (
-    <div className="disposals-tab">
-      <div className="disposals-tab__controls">
+    <div className="realised-gains-tab">
+      <div className="realised-gains-tab__controls">
         <FilterTabList label="Tax year:" options={filterOptions} selected={selectedTaxYear} onSelect={setTaxYear} />
       </div>
 
       {filteredChains.length === 0 ? (
         <EmptyState>No realised gains in {selectedTaxYear}.</EmptyState>
       ) : (
-        <div className="disposals-tab__table-wrapper">
-          <Table className="disposals-tab__table data-table" aria-label="Realised gains">
+        <div className="realised-gains-tab__table-wrapper">
+          <Table className="realised-gains-tab__table data-table" aria-label="Realised gains">
             <TableHeader>
               <TableRow>
-                <TableHeaderCell className="disposals-tab__col--expand" />
+                <TableHeaderCell className="realised-gains-tab__col--expand" />
                 <SortableColumnHeader
                   label="Date"
                   columnKey="date"
@@ -218,7 +218,7 @@ export default function DisposalsTab() {
             </TableHeader>
             <TableBody>
               {sortedRows.map((chain) => (
-                <DisposalRow
+                <RealisedGainRow
                   key={chain.active.id}
                   chain={chain}
                   isExpanded={expandedIds.has(chain.active.id)}

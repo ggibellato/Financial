@@ -7580,7 +7580,6 @@ export interface components {
             country?: components["schemas"]["CountryCode"];
             credits?: components["schemas"]["CreditDTO"][];
             currency?: string;
-            disposalRecords?: components["schemas"]["DisposalRecordDTO"][];
             exchange?: string;
             incomePolicy?: components["schemas"]["IncomePolicy"];
             isin?: string;
@@ -7599,9 +7598,10 @@ export interface components {
             /** Format: double */
             quantity?: number;
             /** Format: double */
-            realizedGainLoss?: number;
+            realisedGainLoss?: number;
             /** Format: double */
-            realizedGainLossSharesOnly?: number;
+            realisedGainLossSharesOnly?: number;
+            realisedGains?: components["schemas"]["RealisedGainDTO"][];
             /** Format: double */
             resultPercent?: null | number;
             /** Format: double */
@@ -8116,39 +8116,6 @@ export interface components {
             date?: string;
             portfolioName: string;
         };
-        DisposalLotConsumptionDTO: {
-            /** Format: double */
-            quantity: number;
-            /** Format: uuid */
-            sourceTransactionId: null | string;
-            /** Format: double */
-            unitCost: number;
-        };
-        DisposalRecordDTO: {
-            /** Format: double */
-            costBasis: number;
-            /** Format: date-time */
-            createdAt: string;
-            currency: string;
-            /** Format: date-time */
-            date: string;
-            /** Format: double */
-            gainLoss: number;
-            /** Format: uuid */
-            id: string;
-            lotsConsumed: components["schemas"]["DisposalLotConsumptionDTO"][];
-            method: components["schemas"]["CostBasisMethod"];
-            /** Format: double */
-            proceeds: number;
-            /** Format: double */
-            quantityDisposed: number;
-            status: components["schemas"]["RealisedGainStatus"];
-            /** Format: uuid */
-            supersededByRecordId: null | string;
-            taxYear: string;
-            /** Format: uuid */
-            transactionId: string;
-        };
         DividendHistoryItemDTO: {
             /** Format: date-time */
             date?: string;
@@ -8624,9 +8591,9 @@ export interface components {
             /** Format: double */
             priceOnlyReturn: null | number;
             /** Format: double */
-            realizedGainLoss: number;
+            realisedGainLoss: number;
             /** Format: double */
-            realizedGainLossSharesOnly: number;
+            realisedGainLossSharesOnly: number;
             /** Format: double */
             resultPercent: null | number;
             /** Format: double */
@@ -8825,6 +8792,39 @@ export interface components {
             status: null | number;
             title: null | string;
             type: null | string;
+        };
+        RealisedGainDTO: {
+            /** Format: double */
+            costBasis: number;
+            /** Format: date-time */
+            createdAt: string;
+            currency: string;
+            /** Format: date-time */
+            date: string;
+            /** Format: double */
+            gainLoss: number;
+            /** Format: uuid */
+            id: string;
+            lotsConsumed: components["schemas"]["RealisedGainLotDTO"][];
+            method: components["schemas"]["CostBasisMethod"];
+            /** Format: double */
+            proceeds: number;
+            /** Format: double */
+            quantitySold: number;
+            status: components["schemas"]["RealisedGainStatus"];
+            /** Format: uuid */
+            supersededByRecordId: null | string;
+            taxYear: string;
+            /** Format: uuid */
+            transactionId: string;
+        };
+        RealisedGainLotDTO: {
+            /** Format: double */
+            quantity: number;
+            /** Format: uuid */
+            sourceTransactionId: null | string;
+            /** Format: double */
+            unitCost: number;
         };
         /** @enum {unknown} */
         RealisedGainStatus: "Active" | "Superseded";

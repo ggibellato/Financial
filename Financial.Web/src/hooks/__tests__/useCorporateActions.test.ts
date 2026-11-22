@@ -124,8 +124,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalBought: 2000,
   totalSold: 0,
   totalCredits: 0,
-  realizedGainLoss: 0,
-  realizedGainLossSharesOnly: 0,
+  realisedGainLoss: 0,
+  realisedGainLossSharesOnly: 0,
   marketValue: null,
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
@@ -138,7 +138,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   transactions: [],
   credits: [],
   priceSnapshots: [],
-  disposalRecords: [],
+  realisedGains: [],
   corporateActions: [SPLIT_RECORD],
   costBasisMethod: 'AverageCost',
   taxJurisdictions: [],
@@ -401,7 +401,7 @@ describe('useCorporateActions', () => {
   })
 
   it('surfaces a delete failure without discarding the current list', async () => {
-    deleteCorporateActionMock.mockRejectedValueOnce(new Error('Cannot delete: a later disposal depends on lots created by this split'))
+    deleteCorporateActionMock.mockRejectedValueOnce(new Error('Cannot delete: a later sale depends on lots created by this split'))
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCorporateActions(), { wrapper })
     setNode(ASSET_NODE)
@@ -410,7 +410,7 @@ describe('useCorporateActions', () => {
     act(() => result.current.deleteCorporateAction('ca1'))
 
     await waitFor(() =>
-      expect(result.current.deleteError).toBe('Cannot delete: a later disposal depends on lots created by this split'),
+      expect(result.current.deleteError).toBe('Cannot delete: a later sale depends on lots created by this split'),
     )
     expect(result.current.deletingId).toBeNull()
     expect(result.current.corporateActions).toEqual([SPLIT_RECORD])

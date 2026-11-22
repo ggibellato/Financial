@@ -51,8 +51,8 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
-  realizedGainLoss: 0,
-  realizedGainLossSharesOnly: 0,
+  realisedGainLoss: 0,
+  realisedGainLossSharesOnly: 0,
   portfolioWeight: 71.4,
   marketValue: null,
   costOfUnitsHeld: 2500,
@@ -86,8 +86,8 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   totalBought: 1000,
   totalSold: 0,
   totalInvested: 1000,
-  realizedGainLoss: 0,
-  realizedGainLossSharesOnly: 0,
+  realisedGainLoss: 0,
+  realisedGainLossSharesOnly: 0,
   portfolioWeight: 28.6,
   marketValue: null,
   costOfUnitsHeld: 1000,
@@ -139,7 +139,7 @@ describe('usePortfolioAssetSummary', () => {
   })
 
   it('forwards_historic_scope_from_context', async () => {
-    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realizedGainLoss: -50 }])
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realisedGainLoss: -50 }])
     const { wrapper, setNode } = createSelectedNodeWrapper('historic')
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
@@ -149,7 +149,7 @@ describe('usePortfolioAssetSummary', () => {
   })
 
   it('skips_current_price_fetch_for_historic_scope', async () => {
-    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realizedGainLoss: -50 }])
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realisedGainLoss: -50 }])
     const { wrapper, setNode } = createSelectedNodeWrapper('historic')
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)

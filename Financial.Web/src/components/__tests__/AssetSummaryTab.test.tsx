@@ -54,8 +54,8 @@ const ASSET: AssetDetailsDto = {
   totalBought: 2000,
   totalSold: 500,
   totalCredits: 50,
-  realizedGainLoss: 75,
-  realizedGainLossSharesOnly: 25,
+  realisedGainLoss: 75,
+  realisedGainLossSharesOnly: 25,
   marketValue: null,
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
@@ -68,7 +68,7 @@ const ASSET: AssetDetailsDto = {
   transactions: [],
   credits: [],
   priceSnapshots: [],
-  disposalRecords: [],
+  realisedGains: [],
   corporateActions: [],
   costBasisMethod: 'AverageCost',
   taxJurisdictions: ['BR'],
@@ -280,15 +280,15 @@ describe('AssetSummaryTab', () => {
     expect(screen.queryByRole('button', { name: 'Refresh price' })).not.toBeInTheDocument()
   })
 
-  it('renders_realized_totals_section_for_historic_scope', () => {
+  it('renders_realised_totals_section_for_historic_scope', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLoss: -50, priceOnlyReturn: -0.1, totalReturn: -0.05 },
+      asset: { ...ASSET, quantity: 0, realisedGainLoss: -50, priceOnlyReturn: -0.1, totalReturn: -0.05 },
       showCurrentSection: false,
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    expect(screen.getByText('Realized')).toBeInTheDocument()
-    const label = screen.getByText('Realized gain/loss')
+    expect(screen.getByText('Realised')).toBeInTheDocument()
+    const label = screen.getByText('Realised gain/loss')
     expect(label.nextElementSibling?.textContent).toBe('-50.00')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--red')
     expect(screen.getByText('Portfolio weight')).toBeInTheDocument()
@@ -299,7 +299,7 @@ describe('AssetSummaryTab', () => {
 
   it('renders_dash_for_historic_xirr_while_not_yet_computed', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLoss: -50 },
+      asset: { ...ASSET, quantity: 0, realisedGainLoss: -50 },
       showCurrentSection: false,
       portfolioWeight: 100,
     })
@@ -310,66 +310,66 @@ describe('AssetSummaryTab', () => {
     expect(xirrSharesOnlyLabel.nextElementSibling?.textContent).toBe('—')
   })
 
-  it('renders_positive_realized_gain_loss_in_green_for_historic_scope', () => {
+  it('renders_positive_realised_gain_loss_in_green_for_historic_scope', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLoss: 75 },
+      asset: { ...ASSET, quantity: 0, realisedGainLoss: 75 },
       showCurrentSection: false,
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const label = screen.getByText('Realized gain/loss')
+    const label = screen.getByText('Realised gain/loss')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
-  it('renders_realized_gain_loss_shares_only_field_directly_below_realized_gain_loss_for_historic_closed_asset', () => {
+  it('renders_realised_gain_loss_shares_only_field_directly_below_realised_gain_loss_for_historic_closed_asset', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLoss: 75, totalCredits: 50, realizedGainLossSharesOnly: 999 },
+      asset: { ...ASSET, quantity: 0, realisedGainLoss: 75, totalCredits: 50, realisedGainLossSharesOnly: 999 },
       showCurrentSection: false,
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const realizedGainLossLabel = screen.getByText('Realized gain/loss')
-    const sharesOnlyLabel = screen.getByText('Realized (shares only)')
+    const realisedGainLossLabel = screen.getByText('Realised gain/loss')
+    const sharesOnlyLabel = screen.getByText('Realised (shares only)')
     expect(sharesOnlyLabel.closest('.asset-summary__field')).toBe(
-      realizedGainLossLabel.closest('.asset-summary__field')?.nextElementSibling,
+      realisedGainLossLabel.closest('.asset-summary__field')?.nextElementSibling,
     )
     expect(sharesOnlyLabel.nextElementSibling?.textContent).toBe('999.00')
   })
 
-  it('does_not_render_realized_gain_loss_shares_only_field_when_realized_section_is_hidden_for_active_scope', () => {
+  it('does_not_render_realised_gain_loss_shares_only_field_when_realised_section_is_hidden_for_active_scope', () => {
     setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
     renderAssetSummaryTab('active')
-    expect(screen.queryByText('Realized (shares only)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Realised (shares only)')).not.toBeInTheDocument()
   })
 
-  it('renders_positive_realized_gain_loss_shares_only_in_green_for_historic_scope', () => {
+  it('renders_positive_realised_gain_loss_shares_only_in_green_for_historic_scope', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLossSharesOnly: 75 },
+      asset: { ...ASSET, quantity: 0, realisedGainLossSharesOnly: 75 },
       showCurrentSection: false,
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const label = screen.getByText('Realized (shares only)')
+    const label = screen.getByText('Realised (shares only)')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
-  it('renders_negative_realized_gain_loss_shares_only_in_red_when_shares_only_result_differs_in_sign_from_realized_gain_loss', () => {
+  it('renders_negative_realised_gain_loss_shares_only_in_red_when_shares_only_result_differs_in_sign_from_realised_gain_loss', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLoss: 10, realizedGainLossSharesOnly: -40 },
+      asset: { ...ASSET, quantity: 0, realisedGainLoss: 10, realisedGainLossSharesOnly: -40 },
       showCurrentSection: false,
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const realizedGainLossLabel = screen.getByText('Realized gain/loss')
-    expect(realizedGainLossLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
-    const sharesOnlyLabel = screen.getByText('Realized (shares only)')
+    const realisedGainLossLabel = screen.getByText('Realised gain/loss')
+    expect(realisedGainLossLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
+    const sharesOnlyLabel = screen.getByText('Realised (shares only)')
     expect(sharesOnlyLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
-  it('hides_realized_totals_section_for_active_scope', () => {
+  it('hides_realised_totals_section_for_active_scope', () => {
     setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
     renderAssetSummaryTab('active')
-    expect(screen.queryByText('Realized')).not.toBeInTheDocument()
+    expect(screen.queryByText('Realised')).not.toBeInTheDocument()
     expect(screen.getByText('Current')).toBeInTheDocument()
   })
 

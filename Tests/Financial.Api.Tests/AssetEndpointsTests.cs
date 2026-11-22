@@ -223,7 +223,7 @@ public class AssetEndpointsTests : ApiEndpointTests
         {
             after!.Transactions.Should().HaveCount(before!.Transactions.Count);
             after.Credits.Should().HaveCount(before.Credits.Count);
-            after.RealizedGainLoss.Should().Be(before.RealizedGainLoss);
+            after.RealisedGainLoss.Should().Be(before.RealisedGainLoss);
             after.Quantity.Should().Be(0);
         }
     }
