@@ -7254,6 +7254,7 @@ export interface components {
             disabledActions: {
                 [key: string]: string;
             };
+            hasPlannedEntries: boolean;
             hasStatements: boolean;
             /** Format: uuid */
             id: string;

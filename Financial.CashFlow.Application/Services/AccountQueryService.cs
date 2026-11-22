@@ -78,6 +78,12 @@ public sealed class AccountQueryService : IAccountQueryService
         }
     }
 
+    private bool HasPlannedEntries(Account account, IEnumerable<IAccountTransaction> records)
+    {
+        var today = _timeProvider.GetLocalToday();
+        return records.OfType<SettlementTransaction>().Any(entry => entry.Account.Id == account.Id && TransactionDateRule.IsInFuture(entry.Date, today));
+    }
+
     public AccountDetailDTO GetAccount(Guid id, int year, int month)
     {
         using var span = StartSpan("GetAccount");
@@ -110,6 +116,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList(),
                 DisabledActions = AccountActions.DisabledFor(account, currentBalances).ToDictionary(disabled => disabled.Key.ToString(), disabled => disabled.Value),
                 CurrentBalances = CurrencyBalanceMapper.ToDtos(currentBalances),
+                HasPlannedEntries = HasPlannedEntries(account, records),
                 OtherParticipant = account.OtherParticipant
             };
 

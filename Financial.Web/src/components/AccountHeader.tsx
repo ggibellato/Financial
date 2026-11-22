@@ -37,7 +37,7 @@ function viewedStatementAmount(statement: AccountStatementDto | null): number {
 function firstFigure(account: AccountDetailDto, hasParticipants: boolean): { label: string; value: string; status: string | null } {
   if (hasParticipants) {
     return {
-      label: 'Current balance',
+      label: account.hasPlannedEntries ? 'Balance (includes planned)' : 'Current balance',
       value: settlementBalanceText(settlementCounterparty(account), account.currentBalances),
       status: null,
     }

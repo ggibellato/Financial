@@ -46,6 +46,7 @@ const DETAIL: AccountDetailDto = {
   allowedActions: [],
   disabledActions: {},
   currentBalances: [],
+  hasPlannedEntries: false,
   otherParticipant: null,
 }
 

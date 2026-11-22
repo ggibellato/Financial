@@ -47,6 +47,7 @@ const AMEX: AccountDetailDto = {
   allowedActions: [],
   disabledActions: {},
   currentBalances: [],
+  hasPlannedEntries: false,
   otherParticipant: null,
 }
 
@@ -66,6 +67,7 @@ const BARCLAYS: AccountDetailDto = {
   allowedActions: [],
   disabledActions: {},
   currentBalances: [],
+  hasPlannedEntries: false,
   otherParticipant: null,
 }
 
@@ -274,13 +276,21 @@ describe('AccountHeader', () => {
   })
 
   describe('on a Settlement account', () => {
-    it('[AC P60-F12-settlement-screen-01] shows the current balance per currency with who owes whom, Settled when it rounds to 0.00', () => {
+    it('[AC P60-F12-settlement-screen-01] [AC P63-F04-settlement-balance-label-02] shows the current balance per currency with who owes whom, Settled when it rounds to 0.00', () => {
       renderHeader(MAE, { hasParticipants: true })
 
       expect(screen.getByText('Settlement · BRL, GBP')).toBeInTheDocument()
       expect(screen.getByText('Current balance')).toBeInTheDocument()
       expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
       expect(screen.queryByText(/at end of/)).not.toBeInTheDocument()
+    })
+
+    it('[AC P63-F04-settlement-balance-label-02] says the balance includes planned entries while the account has any', () => {
+      renderHeader({ ...MAE, hasPlannedEntries: true }, { hasParticipants: true })
+
+      expect(screen.getByText('Balance (includes planned)')).toBeInTheDocument()
+      expect(screen.queryByText('Current balance')).not.toBeInTheDocument()
+      expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
     })
 
     it('[AC P60-F12-settlement-screen-01] reads Settled when every currency rounds to 0.00', () => {

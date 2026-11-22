@@ -17,5 +17,6 @@ public sealed class AccountDetailDTO
     public required IReadOnlyList<string> AllowedActions { get; init; }
     public required IReadOnlyDictionary<string, string> DisabledActions { get; init; }
     public required IReadOnlyList<CurrencyBalanceDTO> CurrentBalances { get; init; }
+    public required bool HasPlannedEntries { get; init; }
     public string? OtherParticipant { get; init; }
 }
