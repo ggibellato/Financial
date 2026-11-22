@@ -176,7 +176,7 @@ const ACCOUNTS: AccountDto[] = [
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
   const isCard = id === AMEX_ID
-  return accountDetail({ ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, allowedActions: isCard ? ['AddCharge'] : [] })
+  return accountDetail({ ...account, savings: null, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, allowedActions: isCard ? ['AddCharge'] : [] })
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [
@@ -291,7 +291,7 @@ function withPotsAccount(transactions: AccountTransactionDto[] = [LEGACY_WITHDRA
   getAccountMock.mockImplementation((id, year, month) =>
     Promise.resolve(
       id === RESERVA_ID
-        ? accountDetail({ ...reserva, year, month, balance: 1500.5, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'] })
+        ? accountDetail({ ...reserva, savings: null, year, month, balance: 1500.5, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'] })
         : detailFor(id, year, month),
     ),
   )
@@ -864,7 +864,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     const reserva = potsAccount({ id: RESERVA_ID, name: 'Reserva', isActive: false })
     getAccountsMock.mockResolvedValue([...ACCOUNTS, reserva])
     getAccountMock.mockImplementation((id, year, month) =>
-      Promise.resolve(accountDetail({ ...reserva, id, year, month })),
+      Promise.resolve(accountDetail({ ...reserva, savings: null, id, year, month })),
     )
     getAccountTransactionsMock.mockResolvedValue([])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
@@ -1330,6 +1330,7 @@ describe('AccountScreenPage on a Settlement account', () => {
         id === MAE_ID
           ? accountDetail({
               ...mae,
+              savings: null,
               year,
               month,
               balance: 1,

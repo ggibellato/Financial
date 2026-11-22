@@ -1127,4 +1127,108 @@ public class AccountTests
 
         account.OtherParticipant.Should().Be("Mãe");
     }
+
+    private static SavingsTerms MonthlyTerms() =>
+        SavingsTerms.Create(InterestFrequency.Monthly, 5, isTaxFree: false, [InterestRate.Create(4.5m, new DateOnly(2026, 9, 1))]);
+
+    [Fact]
+    public void Create_WithSavingsTemplate_KeepsTheTermsAndCannotPayOrRoundUp()
+    {
+        var terms = MonthlyTerms();
+
+        var account = Account.Create("Chase Save", AccountTemplate.Savings, Currency.GBP, terms);
+
+        using (new AssertionScope())
+        {
+            account.Savings.Should().BeSameAs(terms);
+            account.OpeningBalance.Should().NotBeNull();
+            account.RoundUp.Should().BeNull();
+            account.CanPay.Should().BeFalse();
+            account.TemplateOrder.Should().Be(4);
+        }
+    }
+
+    [Fact]
+    public void Create_WithSavingsTemplateWithoutTerms_Throws()
+    {
+        var act = () => Account.Create("Chase Save", AccountTemplate.Savings, Currency.GBP);
+
+        act.Should().Throw<ArgumentException>().WithMessage(Account.MissingSavingsTermsMessage);
+    }
+
+    [Fact]
+    public void Create_WithSavingsTemplateInBrl_Throws()
+    {
+        var act = () => Account.Create("Poupança", AccountTemplate.Savings, Currency.BRL, MonthlyTerms());
+
+        act.Should().Throw<ArgumentException>().WithMessage("Savings accounts must be GBP.");
+    }
+
+    [Fact]
+    public void Create_WithTermsForAnotherTemplate_Throws()
+    {
+        var act = () => Account.Create("Chase", AccountTemplate.Bank, Currency.GBP, MonthlyTerms());
+
+        act.Should().Throw<ArgumentException>().WithMessage("Bank accounts don't earn interest.");
+    }
+
+    [Fact]
+    public void SetSavings_OnASavingsAccount_ReplacesTheTerms()
+    {
+        var account = Account.Create("Chase Save", AccountTemplate.Savings, Currency.GBP, MonthlyTerms());
+        var daily = SavingsTerms.Create(InterestFrequency.Daily, null, isTaxFree: true, [InterestRate.Create(3m, new DateOnly(2026, 1, 1))]);
+
+        account.SetSavings(daily);
+
+        account.Savings.Should().BeSameAs(daily);
+    }
+
+    [Fact]
+    public void SetSavings_OnABankAccount_Throws()
+    {
+        var act = () => CreateBank().SetSavings(MonthlyTerms());
+
+        act.Should().Throw<ArgumentException>().WithMessage("Bank accounts don't earn interest.");
+    }
+
+    [Fact]
+    public void ChangeSetup_ToSavingsWithoutTerms_ThrowsAndLeavesTheAccountUntouched()
+    {
+        var account = CreateBank();
+
+        var act = () => account.ChangeSetup(AccountTemplate.Savings, [Currency.GBP], hasRecords: false);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage(Account.MissingSavingsTermsMessage);
+            account.Template.Should().Be(AccountTemplate.Bank);
+            account.RoundUp.Should().NotBeNull();
+        }
+    }
+
+    [Fact]
+    public void ChangeSetup_ToSavingsWithTerms_SetsThemAndDropsRoundUp()
+    {
+        var account = CreateBank();
+        var terms = MonthlyTerms();
+
+        account.ChangeSetup(AccountTemplate.Savings, [Currency.GBP], hasRecords: false, terms);
+
+        using (new AssertionScope())
+        {
+            account.Template.Should().Be(AccountTemplate.Savings);
+            account.Savings.Should().BeSameAs(terms);
+            account.RoundUp.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void ChangeSetup_AwayFromSavings_DropsTheTerms()
+    {
+        var account = Account.Create("Chase Save", AccountTemplate.Savings, Currency.GBP, MonthlyTerms());
+
+        account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: false);
+
+        account.Savings.Should().BeNull();
+    }
 }

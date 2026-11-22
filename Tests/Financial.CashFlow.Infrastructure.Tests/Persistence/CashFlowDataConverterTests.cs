@@ -243,6 +243,30 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
+    public void LoadThenSave_SavingsSourcedInvestmentAccount_SharesTheSavingsAccountAndKeepsItsId()
+    {
+        const string savingsId = "5db5c88d-0000-0000-0000-000000000803";
+        var file = V5File
+            .Replace(
+                "\"Source\":\"PotsAccountTotal\",\"CreditCardId\":null,\"PotsAccountId\":\"" + ReservaId + "\"}",
+                "\"Source\":\"SavingsAccountBalance\",\"CreditCardId\":null,\"PotsAccountId\":null,\"SavingsAccountId\":\"" + savingsId + "\"}")
+            .Replace(
+                "\"Accounts\":[",
+                "\"Accounts\":[{\"Id\":\"" + savingsId + "\",\"Name\":\"Chase Save\",\"Template\":\"Savings\",\"Currency\":\"GBP\",\"IsActive\":true,"
+                + "\"OpeningBalance\":{\"Amount\":0,\"StartDate\":\"2026-09-01\"},\"RoundUp\":null,\"Pots\":null,\"CategoryId\":null,"
+                + "\"Savings\":{\"Frequency\":\"Daily\",\"IsTaxFree\":false,\"Rates\":[{\"AnnualPercent\":4.5,\"EffectiveFrom\":\"2026-09-01\"}]}},");
+
+        var data = _serializer.Deserialize(file);
+        var investmentAccount = data.InvestmentAccounts.Single(account => account.Id == Guid.Parse(ReservasPessoaisId));
+
+        using (new AssertionScope())
+        {
+            investmentAccount.SavingsAccount.Should().BeSameAs(data.Accounts.Single(account => account.Id == Guid.Parse(savingsId)));
+            _serializer.Serialize(data).Should().Be(file);
+        }
+    }
+
+    [Fact]
     public void Load_IncomeSources_ShareTheirPotsAccountInstance()
     {
         var data = _serializer.Deserialize(V5File);

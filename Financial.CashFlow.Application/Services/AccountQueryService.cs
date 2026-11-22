@@ -117,7 +117,8 @@ public sealed class AccountQueryService : IAccountQueryService
                 DisabledActions = AccountActions.DisabledFor(account, currentBalances).ToDictionary(disabled => disabled.Key.ToString(), disabled => disabled.Value),
                 CurrentBalances = CurrencyBalanceMapper.ToDtos(currentBalances),
                 HasPlannedEntries = account.Has(Capability.HasParticipants) && HasPlannedEntries(account, records),
-                OtherParticipant = account.OtherParticipant
+                OtherParticipant = account.OtherParticipant,
+                Savings = SavingsTermsMapper.ToSummary(account.Savings, _timeProvider.GetLocalToday())
             };
 
             span.MarkSuccess();
@@ -443,6 +444,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = income.Description,
         Counterpart = income.IncomeSource.Name,
         Amount = income.NetValue,
+        IsInterest = account is not null && account.Has(Capability.EarnsInterest) && income.IncomeSource.Group == IncomeGroup.DividendoJuros,
         Currency = account?.Currency.ToString(),
         CanEdit = account?.IsActive ?? true,
         Income = IncomeService.ToDto(income, IncomeService.DepositExpensesOf(income.Id, _repository))
@@ -541,6 +543,7 @@ public sealed class AccountQueryService : IAccountQueryService
         BalanceStartDate = account.OpeningBalance?.StartDate,
         RoundUpEnabled = account.RoundUp?.Enabled,
         CategoryId = account.Category?.Id,
+        Savings = SavingsTermsMapper.ToDto(account.Savings),
         DueDate = dueDate,
         ReplacesPage = replacesPage,
         Capabilities = CapabilityNames(account.Has)

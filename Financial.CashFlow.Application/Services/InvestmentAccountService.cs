@@ -65,8 +65,9 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
             var potsAccount = ResolvePotsAccount(source, request.PotsAccountId);
+            var savingsAccount = ResolveSavingsAccount(source, request.SavingsAccountId);
 
-            var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability, source, creditCard, potsAccount);
+            var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability, source, creditCard, potsAccount, savingsAccount);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -106,10 +107,11 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
             var potsAccount = ResolvePotsAccount(source, request.PotsAccountId);
+            var savingsAccount = ResolveSavingsAccount(source, request.SavingsAccountId);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                account.Update(request.Name, request.IsActive, request.IsLiability, source, creditCard, potsAccount);
+                account.Update(request.Name, request.IsActive, request.IsLiability, source, creditCard, potsAccount, savingsAccount);
                 return true;
             }).ConfigureAwait(false);
 
@@ -180,6 +182,11 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             ? CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId)
             : null;
 
+    private Account? ResolveSavingsAccount(InvestmentAccountSource source, Guid? savingsAccountId) =>
+        source == InvestmentAccountSource.SavingsAccountBalance
+            ? CashFlowReferenceResolver.ResolveSavingsAccount(_repository.GetAccounts(), savingsAccountId)
+            : null;
+
     private void EnsureNoNonZeroInvestmentSnapshotExists(Guid accountId)
     {
         if (HasNonZeroInvestmentSnapshot(accountId))
@@ -213,6 +220,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         HasNonZeroInvestmentSnapshot = hasNonZeroInvestmentSnapshot,
         Source = account.Source.ToString(),
         CreditCardId = account.CreditCard?.Id,
-        PotsAccountId = account.PotsAccount?.Id
+        PotsAccountId = account.PotsAccount?.Id,
+        SavingsAccountId = account.SavingsAccount?.Id
     };
 }

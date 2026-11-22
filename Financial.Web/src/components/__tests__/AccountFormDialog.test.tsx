@@ -114,6 +114,7 @@ describe('AccountFormDialog', () => {
         balanceStartDate: '2026-09-01',
         roundUpEnabled: true,
         categoryId: null,
+        savings: null,
         isActive: true,
       }),
     )
@@ -400,6 +401,7 @@ describe('AccountFormDialog', () => {
         balanceStartDate: '2026-02-01',
         roundUpEnabled: true,
         categoryId: null,
+        savings: null,
         isActive: false,
       }),
     )
@@ -512,6 +514,7 @@ describe('AccountFormDialog', () => {
           balanceStartDate: null,
           roundUpEnabled: null,
           categoryId: null,
+          savings: null,
           isActive: true,
         }),
       )

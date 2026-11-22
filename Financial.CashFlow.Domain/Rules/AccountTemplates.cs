@@ -59,6 +59,19 @@ public static class AccountTemplates
                 Capability.CanSettle
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.BRL, Currency.GBP]),
+            JoinsDefaultGroup: false),
+        new(
+            AccountTemplate.Savings,
+            new[]
+            {
+                Capability.HasOpeningBalance,
+                Capability.ReceivesIncome,
+                Capability.CanSendTransfers,
+                Capability.CanReceiveTransfers,
+                Capability.CanReconcile,
+                Capability.EarnsInterest
+            }.ToFrozenSet(),
+            Array.AsReadOnly([Currency.GBP]),
             JoinsDefaultGroup: false)
     ];
 

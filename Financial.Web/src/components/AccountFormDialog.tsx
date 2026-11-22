@@ -211,6 +211,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
     balanceStartDate: hasOpeningBalance ? values.balanceStartDate || UNSET_START_DATE : null,
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
+    savings: account?.savings ?? null,
     isActive: values.isActive,
   })
 

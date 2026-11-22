@@ -24,6 +24,12 @@ public class AccountJsonConverterTests
     private const string Mae =
         """{"Id":"5db5c88d-0000-0000-0000-000000000008","Name":"Mãe","Template":"Settlement","Currency":"BRL","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":null,"CategoryId":null,"Currencies":["BRL","GBP"],"OtherParticipant":"Mãe"}""";
 
+    private const string ChaseSave =
+        """{"Id":"5db5c88d-0000-0000-0000-000000000009","Name":"Chase Save","Template":"Savings","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":500,"StartDate":"2026-09-01"},"RoundUp":null,"Pots":null,"CategoryId":null,"Savings":{"Frequency":"Monthly","PaymentDay":5,"IsTaxFree":false,"Rates":[{"AnnualPercent":4.5,"EffectiveFrom":"2026-09-01"},{"AnnualPercent":3.75,"EffectiveFrom":"2027-01-01"}]}}""";
+
+    private const string SavingsKey =
+        ""","Savings":{"Frequency":"Monthly","PaymentDay":5,"IsTaxFree":false,"Rates":[{"AnnualPercent":4.5,"EffectiveFrom":"2026-09-01"},{"AnnualPercent":3.75,"EffectiveFrom":"2027-01-01"}]}""";
+
     private readonly JsonSerializerOptions _options;
 
     public AccountJsonConverterTests()
@@ -220,5 +226,68 @@ public class AccountJsonConverterTests
         var act = () => JsonSerializer.Deserialize<Account>(Mae.Replace("[\"BRL\",\"GBP\"]", "[\"BRL\",\"USD\"]"), _options);
 
         act.Should().Throw<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
+    }
+
+    [Fact]
+    public void ReadThenWrite_SavingsAccount_KeepsItsTermsAndProducesIdenticalBytes()
+    {
+        var account = JsonSerializer.Deserialize<Account>(ChaseSave, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.Template.Should().Be(AccountTemplate.Savings);
+            account.Savings!.Frequency.Should().Be(InterestFrequency.Monthly);
+            account.Savings.PaymentDay.Should().Be(5);
+            account.Savings.IsTaxFree.Should().BeFalse();
+            account.Savings.Rates.Should().Equal(
+                InterestRate.Create(4.5m, new DateOnly(2026, 9, 1)), InterestRate.Create(3.75m, new DateOnly(2027, 1, 1)));
+            JsonSerializer.Serialize(account, _options).Should().Be(ChaseSave);
+        }
+    }
+
+    [Fact]
+    public void ReadThenWrite_DailySavingsAccount_OmitsThePaymentDay()
+    {
+        var json = ChaseSave.Replace("\"Monthly\",\"PaymentDay\":5", "\"Daily\"");
+
+        var account = JsonSerializer.Deserialize<Account>(json, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.Savings!.PaymentDay.Should().BeNull();
+            JsonSerializer.Serialize(account, _options).Should().Be(json);
+        }
+    }
+
+    [Fact]
+    public void Write_NewBankAccount_HasNoSavingsKey()
+    {
+        JsonSerializer.Serialize(Account.Create("Chase", AccountTemplate.Bank, Currency.GBP), _options).Should().NotContain("Savings");
+    }
+
+    [Fact]
+    public void Read_SavingsAccountWithoutTerms_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(ChaseSave.Replace(SavingsKey, ""), _options);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000009 must have Savings exactly when its template earns interest.");
+    }
+
+    [Fact]
+    public void Read_BankWithSavingsTerms_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(V4Bank.Replace("\"CategoryId\":null", "\"CategoryId\":null" + SavingsKey), _options);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000001 must have Savings exactly when its template earns interest.");
+    }
+
+    [Fact]
+    public void Read_SavingsAccountWithTwoRatesOnOneDate_Throws()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(ChaseSave.Replace("2027-01-01", "2026-09-01"), _options);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Two rates can't take effect on the same date.");
     }
 }

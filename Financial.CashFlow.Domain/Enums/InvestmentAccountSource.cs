@@ -4,5 +4,6 @@ public enum InvestmentAccountSource
 {
     None,
     CreditCard,
-    PotsAccountTotal
+    PotsAccountTotal,
+    SavingsAccountBalance
 }

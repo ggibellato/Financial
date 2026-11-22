@@ -11,4 +11,5 @@ public sealed class AccountCreateDTO
     public DateOnly? BalanceStartDate { get; init; }
     public bool? RoundUpEnabled { get; init; }
     public Guid? CategoryId { get; init; }
+    public SavingsTermsDTO? Savings { get; init; }
 }

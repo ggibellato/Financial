@@ -113,6 +113,7 @@ describe('AdminAccountsPage', () => {
         balanceStartDate: null,
         roundUpEnabled: null,
         categoryId: null,
+        savings: null,
       }),
     )
   })
@@ -197,6 +198,7 @@ describe('AdminAccountsPage', () => {
       balanceStartDate: null,
       roundUpEnabled: null,
       categoryId: 'c1',
+      savings: null,
     })
     expect(within(rowOf('Travel')).getByText('Pots')).toBeInTheDocument()
   })

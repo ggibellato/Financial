@@ -48,6 +48,23 @@
       "CategoryId": null,
       "Currencies": ["BRL", "GBP"],
       "OtherParticipant": "Mãe"
+    },
+    {
+      "Id": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e04",
+      "Name": "Easy access saver",
+      "Template": "Savings",
+      "Currency": "GBP",
+      "IsActive": true,
+      "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" },
+      "RoundUp": null,
+      "Pots": null,
+      "CategoryId": null,
+      "Savings": {
+        "Frequency": "Monthly",
+        "PaymentDay": 1,
+        "IsTaxFree": false,
+        "Rates": [{ "AnnualPercent": 4.5, "EffectiveFrom": "2026-01-01" }]
+      }
     }
   ],
   "CardStatements": [],
