@@ -32,9 +32,9 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null, potsAccountId: null },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'CreditCard', creditCardId: 'cc1', potsAccountId: null },
-  { id: 'a3', name: 'Reservas pessoais', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'PotsAccountTotal', creditCardId: null, potsAccountId: 'p1' },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null, potsAccountId: null , savingsAccountId: null},
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'CreditCard', creditCardId: 'cc1', potsAccountId: null , savingsAccountId: null},
+  { id: 'a3', name: 'Reservas pessoais', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'PotsAccountTotal', creditCardId: null, potsAccountId: 'p1' , savingsAccountId: null},
 ]
 
 describe('InvestmentAccountsPage', () => {
@@ -130,7 +130,7 @@ describe('InvestmentAccountsPage', () => {
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
       creditCardId: null,
-      potsAccountId: null,
+      potsAccountId: null, savingsAccountId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -146,7 +146,7 @@ describe('InvestmentAccountsPage', () => {
         isLiability: false,
         source: 'None',
         creditCardId: null,
-        potsAccountId: null,
+        potsAccountId: null, savingsAccountId: null,
       }),
     )
     await waitFor(() =>
@@ -183,7 +183,7 @@ describe('InvestmentAccountsPage', () => {
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
       creditCardId: null,
-      potsAccountId: null,
+      potsAccountId: null, savingsAccountId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -200,7 +200,7 @@ describe('InvestmentAccountsPage', () => {
         isLiability: false,
         source: 'None',
         creditCardId: null,
-        potsAccountId: null,
+        potsAccountId: null, savingsAccountId: null,
       }),
     )
   })

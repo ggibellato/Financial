@@ -47,6 +47,7 @@ function toUpdateRequest(account: AccountDto): AccountUpdateDto {
     balanceStartDate: account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled,
     categoryId: account.categoryId,
+    savings: account.savings,
     isActive: account.isActive,
   }
 }

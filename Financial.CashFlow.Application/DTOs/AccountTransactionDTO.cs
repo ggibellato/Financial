@@ -16,6 +16,7 @@ public sealed class AccountTransactionDTO
     public AccountTransactionOperationDTO? Operation { get; init; }
     public ExpenseDTO? Expense { get; init; }
     public IncomeDTO? Income { get; init; }
+    public bool IsInterest { get; init; }
     public AccountTransferDTO? Transfer { get; init; }
     public BalanceAdjustmentDTO? Adjustment { get; init; }
     public ReserveMovementDTO? Movement { get; init; }

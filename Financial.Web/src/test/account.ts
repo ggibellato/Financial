@@ -27,6 +27,7 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
     balanceStartDate: '2026-01-01',
     roundUpEnabled: false,
     categoryId: null,
+    savings: null,
     dueDate: null,
     replacesPage: null,
     capabilities: BANK_CAPABILITIES,
@@ -87,6 +88,7 @@ export function accountDetail(fields: RequiredAccountDetailFields & Partial<Acco
     currentBalances: [],
     hasPlannedEntries: false,
     otherParticipant: null,
+    savings: null,
     ...fields,
   }
 }

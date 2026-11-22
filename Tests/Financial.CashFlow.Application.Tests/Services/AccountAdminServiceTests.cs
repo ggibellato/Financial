@@ -461,6 +461,63 @@ public class AccountAdminServiceTests
         }
     }
 
+    private static SavingsTermsDTO MonthlySavingsTerms() => new()
+    {
+        InterestFrequency = "Monthly",
+        PaymentDay = 5,
+        IsTaxFree = true,
+        Rates = [new InterestRateDTO { AnnualPercent = 4.5m, EffectiveFrom = new DateOnly(2026, 9, 1) }]
+    };
+
+    [Fact]
+    public async Task CreateAsync_SavingsWithTerms_SavesThemOnTheAccount()
+    {
+        var result = await _sut.CreateAsync(new AccountCreateDTO
+        {
+            TemplateName = "Savings",
+            Name = "Chase Save",
+            Currency = "GBP",
+            OpeningBalance = 500m,
+            BalanceStartDate = new DateOnly(2026, 9, 1),
+            Savings = MonthlySavingsTerms()
+        });
+
+        using (new AssertionScope())
+        {
+            var saved = _repository.Accounts.Single(account => account.Id == result.Id).Savings!;
+            saved.Frequency.Should().Be(InterestFrequency.Monthly);
+            saved.PaymentDay.Should().Be(5);
+            saved.IsTaxFree.Should().BeTrue();
+            saved.Rates.Should().Equal(InterestRate.Create(4.5m, new DateOnly(2026, 9, 1)));
+            result.Savings.Should().BeEquivalentTo(MonthlySavingsTerms());
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UnusedBankToSavings_ChangesTheTemplateAndSetsTheTerms()
+    {
+        var created = await _sut.CreateAsync(NewBank(name: "Monzo"));
+
+        var result = await _sut.UpdateAsync(created.Id, new AccountUpdateDTO
+        {
+            TemplateName = "Savings",
+            Name = "Monzo",
+            Currency = "GBP",
+            OpeningBalance = 0m,
+            BalanceStartDate = new DateOnly(2026, 9, 1),
+            IsActive = true,
+            Savings = MonthlySavingsTerms()
+        });
+
+        using (new AssertionScope())
+        {
+            result.TemplateName.Should().Be("Savings");
+            result.RoundUpEnabled.Should().BeNull();
+            result.Savings!.PaymentDay.Should().Be(5);
+        }
+    }
+
     [Fact]
     public async Task CreateAsync_SavingsWithoutItsTerms_ThrowsAndWritesNothing()
     {

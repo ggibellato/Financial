@@ -35,7 +35,7 @@ This PRD is the first of three planned together. Cashback for bank accounts (P65
 ### The Opportunity
 
 - **One template, a few settings:** the template-and-capability model (P60) already decides what an account can do; a Savings template with an `EarnsInterest` capability, plus settings for how often interest is paid and whether it is tax-free, adds savings without new account machinery.
-- **Interest as income:** an interest payment is an `Income` on the Savings account with the account's interest income source, so the Income tab, Summary, Result and tithe pick it up with no new rules.
+- **Interest as income:** an interest payment is an `Income` on the Savings account from a source in the existing Dividendo/Juros income group, so the Income tab, Summary, Result and tithe pick it up with no new rules.
 - **Snapshot from the balance:** the snapshot suggestion that already reads a Pots account's balance (`InvestmentSnapshotService`) can read a Savings account's balance the same way.
 
 ## 3. Target Audience
@@ -86,7 +86,7 @@ This PRD is the first of three planned together. Cashback for bank accounts (P65
 - As the user, I want the suggestion to use the balance at the end of the previous month so that it matches how the Pots account is suggested
 
 ### F04. Savings Accounts in the Web App
-- As the user, I want Admin → Accounts to show the Savings settings when I pick the Savings template so that I can set how often interest is paid, the payment day, tax-free, the rates and the interest income source
+- As the user, I want Admin → Accounts to show the Savings settings when I pick the Savings template so that I can set how often interest is paid, the payment day, tax-free and the rates
 - As the user, I want the account screen to show the current rate, when interest is paid and whether it is tax-free so that I see the account's terms at a glance
 - As the user, I want an "Add interest" action on a Savings account so that recording interest is one short form
 - As the user, I want Admin → Investment accounts to offer "Savings account balance" as a source so that I can link a snapshot account to a Savings account
@@ -105,33 +105,33 @@ This PRD is the first of three planned together. Cashback for bank accounts (P65
 - Both settings can be changed at any time, also when the account has transactions; the rates and interest entries are kept.
 - **Rate history:** a list of rates, each an annual rate in percent (from 0 to 100, at most 2 decimal places) with the date it takes effect. At least one rate is required. Two rates can't take effect on the same date. A rate may take effect in the future (a change the bank has announced). Rates can be added, changed and removed while at least one remains.
 - **Current rate:** the rate with the latest effective date on or before the host's local today; when every rate is in the future, there is no current rate and the account shows the earliest upcoming one as upcoming.
-- **Interest income source:** required on a Savings account, an active income source chosen by the user (for example "Interest"). It is what F02 records interest against.
 - **Other templates:** a Savings setting sent for a non-Savings account is refused; changing an account to or from Savings follows today's rule (only while the account has no transactions).
 - **Data:** the Savings settings are new optional fields on the account in `data-cashflow.json`; accounts without them load unchanged. Whether the data file version changes is decided in the spec. The API shape changes, so the OpenAPI snapshot and the generated web types are regenerated.
 
 **Experience:**
-- The account detail returns how often interest is paid and the payment day, the tax-free flag, the full rate history ordered by effective date, the current rate and its effective date, any upcoming rate, and the interest income source.
+- The account detail returns how often interest is paid and the payment day, the tax-free flag, the full rate history ordered by effective date, the current rate and its effective date, and any upcoming rate.
 - Transfers to and from a Savings account, its opening balance and balance adjustments behave exactly as for a Bank account.
 
 **Error Handling:**
-- Missing interest frequency or tax-free flag, missing rate, rate outside 0–100 or with more than 2 decimal places, two rates on one date, missing or out-of-range payment day for `Monthly`, a payment day for `Daily`, or a missing or inactive interest income source: 400 with a message naming the field; nothing is saved.
+- Missing interest frequency or tax-free flag, missing rate, rate outside 0–100 or with more than 2 decimal places, two rates on one date, missing or out-of-range payment day for `Monthly`, or a payment day for `Daily`: 400 with a message naming the field; nothing is saved.
 - Removing the last rate: 400 "A savings account needs at least one rate."; nothing changes.
 - Savings settings on a non-Savings account: 400; nothing is saved.
 
 ### F02. Interest Entries
 
 **Consumes:**
-- F01: Savings accounts that receive income and their interest income source
+- F01: Savings accounts that receive income
 
 **Capabilities:**
-- An interest entry is an `Income` whose account is a Savings account and whose source is that account's interest income source; it is created, edited and deleted through the existing income endpoints. No new transaction type and no new endpoint.
+- An interest entry is an `Income` whose account is a Savings account and whose source is in the **Dividendo/Juros** income group (the group that already exists for dividends and interest); it is created, edited and deleted through the existing income endpoints. No new transaction type and no new endpoint.
 - Amount: the interest actually received, net value only (no gross); amount > 0 with at most 2 decimal places. Date: any date the income rules already accept.
 - It raises the Savings account's balance from its date, and counts in its month's Income tab, Summary income, Result and tithe base, as every income does.
 - Interest is never generated or estimated by the app. An account paid daily can record one entry per day or one entry for a period, as the user prefers.
-- An income from another source can also be paid into a Savings account (for example a bonus); it is shown as an ordinary income, not as interest.
+- An income from a source in another group can also be paid into a Savings account (for example a bonus); it is shown as an ordinary income, not as interest.
+- The account's transactions mark each income row with `isInterest` (true only for a Dividendo/Juros source on a Savings account); the row keeps its `Income` kind, so editing and deleting work as for any income.
 
 **Experience:**
-- In the account's transactions, an income whose source is the account's interest income source shows as "Interest".
+- In the account's transactions, an income marked `isInterest` shows as "Interest".
 
 **Error Handling:**
 - The existing income validation applies unchanged (missing source, negative value, inactive account: 400, nothing saved).
@@ -155,10 +155,10 @@ This PRD is the first of three planned together. Cashback for bank accounts (P65
 - F01, F02, F03
 
 **Capabilities:**
-- **Admin → Accounts:** picking the Savings template shows Interest paid (Monthly / Daily), Payment day (only for Monthly), Tax-free, Interest income source and a Rates editor (rows of rate % and effective date, Add rate, Remove rate disabled on the last row). Switching to Daily hides Payment day and drops its value.
+- **Admin → Accounts:** picking the Savings template shows Interest paid (Monthly / Daily), Payment day (only for Monthly), Tax-free and a Rates editor (rows of rate % and effective date, Add rate, Remove rate disabled on the last row). Switching to Daily hides Payment day and drops its value.
 - **Accounts tab:** Savings accounts form their own "Savings" group, in template order after the existing groups.
 - **Account screen header:** current rate ("4.50% since 1 Sep 2026"), any upcoming rate ("3.75% from 1 Jan 2027"), the schedule ("Interest paid monthly on day 5" or "Interest paid daily") and a "Tax-free" badge on a tax-free account, with visible text so the meaning does not depend on colour.
-- **Add interest:** an action on a Savings account opening the income form with the account and the interest income source filled in and locked; the user enters date and amount (date defaults to today).
+- **Add interest:** an action on a Savings account opening the income form with the account locked and the source picker limited to active Dividendo/Juros sources (filled in when there is only one); the user enters date and amount (date defaults to today).
 - **Admin → Investment accounts:** the source picker offers "Savings account balance" with a Savings account picker.
 - Every new form follows `docs/rules/ui.md` and `docs/ui/review-checklist.md`: labels, keyboard operation, visible focus, inline validation with focus on the first invalid field, saving and server-error states, and the unsaved-changes guard the account dialog already has.
 
@@ -221,37 +221,37 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Savings Template and Interest Settings
-- [ ] **P64-F01-savings-template-01** Creating a GBP Savings account paid monthly (with a payment day) and one paid daily, each with one rate, a tax-free flag and an interest income source, returns 201; the account detail returns the frequency, payment day, tax-free flag, rates and current rate
-- [ ] **P64-F01-savings-template-02** A Savings account in a currency other than GBP is refused with 400
-- [ ] **P64-F01-savings-template-03** The tax-free flag is saved as sent, is required, and can be changed later
-- [ ] **P64-F01-savings-template-04** Monthly without a payment day, or with a day outside 1–31, is refused; Daily with a payment day is refused
-- [ ] **P64-F01-savings-template-05** A missing rate, a rate outside 0–100 or with more than 2 decimal places, and two rates on the same date are each refused with 400 naming the field
-- [ ] **P64-F01-savings-template-06** The current rate is the latest rate effective on or before today; a future rate is returned as upcoming and becomes current on its date (fixed clock)
-- [ ] **P64-F01-savings-template-07** Removing the last rate returns 400 "A savings account needs at least one rate." and the account is unchanged
-- [ ] **P64-F01-savings-template-08** A missing or inactive interest income source is refused with 400
-- [ ] **P64-F01-savings-template-09** The frequency and the tax-free flag can change on an account with transactions, and its rates and entries are kept
-- [ ] **P64-F01-savings-template-10** A Savings account accepts transfers in and out, an opening balance and a balance adjustment, and refuses an expense or bill payment
-- [ ] **P64-F01-savings-template-11** Savings settings sent for a non-Savings account are refused with 400
-- [ ] **P64-F01-savings-template-12** A data file with no Savings accounts loads and saves unchanged; a Savings account survives a save-load round trip with all its settings
-- [ ] **P64-F01-savings-template-13** The OpenAPI snapshot and the generated web types include the Savings fields and their freshness tests pass
+- [x] **P64-F01-savings-template-01** Creating a GBP Savings account paid monthly (with a payment day) and one paid daily, each with one rate and a tax-free flag, returns 201; the account detail returns the frequency, payment day, tax-free flag, rates and current rate
+- [x] **P64-F01-savings-template-02** A Savings account in a currency other than GBP is refused with 400
+- [x] **P64-F01-savings-template-03** The tax-free flag is saved as sent, is required, and can be changed later
+- [x] **P64-F01-savings-template-04** Monthly without a payment day, or with a day outside 1–31, is refused; Daily with a payment day is refused
+- [x] **P64-F01-savings-template-05** A missing rate, a rate outside 0–100 or with more than 2 decimal places, and two rates on the same date are each refused with 400 naming the field
+- [x] **P64-F01-savings-template-06** The current rate is the latest rate effective on or before today; a future rate is returned as upcoming and becomes current on its date (fixed clock)
+- [x] **P64-F01-savings-template-07** Removing the last rate returns 400 "A savings account needs at least one rate." and the account is unchanged
+- [x] **P64-F01-savings-template-08** Creating a Savings account without its terms is refused with 400 "Enter how this savings account pays interest and its rate."
+- [x] **P64-F01-savings-template-09** The frequency and the tax-free flag can change on an account with transactions, and its rates and entries are kept
+- [x] **P64-F01-savings-template-10** A Savings account accepts transfers in and out, an opening balance and a balance adjustment, and refuses an expense or bill payment
+- [x] **P64-F01-savings-template-11** Savings settings sent for a non-Savings account are refused with 400
+- [x] **P64-F01-savings-template-12** A data file with no Savings accounts loads and saves unchanged; a Savings account survives a save-load round trip with all its settings
+- [x] **P64-F01-savings-template-13** The OpenAPI snapshot and the generated web types include the Savings fields and their freshness tests pass
 
 ### F02. Interest Entries
-- [ ] **P64-F02-interest-entries-01** An income on a Savings account with its interest income source raises the account's balance from its date
-- [ ] **P64-F02-interest-entries-02** That income appears in its month's Income tab, Summary income, Result and tithe base
-- [ ] **P64-F02-interest-entries-03** It can be edited and deleted through the income endpoints, and the balance follows
-- [ ] **P64-F02-interest-entries-04** In the account's transactions it is labelled "Interest"; an income from another source on the same account is not
+- [x] **P64-F02-interest-entries-01** An income on a Savings account from a Dividendo/Juros source raises the account's balance from its date
+- [x] **P64-F02-interest-entries-02** That income appears in its month's Income tab, Summary income, Result and tithe base
+- [x] **P64-F02-interest-entries-03** It can be edited and deleted through the income endpoints, and the balance follows
+- [x] **P64-F02-interest-entries-04** In the account's transactions it is labelled "Interest"; an income from another source on the same account is not
 
 ### F03. Savings Balance in Investment Snapshots
-- [ ] **P64-F03-savings-snapshot-01** An Investment account with source `SavingsAccountBalance` and a Savings account saves; without a Savings account, or with an account of another template, it returns 400
-- [ ] **P64-F03-savings-snapshot-02** The suggestion for month M is the Savings account's balance at the end of month M − 1, described as "{account} balance — as of {MMM yyyy}"
-- [ ] **P64-F03-savings-snapshot-03** Credit card and Pots suggestions are unchanged
+- [x] **P64-F03-savings-snapshot-01** An Investment account with source `SavingsAccountBalance` and a Savings account saves; without a Savings account, or with an account of another template, it returns 400
+- [x] **P64-F03-savings-snapshot-02** The suggestion for month M is the Savings account's balance at the end of month M − 1, described as "{account} balance — as of {MMM yyyy}"
+- [x] **P64-F03-savings-snapshot-03** Credit card and Pots suggestions are unchanged
 
 ### F04. Savings Accounts in the Web App
-- [ ] **P64-F04-savings-web-01** Admin → Accounts shows Interest paid, Payment day, Tax-free, Interest income source and Rates for the Savings template only; Payment day is hidden for Daily
+- [ ] **P64-F04-savings-web-01** Admin → Accounts shows Interest paid, Payment day, Tax-free and Rates for the Savings template only; Payment day is hidden for Daily
 - [ ] **P64-F04-savings-web-02** The Rates editor adds and removes rows, Remove is disabled on the last row, and invalid rates show inline errors with focus on the first invalid field
 - [ ] **P64-F04-savings-web-03** The Accounts tab shows a "Savings" group
 - [ ] **P64-F04-savings-web-04** The account screen header shows the current rate with its date, any upcoming rate, the schedule, and a "Tax-free" badge with visible text only on tax-free accounts
-- [ ] **P64-F04-savings-web-05** "Add interest" opens the income form with the account and interest income source locked, and a saved entry shows as "Interest" in the account's transactions
+- [ ] **P64-F04-savings-web-05** "Add interest" opens the income form with the account locked and only Dividendo/Juros sources offered, and a saved entry shows as "Interest" in the account's transactions
 - [ ] **P64-F04-savings-web-06** Admin → Investment accounts offers "Savings account balance" with a Savings account picker
 - [ ] **P64-F04-savings-web-07** Every touched view passes `docs/ui/review-checklist.md`
 

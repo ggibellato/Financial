@@ -52,6 +52,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(PotTransaction), nameof(PotTransaction.Income))] = ("IncomeId", false),
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.CreditCard))] = ("CreditCardId", false),
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.PotsAccount))] = ("PotsAccountId", false),
+        [(typeof(InvestmentAccount), nameof(InvestmentAccount.SavingsAccount))] = ("SavingsAccountId", false),
         [(typeof(IncomeSource), nameof(IncomeSource.PotsAccount))] = ("PotsAccountId", false),
         [(typeof(Income), nameof(Income.PotsAccount))] = ("PotsAccountId", false),
     };
@@ -63,7 +64,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(CardStatement), nameof(CardStatement.SettledOn)),
         (typeof(Expense), nameof(Expense.OperationId)),
         (typeof(Expense), nameof(Expense.ReportingMonth)),
-        (typeof(PotTransaction), nameof(PotTransaction.OperationId))
+        (typeof(PotTransaction), nameof(PotTransaction.OperationId)),
+        (typeof(InvestmentAccount), nameof(InvestmentAccount.SavingsAccount))
     ];
 
     private readonly ReferenceResolutionContext? _context;

@@ -51,6 +51,16 @@
               "boolean"
             ]
           },
+          "savings": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SavingsTermsDTO"
+              }
+            ]
+          },
           "templateName": {
             "type": "string"
           }
@@ -138,6 +148,16 @@
               "boolean"
             ]
           },
+          "savings": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SavingsTermsDTO"
+              }
+            ]
+          },
           "templateName": {
             "type": "string"
           }
@@ -208,6 +228,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "savings": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SavingsSummaryDTO"
+              }
             ]
           },
           "templateName": {
@@ -658,6 +688,9 @@
               }
             ]
           },
+          "isInterest": {
+            "type": "boolean"
+          },
           "kind": {
             "type": "string"
           },
@@ -979,6 +1012,16 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "savings": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SavingsTermsDTO"
+              }
             ]
           },
           "templateName": {
@@ -4143,6 +4186,23 @@
         ],
         "type": "object"
       },
+      "InterestRateDTO": {
+        "properties": {
+          "annualPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "effectiveFrom": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "annualPercent",
+          "effectiveFrom"
+        ],
+        "type": "object"
+      },
       "InvestmentAccountAnnualDiffDTO": {
         "properties": {
           "account": {
@@ -4202,6 +4262,13 @@
               "string"
             ]
           },
+          "savingsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "source": {
             "type": "string"
           }
@@ -4245,6 +4312,13 @@
               "string"
             ]
           },
+          "savingsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "source": {
             "type": "string"
           }
@@ -4277,6 +4351,13 @@
             "type": "string"
           },
           "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "savingsAccountId": {
             "format": "uuid",
             "type": [
               "null",
@@ -5879,6 +5960,77 @@
           "offendingSaleDate",
           "quantityHeld",
           "shortfall"
+        ],
+        "type": "object"
+      },
+      "SavingsSummaryDTO": {
+        "properties": {
+          "currentRate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InterestRateDTO"
+              }
+            ]
+          },
+          "interestFrequency": {
+            "type": "string"
+          },
+          "isTaxFree": {
+            "type": "boolean"
+          },
+          "paymentDay": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "upcomingRate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InterestRateDTO"
+              }
+            ]
+          }
+        },
+        "required": [
+          "interestFrequency",
+          "isTaxFree"
+        ],
+        "type": "object"
+      },
+      "SavingsTermsDTO": {
+        "properties": {
+          "interestFrequency": {
+            "type": "string"
+          },
+          "isTaxFree": {
+            "type": "boolean"
+          },
+          "paymentDay": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "rates": {
+            "items": {
+              "$ref": "#/components/schemas/InterestRateDTO"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "interestFrequency",
+          "isTaxFree",
+          "rates"
         ],
         "type": "object"
       },

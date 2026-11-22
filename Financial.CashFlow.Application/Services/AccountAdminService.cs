@@ -5,6 +5,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
+using Financial.CashFlow.Domain.ValueObjects;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
@@ -64,7 +65,7 @@ public sealed class AccountAdminService : IAccountAdminService
             ArgumentNullException.ThrowIfNull(request);
 
             var currency = CurrencyParser.Parse(request.Currency);
-            var account = Account.Create(request.Name, ParseTemplate(request.TemplateName), currency);
+            var account = Account.Create(request.Name, ParseTemplate(request.TemplateName), currency, SavingsTermsMapper.ToDomain(request.Savings));
             _repository.GetAccounts().EnsureAccountNameIsUnique(account.Name, null, DisplayName);
             var currencies = RequestedCurrencies(account.Has, account.Name, currency, request.Currencies);
             EnsureOtherParticipantFits(account.Has, account.Name, request.OtherParticipant);
@@ -107,6 +108,7 @@ public sealed class AccountAdminService : IAccountAdminService
             var template = ParseTemplate(request.TemplateName);
             var currency = CurrencyParser.Parse(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
+            var savings = SavingsTermsMapper.ToDomain(request.Savings);
             var trimmedName = request.Name.Trim();
             Func<Capability, bool> templateHas = AccountTemplates.CapabilitiesOf(template).Contains;
             var currencies = RequestedCurrencies(templateHas, trimmedName, currency, request.Currencies);
@@ -117,14 +119,15 @@ public sealed class AccountAdminService : IAccountAdminService
             _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DisplayName);
             var targetHas = changesSetup ? templateHas : account.Has;
             EnsureOtherParticipantFits(targetHas, trimmedName, request.OtherParticipant);
-            EnsureTemplateFieldsAreValid(trimmedName, template, currencies, request.OtherParticipant);
+            EnsureTemplateFieldsAreValid(trimmedName, template, currencies, request.OtherParticipant, savings);
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 account.Update(request.Name);
-                account.ChangeSetup(template, currencies, hasRecords);
+                account.ChangeSetup(template, currencies, hasRecords, savings);
+                ApplySavings(account, savings);
                 ApplyOtherParticipant(account, request.OtherParticipant);
                 ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
                 ApplyCategory(account, category);
@@ -228,11 +231,19 @@ public sealed class AccountAdminService : IAccountAdminService
     }
 
     private static void EnsureTemplateFieldsAreValid(
-        string accountName, AccountTemplate template, IReadOnlyList<Currency> currencies, string? otherParticipant)
+        string accountName, AccountTemplate template, IReadOnlyList<Currency> currencies, string? otherParticipant, SavingsTerms? savings)
     {
-        var preview = Account.Create(accountName, template, currencies[0]);
+        var preview = Account.Create(accountName, template, currencies[0], savings);
         preview.ApplyCurrencies(currencies);
         ApplyOtherParticipant(preview, otherParticipant);
+    }
+
+    private static void ApplySavings(Account account, SavingsTerms? savings)
+    {
+        if (savings is not null)
+        {
+            account.SetSavings(savings);
+        }
     }
 
     private static void ApplyOtherParticipant(Account account, string? otherParticipant)

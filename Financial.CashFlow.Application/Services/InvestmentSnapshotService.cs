@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
@@ -114,6 +115,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             var potsAsOfDate = PotAsOfDateResolver.LastDayOfPriorMonth(year, month);
             var potsAsOfLabel = potsAsOfDate.ToString("MMM yyyy", CultureInfo.InvariantCulture);
 
+            IReadOnlyList<IAccountTransaction>? accountTransactions = null;
             var suggestions = new List<InvestmentSnapshotSuggestionDTO>();
             var notUpdated = new List<InvestmentSnapshotSuggestionSkippedDTO>();
 
@@ -159,6 +161,19 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                             CurrentValue = snapshot.Value,
                             SuggestedValue = AccountBalanceRule.Balance(potsAccount, potsAsOfDate, _repository.GetPotTransactions()),
                             SourceDescription = $"{potsAccount.Name} total — as of {potsAsOfLabel}"
+                        });
+                        break;
+
+                    case InvestmentAccountSource.SavingsAccountBalance:
+                        var savingsAccount = account.SavingsAccount!;
+                        suggestions.Add(new InvestmentSnapshotSuggestionDTO
+                        {
+                            SnapshotId = snapshot.Id,
+                            AccountId = account.Id,
+                            AccountName = account.Name,
+                            CurrentValue = snapshot.Value,
+                            SuggestedValue = AccountBalanceRule.Balance(savingsAccount, potsAsOfDate, accountTransactions ??= AccountTransactionReader.Read(_repository)),
+                            SourceDescription = $"{savingsAccount.Name} balance — as of {potsAsOfLabel}"
                         });
                         break;
 

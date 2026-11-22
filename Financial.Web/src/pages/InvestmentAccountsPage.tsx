@@ -64,8 +64,16 @@ export default function InvestmentAccountsPage() {
     potsAccountId: string | null,
   ) =>
     editingAccount
-      ? updateInvestmentAccount(editingAccount.id, { name, isActive, isLiability, source, creditCardId, potsAccountId })
-      : createInvestmentAccount({ name, isActive, isLiability, source, creditCardId, potsAccountId })
+      ? updateInvestmentAccount(editingAccount.id, {
+          name,
+          isActive,
+          isLiability,
+          source,
+          creditCardId,
+          potsAccountId,
+          savingsAccountId: editingAccount.savingsAccountId,
+        })
+      : createInvestmentAccount({ name, isActive, isLiability, source, creditCardId, potsAccountId, savingsAccountId: null })
 
   const closeFormDialog = () => {
     setEditingAccount(null)

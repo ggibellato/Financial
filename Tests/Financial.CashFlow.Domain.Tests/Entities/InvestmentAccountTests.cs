@@ -1,5 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.ValueObjects;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Financial.TestUtilities;
@@ -292,5 +294,60 @@ public class InvestmentAccountTests
             "Amex balance", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, TestAccounts.CreditCard("Retired", isActive: false));
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    private static Account ChaseSave() =>
+        Account.Create(
+            "Chase Save",
+            AccountTemplate.Savings,
+            Currency.GBP,
+            SavingsTerms.Create(InterestFrequency.Daily, null, isTaxFree: false, [InterestRate.Create(4.5m, new DateOnly(2026, 9, 1))]));
+
+    [Fact]
+    public void Create_WithSourceSavingsAccountBalanceAndASavingsAccount_NamesIt()
+    {
+        var chaseSave = ChaseSave();
+
+        var account = InvestmentAccount.Create(
+            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance, savingsAccount: chaseSave);
+
+        account.SavingsAccount.Should().BeSameAs(chaseSave);
+    }
+
+    [Fact]
+    public void Create_WithSourceSavingsAccountBalanceAndNoSavingsAccount_Throws()
+    {
+        var act = () => InvestmentAccount.Create("Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance);
+
+        act.Should().Throw<ArgumentException>().WithMessage("A savings-account-sourced investment account requires a Savings account.");
+    }
+
+    [Fact]
+    public void Create_WithASavingsAccountAndAnotherSource_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.None, savingsAccount: ChaseSave());
+
+        act.Should().Throw<ArgumentException>().WithMessage("Only a savings-account-sourced investment account can name a Savings account.");
+    }
+
+    [Fact]
+    public void Create_NamingAnAccountThatDoesNotEarnInterest_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "Barclays savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance, savingsAccount: TestAccounts.Bank("Barclays"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays is not a Savings account.");
+    }
+
+    [Fact]
+    public void Update_SwitchingAwayFromSavingsAccountBalance_ClearsTheSavingsAccount()
+    {
+        var account = InvestmentAccount.Create(
+            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance, savingsAccount: ChaseSave());
+
+        account.Update("Chase savings", isActive: true, isLiability: false);
+
+        account.SavingsAccount.Should().BeNull();
     }
 }

@@ -7220,6 +7220,7 @@ export interface components {
             openingBalance?: null | number;
             otherParticipant?: null | string;
             roundUpEnabled?: null | boolean;
+            savings?: null | components["schemas"]["SavingsTermsDTO"];
             templateName: string;
         };
         AccountDTO: {
@@ -7242,6 +7243,7 @@ export interface components {
             otherParticipant?: null | string;
             replacesPage?: null | string;
             roundUpEnabled?: null | boolean;
+            savings?: null | components["schemas"]["SavingsTermsDTO"];
             templateName: string;
         };
         AccountDetailDTO: {
@@ -7263,6 +7265,7 @@ export interface components {
             month: number;
             name: string;
             otherParticipant?: null | string;
+            savings?: null | components["schemas"]["SavingsSummaryDTO"];
             templateName: string;
             /** Format: double */
             totalOwed: null | number;
@@ -7373,6 +7376,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             income?: null | components["schemas"]["IncomeDTO"];
+            isInterest?: boolean;
             kind: string;
             movement?: null | components["schemas"]["ReserveMovementDTO"];
             operation?: null | components["schemas"]["AccountTransactionOperationDTO"];
@@ -7461,6 +7465,7 @@ export interface components {
             openingBalance?: null | number;
             otherParticipant?: null | string;
             roundUpEnabled?: null | boolean;
+            savings?: null | components["schemas"]["SavingsTermsDTO"];
             templateName: string;
         };
         AggregatedSummaryDTO: {
@@ -8390,6 +8395,12 @@ export interface components {
             /** Format: uuid */
             potsAccountId?: null | string;
         };
+        InterestRateDTO: {
+            /** Format: double */
+            annualPercent: number;
+            /** Format: date */
+            effectiveFrom: string;
+        };
         InvestmentAccountAnnualDiffDTO: {
             account: string;
             isLiability: boolean;
@@ -8404,6 +8415,8 @@ export interface components {
             name: string;
             /** Format: uuid */
             potsAccountId?: null | string;
+            /** Format: uuid */
+            savingsAccountId?: null | string;
             source?: string;
         };
         InvestmentAccountDTO: {
@@ -8417,6 +8430,8 @@ export interface components {
             name: string;
             /** Format: uuid */
             potsAccountId?: null | string;
+            /** Format: uuid */
+            savingsAccountId?: null | string;
             source?: string;
         };
         InvestmentAccountUpdateDTO: {
@@ -8427,6 +8442,8 @@ export interface components {
             name: string;
             /** Format: uuid */
             potsAccountId?: null | string;
+            /** Format: uuid */
+            savingsAccountId?: null | string;
             source?: string;
         };
         InvestmentAnnualResultDTO: {
@@ -8921,6 +8938,21 @@ export interface components {
             quantityHeld: number;
             /** Format: double */
             shortfall: number;
+        };
+        SavingsSummaryDTO: {
+            currentRate?: null | components["schemas"]["InterestRateDTO"];
+            interestFrequency: string;
+            isTaxFree: boolean;
+            /** Format: int32 */
+            paymentDay?: null | number;
+            upcomingRate?: null | components["schemas"]["InterestRateDTO"];
+        };
+        SavingsTermsDTO: {
+            interestFrequency: string;
+            isTaxFree: boolean;
+            /** Format: int32 */
+            paymentDay?: null | number;
+            rates: components["schemas"]["InterestRateDTO"][];
         };
         SetAssetPriceDTO: {
             assetName: string;

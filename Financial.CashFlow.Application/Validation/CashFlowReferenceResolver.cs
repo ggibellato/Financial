@@ -34,19 +34,22 @@ public static class CashFlowReferenceResolver
             ? card
             : throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
 
-    public static Account? ResolvePotsAccount(IEnumerable<Account> accounts, Guid? potsAccountId)
+    public static Account? ResolvePotsAccount(IEnumerable<Account> accounts, Guid? potsAccountId) =>
+        ResolveOptionalAccount(accounts, potsAccountId, "Pots account");
+
+    public static Account? ResolveSavingsAccount(IEnumerable<Account> accounts, Guid? savingsAccountId) =>
+        ResolveOptionalAccount(accounts, savingsAccountId, "Savings account");
+
+    private static Account? ResolveOptionalAccount(IEnumerable<Account> accounts, Guid? accountId, string label)
     {
-        if (potsAccountId is null)
+        if (accountId is null)
         {
             return null;
         }
 
-        if (!EntityIdResolver.TryResolve(potsAccountId, accounts, a => a.Id, out var potsAccount))
-        {
-            throw new ArgumentException($"Pots account '{potsAccountId}' is not recognized.");
-        }
-
-        return potsAccount;
+        return EntityIdResolver.TryResolve(accountId, accounts, a => a.Id, out var account)
+            ? account
+            : throw new ArgumentException($"{label} '{accountId}' is not recognized.");
     }
 
     public static Account ResolveAccount(IEnumerable<Account> accounts, Guid accountId) =>

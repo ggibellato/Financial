@@ -34,7 +34,7 @@ describe('InvestmentAccountFormDialog', () => {
           hasNonZeroInvestmentSnapshot: false,
           source: 'None',
           creditCardId: null,
-          potsAccountId: null,
+          potsAccountId: null, savingsAccountId: null,
         }}
         creditCards={[]}
         accounts={ACCOUNTS}
@@ -155,7 +155,7 @@ describe('InvestmentAccountFormDialog', () => {
           hasNonZeroInvestmentSnapshot: false,
           source: 'PotsAccountTotal',
           creditCardId: null,
-          potsAccountId: 'gone',
+          potsAccountId: 'gone', savingsAccountId: null,
         }}
         creditCards={[]}
         accounts={ACCOUNTS}
@@ -181,7 +181,7 @@ describe('InvestmentAccountFormDialog', () => {
           hasNonZeroInvestmentSnapshot: false,
           source: 'PotsAccountTotal',
           creditCardId: null,
-          potsAccountId: 'p3',
+          potsAccountId: 'p3', savingsAccountId: null,
         }}
         creditCards={[]}
         accounts={ACCOUNTS}
@@ -233,7 +233,7 @@ describe('InvestmentAccountFormDialog', () => {
           hasNonZeroInvestmentSnapshot: false,
           source: 'CreditCard',
           creditCardId: 'cc2',
-          potsAccountId: null,
+          potsAccountId: null, savingsAccountId: null,
         }}
         creditCards={[activeCard, inactiveCard, otherRetired]}
         accounts={ACCOUNTS}

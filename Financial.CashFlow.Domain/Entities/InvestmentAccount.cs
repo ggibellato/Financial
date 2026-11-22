@@ -13,6 +13,7 @@ public class InvestmentAccount
     public InvestmentAccountSource Source { get; private set; }
     public Account? CreditCard { get; private set; }
     public Account? PotsAccount { get; private set; }
+    public Account? SavingsAccount { get; private set; }
 
     private InvestmentAccount() { }
 
@@ -22,7 +23,8 @@ public class InvestmentAccount
         bool isLiability,
         InvestmentAccountSource source = InvestmentAccountSource.None,
         Account? creditCard = null,
-        Account? potsAccount = null)
+        Account? potsAccount = null,
+        Account? savingsAccount = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -32,6 +34,8 @@ public class InvestmentAccount
         ValidateSourceShape(source, creditCard);
         ValidatePotsAccount(source, potsAccount);
         ActiveAccountRule.EnsureUsable(null, potsAccount);
+        ValidateSavingsAccount(source, savingsAccount);
+        ActiveAccountRule.EnsureUsable(null, savingsAccount);
 
         return new()
         {
@@ -41,7 +45,8 @@ public class InvestmentAccount
             IsLiability = isLiability,
             Source = source,
             CreditCard = creditCard,
-            PotsAccount = potsAccount
+            PotsAccount = potsAccount,
+            SavingsAccount = savingsAccount
         };
     }
 
@@ -51,7 +56,8 @@ public class InvestmentAccount
         bool isLiability,
         InvestmentAccountSource source = InvestmentAccountSource.None,
         Account? creditCard = null,
-        Account? potsAccount = null)
+        Account? potsAccount = null,
+        Account? savingsAccount = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -61,6 +67,8 @@ public class InvestmentAccount
         ValidateSourceShape(source, creditCard);
         ValidatePotsAccount(source, potsAccount);
         ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
+        ValidateSavingsAccount(source, savingsAccount);
+        ActiveAccountRule.EnsureUsable(SavingsAccount, savingsAccount);
 
         Name = name;
         IsActive = isActive;
@@ -68,28 +76,37 @@ public class InvestmentAccount
         Source = source;
         CreditCard = creditCard;
         PotsAccount = potsAccount;
+        SavingsAccount = savingsAccount;
     }
 
-    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? potsAccount)
+    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? potsAccount) =>
+        ValidateLinkedAccount(source, InvestmentAccountSource.PotsAccountTotal, potsAccount, Capability.HasPots, "pots-account", "Pots account");
+
+    private static void ValidateSavingsAccount(InvestmentAccountSource source, Account? savingsAccount) =>
+        ValidateLinkedAccount(
+            source, InvestmentAccountSource.SavingsAccountBalance, savingsAccount, Capability.EarnsInterest, "savings-account", "Savings account");
+
+    private static void ValidateLinkedAccount(
+        InvestmentAccountSource source,
+        InvestmentAccountSource linkingSource,
+        Account? linkedAccount,
+        Capability requiredCapability,
+        string sourceLabel,
+        string accountLabel)
     {
-        if (source == InvestmentAccountSource.PotsAccountTotal && potsAccount is null)
+        if (source == linkingSource && linkedAccount is null)
         {
-            throw new ArgumentException("A pots-account-sourced investment account requires a Pots account.");
+            throw new ArgumentException($"A {sourceLabel}-sourced investment account requires a {accountLabel}.");
         }
 
-        if (source != InvestmentAccountSource.PotsAccountTotal && potsAccount is not null)
+        if (source != linkingSource && linkedAccount is not null)
         {
-            throw new ArgumentException("Only a pots-account-sourced investment account can name a Pots account.");
+            throw new ArgumentException($"Only a {sourceLabel}-sourced investment account can name a {accountLabel}.");
         }
 
-        if (potsAccount is null)
+        if (linkedAccount is not null && !linkedAccount.Has(requiredCapability))
         {
-            return;
-        }
-
-        if (!potsAccount.Has(Capability.HasPots))
-        {
-            throw new ArgumentException($"{potsAccount.Name} is not a Pots account.");
+            throw new ArgumentException($"{linkedAccount.Name} is not a {accountLabel}.");
         }
     }
 

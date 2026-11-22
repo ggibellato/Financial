@@ -13,4 +13,6 @@ public sealed class InvestmentAccountUpdateDTO
     public Guid? CreditCardId { get; init; }
 
     public Guid? PotsAccountId { get; init; }
+
+    public Guid? SavingsAccountId { get; init; }
 }
