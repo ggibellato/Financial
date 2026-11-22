@@ -49,7 +49,8 @@ public class PotsServiceTests
         bool? withCategory = null,
         Guid? bankId = null,
         Guid? categoryId = null,
-        string description = "Dentist") => new()
+        string description = "Dentist",
+        decimal? roundUpAmount = null) => new()
     {
         PotId = PotNamed(pot).Id,
         Amount = amount,
@@ -57,7 +58,8 @@ public class PotsServiceTests
         Description = description,
         BankId = withBank ? bankId ?? Bank("Chase").Id : null,
         CategoryId = withCategory ?? withBank ? categoryId ?? CategoryNamed("Saude").Id : null,
-        Confirmed = confirmed
+        Confirmed = confirmed,
+        RoundUpAmount = roundUpAmount
     };
 
     private PotDepositRequestDTO Deposit(
@@ -337,6 +339,38 @@ public class PotsServiceTests
             _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.UpdateWithdrawal").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
         }
     }
+
+    [Fact]
+    public async Task WithdrawAsync_WithARoundUp_RecordsItOnTheSpendOnlyAndReturnsIt()
+    {
+        var result = await _sut.WithdrawAsync(Reserva.Id, Withdrawal(amount: 30.30m, roundUpAmount: 0.70m));
+
+        using (new AssertionScope())
+        {
+            result.RoundUpAmount.Should().Be(0.70m);
+            _repository.PotTransactions.Should().ContainSingle(movement => movement.OperationId == result.OperationId && movement.Amount == -30.30m);
+            _repository.Expenses.Where(expense => expense.OperationId == result.OperationId).Select(expense => (expense.Category.Name, expense.Value, expense.RoundUpAmount))
+                .Should().BeEquivalentTo([("Reserva", -30.30m, (decimal?)null), ("Saude", 30.30m, (decimal?)0.70m)]);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateWithdrawalAsync_ChangesTheRoundUp()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, Withdrawal(amount: 30.30m, roundUpAmount: 0.70m));
+
+        var result = await _sut.UpdateWithdrawalAsync(Reserva.Id, created.OperationId, Withdrawal(amount: 30.30m, roundUpAmount: 0m));
+
+        using (new AssertionScope())
+        {
+            result.RoundUpAmount.Should().Be(0m);
+            _repository.Expenses.Single(expense => expense.OperationId == created.OperationId && expense.Value > 0).RoundUpAmount.Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_RoundUpOnABankWithoutRoundUp_ThrowsAndSavesNothing() =>
+        await ShouldRefuseAndSaveNothing(Withdrawal(bankId: Bank("Barclays").Id, roundUpAmount: 0.5m), "Bank 'Barclays' does not support round-up.");
 
     [Fact]
     public async Task UpdateWithdrawalAsync_RemovingTheBank_LeavesOnlyTheMovement()
@@ -843,7 +877,8 @@ public class PotsServiceTests
         bool withCategory = true,
         bool withCard = true,
         string category = "Saude",
-        string description = "Flights") => new()
+        string description = "Flights",
+        decimal? roundUpAmount = null) => new()
     {
         PotId = PotNamed(pot).Id,
         Amount = amount,
@@ -853,7 +888,8 @@ public class PotsServiceTests
         CreditCardId = withCard ? cardId ?? _card.Id : null,
         StatementYear = statementYear,
         StatementMonth = statementMonth,
-        CategoryId = withCategory ? CategoryNamed(category).Id : null
+        CategoryId = withCategory ? CategoryNamed(category).Id : null,
+        RoundUpAmount = roundUpAmount
     };
 
     private List<Guid> OperationRecordIds(Guid operationId) =>
@@ -1033,6 +1069,21 @@ public class PotsServiceTests
         {
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("Unmark the statement paid to change this.");
             _repository.Expenses.Should().ContainSingle(expense => expense.CreditCard == _card && expense.Value == 30m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.UpdateWithdrawal");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateWithdrawalAsync_LockedCardWithdrawalWithARoundUp_Throws()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, CardWithdrawal());
+        PaidStatement(2026, 10);
+
+        var act = async () => await _sut.UpdateWithdrawalAsync(Reserva.Id, created.OperationId, CardWithdrawal(roundUpAmount: 0.5m));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Round-up only applies to a withdrawal paid from a bank.");
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.UpdateWithdrawal");
         }
     }

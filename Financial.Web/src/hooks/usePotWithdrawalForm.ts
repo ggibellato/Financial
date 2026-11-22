@@ -10,6 +10,7 @@ import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
 import { useStatementMonthOptions } from './useStatementMonthOptions'
+import { parseRoundUpAmount, ROUND_UP_RANGE_MESSAGE, roundsUp, suggestRoundUpAmount } from '../utils/roundUp'
 import { futureDateError } from '../utils/validators'
 
 const DATE_KEY = 'potWithdrawal.date'
@@ -22,7 +23,21 @@ const CATEGORY_REQUIRED: Record<PaidWith, string | null> = {
   card: 'Category is required when a credit card is selected.',
 }
 
-const FIELDS = ['potsAccountId', 'potId', 'date', 'description', 'amount', 'paidWith', 'bankId', 'creditCardId', 'statementMonth', 'categoryId'] as const
+const FIELDS = [
+  'potsAccountId',
+  'potId',
+  'date',
+  'description',
+  'amount',
+  'paidWith',
+  'bankId',
+  'creditCardId',
+  'statementMonth',
+  'categoryId',
+  'roundUpAmount',
+] as const
+
+const ROUND_UP_SOURCES: readonly PotWithdrawalField[] = ['amount', 'bankId']
 
 export type PotWithdrawalField = (typeof FIELDS)[number]
 
@@ -42,6 +57,7 @@ interface WithdrawalFormState {
   investmentWithdrawal: InvestmentWithdrawal | null
   opened: WithdrawalValues
   values: WithdrawalValues
+  isRoundUpSuggested: boolean
   isSaving: boolean
   error: string | null
   errorFields: FieldErrors<PotWithdrawalField>
@@ -50,18 +66,27 @@ interface WithdrawalFormState {
 
 const NO_ERRORS: FieldErrors<PotWithdrawalField> = {}
 
-const PAYMENT_FIELDS_CLEARED: Pick<WithdrawalValues, 'bankId' | 'creditCardId' | 'statementMonth' | 'categoryId'> = {
+const PAYMENT_FIELDS_CLEARED: Pick<WithdrawalValues, 'bankId' | 'creditCardId' | 'statementMonth' | 'categoryId' | 'roundUpAmount'> = {
   bankId: '',
   creditCardId: '',
   statementMonth: '',
   categoryId: '',
+  roundUpAmount: '',
 }
 
 function paidWithIn(values: WithdrawalValues): PaidWith {
   return values.paidWith === 'bank' || values.paidWith === 'card' ? values.paidWith : 'none'
 }
 
-function validate(values: WithdrawalValues): FieldErrors<PotWithdrawalField> {
+function takesRoundUp(values: WithdrawalValues, accounts: readonly AccountDto[]): boolean {
+  return values.paidWith === 'bank' && roundsUp(accounts, values.bankId)
+}
+
+function roundUpAmountOf(values: WithdrawalValues, accounts: readonly AccountDto[]): number | null {
+  return takesRoundUp(values, accounts) && values.roundUpAmount.trim() ? parseRoundUpAmount(values.roundUpAmount) : null
+}
+
+function validate(values: WithdrawalValues, accounts: readonly AccountDto[]): FieldErrors<PotWithdrawalField> {
   const errors: FieldErrors<PotWithdrawalField> = {}
   if (!values.potId) errors.potId = 'Choose a pot.'
   const dateError = values.date.trim() ? futureDateError(values.date) : 'Enter the withdrawal date.'
@@ -75,10 +100,13 @@ function validate(values: WithdrawalValues): FieldErrors<PotWithdrawalField> {
   }
   const categoryRequired = CATEGORY_REQUIRED[paidWithIn(values)]
   if (categoryRequired && !values.categoryId) errors.categoryId = categoryRequired
+  if (takesRoundUp(values, accounts) && values.roundUpAmount.trim() && parseRoundUpAmount(values.roundUpAmount) === null) {
+    errors.roundUpAmount = ROUND_UP_RANGE_MESSAGE
+  }
   return errors
 }
 
-function toRequest(values: WithdrawalValues, confirmed: boolean): PotWithdrawalRequestDto {
+function toRequest(values: WithdrawalValues, accounts: readonly AccountDto[], confirmed: boolean): PotWithdrawalRequestDto {
   const statement = values.paidWith === 'card' ? parseMonthInputValue(values.statementMonth) : null
   return {
     potId: values.potId,
@@ -90,6 +118,7 @@ function toRequest(values: WithdrawalValues, confirmed: boolean): PotWithdrawalR
     statementYear: statement?.year ?? null,
     statementMonth: statement?.month ?? null,
     categoryId: values.paidWith === 'none' ? null : values.categoryId,
+    roundUpAmount: roundUpAmountOf(values, accounts),
     confirmed,
   }
 }
@@ -138,7 +167,18 @@ export function usePotWithdrawalForm(
   }
 
   const show = (operationId: string | null, isPaymentLocked: boolean, opened: WithdrawalValues, investmentWithdrawal: InvestmentWithdrawal | null = null) =>
-    setForm({ operationId, isPaymentLocked, investmentWithdrawal, opened, values: opened, isSaving: false, error: null, errorFields: {}, overdraftMessage: null })
+    setForm({
+      operationId,
+      isPaymentLocked,
+      investmentWithdrawal,
+      opened,
+      values: opened,
+      isRoundUpSuggested: opened.roundUpAmount === '',
+      isSaving: false,
+      error: null,
+      errorFields: {},
+      overdraftMessage: null,
+    })
 
   const openNew = (paidWith: PaidWith, isPaymentLocked: boolean, payment: Partial<WithdrawalValues>, potsAccountId: string) =>
     show(null, isPaymentLocked, {
@@ -175,30 +215,34 @@ export function usePotWithdrawalForm(
         creditCardId: operation.creditCardId ?? '',
         statementMonth: operation.statementYear && operation.statementMonth ? formatMonthInputValue(operation.statementYear, operation.statementMonth) : '',
         categoryId: operation.categoryId ?? '',
+        roundUpAmount: operation.roundUpAmount != null ? operation.roundUpAmount.toFixed(2) : '',
       },
       investmentWithdrawalOf(operation),
     )
 
   const cancel = () => setForm(null)
 
+  const withSuggestedRoundUp = (values: WithdrawalValues): WithdrawalValues => ({
+    ...values,
+    roundUpAmount: takesRoundUp(values, accounts) ? (suggestRoundUpAmount(accounts, values.bankId, values.amount) ?? '') : '',
+  })
+
   const setField = (field: PotWithdrawalField, value: string) =>
-    setForm(
-      (current) =>
-        current && {
-          ...current,
-          values: {
-            ...current.values,
-            ...(field === 'paidWith' ? PAYMENT_FIELDS_CLEARED : {}),
-            [field]: value,
-            ...(field === 'potsAccountId' ? { potId: '' } : {}),
-          },
-          error: null,
-          errorFields: {},
-        },
-    )
+    setForm((current) => {
+      if (!current) return current
+      const values = {
+        ...current.values,
+        ...(field === 'paidWith' ? PAYMENT_FIELDS_CLEARED : {}),
+        [field]: value,
+        ...(field === 'potsAccountId' ? { potId: '' } : {}),
+      }
+      const isRoundUpSuggested = field !== 'roundUpAmount' && (field === 'paidWith' || current.isRoundUpSuggested)
+      const suggests = isRoundUpSuggested && ROUND_UP_SOURCES.includes(field)
+      return { ...current, values: suggests ? withSuggestedRoundUp(values) : values, isRoundUpSuggested, error: null, errorFields: {} }
+    })
 
   const save = (saved: WithdrawalFormState, savedValues: WithdrawalValues, confirmed: boolean) => {
-    const request = toRequest(savedValues, confirmed)
+    const request = toRequest(savedValues, accounts, confirmed)
     const saving = saved.operationId
       ? apiClient.updatePotWithdrawal(savedValues.potsAccountId, saved.operationId, request)
       : apiClient.createPotWithdrawal(savedValues.potsAccountId, request)
@@ -227,7 +271,7 @@ export function usePotWithdrawalForm(
 
   const submit = () => {
     if (!form || !values || form.isSaving || pots === null) return
-    const errorFields = validate(values)
+    const errorFields = validate(values, accounts)
     if (Object.keys(errorFields).length > 0) {
       setForm({ ...form, error: null, errorFields })
       return
@@ -251,6 +295,7 @@ export function usePotWithdrawalForm(
     isPaymentLocked: form?.isPaymentLocked ?? false,
     isStatementPaidLocked: form?.investmentWithdrawal?.status === INVESTMENT_WITHDRAWAL_DONE,
     paidWith: values ? paidWithIn(values) : 'none',
+    takesRoundUp: values ? takesRoundUp(values, accounts) : false,
     investmentWithdrawal: form?.investmentWithdrawal ?? null,
     operationId: form?.operationId ?? null,
     values,

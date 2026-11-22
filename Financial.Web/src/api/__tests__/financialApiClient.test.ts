@@ -507,6 +507,7 @@ describe('financialApiClient', () => {
         creditCardId: null,
         statementYear: null,
         statementMonth: null,
+        roundUpAmount: null,
       })
       .catch((e: unknown) => e)
 

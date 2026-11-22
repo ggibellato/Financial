@@ -265,7 +265,17 @@ public sealed class PotsService : IPotsService
         var payment = PotWithdrawalValidator.ResolvePayment(
             request, accounts, _repository.GetCreditCardAccounts(), _repository.GetCategories(), _repository.GetCardStatements());
         var operation = PotWithdrawal.Build(
-            potsAccount, pot, request.Amount, request.Date, request.Description, payment.Bank, payment.Category, operationId, _timeProvider.GetLocalToday(), payment.Card);
+            potsAccount,
+            pot,
+            request.Amount,
+            request.Date,
+            request.Description,
+            payment.Bank,
+            payment.Category,
+            operationId,
+            _timeProvider.GetLocalToday(),
+            payment.Card,
+            request.RoundUpAmount);
         PotWithdrawalValidator.EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceTransactions);
 
         return operation;
@@ -287,6 +297,8 @@ public sealed class PotsService : IPotsService
         {
             throw new ArgumentException(LockedChangeMessage);
         }
+
+        PotWithdrawal.EnsureRoundUpOnlyWithBank(existing.Bank, request.RoundUpAmount);
 
         EnsureDescription(request.Description);
         var category = PotWithdrawalValidator.ResolveCategory(request.CategoryId, request.Description, _repository.GetAccounts(), _repository.GetCategories())
@@ -428,6 +440,7 @@ public sealed class PotsService : IPotsService
         StatementMonth = operation.StatementMonth?.Month,
         InvestmentWithdrawal = operation.InvestmentWithdrawal?.ToString(),
         InvestmentWithdrawalBankId = operation.InvestmentWithdrawalExpense?.PaymentSourceAccount?.Id,
-        InvestmentWithdrawalDate = operation.InvestmentWithdrawalExpense?.Date
+        InvestmentWithdrawalDate = operation.InvestmentWithdrawalExpense?.Date,
+        RoundUpAmount = operation.RoundUpAmount
     };
 }
