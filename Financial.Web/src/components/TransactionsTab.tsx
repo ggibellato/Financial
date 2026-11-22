@@ -42,6 +42,8 @@ import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
 import { CHART_TEXT_STYLE } from '../styles/chartText'
+import ChartValueLabel from './ChartValueLabel'
+import MonthTotalsTable from './MonthTotalsTable'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
 // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
@@ -51,6 +53,7 @@ const CHART_COLOR = 'var(--colorBrandForeground1)'
 const CHART_MODE_OPTIONS: { value: ChartDisplayMode; label: string }[] = [
   { value: 'Bar', label: 'Bar' },
   { value: 'Line', label: 'Line' },
+  { value: 'Table', label: 'Table' },
 ]
 
 const TRANSACTION_TYPE_OPTIONS = [
@@ -322,6 +325,12 @@ interface TransactionsChartProps {
   compact?: boolean
 }
 
+function netInvestedLabel(value: number): string {
+  return value !== 0 ? formatN2(value) : ''
+}
+
+const NET_INVESTED_COLUMNS = [{ label: 'Net invested', value: (row: TransactionMonthBucket) => row.netInvested }]
+
 function TransactionsChart({
   chartData,
   selectedFilter,
@@ -345,40 +354,44 @@ function TransactionsChart({
         />
       </div>
       <p id={chartTitleId} className="transactions-tab__chart-title">Net invested by month</p>
-      <div className="transactions-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
-        <ResponsiveContainer width="100%" height="100%">
-          {selectedChartMode === 'Bar' ? (
-            <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
-              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
-              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-              <Bar dataKey="netInvested" fill={CHART_COLOR}>
-                <LabelList
+      {selectedChartMode === 'Table' ? (
+        <MonthTotalsTable title="Net invested by month" rows={chartData} columns={NET_INVESTED_COLUMNS} />
+      ) : (
+        <div className="transactions-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
+          <ResponsiveContainer width="100%" height="100%">
+            {selectedChartMode === 'Bar' ? (
+              <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+                <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
+                <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+                <Bar dataKey="netInvested" fill={CHART_COLOR}>
+                  <LabelList
+                    dataKey="netInvested"
+                    content={({ x, y, width, height, value }) => (
+                      <ChartValueLabel x={x} y={y} width={width} height={height} value={value} formatValue={netInvestedLabel} />
+                    )}
+                  />
+                </Bar>
+              </BarChart>
+            ) : (
+              <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
+                <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
+                <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+                <Line
+                  type="monotone"
                   dataKey="netInvested"
-                  position="top"
-                  formatter={(v: unknown) => (typeof v === 'number' && v !== 0 ? formatN2(v) : '')}
-                  style={CHART_TEXT_STYLE}
+                  stroke={CHART_COLOR}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
                 />
-              </Bar>
-            </BarChart>
-          ) : (
-            <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={CHART_TEXT_STYLE} />
-              <YAxis tickFormatter={formatN2} tick={CHART_TEXT_STYLE} width="auto" />
-              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-              <Line
-                type="monotone"
-                dataKey="netInvested"
-                stroke={CHART_COLOR}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-              />
-            </LineChart>
-          )}
-        </ResponsiveContainer>
-      </div>
+              </LineChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }

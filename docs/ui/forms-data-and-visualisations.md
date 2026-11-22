@@ -562,7 +562,13 @@ Every chart must provide:
 - Loading state
 - Empty state
 - Error state
-- Accessible alternative data or summary
+- Accessible alternative data or summary. For a chart of month buckets, that is a
+  "Table" option in the chart's own View switch (next to Bar and Line), which
+  shows `components/MonthTotalsTable` in the chart's place: every month with a
+  value, one column per series, the total column bold, a period-total row, and
+  its own keyboard-reachable scroll area. Taking the chart's place keeps the page
+  layout fixed; a table added under the chart would squeeze the grid below it.
+  The tooltip alone is not an equivalent: it needs a mouse.
 - Non-colour distinction between series where needed
 
 Charts must answer a user question. Do not use them as decoration.
@@ -605,9 +611,11 @@ When a chart shows a value directly on/at a bar or point, position the label
 so it reads clearly regardless of the mark's own fill color — above/outside
 the mark in `var(--colorNeutralForeground1)`, not inside a colored fill where
 contrast depends on which color in a gradient palette that particular bar
-happens to be. With Recharts' `LabelList` that means `position="top"` with
-an explicit `fill`, not `position="inside"` with no fill set
-(`CreditsTab.tsx` is the reference).
+happens to be. With Recharts' `LabelList` that means rendering through
+`components/ChartValueLabel` as its `content`: it draws above a positive bar and
+below a negative one, and takes its colour from `.recharts-label-list text` in
+`styles/charts.css`. A stacked bar shows one label, the stack total, at the top of
+the stack, not one per segment.
 
 Chart text (axis ticks and value labels) is 12px, Fluent's Caption 1 size
 (`fontSizeBase200`), through `styles/chartText.ts` (`CHART_TEXT_STYLE`); never a
@@ -617,6 +625,9 @@ because Recharts measures tick text from the `fontSize` prop. Y axes use
 
 Every bar chart shows its value on top of the bar whenever there is room for
 it — this is the standard, not an enhancement one chart happens to have.
+"Room" means the bar is at least as wide as the label's estimated text width,
+so neighbouring labels never overlap; in a dense period the labels are left out
+rather than drawn on top of each other.
 A chart that currently shows no value labels at all (not just badly
 positioned ones) is missing this, the same as one with unreadable labels.
 

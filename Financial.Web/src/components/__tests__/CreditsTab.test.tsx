@@ -556,6 +556,27 @@ describe('CreditsTab', () => {
     expect(screen.getByTestId('line-chart')).toBeInTheDocument()
   })
 
+  it('the_table_view_lists_each_months_credits_by_type_and_total', async () => {
+    await renderAssetTab([CREDIT_DIVIDEND, CREDIT_SECURITIES_LENDING_INCOME])
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Table' }))
+
+    const table = await screen.findByRole('table', { name: 'Credits by month' })
+    expect(screen.queryByRole('tab', { name: 'Stacked' })).not.toBeInTheDocument()
+    expect(within(table).getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual([
+      'Month',
+      'Dividend',
+      'Securities lending income',
+      'Total',
+    ])
+    const cells = within(table).getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]+:/, '')))
+    expect(cells).toEqual([
+      ['01/2024', '0.00', '350.00', '350.00'],
+      ['03/2024', '120.50', '0.00', '120.50'],
+      ['Period total', '120.50', '350.00', '470.50'],
+    ])
+  })
+
   it('renders_bar_chart_unchanged_when_bar_selected', async () => {
     await renderAssetTab()
     expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
@@ -578,7 +599,7 @@ describe('CreditsTab', () => {
 
     const lines = screen.getAllByTestId('line')
     expect(lines).toHaveLength(2)
-    expect(lines.map((l) => l.getAttribute('data-name'))).toEqual(['Dividend', 'SecuritiesLendingIncome'])
+    expect(lines.map((l) => l.getAttribute('data-name'))).toEqual(['Dividend', 'Securities lending income'])
   })
 
   it('clicking_value_header_sorts_rows_ascending_then_descending', async () => {
