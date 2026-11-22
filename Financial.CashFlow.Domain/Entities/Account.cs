@@ -14,6 +14,7 @@ public class Account
     public const int MaxOtherParticipantLength = 60;
     public const string SelfParticipantName = "You";
     public const decimal RequiredActiveSplitTotal = 100m;
+    public const string MissingSavingsTermsMessage = "Enter how this savings account pays interest and its rate.";
     private const string SetupLockedMessage = "Template and currency can't change once the account has transactions.";
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
@@ -29,6 +30,7 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
+    public SavingsTerms? Savings { get; private set; }
     public IReadOnlyList<Pot>? Pots => Has(Capability.HasPots) ? _pots : null;
     public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
@@ -40,10 +42,12 @@ public class Account
 
     private Account() { }
 
-    public static Account Create(string name, AccountTemplate template, Currency currency)
+    public static Account Create(string name, AccountTemplate template, Currency currency, SavingsTerms? savings = null)
     {
         EnsureCurrencyIsAllowed(template, currency);
-        return Build(name, template, currency, capabilitiesOverride: null);
+        var account = Build(name, template, currency, capabilitiesOverride: null);
+        account.AssignSavings(savings);
+        return account;
     }
 
     internal static Account CreateWithCapabilities(
@@ -79,7 +83,7 @@ public class Account
         }
     }
 
-    public void ChangeSetup(AccountTemplate template, IReadOnlyList<Currency> currencies, bool hasRecords)
+    public void ChangeSetup(AccountTemplate template, IReadOnlyList<Currency> currencies, bool hasRecords, SavingsTerms? savings = null)
     {
         if (IsSetUpAs(template, currencies))
         {
@@ -91,8 +95,10 @@ public class Account
             throw new ArgumentException(SetupLockedMessage);
         }
 
+        EnsureSavingsTermsFit(template, savings);
         ChangeTemplate(template, currencies[0]);
         ApplyCurrencies(currencies);
+        Savings = savings;
     }
 
     public void ApplyCurrencies(IReadOnlyList<Currency> currencies)
@@ -164,6 +170,18 @@ public class Account
         }
 
         RoundUp = new RoundUpSetting(enabled);
+    }
+
+    public void SetSavings(SavingsTerms savings)
+    {
+        ArgumentNullException.ThrowIfNull(savings);
+        AssignSavings(savings);
+    }
+
+    private void AssignSavings(SavingsTerms? savings)
+    {
+        EnsureSavingsTermsFit(Template, savings);
+        Savings = savings;
     }
 
     public void AddPot(Pot pot)
@@ -329,6 +347,7 @@ public class Account
     {
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
+        Savings = Has(Capability.EarnsInterest) ? Savings : null;
         _currencies = Has(Capability.MultiCurrency) ? [Currency] : [];
         OtherParticipant = Has(Capability.HasParticipants) ? OtherParticipant : null;
         if (!Has(Capability.HasPots))
@@ -355,6 +374,20 @@ public class Account
         }
 
         return trimmed;
+    }
+
+    private static void EnsureSavingsTermsFit(AccountTemplate template, SavingsTerms? savings)
+    {
+        var earnsInterest = AccountTemplates.CapabilitiesOf(template).Contains(Capability.EarnsInterest);
+        if (earnsInterest && savings is null)
+        {
+            throw new ArgumentException(MissingSavingsTermsMessage);
+        }
+
+        if (!earnsInterest && savings is not null)
+        {
+            throw new ArgumentException($"{template} accounts don't earn interest.");
+        }
     }
 
     private static void EnsureCurrencyIsAllowed(AccountTemplate template, Currency currency)

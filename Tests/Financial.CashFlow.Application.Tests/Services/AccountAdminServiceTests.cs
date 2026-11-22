@@ -88,13 +88,13 @@ public class AccountAdminServiceTests
     };
 
     [Fact]
-    public void GetTemplates_ListsBankCreditCardPotsAndSettlementWithTheirCurrenciesAndCapabilitiesInOrder()
+    public void GetTemplates_ListsEveryTemplateWithItsCurrenciesAndCapabilitiesInOrder()
     {
         var templates = _sut.GetTemplates();
 
         using (new AssertionScope())
         {
-            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots", "Settlement");
+            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots", "Settlement", "Savings");
             var bank = templates[0];
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
@@ -109,6 +109,10 @@ public class AccountAdminServiceTests
             var settlement = templates[3];
             settlement.Currencies.Should().Equal("BRL", "GBP");
             settlement.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
+            var savings = templates[4];
+            savings.Currencies.Should().Equal("GBP");
+            savings.Capabilities.Should().Equal(
+                "HasOpeningBalance", "ReceivesIncome", "CanSendTransfers", "CanReceiveTransfers", "CanReconcile", "EarnsInterest");
             _tracer.ShouldHaveSucceededSpan("CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }
@@ -454,6 +458,20 @@ public class AccountAdminServiceTests
             result.HasRecords.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(1);
             _calendarSyncTrigger.TriggeredCreditCardIds.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_SavingsWithoutItsTerms_ThrowsAndWritesNothing()
+    {
+        var act = () => _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Savings", Name = "Chase Save", Currency = "GBP" });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage(Account.MissingSavingsTermsMessage);
+            _repository.Accounts.Should().HaveCount(2);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.CreateAccount");
         }
     }
 

@@ -129,10 +129,36 @@ public class AccountTemplatesTests
     }
 
     [Fact]
-    public void Available_ListsBankCreditCardPotsAndSettlementInThatOrder()
+    public void Available_ListsBankCreditCardPotsSettlementAndSavingsInThatOrder()
     {
         AccountTemplates.Available.Should().Equal(
-            AccountTemplate.Bank, AccountTemplate.CreditCard, AccountTemplate.Pots, AccountTemplate.Settlement);
+            AccountTemplate.Bank, AccountTemplate.CreditCard, AccountTemplate.Pots, AccountTemplate.Settlement, AccountTemplate.Savings);
+    }
+
+    [Fact]
+    public void CapabilitiesOf_Savings_IsBalanceIncomeTransfersReconcileAndInterest()
+    {
+        AccountTemplates.CapabilitiesOf(AccountTemplate.Savings).Should().BeEquivalentTo(new[]
+        {
+            Capability.HasOpeningBalance,
+            Capability.ReceivesIncome,
+            Capability.CanSendTransfers,
+            Capability.CanReceiveTransfers,
+            Capability.CanReconcile,
+            Capability.EarnsInterest
+        });
+    }
+
+    [Fact]
+    public void AllowedCurrencies_Savings_IsGbp()
+    {
+        AccountTemplates.AllowedCurrencies(AccountTemplate.Savings).Should().Equal(Currency.GBP);
+    }
+
+    [Fact]
+    public void JoinsDefaultGroup_Savings_IsFalse()
+    {
+        AccountTemplates.JoinsDefaultGroup(AccountTemplate.Savings).Should().BeFalse();
     }
 
     public static TheoryData<AccountTemplate> AvailableTemplates => new(AccountTemplates.Available);

@@ -8,7 +8,8 @@
       { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000004", "Name": "Gleison", "IsActive": true, "SplitPercentage": 16.67 }
     ], "CategoryId": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014" },
     { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000001", "Name": "Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
-    { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-400000000001", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" }
+    { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-400000000001", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" },
+    { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-a00000000001", "Name": "Chase Save", "Template": "Savings", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" }, "RoundUp": null, "Pots": null, "CategoryId": null, "Savings": { "Frequency": "Monthly", "PaymentDay": 5, "IsTaxFree": false, "Rates": [{ "AnnualPercent": 4.5, "EffectiveFrom": "2026-01-01" }] } }
   ],
   "Expenses": [
     { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000001", "Date": "2026-10-05", "Description": "Amex groceries", "Value": 45.20, "CategoryId": "8f3b1c1a-2e3a-4b1a-9a7f-600000000008", "PaymentSourceAccountId": null, "CreditCardId": "8f3b1c1a-2e3a-4b1a-9a7f-500000000001", "ChargeDate": "2026-10-05", "InvoiceDate": "2026-10-01", "RoundUpAmount": null, "CountsAsTithe": true },

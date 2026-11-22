@@ -17,5 +17,6 @@ public enum Capability
     CanWithdraw,
     HasParticipants,
     MultiCurrency,
-    CanSettle
+    CanSettle,
+    EarnsInterest
 }

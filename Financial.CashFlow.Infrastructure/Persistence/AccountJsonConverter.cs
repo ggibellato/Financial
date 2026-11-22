@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.ValueObjects;
 using Financial.Shared.Abstractions.Currencies;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -62,6 +63,7 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
 
         ApplyCurrencies(account, record);
         ApplyOtherParticipant(account, record);
+        ApplySavings(account, record);
 
         return account;
     }
@@ -79,7 +81,8 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
             value.Pots?.Select(pot => JsonSerializer.SerializeToElement(pot, AccountOptions)).ToList(),
             value.Category,
             value.Has(Capability.MultiCurrency) ? [.. value.Currencies] : null,
-            value.OtherParticipant);
+            value.OtherParticipant,
+            value.Savings is { } savings ? ToRecord(savings) : null);
 
         JsonSerializer.Serialize(writer, record, _recordOptions);
     }
@@ -118,6 +121,32 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
         account.SetOtherParticipant(otherParticipant);
     }
 
+    private static void ApplySavings(Account account, AccountRecord record)
+    {
+        if (account.Has(Capability.EarnsInterest) != record.Savings is not null)
+        {
+            throw new JsonException($"Account {record.Id} must have Savings exactly when its template earns interest.");
+        }
+
+        if (record.Savings is not { } savings)
+        {
+            return;
+        }
+
+        account.SetSavings(SavingsTerms.Create(
+            savings.Frequency,
+            savings.PaymentDay,
+            savings.IsTaxFree,
+            savings.Rates.Select(rate => InterestRate.Create(rate.AnnualPercent, rate.EffectiveFrom))));
+    }
+
+    private static SavingsRecord ToRecord(SavingsTerms savings) =>
+        new(
+            savings.Frequency,
+            savings.PaymentDay,
+            savings.IsTaxFree,
+            savings.Rates.Select(rate => new InterestRateRecord(rate.AnnualPercent, rate.EffectiveFrom)).ToList());
+
     private sealed record AccountRecord(
         Guid Id,
         string Name,
@@ -129,9 +158,18 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
         List<JsonElement>? Pots,
         [property: JsonPropertyName("CategoryId")] Category? Category,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Currency>? Currencies,
-        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OtherParticipant);
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OtherParticipant,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SavingsRecord? Savings);
 
     private sealed record OpeningBalanceRecord(decimal Amount, DateOnly StartDate);
 
     private sealed record RoundUpRecord(bool Enabled);
+
+    private sealed record SavingsRecord(
+        InterestFrequency Frequency,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? PaymentDay,
+        bool IsTaxFree,
+        List<InterestRateRecord> Rates);
+
+    private sealed record InterestRateRecord(decimal AnnualPercent, DateOnly EffectiveFrom);
 }

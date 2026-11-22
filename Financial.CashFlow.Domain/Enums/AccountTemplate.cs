@@ -5,5 +5,6 @@ public enum AccountTemplate
     Bank,
     CreditCard,
     Pots,
-    Settlement
+    Settlement,
+    Savings
 }

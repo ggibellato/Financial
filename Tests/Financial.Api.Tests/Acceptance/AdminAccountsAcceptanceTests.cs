@@ -105,13 +105,13 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetTemplates_ListsBankCreditCardPotsAndSettlementWithTheirCurrenciesAndCapabilities()
+    public async Task GetTemplates_ListsEveryTemplateWithItsCurrenciesAndCapabilities()
     {
         var templates = await Client.GetFromJsonAsync<List<AccountTemplateDTO>>($"{AccountsUrl}/templates");
 
         using (new AssertionScope())
         {
-            templates!.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots", "Settlement");
+            templates!.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots", "Settlement", "Savings");
             templates![0].Currencies.Should().Equal("GBP");
             templates![0].Capabilities.Should().Contain(["HasOpeningBalance", "SupportsRoundUp"]);
             templates![1].Currencies.Should().Equal("GBP");
@@ -120,6 +120,8 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
             templates![2].Capabilities.Should().Equal("HasPots", "ReceivesIncomeSplit", "CanWithdraw");
             templates![3].Currencies.Should().Equal("BRL", "GBP");
             templates![3].Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
+            templates![4].Currencies.Should().Equal("GBP");
+            templates![4].Capabilities.Should().Contain("EarnsInterest");
         }
     }
 
