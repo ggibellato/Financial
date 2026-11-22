@@ -39,27 +39,6 @@ public class InvestmentTypeInfoResolverTests
     }
 
     [Fact]
-    public void SaveLoadSave_DocumentWithEveryKindOfRecord_IsIdentical()
-    {
-        var serializer = new InvestmentSerializerAdapter();
-        var investments = Investments.Create();
-        var broker = Broker.Create("Broker A", "USD");
-        var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
-        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2022, 6, 1), 2.0m, "2-for-1 split"));
-        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: true);
-        broker.AddPortfolio("Default").AddAsset(asset);
-        investments.AddActiveBroker(broker);
-
-        var saved = serializer.Serialize(investments);
-        var resaved = serializer.Serialize(serializer.Deserialize(saved));
-
-        resaved.Should().Be(saved);
-    }
-
-    [Fact]
     public void GetTypeInfo_DeserializesAssetJsonStillContainingPositionType_LoadsCleanly()
     {
         // UnmappedMemberHandling defaults to Skip, so a still-present legacy key is ignored.

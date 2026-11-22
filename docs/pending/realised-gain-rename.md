@@ -169,11 +169,13 @@ As built:
 
 ## Follow-ups found in PR 1's review (not part of this rename)
 
-- `InvestmentTypeInfoResolver.ExcludedProperties` is a hand-kept list of computed getters and has drifted:
+- [x] `InvestmentTypeInfoResolver.ExcludedProperties` is a hand-kept list of computed getters and has drifted:
   `RealizedGainLossSharesOnly` was written to the file for months, and `CorporateAction.IsReceivingRole` is
-  still written. A general rule (a property with no setter of any visibility is never serialized, in
-  `ReflectionJsonTypeInfoHelpers.WirePropertySetter`) would replace this list and CashFlow's
-  `PropertiesNeverWritten`, after auditing CashFlow's computed getters.
+  still written. Done in the no-setter rule PR: `ReflectionJsonTypeInfoHelpers.RemoveSetterlessProperties`
+  drops every property with no setter of any visibility, replacing this list and CashFlow's
+  `PropertiesNeverWritten`. The CashFlow audit also found six computed `Expense` getters still written
+  (`PaymentStatus`, `RoundUpSuggestion`, `SuggestedRoundUpAmount`, `IsInvestment`, `ReportingDate`,
+  `ListingDate`); they leave the file on its next save, with no data-version bump.
 - The older steps in `InvestmentDataMigrations` (versions 2–4) can use the new `RenameProperty` and
   `EnumerateObjects` helpers.
 
