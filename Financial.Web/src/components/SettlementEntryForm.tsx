@@ -1,6 +1,9 @@
+import { useRef } from 'react'
 import { Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Text, tokens } from '@fluentui/react-components'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
 import ActionErrorAlert from './ActionErrorAlert'
+import FieldErrorSummary from './FieldErrorSummary'
+import { useFieldErrorSummary } from '../hooks/useFieldErrorSummary'
 import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
@@ -13,6 +16,9 @@ interface SettlementEntryFormProps {
   onCancel: () => void
 }
 
+const FUTURE_DATE_HINT = 'A date after today records a planned entry.'
+const NO_FUTURE_DATE_HINT = 'Use today or an earlier date. Later dates have no exchange rate yet.'
+
 const useEntryFormStyles = makeStyles({
   startsRow: { gridColumnStart: 1 },
   impliedRate: { minHeight: tokens.lineHeightBase300 },
@@ -22,6 +28,8 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
   const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, acceptsFutureDates, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
+  const formRef = useRef<HTMLFormElement | null>(null)
+  const { summaryRef, summarizedErrors, submitWithSummary } = useFieldErrorSummary(formRef)
   const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'New entry'
   const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : 'Add entry'
   const validation = (field: SettlementEntryField) => ({
@@ -46,19 +54,20 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   return (
     <>
       <form
+        ref={formRef}
         className={styles.panel}
         noValidate
         aria-labelledby="settlement-entry-title"
         onSubmit={(event) => {
           event.preventDefault()
-          const firstInvalid = submit()
-          if (firstInvalid) event.currentTarget.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus()
+          submitWithSummary(submit)
         }}
       >
         <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
           <Text as="h2" id="settlement-entry-title" weight="semibold" size={400}>
             {title}
           </Text>
+          {summarizedErrors.length > 0 && <FieldErrorSummary ref={summaryRef} errors={summarizedErrors} />}
           <ActionErrorAlert message={saveError} />
           {warning && (
             <MessageBar role="status" intent="warning">
@@ -67,7 +76,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
           )}
           <div className={styles.grid}>
             {isSettling && currencyChoice}
-            <Field label="Date" required {...validation('date')}>
+            <Field label="Date" required hint={acceptsFutureDates ? FUTURE_DATE_HINT : NO_FUTURE_DATE_HINT} {...validation('date')}>
               <Input type="date" max={acceptsFutureDates ? undefined : todayIsoDate()} {...inputProps('date')} />
             </Field>
             <Field label="Paid by" required {...validation('paidBy')}>

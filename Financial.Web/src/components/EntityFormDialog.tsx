@@ -6,14 +6,13 @@ import {
   DialogSurface,
   DialogTitle,
 } from '@fluentui/react-components'
-import { flushSync } from 'react-dom'
 import ActionErrorAlert from './ActionErrorAlert'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import FieldErrorSummary from './FieldErrorSummary'
-import { collectFieldErrors, type FieldError } from '../utils/fieldErrors'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
+import { useFieldErrorSummary } from '../hooks/useFieldErrorSummary'
 import { EDITABLE_FIELD } from '../utils/focus'
 
 interface EntityFormDialogProps {
@@ -42,8 +41,7 @@ export default function EntityFormDialog({
   const styles = useFormPanelStyles()
   const content = useRef<HTMLDivElement | null>(null)
   const discardPrompt = useDiscardPrompt(isDirty)
-  const errorSummary = useRef<HTMLDivElement | null>(null)
-  const [summarizedErrors, setSummarizedErrors] = useState<FieldError[]>([])
+  const { summaryRef, summarizedErrors, submitWithSummary } = useFieldErrorSummary(content)
 
   const [opener] = useState(() => document.activeElement as HTMLElement | null)
 
@@ -61,14 +59,7 @@ export default function EntityFormDialog({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!canSave || isSaving) return
-    flushSync(onSave)
-    const invalidFields = collectFieldErrors(content.current)
-    const hasSeveral = invalidFields.length > 1
-    flushSync(() => setSummarizedErrors(hasSeveral ? invalidFields : []))
-    if (hasSeveral) errorSummary.current?.focus()
-    else if (invalidFields.length === 1 && !content.current?.contains(document.activeElement)) {
-      document.getElementById(invalidFields[0].fieldId)?.focus()
-    }
+    submitWithSummary(onSave, content.current)
   }
 
   const requestClose = () => {
@@ -83,7 +74,7 @@ export default function EntityFormDialog({
             <DialogBody>
               <DialogTitle>{title}</DialogTitle>
               <DialogContent ref={content} className={styles.dialogContent}>
-                {summarizedErrors.length > 0 && <FieldErrorSummary ref={errorSummary} errors={summarizedErrors} />}
+                {summarizedErrors.length > 0 && <FieldErrorSummary ref={summaryRef} errors={summarizedErrors} />}
                 <ActionErrorAlert message={error} className={styles.dialogError} />
                 <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
                   {children}

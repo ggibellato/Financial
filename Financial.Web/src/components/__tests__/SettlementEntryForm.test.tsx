@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
+import type { SettlementEntryField, SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import SettlementEntryForm from '../SettlementEntryForm'
 import { getErrorAlert } from '../../test-utils/errorAlert'
@@ -233,18 +233,76 @@ describe('SettlementEntryForm', () => {
     expect(setField).toHaveBeenCalledWith('currency', 'GBP')
   })
 
+  function ValidatingForm({ errors, mode = 'add' }: { errors: SettlementEntryFormModel['fieldErrors']; mode?: 'add' | 'settle' }) {
+    const [fieldErrors, setFieldErrors] = useState<SettlementEntryFormModel['fieldErrors']>({})
+    const state = (mode === 'settle' ? settleState : addState)({
+      fieldErrors,
+      submit: () => {
+        setFieldErrors(errors)
+        return null
+      },
+      setField: (field: SettlementEntryField) => setFieldErrors((previous) => ({ ...previous, [field]: undefined })),
+    })
+    return <SettlementEntryForm form={state} onCancel={vi.fn()} />
+  }
+
   it.each([
     ['date', () => screen.getByLabelText(/^Date/)],
     ['paidBy', () => screen.getByRole('radio', { name: 'You' })],
     ['currency', () => screen.getByRole('radio', { name: 'BRL' })],
     ['description', () => screen.getByLabelText(/^Description/)],
     ['amount', () => screen.getByLabelText(/^Amount/)],
-  ] as const)('[AC P60-F12-settlement-screen-08] focuses %s when the submit reports it invalid', (field, control) => {
-    renderForm(addState({ submit: vi.fn(() => field) }))
+  ] as const)('[AC P60-F12-settlement-screen-08] focuses %s when it is the one invalid field', (field, control) => {
+    render(<ValidatingForm errors={{ [field]: 'Fix this.' }} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
 
+    expect(screen.queryByText(/before saving/)).not.toBeInTheDocument()
     expect(control()).toHaveFocus()
+  })
+
+  it('summarises several invalid fields at the top, focuses the summary and links each message to its field', () => {
+    render(<ValidatingForm errors={{ paidBy: 'Choose who paid.', amount: 'Amount must be greater than zero.' }} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+
+    const summary = screen.getByText('Fix 2 fields before saving').closest('[tabindex="-1"]') as HTMLElement
+    expect(summary).toHaveFocus()
+    fireEvent.click(within(summary).getByRole('button', { name: 'Choose who paid.' }))
+    expect(screen.getByRole('radio', { name: 'You' })).toHaveFocus()
+    fireEvent.click(within(summary).getByRole('button', { name: 'Amount must be greater than zero.' }))
+    expect(screen.getByLabelText(/^Amount/)).toHaveFocus()
+  })
+
+  it('drops fixed fields from the summary and hides it once fewer than two are left', async () => {
+    render(<ValidatingForm errors={{ paidBy: 'Choose who paid.', description: 'Description is required.', amount: 'Amount must be greater than zero.' }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    expect(screen.getByText('Fix 3 fields before saving')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Mercado' } })
+    expect(await screen.findByText('Fix 2 fields before saving')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '10' } })
+    await waitFor(() => expect(screen.queryByText(/before saving/)).not.toBeInTheDocument())
+  })
+
+  it('shows no summary carried over when the form reopens in another mode', async () => {
+    const { rerender } = render(<ValidatingForm errors={{ paidBy: 'Choose who paid.', amount: 'Amount must be greater than zero.' }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    expect(screen.getByText('Fix 2 fields before saving')).toBeInTheDocument()
+
+    rerender(<SettlementEntryForm form={settleState()} onCancel={vi.fn()} />)
+
+    await waitFor(() => expect(screen.queryByText(/before saving/)).not.toBeInTheDocument())
+  })
+
+  it.each([
+    [false, 'Use today or an earlier date. Later dates have no exchange rate yet.'],
+    [true, 'A date after today records a planned entry.'],
+  ])('explains the date rule under Date when future dates are accepted: %s', (acceptsFutureDates, hint) => {
+    renderForm(addState({ acceptsFutureDates }))
+
+    expect(screen.getByLabelText(/^Date/)).toHaveAccessibleDescription(hint)
   })
 
   it('shows the field messages', () => {

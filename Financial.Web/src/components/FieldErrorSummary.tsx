@@ -1,6 +1,7 @@
 import { forwardRef, useId } from 'react'
 import { Link, MessageBar, MessageBarBody, MessageBarTitle, makeStyles, tokens } from '@fluentui/react-components'
 import type { FieldError } from '../utils/fieldErrors'
+import { focusField } from '../utils/focus'
 
 const useStyles = makeStyles({
   root: {
@@ -27,7 +28,7 @@ const FieldErrorSummary = forwardRef<HTMLDivElement, FieldErrorSummaryProps>(({ 
         <ul className={styles.list}>
           {errors.map((error) => (
             <li key={error.fieldId}>
-              <Link as="button" type="button" onClick={() => document.getElementById(error.fieldId)?.focus()}>
+              <Link as="button" type="button" onClick={() => focusField(error.fieldId)}>
                 {error.message}
               </Link>
             </li>
