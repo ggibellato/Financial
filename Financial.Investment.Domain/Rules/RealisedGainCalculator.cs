@@ -6,10 +6,10 @@ using Financial.Investment.Domain.Exceptions;
 
 namespace Financial.Investment.Domain.Rules;
 
-public static class DisposalRecordCalculator
+public static class RealisedGainCalculator
 {
-    public static DisposalRecord Calculate(
-        Transaction disposingTransaction,
+    public static RealisedGain Calculate(
+        Transaction sellingTransaction,
         IEnumerable<Transaction> precedingTransactions,
         CostBasisMethod method,
         string brokerCurrency,
@@ -22,40 +22,40 @@ public static class DisposalRecordCalculator
 
         var lotsConsumed = method switch
         {
-            CostBasisMethod.AverageCost => BuildAverageCostLot(disposingTransaction, preceding, precedingActions),
-            CostBasisMethod.FIFO => BuildAutoConsumedLots(disposingTransaction, preceding, precedingActions),
-            CostBasisMethod.SpecificId => BuildSpecificIdLots(disposingTransaction, preceding, allocation, precedingActions),
+            CostBasisMethod.AverageCost => BuildAverageCostLot(sellingTransaction, preceding, precedingActions),
+            CostBasisMethod.FIFO => BuildAutoConsumedLots(sellingTransaction, preceding, precedingActions),
+            CostBasisMethod.SpecificId => BuildSpecificIdLots(sellingTransaction, preceding, allocation, precedingActions),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown cost basis method.")
         };
 
-        var taxYear = TaxYearCalculator.Calculate(disposingTransaction.Date, brokerCurrency);
+        var taxYear = TaxYearCalculator.Calculate(sellingTransaction.Date, brokerCurrency);
 
-        return DisposalRecord.Create(
-            disposingTransaction.Id,
-            disposingTransaction.Date,
+        return RealisedGain.Create(
+            sellingTransaction.Id,
+            sellingTransaction.Date,
             method,
             lotsConsumed,
-            disposingTransaction.Quantity,
-            disposingTransaction.NetCash,
-            disposingTransaction.Currency,
+            sellingTransaction.Quantity,
+            sellingTransaction.NetCash,
+            sellingTransaction.Currency,
             taxYear,
             createdAt);
     }
 
-    private static IReadOnlyList<DisposalLotConsumption> BuildAverageCostLot(
-        Transaction disposingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
+    private static IReadOnlyList<RealisedGainLot> BuildAverageCostLot(
+        Transaction sellingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
     {
         var (_, averagePrice) = CorporateActionReplay.ReplayAveragePosition(preceding, precedingCorporateActions);
 
-        return new[] { new DisposalLotConsumption(null, disposingTransaction.Quantity, averagePrice) };
+        return new[] { new RealisedGainLot(null, sellingTransaction.Quantity, averagePrice) };
     }
 
-    private static IReadOnlyList<DisposalLotConsumption> BuildAutoConsumedLots(
-        Transaction disposingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
+    private static IReadOnlyList<RealisedGainLot> BuildAutoConsumedLots(
+        Transaction sellingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
     {
         var openLots = OpenLotTracker.GetOpenLots(preceding, precedingCorporateActions);
-        var remaining = disposingTransaction.Quantity;
-        var consumed = new List<DisposalLotConsumption>();
+        var remaining = sellingTransaction.Quantity;
+        var consumed = new List<RealisedGainLot>();
 
         foreach (var lot in openLots)
         {
@@ -65,15 +65,15 @@ public static class DisposalRecordCalculator
             }
 
             var take = Math.Min(lot.RemainingQuantity, remaining);
-            consumed.Add(new DisposalLotConsumption(lot.SourceTransactionId, take, lot.UnitCost));
+            consumed.Add(new RealisedGainLot(lot.SourceTransactionId, take, lot.UnitCost));
             remaining -= take;
         }
 
         return consumed;
     }
 
-    private static IReadOnlyList<DisposalLotConsumption> BuildSpecificIdLots(
-        Transaction disposingTransaction,
+    private static IReadOnlyList<RealisedGainLot> BuildSpecificIdLots(
+        Transaction sellingTransaction,
         IReadOnlyList<Transaction> preceding,
         IReadOnlyList<SpecificLotAllocation>? allocation,
         IReadOnlyList<CorporateAction> precedingCorporateActions)
@@ -84,14 +84,14 @@ public static class DisposalRecordCalculator
         }
 
         var allocatedQuantity = allocation.Sum(entry => entry.Quantity);
-        if (allocatedQuantity != disposingTransaction.Quantity)
+        if (allocatedQuantity != sellingTransaction.Quantity)
         {
             throw new InvestmentRuleViolationException(
-                $"Allocated lot quantity ({allocatedQuantity}) does not match the sale quantity ({disposingTransaction.Quantity}).");
+                $"Allocated lot quantity ({allocatedQuantity}) does not match the sale quantity ({sellingTransaction.Quantity}).");
         }
 
         var openLots = OpenLotTracker.GetOpenLots(preceding, precedingCorporateActions).ToDictionary(lot => lot.SourceTransactionId);
-        var consumed = new List<DisposalLotConsumption>();
+        var consumed = new List<RealisedGainLot>();
 
         foreach (var entry in allocation)
         {
@@ -107,7 +107,7 @@ public static class DisposalRecordCalculator
                     $"Lot {entry.SourceTransactionId} has only {lot.RemainingQuantity} units open, but {entry.Quantity} were requested.");
             }
 
-            consumed.Add(new DisposalLotConsumption(lot.SourceTransactionId, entry.Quantity, lot.UnitCost));
+            consumed.Add(new RealisedGainLot(lot.SourceTransactionId, entry.Quantity, lot.UnitCost));
         }
 
         return consumed;

@@ -15,7 +15,7 @@ public class InvestmentLoaderTests
 {
     [Fact]
     [Trait("AC", "P50-F02-disposal-record-05")]
-    public void LoadSync_LegacyDocumentWithSellAndNoDisposalRecords_BackfillsActiveRecordOnLoad()
+    public void LoadSync_LegacyDocumentWithSellAndNoRealisedGains_BackfillsActiveRecordOnLoad()
     {
         var investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
@@ -36,8 +36,8 @@ public class InvestmentLoaderTests
             var loaded = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
 
             var loadedAsset = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
-            loadedAsset.DisposalRecords.Should().ContainSingle();
-            loadedAsset.DisposalRecords.Single().Status.Should().Be(DisposalRecordStatus.Active);
+            loadedAsset.RealisedGains.Should().ContainSingle();
+            loadedAsset.RealisedGains.Single().Status.Should().Be(RealisedGainStatus.Active);
         }
         finally
         {
@@ -71,9 +71,33 @@ public class InvestmentLoaderTests
             var classifications = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single().TaxClassifications;
             classifications.Select(c => (c.SourceType, c.Status)).Should().BeEquivalentTo(new[]
             {
-                (SourceType.Disposal, TaxClassificationStatus.Active),
+                (SourceType.RealisedGain, TaxClassificationStatus.Active),
                 (SourceType.Credit, TaxClassificationStatus.Active),
             });
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void LoadSync_Version5File_KeepsItsRealisedGainsInsteadOfBackfillingNewOnes()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
+        File.WriteAllText(tempFile, Version5RealisedGainDocument.Build());
+
+        try
+        {
+            var loaded = InvestmentLoader.LoadSync(new LocalJsonStorage(tempFile), new InvestmentSerializerAdapter(), TestClock.At());
+
+            var loadedAsset = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+            loadedAsset.RealisedGains.Select(r => r.Id).Should().BeEquivalentTo(new[]
+            {
+                Version5RealisedGainDocument.SupersededRecordId, Version5RealisedGainDocument.ActiveRecordId,
+            });
+            loadedAsset.TaxClassifications.Should().HaveCount(2);
+            loadedAsset.RealisedGainLossSharesOnly.Should().Be(20m);
         }
         finally
         {
@@ -103,7 +127,7 @@ public class InvestmentLoaderTests
             var loaded = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
 
             var loadedAsset = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
-            loadedAsset.DisposalRecords.Should().ContainSingle();
+            loadedAsset.RealisedGains.Should().ContainSingle();
         }
         finally
         {

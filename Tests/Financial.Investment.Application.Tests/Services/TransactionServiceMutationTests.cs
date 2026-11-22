@@ -493,7 +493,7 @@ public class TransactionServiceMutationTests
 
     [Fact]
     [Trait("AC", "P51-F02-tax-profile-and-classification-01")]
-    public async Task AddTransactionAsync_DisposingTransaction_ClassifiesItInTheSameCall()
+    public async Task AddTransactionAsync_SellingTransaction_ClassifiesItInTheSameCall()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
@@ -512,8 +512,8 @@ public class TransactionServiceMutationTests
         });
 
         var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
-        classification.SourceType.Should().Be(SourceType.Disposal);
-        classification.SourceId.Should().Be(asset.DisposalRecords.Single().Id);
+        classification.SourceType.Should().Be(SourceType.RealisedGain);
+        classification.SourceId.Should().Be(asset.RealisedGains.Single().Id);
         classification.EventCategory.Should().Be(EventCategory.CapitalGain);
         classification.Status.Should().Be(TaxClassificationStatus.Active);
     }

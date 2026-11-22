@@ -5,21 +5,21 @@ using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Domain.Entities;
 
-public sealed class DisposalRecord
+public sealed class RealisedGain
 {
     public Guid Id { get; private set; }
     public Guid TransactionId { get; private set; }
     public DateTime Date { get; private set; }
     public CostBasisMethod Method { get; private set; }
 
-    private List<DisposalLotConsumption> _lotsConsumed = new();
-    public IReadOnlyList<DisposalLotConsumption> LotsConsumed
+    private List<RealisedGainLot> _lotsConsumed = new();
+    public IReadOnlyList<RealisedGainLot> LotsConsumed
     {
         get => _lotsConsumed.AsReadOnly();
-        private set => _lotsConsumed = new List<DisposalLotConsumption>(value);
+        private set => _lotsConsumed = new List<RealisedGainLot>(value);
     }
 
-    public decimal QuantityDisposed { get; private set; }
+    public decimal QuantitySold { get; private set; }
     public decimal Proceeds { get; private set; }
 
     public decimal CostBasis => _lotsConsumed.Sum(lot => lot.Quantity * lot.UnitCost);
@@ -28,19 +28,19 @@ public sealed class DisposalRecord
 
     public Currency Currency { get; private set; }
     public string TaxYear { get; private set; } = string.Empty;
-    public DisposalRecordStatus Status { get; private set; } = DisposalRecordStatus.Active;
+    public RealisedGainStatus Status { get; private set; } = RealisedGainStatus.Active;
     public Guid? SupersededByRecordId { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
-    private DisposalRecord() { }
+    private RealisedGain() { }
 
-    private DisposalRecord(
+    private RealisedGain(
         Guid id,
         Guid transactionId,
         DateTime date,
         CostBasisMethod method,
-        IReadOnlyList<DisposalLotConsumption> lotsConsumed,
-        decimal quantityDisposed,
+        IReadOnlyList<RealisedGainLot> lotsConsumed,
+        decimal quantitySold,
         decimal proceeds,
         Currency currency,
         string taxYear,
@@ -49,7 +49,7 @@ public sealed class DisposalRecord
     {
         if (lotsConsumed is null || lotsConsumed.Count == 0)
         {
-            throw new ArgumentException("A disposal record requires at least one consumed lot.", nameof(lotsConsumed));
+            throw new ArgumentException("A realised gain requires at least one consumed lot.", nameof(lotsConsumed));
         }
 
         Id = id;
@@ -57,46 +57,46 @@ public sealed class DisposalRecord
         Date = date;
         Method = method;
         LotsConsumed = lotsConsumed;
-        QuantityDisposed = quantityDisposed;
+        QuantitySold = quantitySold;
         Proceeds = proceeds;
         Currency = currency;
         TaxYear = taxYear;
         CreatedAt = createdAt;
     }
 
-    public static DisposalRecord Create(
+    public static RealisedGain Create(
         Guid transactionId,
         DateTime date,
         CostBasisMethod method,
-        IReadOnlyList<DisposalLotConsumption> lotsConsumed,
-        decimal quantityDisposed,
+        IReadOnlyList<RealisedGainLot> lotsConsumed,
+        decimal quantitySold,
         decimal proceeds,
         Currency currency,
         string taxYear,
         DateTimeOffset createdAt) =>
-        new(Guid.NewGuid(), transactionId, date, method, lotsConsumed, quantityDisposed, proceeds, currency, taxYear, createdAt);
+        new(Guid.NewGuid(), transactionId, date, method, lotsConsumed, quantitySold, proceeds, currency, taxYear, createdAt);
 
     public void Supersede(Guid? supersededByRecordId)
     {
-        if (Status == DisposalRecordStatus.Superseded)
+        if (Status == RealisedGainStatus.Superseded)
         {
-            throw new InvalidOperationException("This disposal record has already been superseded.");
+            throw new InvalidOperationException("This realised gain has already been superseded.");
         }
 
-        Status = DisposalRecordStatus.Superseded;
+        Status = RealisedGainStatus.Superseded;
         SupersededByRecordId = supersededByRecordId;
     }
 
-    public static DisposalRecord CreateWithId(
+    public static RealisedGain CreateWithId(
         Guid id,
         Guid transactionId,
         DateTime date,
         CostBasisMethod method,
-        IReadOnlyList<DisposalLotConsumption> lotsConsumed,
-        decimal quantityDisposed,
+        IReadOnlyList<RealisedGainLot> lotsConsumed,
+        decimal quantitySold,
         decimal proceeds,
         Currency currency,
         string taxYear,
         DateTimeOffset createdAt) =>
-        new(id, transactionId, date, method, lotsConsumed, quantityDisposed, proceeds, currency, taxYear, createdAt);
+        new(id, transactionId, date, method, lotsConsumed, quantitySold, proceeds, currency, taxYear, createdAt);
 }

@@ -475,10 +475,10 @@ public class CorporateActionsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task DeleteCorporateAction_WhenALaterSpecificIdDisposalDependsOnTheSplitLots_ReturnsConflict()
+    public async Task DeleteCorporateAction_WhenALaterSpecificIdSaleDependsOnTheSplitLots_ReturnsConflict()
     {
         // A dedicated broker/portfolio/asset, rather than the seeded XPI/Default/BCIA11: BCIA11's
-        // seeded sell has no lot allocation and no persisted DisposalRecord (it is backfilled at
+        // seeded sell has no lot allocation and no persisted RealisedGain (it is backfilled at
         // host startup, unrelated to this feature), so switching its broker to SpecificId cannot
         // reconstruct an allocation for it and fails before this scenario even starts.
         var broker = await Client.PostAsJsonAsync("/api/v1/financial/brokers", new BrokerCreateDTO
@@ -559,7 +559,7 @@ public class CorporateActionsEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
-        problem!.Detail.Should().Be("Cannot delete: a later disposal depends on lots created by this split.");
+        problem!.Detail.Should().Be("Cannot delete: a later sale depends on lots created by this split.");
     }
 
     [Fact]

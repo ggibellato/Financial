@@ -129,14 +129,14 @@ public class TransactionServiceTests : IDisposable
 
     [Fact]
     [Trait("AC", "P50-F02-disposal-record-01")]
-    public async Task AddTransaction_Sell_PersistsADisposalRecordUsingTheBrokersCostBasisMethod()
+    public async Task AddTransaction_Sell_PersistsARealisedGainUsingTheBrokersCostBasisMethod()
     {
-        var disposalsBefore = PersistedAsset().DisposalRecords.Count;
+        var realisedGainsBefore = PersistedAsset().RealisedGains.Count;
 
         await _service.AddTransactionAsync(NewTransaction(new DateTime(2024, 1, 6), "Sell", 1m, 120m, 0m));
 
-        var disposals = PersistedAsset().DisposalRecords;
-        disposals.Should().HaveCountGreaterThan(disposalsBefore);
-        disposals.Should().OnlyContain(record => record.Method == CostBasisMethod.AverageCost);
+        var realisedGains = PersistedAsset().RealisedGains;
+        realisedGains.Should().HaveCountGreaterThan(realisedGainsBefore);
+        realisedGains.Should().OnlyContain(record => record.Method == CostBasisMethod.AverageCost);
     }
 }

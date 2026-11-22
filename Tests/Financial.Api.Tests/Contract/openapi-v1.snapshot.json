@@ -3345,7 +3345,7 @@
             "type": "number"
           },
           "status": {
-            "$ref": "#/components/schemas/DisposalRecordStatus"
+            "$ref": "#/components/schemas/RealisedGainStatus"
           },
           "supersededByRecordId": {
             "format": "uuid",
@@ -3363,12 +3363,6 @@
           }
         },
         "type": "object"
-      },
-      "DisposalRecordStatus": {
-        "enum": [
-          "Active",
-          "Superseded"
-        ]
       },
       "DividendHistoryItemDTO": {
         "properties": {
@@ -5578,6 +5572,12 @@
           }
         },
         "type": "object"
+      },
+      "RealisedGainStatus": {
+        "enum": [
+          "Active",
+          "Superseded"
+        ]
       },
       "RecurringBillCreateDTO": {
         "properties": {
@@ -10570,7 +10570,7 @@
             "description": "Not Found"
           }
         },
-        "summary": "Changes a broker\u0027s cost-basis method, regenerating every disposal record under it.",
+        "summary": "Changes a broker\u0027s cost-basis method, regenerating every realised gain under it.",
         "tags": [
           "Brokers"
         ]

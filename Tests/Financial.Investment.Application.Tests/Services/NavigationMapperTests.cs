@@ -219,14 +219,14 @@ public class NavigationMapperTests
     }
 
     [Fact]
-    public void MapDisposalRecord_CopiesEachConsumedLot()
+    public void MapRealisedGain_CopiesEachConsumedLot()
     {
         var sourceTransactionId = Guid.NewGuid();
-        var record = DisposalRecord.Create(
+        var record = RealisedGain.Create(
             Guid.NewGuid(), new DateTime(2022, 1, 1), CostBasisMethod.FIFO,
-            [new DisposalLotConsumption(sourceTransactionId, 3m, 12.5m)], 3m, 60m, Currency.GBP, "2021/22", TestClock.Default);
+            [new RealisedGainLot(sourceTransactionId, 3m, 12.5m)], 3m, 60m, Currency.GBP, "2021/22", TestClock.Default);
 
-        var lot = NavigationMapper.MapDisposalRecord(record).LotsConsumed.Should().ContainSingle().Subject;
+        var lot = NavigationMapper.MapRealisedGain(record).LotsConsumed.Should().ContainSingle().Subject;
 
         using var _ = new AssertionScope();
         lot.SourceTransactionId.Should().Be(sourceTransactionId);

@@ -83,7 +83,7 @@ public class TransactionTests
 
     /// <summary>
     /// The fee on a sale is deducted from what is received, not added to it. Adding it overstated
-    /// proceeds by twice the fee and propagated into Realized Gain/Loss, Average Sell Price and
+    /// proceeds by twice the fee and propagated into Realised Gain/Loss, Average Sell Price and
     /// the XIRR cash-flow series.
     /// </summary>
     [Fact]

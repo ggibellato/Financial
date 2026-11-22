@@ -113,7 +113,7 @@ public class GoogleSheetsAssetReaderTests
     /// <summary>
     /// A recorded total that disagrees with quantity x unit price derives a negative fee, which
     /// Transaction floors to zero on construction. The floor is deliberate - a negative fee would propagate
-    /// into Realized Gain/Loss - but it is a repair, and a silent repair made a spreadsheet with
+    /// into Realised Gain/Loss - but it is a repair, and a silent repair made a spreadsheet with
     /// bad totals import looking exactly like a clean one.
     /// </summary>
     [Fact]

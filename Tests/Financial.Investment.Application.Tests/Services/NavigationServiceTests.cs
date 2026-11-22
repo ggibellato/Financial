@@ -375,7 +375,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_AfterASale_ReturnsMatchingDisposalRecord()
+    public void GetAssetDetails_AfterASale_ReturnsMatchingRealisedGain()
     {
         var broker = Broker.Create("Broker", "BRL");
         var portfolio = broker.AddPortfolio("Portfolio");
@@ -395,7 +395,7 @@ public class NavigationServiceTests
         record.QuantityDisposed.Should().Be(5m);
         record.Proceeds.Should().Be(sale.NetCash);
         record.GainLoss.Should().Be(record.Proceeds - record.CostBasis);
-        record.Status.Should().Be(DisposalRecordStatus.Active);
+        record.Status.Should().Be(RealisedGainStatus.Active);
     }
 
     [Fact]
@@ -437,7 +437,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_WithNoDisposingTransactions_ReturnsEmptyDisposalRecords()
+    public void GetAssetDetails_WithNoSellingTransactions_ReturnsEmptyRealisedGains()
     {
         var broker = Broker.Create("Broker", "BRL");
         var portfolio = broker.AddPortfolio("Portfolio");

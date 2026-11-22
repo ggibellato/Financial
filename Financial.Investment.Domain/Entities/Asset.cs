@@ -36,11 +36,10 @@ public class Asset
 
     public decimal? AverageSellPrice => Transactions.AverageSellPrice;
 
-    public decimal RealizedGainLoss =>
-        DisposalRecords.Where(d => d.Status == DisposalRecordStatus.Active).Sum(d => d.GainLoss) + Credits.Sum(c => c.Value);
+    public decimal RealisedGainLoss => RealisedGainLossSharesOnly + Credits.Sum(c => c.Value);
 
-    public decimal RealizedGainLossSharesOnly =>
-        DisposalRecords.Where(d => d.Status == DisposalRecordStatus.Active).Sum(d => d.GainLoss);
+    public decimal RealisedGainLossSharesOnly =>
+        RealisedGains.Where(r => r.Status == RealisedGainStatus.Active).Sum(r => r.GainLoss);
 
     public PositionType PositionType => Quantity switch
     {
@@ -49,11 +48,11 @@ public class Asset
         _ => PositionType.Flat
     };
 
-    private List<DisposalRecord> _disposalRecords = new List<DisposalRecord>();
-    public IReadOnlyCollection<DisposalRecord> DisposalRecords
+    private List<RealisedGain> _realisedGains = new List<RealisedGain>();
+    public IReadOnlyCollection<RealisedGain> RealisedGains
     {
-        get => _disposalRecords.AsReadOnly();
-        private set => EntityGuard.ReplaceAll(_disposalRecords, value);
+        get => _realisedGains.AsReadOnly();
+        private set => EntityGuard.ReplaceAll(_realisedGains, value);
     }
 
     private List<CorporateAction> _corporateActions = new List<CorporateAction>();
@@ -184,12 +183,12 @@ public class Asset
     {
         EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id, _corporateActions);
 
-        if (transaction.Date <= LatestActiveDisposalDate())
+        if (transaction.Date <= LatestActiveRealisedGainDate())
         {
             AddTransaction(transaction);
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, transaction.Date, createdAt, transaction.Id, allocation, investments);
+                RealisedGainRegenerator.RegenerateAsset(this, method, transaction.Date, createdAt, transaction.Id, allocation, investments);
             }
             catch
             {
@@ -200,37 +199,37 @@ public class Asset
         }
 
         var effect = TransactionTypeEffects.For(transaction.Type);
-        var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
-        if (isDisposing)
+        var realisesGain = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
+        if (realisesGain)
         {
             var precedingCorporateActions = _corporateActions.Where(ca => ca.EffectiveDate <= transaction.Date);
-            var disposalRecord = DisposalRecordCalculator.Calculate(
+            var realisedGain = RealisedGainCalculator.Calculate(
                 transaction, Transactions, method, transaction.Currency.ToString(), createdAt, allocation, precedingCorporateActions);
-            _disposalRecords.Add(disposalRecord);
+            _realisedGains.Add(realisedGain);
             if (investments is not null)
             {
-                AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(disposalRecord, investments, createdAt));
+                AppendTaxClassification(TaxClassificationCalculator.CalculateForRealisedGain(realisedGain, investments, createdAt));
             }
         }
 
         AddTransaction(transaction);
 
-        if (isDisposing)
+        if (realisesGain)
         {
-            RefreshRealizedCapitalGain();
+            RefreshRealisedCapitalGain();
         }
     }
 
-    private DateTime? LatestActiveDisposalDate()
+    private DateTime? LatestActiveRealisedGainDate()
     {
-        var activeDates = _disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Select(r => r.Date).ToList();
+        var activeDates = _realisedGains.Where(r => r.Status == RealisedGainStatus.Active).Select(r => r.Date).ToList();
         return activeDates.Count == 0 ? null : activeDates.Max();
     }
 
-    internal void AppendBackfilledDisposalRecord(DisposalRecord record)
+    internal void AppendBackfilledRealisedGain(RealisedGain record)
     {
-        _disposalRecords.Add(record);
-        RefreshRealizedCapitalGain();
+        _realisedGains.Add(record);
+        RefreshRealisedCapitalGain();
     }
 
     internal void AppendTaxClassification(TaxClassification classification) => _taxClassifications.Add(classification);
@@ -252,8 +251,8 @@ public class Asset
         return _taxClassifications.Remove(classification);
     }
 
-    internal void RefreshRealizedCapitalGain() =>
-        Transactions.SetRealizedCapitalGain(_disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Sum(r => r.GainLoss));
+    internal void RefreshRealisedCapitalGain() =>
+        Transactions.SetRealisedCapitalGain(_realisedGains.Where(r => r.Status == RealisedGainStatus.Active).Sum(r => r.GainLoss));
 
     public bool ReviseTransaction(Transaction updatedTransaction, DateTimeOffset createdAt, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
     {
@@ -272,11 +271,11 @@ public class Asset
         }
 
         var anchor = previous.Date <= updatedTransaction.Date ? previous.Date : updatedTransaction.Date;
-        if (anchor <= LatestActiveDisposalDate())
+        if (anchor <= LatestActiveRealisedGainDate())
         {
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, createdAt, investments: investments);
+                RealisedGainRegenerator.RegenerateAsset(this, method, anchor, createdAt, investments: investments);
             }
             catch
             {
@@ -304,11 +303,11 @@ public class Asset
             return false;
         }
 
-        if (removed.Date <= LatestActiveDisposalDate())
+        if (removed.Date <= LatestActiveRealisedGainDate())
         {
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, removed.Date, createdAt, investments: investments);
+                RealisedGainRegenerator.RegenerateAsset(this, method, removed.Date, createdAt, investments: investments);
             }
             catch
             {
@@ -355,7 +354,7 @@ public class Asset
 
         try
         {
-            DisposalRecordRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, createdAt, investments: investments);
+            RealisedGainRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, createdAt, investments: investments);
             AppendCorporateActionTaxClassification(corporateAction, createdAt, investments, brokerCurrency);
         }
         catch
@@ -395,7 +394,7 @@ public class Asset
 
         try
         {
-            DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, createdAt, investments: investments);
+            RealisedGainRegenerator.RegenerateAsset(this, method, anchor, createdAt, investments: investments);
             ReviseCorporateActionTaxClassification(updatedCorporateAction, createdAt, investments, brokerCurrency);
         }
         catch
@@ -422,7 +421,7 @@ public class Asset
 
         try
         {
-            DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, createdAt, investments: investments);
+            RealisedGainRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, createdAt, investments: investments);
             SupersedeCorporateActionTaxClassification(removed);
         }
         catch (Exception ex)
@@ -434,9 +433,9 @@ public class Asset
             {
                 var message = removed.Type switch
                 {
-                    CorporateAction.CorporateActionType.Split => "Cannot delete: a later disposal depends on lots created by this split.",
-                    CorporateAction.CorporateActionType.Merger => "Cannot delete: a later disposal depends on lots created by this merger.",
-                    CorporateAction.CorporateActionType.SpinOff => "Cannot delete: a later disposal depends on lots created by this spin-off.",
+                    CorporateAction.CorporateActionType.Split => "Cannot delete: a later sale depends on lots created by this split.",
+                    CorporateAction.CorporateActionType.Merger => "Cannot delete: a later sale depends on lots created by this merger.",
+                    CorporateAction.CorporateActionType.SpinOff => "Cannot delete: a later sale depends on lots created by this spin-off.",
                     _ => throw new ArgumentOutOfRangeException(nameof(removed), removed.Type, "Unsupported corporate action type."),
                 };
                 throw new InvestmentRuleViolationException(message);

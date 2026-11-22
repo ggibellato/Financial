@@ -29,7 +29,7 @@ public class DisposalRecordDTO
     public string TaxYear { get; set; } = string.Empty;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public DisposalRecordStatus Status { get; set; }
+    public RealisedGainStatus Status { get; set; }
 
     public Guid? SupersededByRecordId { get; set; }
 

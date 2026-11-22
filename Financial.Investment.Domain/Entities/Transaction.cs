@@ -39,7 +39,7 @@ public class Transaction
     /// <summary>
     /// Fees/Withheld are floored at zero here rather than at any one call site, because a negative
     /// value is never valid on a Transaction: it would invert <see cref="NetCash"/> and carry the
-    /// error into Realized Gain/Loss and the XIRR series. A caller holding a figure that might be
+    /// error into Realised Gain/Loss and the XIRR series. A caller holding a figure that might be
     /// negative - an importer recovering it from a recorded total - should report the anomaly
     /// before constructing, because from here on it is gone.
     /// <para>

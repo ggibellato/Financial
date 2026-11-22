@@ -137,7 +137,7 @@ internal static class NavigationMapper
         };
     }
 
-    internal static DisposalRecordDTO MapDisposalRecord(DisposalRecord record)
+    internal static DisposalRecordDTO MapRealisedGain(RealisedGain record)
     {
         return new DisposalRecordDTO
         {
@@ -145,8 +145,8 @@ internal static class NavigationMapper
             TransactionId = record.TransactionId,
             Date = record.Date,
             Method = record.Method,
-            LotsConsumed = record.LotsConsumed.Select(MapDisposalLotConsumption).ToList(),
-            QuantityDisposed = record.QuantityDisposed,
+            LotsConsumed = record.LotsConsumed.Select(MapRealisedGainLot).ToList(),
+            QuantityDisposed = record.QuantitySold,
             Proceeds = record.Proceeds,
             CostBasis = record.CostBasis,
             GainLoss = record.GainLoss,
@@ -181,7 +181,7 @@ internal static class NavigationMapper
         };
     }
 
-    private static DisposalLotConsumptionDTO MapDisposalLotConsumption(DisposalLotConsumption lot)
+    private static DisposalLotConsumptionDTO MapRealisedGainLot(RealisedGainLot lot)
     {
         return new DisposalLotConsumptionDTO
         {

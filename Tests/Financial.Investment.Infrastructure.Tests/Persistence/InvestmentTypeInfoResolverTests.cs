@@ -34,7 +34,8 @@ public class InvestmentTypeInfoResolverTests
         typeInfo!.Properties.Should().NotContain(p => p.Name == nameof(Asset.AveragePrice));
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.Quantity));
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.AverageSellPrice));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.RealizedGainLoss));
+        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.RealisedGainLoss));
+        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.RealisedGainLossSharesOnly));
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.PositionType));
     }
 
@@ -134,10 +135,10 @@ public class InvestmentTypeInfoResolverTests
     }
 
     [Fact]
-    public void GetTypeInfo_RoundTripsAssetWithSellTransaction_RecalculatesRealizedGainLossAndAverageSellPrice()
+    public void GetTypeInfo_RoundTripsAssetWithSellTransaction_RecalculatesRealisedGainLossAndAverageSellPrice()
     {
         // End-to-end: Transactions is a plain JSON array on disk (ICollection<Transaction>),
-        // and RealizedGainLoss/AverageSellPrice recompute from it on deserialize rather than
+        // and RealisedGainLoss/AverageSellPrice recompute from it on deserialize rather than
         // trusting the excluded JSON fields directly.
         var options = CreateOptions();
         var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
@@ -151,7 +152,7 @@ public class InvestmentTypeInfoResolverTests
         deserialized.Should().NotBeNull();
         deserialized!.Quantity.Should().Be(5m);
         deserialized.AverageSellPrice.Should().Be(110m);
-        deserialized.RealizedGainLoss.Should().Be(62m);
+        deserialized.RealisedGainLoss.Should().Be(62m);
     }
 
     [Fact]

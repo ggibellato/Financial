@@ -373,7 +373,7 @@ public class PortfolioAssetSummaryServiceTests
     }
 
     [Fact]
-    public void GetPortfolioAssetsSummary_HistoricScope_ReturnsTheRealizedResultPercentOnTotalBought()
+    public void GetPortfolioAssetsSummary_HistoricScope_ReturnsTheRealisedResultPercentOnTotalBought()
     {
         var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
         asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 4m, 100m, 0m));

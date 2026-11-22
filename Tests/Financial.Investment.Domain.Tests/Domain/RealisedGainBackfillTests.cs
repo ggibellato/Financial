@@ -7,10 +7,10 @@ using FluentAssertions;
 namespace Financial.Investment.Domain.Tests;
 
 [Trait("Category", "Unit")]
-public class DisposalRecordBackfillTests
+public class RealisedGainBackfillTests
 {
     [Fact]
-    public void Apply_ExistingSellWithNoDisposalRecord_BackfillsExactlyOneActiveRecord()
+    public void Apply_ExistingSellWithNoRealisedGain_BackfillsExactlyOneActiveRecord()
     {
         var investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
@@ -20,12 +20,12 @@ public class DisposalRecordBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        var failures = RealisedGainBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
-        asset.DisposalRecords.Should().ContainSingle();
-        var record = asset.DisposalRecords.Single();
-        record.Status.Should().Be(DisposalRecordStatus.Active);
+        asset.RealisedGains.Should().ContainSingle();
+        var record = asset.RealisedGains.Single();
+        record.Status.Should().Be(RealisedGainStatus.Active);
         record.Method.Should().Be(CostBasisMethod.AverageCost);
         record.GainLoss.Should().Be(50m);
     }
@@ -42,14 +42,14 @@ public class DisposalRecordBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        DisposalRecordBackfill.Apply(investments, TestClock.Default);
-        DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        RealisedGainBackfill.Apply(investments, TestClock.Default);
+        RealisedGainBackfill.Apply(investments, TestClock.Default);
 
-        asset.DisposalRecords.Should().ContainSingle();
+        asset.RealisedGains.Should().ContainSingle();
     }
 
     [Fact]
-    public void Apply_TransactionAlreadyHasADisposalRecord_LeavesItUntouched()
+    public void Apply_TransactionAlreadyHasARealisedGain_LeavesItUntouched()
     {
         var investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
@@ -58,13 +58,13 @@ public class DisposalRecordBackfillTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
-        var existingRecord = asset.DisposalRecords.Single();
+        var existingRecord = asset.RealisedGains.Single();
 
-        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        var failures = RealisedGainBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
-        asset.DisposalRecords.Should().ContainSingle();
-        asset.DisposalRecords.Single().Id.Should().Be(existingRecord.Id);
+        asset.RealisedGains.Should().ContainSingle();
+        asset.RealisedGains.Single().Id.Should().Be(existingRecord.Id);
     }
 
     [Fact]
@@ -78,10 +78,10 @@ public class DisposalRecordBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        var failures = RealisedGainBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
-        asset.DisposalRecords.Should().BeEmpty();
+        asset.RealisedGains.Should().BeEmpty();
     }
 
     [Fact]
@@ -103,10 +103,10 @@ public class DisposalRecordBackfillTests
         historicBroker.AddPortfolio("Closed").AddAsset(historicAsset);
         investments.AddHistoricBroker(historicBroker);
 
-        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        var failures = RealisedGainBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
-        activeAsset.DisposalRecords.Should().ContainSingle();
-        historicAsset.DisposalRecords.Should().ContainSingle();
+        activeAsset.RealisedGains.Should().ContainSingle();
+        historicAsset.RealisedGains.Should().ContainSingle();
     }
 }

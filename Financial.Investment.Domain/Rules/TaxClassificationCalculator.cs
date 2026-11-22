@@ -6,13 +6,13 @@ namespace Financial.Investment.Domain.Rules;
 
 public static class TaxClassificationCalculator
 {
-    public static TaxClassification CalculateForDisposal(DisposalRecord record, Investments investments, DateTimeOffset createdAt)
+    public static TaxClassification CalculateForRealisedGain(RealisedGain record, Investments investments, DateTimeOffset createdAt)
     {
         var jurisdiction = ForCurrency(record.Currency);
         var rule = investments.FindApplicableTaxRule(jurisdiction, EventCategory.CapitalGain, DateOnly.FromDateTime(record.Date));
         var status = rule is not null ? CalculationStatus.Final : CalculationStatus.Incomplete;
 
-        return TaxClassification.CreateForDisposal(
+        return TaxClassification.CreateForRealisedGain(
             record.Id, jurisdiction, record.TaxYear, record.Proceeds, record.CostBasis, record.GainLoss, status, rule?.Id, createdAt);
     }
 

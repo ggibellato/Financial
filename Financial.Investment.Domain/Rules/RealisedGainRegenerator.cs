@@ -5,13 +5,13 @@ using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Domain.Rules;
 
-public static class DisposalRecordRegenerator
+public static class RealisedGainRegenerator
 {
     private sealed record RegenerationPlan(
         Asset Asset,
-        IReadOnlyList<DisposalRecord> ToRetire,
-        IReadOnlyList<(DisposalRecord Existing, DisposalRecord New)> Replacements,
-        IReadOnlyList<DisposalRecord> NewOnly);
+        IReadOnlyList<RealisedGain> ToRetire,
+        IReadOnlyList<(RealisedGain Existing, RealisedGain New)> Replacements,
+        IReadOnlyList<RealisedGain> NewOnly);
 
     public static void RegenerateAsset(
         Asset asset,
@@ -46,15 +46,15 @@ public static class DisposalRecordRegenerator
         IReadOnlyList<SpecificLotAllocation>? seedAllocation = null)
     {
         var transactionIds = asset.Transactions.Select(t => t.Id).ToHashSet();
-        var existingActive = asset.DisposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).ToList();
+        var existingActive = asset.RealisedGains.Where(r => r.Status == RealisedGainStatus.Active).ToList();
         var existingByTransactionId = existingActive.ToDictionary(r => r.TransactionId);
 
         var toRetire = existingActive
             .Where(r => r.Date >= anchor && !transactionIds.Contains(r.TransactionId))
             .ToList();
 
-        var replacements = new List<(DisposalRecord Existing, DisposalRecord New)>();
-        var newOnly = new List<DisposalRecord>();
+        var replacements = new List<(RealisedGain Existing, RealisedGain New)>();
+        var newOnly = new List<RealisedGain>();
         var preceding = new List<Transaction>();
         var precedingCorporateActions = new List<CorporateAction>();
 
@@ -68,14 +68,14 @@ public static class DisposalRecordRegenerator
 
                 case TransactionReplayStep(var transaction):
                     var effect = TransactionTypeEffects.For(transaction.Type);
-                    var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
+                    var realisesGain = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
 
-                    if (isDisposing && transaction.Date >= anchor)
+                    if (realisesGain && transaction.Date >= anchor)
                     {
                         var existing = existingByTransactionId.GetValueOrDefault(transaction.Id);
                         var allocation = transaction.Id == seedTransactionId ? seedAllocation : ReconstructAllocation(existing);
 
-                        var newRecord = DisposalRecordCalculator.Calculate(
+                        var newRecord = RealisedGainCalculator.Calculate(
                             transaction, preceding, method, transaction.Currency.ToString(), createdAt, allocation, precedingCorporateActions);
 
                         if (existing is not null)
@@ -103,35 +103,35 @@ public static class DisposalRecordRegenerator
             record.Supersede(null);
             if (investments is not null)
             {
-                plan.Asset.SupersedeTaxClassificationBySource(SourceType.Disposal, record.Id, null);
+                plan.Asset.SupersedeTaxClassificationBySource(SourceType.RealisedGain, record.Id, null);
             }
         }
 
         foreach (var (existing, newRecord) in plan.Replacements)
         {
             existing.Supersede(newRecord.Id);
-            plan.Asset.AppendBackfilledDisposalRecord(newRecord);
+            plan.Asset.AppendBackfilledRealisedGain(newRecord);
             if (investments is not null)
             {
-                var newClassification = TaxClassificationCalculator.CalculateForDisposal(newRecord, investments, createdAt);
-                plan.Asset.SupersedeTaxClassificationBySource(SourceType.Disposal, existing.Id, newClassification.Id);
+                var newClassification = TaxClassificationCalculator.CalculateForRealisedGain(newRecord, investments, createdAt);
+                plan.Asset.SupersedeTaxClassificationBySource(SourceType.RealisedGain, existing.Id, newClassification.Id);
                 plan.Asset.AppendTaxClassification(newClassification);
             }
         }
 
         foreach (var newRecord in plan.NewOnly)
         {
-            plan.Asset.AppendBackfilledDisposalRecord(newRecord);
+            plan.Asset.AppendBackfilledRealisedGain(newRecord);
             if (investments is not null)
             {
-                plan.Asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(newRecord, investments, createdAt));
+                plan.Asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForRealisedGain(newRecord, investments, createdAt));
             }
         }
 
-        plan.Asset.RefreshRealizedCapitalGain();
+        plan.Asset.RefreshRealisedCapitalGain();
     }
 
-    private static IReadOnlyList<SpecificLotAllocation>? ReconstructAllocation(DisposalRecord? record)
+    private static IReadOnlyList<SpecificLotAllocation>? ReconstructAllocation(RealisedGain? record)
     {
         if (record is null || record.Method != CostBasisMethod.SpecificId)
         {

@@ -2678,7 +2678,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Changes a broker's cost-basis method, regenerating every disposal record under it. */
+        /** Changes a broker's cost-basis method, regenerating every realised gain under it. */
         put: {
             parameters: {
                 query?: {
@@ -8142,15 +8142,13 @@ export interface components {
             proceeds: number;
             /** Format: double */
             quantityDisposed: number;
-            status: components["schemas"]["DisposalRecordStatus"];
+            status: components["schemas"]["RealisedGainStatus"];
             /** Format: uuid */
             supersededByRecordId: null | string;
             taxYear: string;
             /** Format: uuid */
             transactionId: string;
         };
-        /** @enum {unknown} */
-        DisposalRecordStatus: "Active" | "Superseded";
         DividendHistoryItemDTO: {
             /** Format: date-time */
             date?: string;
@@ -8828,6 +8826,8 @@ export interface components {
             title: null | string;
             type: null | string;
         };
+        /** @enum {unknown} */
+        RealisedGainStatus: "Active" | "Superseded";
         RecurringBillCreateDTO: {
             area: string;
             description: string;

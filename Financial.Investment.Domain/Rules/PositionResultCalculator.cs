@@ -13,13 +13,13 @@ public static class PositionResultCalculator
                 Percent(unrealisedGain.Value, costOfUnitsHeld),
                 Percent(unrealisedGain.Value + totalCredits, costOfUnitsHeld));
 
-    // RealizedGainLoss already includes the credits, so the credits-free figure subtracts them back out.
-    public static PositionResult ForClosedPosition(decimal realizedGainLoss, decimal totalCredits, decimal totalBought) =>
+    // RealisedGainLoss already includes the credits, so the credits-free figure subtracts them back out.
+    public static PositionResult ForClosedPosition(decimal realisedGainLoss, decimal totalCredits, decimal totalBought) =>
         totalBought == 0m
             ? Unavailable
             : new PositionResult(
-                Percent(realizedGainLoss - totalCredits, totalBought),
-                Percent(realizedGainLoss, totalBought));
+                Percent(realisedGainLoss - totalCredits, totalBought),
+                Percent(realisedGainLoss, totalBought));
 
     private static decimal Percent(decimal gain, decimal basis) => gain / basis * 100m;
 }

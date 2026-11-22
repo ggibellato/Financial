@@ -10,7 +10,7 @@ namespace Financial.Investment.Domain.Tests.Rules;
 public class TaxClassificationBackfillTests
 {
     [Fact]
-    public void Apply_ExistingDisposalRecordWithNoClassification_BackfillsExactlyOne()
+    public void Apply_ExistingRealisedGainWithNoClassification_BackfillsExactlyOne()
     {
         var investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
@@ -19,14 +19,14 @@ public class TaxClassificationBackfillTests
         asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
-        DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        RealisedGainBackfill.Apply(investments, TestClock.Default);
 
         var failures = TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
-        classification.SourceType.Should().Be(SourceType.Disposal);
-        classification.SourceId.Should().Be(asset.DisposalRecords.Single().Id);
+        classification.SourceType.Should().Be(SourceType.RealisedGain);
+        classification.SourceId.Should().Be(asset.RealisedGains.Single().Id);
     }
 
     [Fact]
@@ -60,18 +60,18 @@ public class TaxClassificationBackfillTests
         asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
-        DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        RealisedGainBackfill.Apply(investments, TestClock.Default);
 
         TaxClassificationBackfill.Apply(investments, TestClock.Default);
         TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         asset.TaxClassifications.Should().HaveCount(2);
-        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Disposal);
+        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.RealisedGain);
         asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Credit);
     }
 
     [Fact]
-    public void Apply_SupersededDisposalRecord_IsNeverClassified()
+    public void Apply_SupersededRealisedGain_IsNeverClassified()
     {
         var investments = Investments.Create();
         var broker = Broker.Create("Trading212", "GBP");
@@ -80,7 +80,7 @@ public class TaxClassificationBackfillTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Sell, 4m, 12m, 0m));
         broker.AddPortfolio("ISA").AddAsset(asset);
         investments.AddActiveBroker(broker);
-        var record = asset.DisposalRecords.Single();
+        var record = asset.RealisedGains.Single();
         record.Supersede(null);
 
         var failures = TaxClassificationBackfill.Apply(investments, TestClock.Default);

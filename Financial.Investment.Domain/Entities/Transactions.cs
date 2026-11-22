@@ -23,9 +23,9 @@ public class Transactions : ICollection<Transaction>
     public decimal AveragePrice { get; private set; }
 
     /// <summary>Pure capital gain/loss from closed (sold) quantity. Does NOT include Credits.</summary>
-    public decimal RealizedCapitalGain { get; private set; }
+    public decimal RealisedCapitalGain { get; private set; }
 
-    internal void SetRealizedCapitalGain(decimal value) => RealizedCapitalGain = value;
+    internal void SetRealisedCapitalGain(decimal value) => RealisedCapitalGain = value;
 
     public decimal? AverageSellPrice => _totalSoldQuantity == 0 ? null : _totalSoldValue / _totalSoldQuantity;
 
@@ -103,7 +103,7 @@ public class Transactions : ICollection<Transaction>
         _items.Clear();
         Quantity = 0;
         AveragePrice = 0;
-        RealizedCapitalGain = 0;
+        RealisedCapitalGain = 0;
         _totalSoldQuantity = 0;
         _totalSoldValue = 0;
 
@@ -126,8 +126,8 @@ public class Transactions : ICollection<Transaction>
     /// <summary>
     /// Generalizes Buy/Sell's original two-way split to every <see cref="QuantityEffect"/>: an
     /// Increase (Buy, TransferIn) feeds <see cref="AveragePrice"/>; a Decrease with a real cash
-    /// effect (Sell, Redemption) realizes gain/loss against its proceeds; a Decrease with no cash
-    /// effect (TransferOut) realizes zero gain/loss, since no consideration changed hands - it
+    /// effect (Sell, Redemption) realises gain/loss against its proceeds; a Decrease with no cash
+    /// effect (TransferOut) realises zero gain/loss, since no consideration changed hands - it
     /// reduces quantity at the existing average price instead. A None-quantity-effect type (Fee,
     /// CapitalCall, ReturnOfCapital) is a pure cash entry with no effect here at all.
     /// </summary>
@@ -150,7 +150,7 @@ public class Transactions : ICollection<Transaction>
                 if (effect.Cash != CashEffect.None)
                 {
                     var proceeds = transaction.NetCash;
-                    RealizedCapitalGain += proceeds - (transaction.Quantity * AveragePrice);
+                    RealisedCapitalGain += proceeds - (transaction.Quantity * AveragePrice);
                     _totalSoldValue += proceeds;
                     _totalSoldQuantity += transaction.Quantity;
                 }

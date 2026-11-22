@@ -18,17 +18,17 @@ Mandatory, not advisory.
 - A property with an expression-bodied getter and/or setter — whatever the body (backing-field access, `EntityGuard`/`AsReadOnly` calls, `SetProperty(ref _field, value)`, guard clauses, etc.) — is broken across lines once the full declaration line exceeds **140 characters**. This applies uniformly, including to the `{ get => _field; private set => SetProperty(ref _field, value); }` shape — length decides, not the property's role. Under 140 characters, keep it on one line even with expression bodies.
 
   ```csharp
-  public IReadOnlyCollection<DisposalRecord> DisposalRecords
+  public IReadOnlyCollection<RealisedGain> RealisedGains
   {
-      get => _disposalRecords.AsReadOnly();
-      private set => EntityGuard.ReplaceAll(_disposalRecords, value);
+      get => _realisedGains.AsReadOnly();
+      private set => EntityGuard.ReplaceAll(_realisedGains, value);
   }
   ```
 
   not
 
   ```csharp
-  public IReadOnlyCollection<DisposalRecord> DisposalRecords { get => _disposalRecords.AsReadOnly(); private set => EntityGuard.ReplaceAll(_disposalRecords, value); }
+  public IReadOnlyCollection<RealisedGain> RealisedGains { get => _realisedGains.AsReadOnly(); private set => EntityGuard.ReplaceAll(_realisedGains, value); }
   ```
 
 ## SOLID

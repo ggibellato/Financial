@@ -64,7 +64,7 @@ public class TransactionsTests
     }
 
     [Fact]
-    public void Add_Sell_AccumulatesRealizedCapitalGainAtRunningCostBasis()
+    public void Add_Sell_AccumulatesRealisedCapitalGainAtRunningCostBasis()
     {
         _sut.Add(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         _sut.Add(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
@@ -72,7 +72,7 @@ public class TransactionsTests
         _sut.Add(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
 
         // Weighted-average cost after both buys is 100; capital gain = 550 - (5 x 100) = 50
-        _sut.RealizedCapitalGain.Should().Be(50m);
+        _sut.RealisedCapitalGain.Should().Be(50m);
     }
 
     [Fact]
@@ -141,17 +141,17 @@ public class TransactionsTests
     }
 
     /// <summary>
-    /// Fees reduce what a sale returns, so they reduce the realized gain. Adding them to proceeds
+    /// Fees reduce what a sale returns, so they reduce the realised gain. Adding them to proceeds
     /// overstated this figure by twice the fee.
     /// </summary>
     [Fact]
-    public void Add_SellWithFees_DeductsFeesFromRealizedCapitalGain()
+    public void Add_SellWithFees_DeductsFeesFromRealisedCapitalGain()
     {
         _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
 
         _sut.Add(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 4m));
 
-        _sut.RealizedCapitalGain.Should().Be(46m, "550 received less 4 in fees against a 500 cost basis");
+        _sut.RealisedCapitalGain.Should().Be(46m, "550 received less 4 in fees against a 500 cost basis");
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public class TransactionsTests
 
         shuffled.Quantity.Should().Be(chronological.Quantity);
         shuffled.AveragePrice.Should().Be(chronological.AveragePrice);
-        shuffled.RealizedCapitalGain.Should().Be(chronological.RealizedCapitalGain);
+        shuffled.RealisedCapitalGain.Should().Be(chronological.RealisedCapitalGain);
         shuffled.AverageSellPrice.Should().Be(chronological.AverageSellPrice);
     }
 
@@ -214,7 +214,7 @@ public class TransactionsTests
         _sut.Add(buy);
 
         _sut.Quantity.Should().Be(0m);
-        _sut.RealizedCapitalGain.Should().Be(100m, "the sale is covered by the same-date purchase, at cost 10 x 100 = 1000 against proceeds 1100");
+        _sut.RealisedCapitalGain.Should().Be(100m, "the sale is covered by the same-date purchase, at cost 10 x 100 = 1000 against proceeds 1100");
     }
 
     [Fact]
@@ -267,24 +267,24 @@ public class TransactionsTests
         var bitcoin = new Transactions();
         bitcoin.AddRange(BitcoinStoredOrderTransactions());
         bitcoin.AveragePrice.Should().BeApproximately(62709.05039421211m, 0.00000001m);
-        bitcoin.RealizedCapitalGain.Should().BeApproximately(0.1678589829253596m, 0.0000000000001m);
+        bitcoin.RealisedCapitalGain.Should().BeApproximately(0.1678589829253596m, 0.0000000000001m);
 
         var agnc = new Transactions();
         agnc.AddRange(AgncStoredOrderTransactions());
-        agnc.RealizedCapitalGain.Should().BeApproximately(9.660847205052619m, 0.000000000001m);
+        agnc.RealisedCapitalGain.Should().BeApproximately(9.660847205052619m, 0.000000000001m);
 
         Math.Round(agnc.AveragePrice, 2).Should().Be(7.09m, "unchanged at the 2 dp both front ends display, even though full precision moves");
     }
 
     [Fact]
-    public void Add_Redemption_BehavesLikeASaleForQuantityAndRealizedGain()
+    public void Add_Redemption_BehavesLikeASaleForQuantityAndRealisedGain()
     {
         _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
 
         _sut.Add(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Redemption, 10m, 100m, 0m));
 
         _sut.Quantity.Should().Be(0m);
-        _sut.RealizedCapitalGain.Should().Be(0m);
+        _sut.RealisedCapitalGain.Should().Be(0m);
         _sut.AverageSellPrice.Should().Be(100m);
     }
 
@@ -300,7 +300,7 @@ public class TransactionsTests
     }
 
     [Fact]
-    public void Add_TransferOut_ReducesQuantityAtExistingAveragePriceWithZeroRealizedGain()
+    public void Add_TransferOut_ReducesQuantityAtExistingAveragePriceWithZeroRealisedGain()
     {
         _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
 
@@ -308,12 +308,12 @@ public class TransactionsTests
 
         _sut.Quantity.Should().Be(6m);
         _sut.AveragePrice.Should().Be(100m, "a TransferOut never changes the average price of what remains");
-        _sut.RealizedCapitalGain.Should().Be(0m, "no consideration changed hands, so no gain or loss is realized");
+        _sut.RealisedCapitalGain.Should().Be(0m, "no consideration changed hands, so no gain or loss is realised");
         _sut.AverageSellPrice.Should().BeNull("a TransferOut is not a sale for this metric's purpose");
     }
 
     [Fact]
-    public void AveragePrice_And_RealizedCapitalGain_AreUnaffectedByComputingOpenLots()
+    public void AveragePrice_And_RealisedCapitalGain_AreUnaffectedByComputingOpenLots()
     {
         var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 1m);
         var sell = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 4m, 120m, 1m);
@@ -321,19 +321,19 @@ public class TransactionsTests
         _sut.Add(sell);
 
         var averagePriceBefore = _sut.AveragePrice;
-        var realizedGainBefore = _sut.RealizedCapitalGain;
+        var realisedGainBefore = _sut.RealisedCapitalGain;
 
         Financial.Investment.Domain.Rules.OpenLotTracker.GetOpenLots(_sut);
 
         _sut.AveragePrice.Should().Be(averagePriceBefore, "AverageCost's replay is unchanged by this feature");
-        _sut.RealizedCapitalGain.Should().Be(realizedGainBefore, "AverageCost's replay is unchanged by this feature");
+        _sut.RealisedCapitalGain.Should().Be(realisedGainBefore, "AverageCost's replay is unchanged by this feature");
     }
 
     [Theory]
     [InlineData(Transaction.TransactionType.Fee)]
     [InlineData(Transaction.TransactionType.CapitalCall)]
     [InlineData(Transaction.TransactionType.ReturnOfCapital)]
-    public void Add_NoQuantityEffectType_LeavesQuantityAveragePriceAndRealizedGainUnchanged(Transaction.TransactionType type)
+    public void Add_NoQuantityEffectType_LeavesQuantityAveragePriceAndRealisedGainUnchanged(Transaction.TransactionType type)
     {
         _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
 
@@ -341,7 +341,7 @@ public class TransactionsTests
 
         _sut.Quantity.Should().Be(10m);
         _sut.AveragePrice.Should().Be(100m);
-        _sut.RealizedCapitalGain.Should().Be(0m);
+        _sut.RealisedCapitalGain.Should().Be(0m);
     }
 
     [Fact]
@@ -367,7 +367,7 @@ public class TransactionsTests
         _sut.Add(Transaction.Create(date, Transaction.TransactionType.Sell, 5m, 60m, 0m));
 
         _sut.Quantity.Should().Be(15m, "20 post-split units less the same-date sale of 5");
-        _sut.RealizedCapitalGain.Should().Be(50m, "sold at 60 against the post-split average cost of 50");
+        _sut.RealisedCapitalGain.Should().Be(50m, "sold at 60 against the post-split average cost of 50");
     }
 
     [Fact]

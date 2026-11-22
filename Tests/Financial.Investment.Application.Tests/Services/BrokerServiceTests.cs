@@ -166,7 +166,7 @@ public class BrokerServiceTests
 
     [Fact]
     [Trait("AC", "P50-F03-disposal-recalculation-policy-02")]
-    public async Task SetCostBasisMethodAsync_ValidBroker_ChangesMethodAndRegeneratesDisposals()
+    public async Task SetCostBasisMethodAsync_ValidBroker_ChangesMethodAndRegeneratesSales()
     {
         var broker = Broker.Create("Trading 212", "GBP");
         var portfolio = broker.AddPortfolio("ISA");
@@ -181,8 +181,8 @@ public class BrokerServiceTests
         otherAsset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 80m, 0m));
         broker.AddPortfolio("GIA").AddAsset(otherAsset);
         _repository.Investments!.AddActiveBroker(broker);
-        var originalRecord = asset.DisposalRecords.Single();
-        var otherOriginalRecord = otherAsset.DisposalRecords.Single();
+        var originalRecord = asset.RealisedGains.Single();
+        var otherOriginalRecord = otherAsset.RealisedGains.Single();
 
         var result = await CreateService().SetCostBasisMethodAsync("Trading 212", CostBasisMethod.FIFO);
 
@@ -190,17 +190,17 @@ public class BrokerServiceTests
         {
             result.Name.Should().Be("Trading 212");
             broker.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
-            originalRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
-            asset.DisposalRecords.Should().HaveCount(2);
-            otherOriginalRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
-            otherAsset.DisposalRecords.Should().HaveCount(2);
+            originalRecord.Status.Should().Be(RealisedGainStatus.Superseded);
+            asset.RealisedGains.Should().HaveCount(2);
+            otherOriginalRecord.Status.Should().Be(RealisedGainStatus.Superseded);
+            otherAsset.RealisedGains.Should().HaveCount(2);
             _repository.WriteCallCount.Should().Be(1);
             _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.SetCostBasisMethod");
         }
     }
 
     [Fact]
-    public async Task SetCostBasisMethodAsync_RegeneratesTaxClassificationsAlongsideDisposalRecords()
+    public async Task SetCostBasisMethodAsync_RegeneratesTaxClassificationsAlongsideRealisedGains()
     {
         var broker = Broker.Create("Trading 212", "GBP");
         var portfolio = broker.AddPortfolio("ISA");
@@ -250,7 +250,7 @@ public class BrokerServiceTests
 
     [Fact]
     [Trait("AC", "P50-F03-disposal-recalculation-policy-06")]
-    public async Task SetCostBasisMethodAsync_RegenerationThrows_MethodAndDisposalsUnchangedAndWritesNothing()
+    public async Task SetCostBasisMethodAsync_RegenerationThrows_MethodAndSalesUnchangedAndWritesNothing()
     {
         var broker = Broker.Create("Trading 212", "GBP");
         var portfolio = broker.AddPortfolio("ISA");
@@ -259,7 +259,7 @@ public class BrokerServiceTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m));
         portfolio.AddAsset(asset);
         _repository.Investments!.AddActiveBroker(broker);
-        var originalRecord = asset.DisposalRecords.Single();
+        var originalRecord = asset.RealisedGains.Single();
 
         var act = async () => await CreateService().SetCostBasisMethodAsync("Trading 212", CostBasisMethod.SpecificId);
 
@@ -267,8 +267,8 @@ public class BrokerServiceTests
         using (new AssertionScope())
         {
             broker.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
-            originalRecord.Status.Should().Be(DisposalRecordStatus.Active);
-            asset.DisposalRecords.Should().ContainSingle();
+            originalRecord.Status.Should().Be(RealisedGainStatus.Active);
+            asset.RealisedGains.Should().ContainSingle();
             _repository.WriteCallCount.Should().Be(0);
         }
     }

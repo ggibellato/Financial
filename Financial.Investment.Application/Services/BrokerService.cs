@@ -146,7 +146,7 @@ public sealed class BrokerService : IBrokerService
                 updated.SetCostBasisMethod(method);
                 try
                 {
-                    DisposalRecordRegenerator.RegenerateBroker(updated, _timeProvider.GetUtcNow(), investments);
+                    RealisedGainRegenerator.RegenerateBroker(updated, _timeProvider.GetUtcNow(), investments);
                 }
                 catch
                 {

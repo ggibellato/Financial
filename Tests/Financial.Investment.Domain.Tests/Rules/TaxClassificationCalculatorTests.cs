@@ -9,12 +9,12 @@ namespace Financial.Investment.Domain.Tests.Rules;
 [Trait("Category", "Unit")]
 public class TaxClassificationCalculatorTests
 {
-    private static DisposalRecord CreateDisposalRecord(Currency currency = Currency.BRL, DateTime? date = null) =>
-        DisposalRecord.Create(
+    private static RealisedGain CreateRealisedGain(Currency currency = Currency.BRL, DateTime? date = null) =>
+        RealisedGain.Create(
             Guid.NewGuid(),
             date ?? new DateTime(2026, 6, 1),
             CostBasisMethod.AverageCost,
-            [new DisposalLotConsumption(null, 10m, 60m)],
+            [new RealisedGainLot(null, 10m, 60m)],
             10m,
             1000m,
             currency,
@@ -22,12 +22,12 @@ public class TaxClassificationCalculatorTests
 
     [Fact]
     [Trait("AC", "P51-F02-tax-profile-and-classification-03")]
-    public void CalculateForDisposal_DerivesJurisdictionFromCurrency_Brl()
+    public void CalculateForRealisedGain_DerivesJurisdictionFromCurrency_Brl()
     {
-        var record = CreateDisposalRecord(Currency.BRL);
+        var record = CreateRealisedGain(Currency.BRL);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
+        var classification = TaxClassificationCalculator.CalculateForRealisedGain(record, investments, TestClock.Default);
 
         classification.Jurisdiction.Should().Be(Jurisdiction.BR);
     }
@@ -36,23 +36,23 @@ public class TaxClassificationCalculatorTests
     [InlineData(Currency.GBP)]
     [InlineData(Currency.USD)]
     [Trait("AC", "P51-F02-tax-profile-and-classification-03")]
-    public void CalculateForDisposal_DerivesJurisdictionFromCurrency_NonBrlIsUk(Currency currency)
+    public void CalculateForRealisedGain_DerivesJurisdictionFromCurrency_NonBrlIsUk(Currency currency)
     {
-        var record = CreateDisposalRecord(currency);
+        var record = CreateRealisedGain(currency);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
+        var classification = TaxClassificationCalculator.CalculateForRealisedGain(record, investments, TestClock.Default);
 
         classification.Jurisdiction.Should().Be(Jurisdiction.UK);
     }
 
     [Fact]
-    public void CalculateForDisposal_NoApplicableRule_IsIncomplete()
+    public void CalculateForRealisedGain_NoApplicableRule_IsIncomplete()
     {
-        var record = CreateDisposalRecord();
+        var record = CreateRealisedGain();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
+        var classification = TaxClassificationCalculator.CalculateForRealisedGain(record, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -62,14 +62,14 @@ public class TaxClassificationCalculatorTests
     }
 
     [Fact]
-    public void CalculateForDisposal_ApplicableRule_IsFinalAndReferencesTheRule()
+    public void CalculateForRealisedGain_ApplicableRule_IsFinalAndReferencesTheRule()
     {
-        var record = CreateDisposalRecord(date: new DateTime(2026, 6, 1));
+        var record = CreateRealisedGain(date: new DateTime(2026, 6, 1));
         var investments = Investments.Create();
         var rule = investments.CreateTaxRule(
             Jurisdiction.BR, EventCategory.CapitalGain, "BR capital gains", "desc", new DateOnly(2026, 1, 1), null);
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
+        var classification = TaxClassificationCalculator.CalculateForRealisedGain(record, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -79,16 +79,16 @@ public class TaxClassificationCalculatorTests
     }
 
     [Fact]
-    public void CalculateForDisposal_CopiesFieldsFromTheRecordUnchanged()
+    public void CalculateForRealisedGain_CopiesFieldsFromTheRecordUnchanged()
     {
-        var record = CreateDisposalRecord();
+        var record = CreateRealisedGain();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
+        var classification = TaxClassificationCalculator.CalculateForRealisedGain(record, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
-            classification.SourceType.Should().Be(SourceType.Disposal);
+            classification.SourceType.Should().Be(SourceType.RealisedGain);
             classification.SourceId.Should().Be(record.Id);
             classification.TaxYear.Should().Be(record.TaxYear);
             classification.Proceeds.Should().Be(record.Proceeds);

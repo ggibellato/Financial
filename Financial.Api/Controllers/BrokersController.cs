@@ -68,7 +68,7 @@ public sealed class BrokersController : ControllerBase
         return Ok(broker);
     }
 
-    /// <summary>Changes a broker's cost-basis method, regenerating every disposal record under it.</summary>
+    /// <summary>Changes a broker's cost-basis method, regenerating every realised gain under it.</summary>
     /// <param name="name">The broker's name.</param>
     /// <param name="request">The broker's new cost-basis method.</param>
     /// <param name="scope">Which record (Active or Historic) to resolve <paramref name="name"/> against; defaults to Active.</param>

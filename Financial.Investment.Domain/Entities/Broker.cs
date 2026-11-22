@@ -34,7 +34,7 @@ public class Broker
         Currency = currency;
     }
 
-    // Does not regenerate existing DisposalRecords — that is the recalculation policy's job, not this method's.
+    // Does not regenerate existing RealisedGains — that is the recalculation policy's job, not this method's.
     public void SetCostBasisMethod(CostBasisMethod costBasisMethod) => CostBasisMethod = costBasisMethod;
 
     public Portfolio AddPortfolio(string name)
