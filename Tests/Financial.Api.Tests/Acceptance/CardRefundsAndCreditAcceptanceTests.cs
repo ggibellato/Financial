@@ -111,6 +111,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
+    [Trait("AC", "P63-F01-settlement-future-dates-08")]
     public async Task AddRefund_DatedAfterToday_Returns400()
     {
         await ShouldBeProblemAsync(await PostCardChargeAsync(new DateOnly(2026, 11, 16), -40m), HttpStatusCode.BadRequest, "Date must not be in the future.");
