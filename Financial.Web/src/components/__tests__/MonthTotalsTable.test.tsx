@@ -54,11 +54,4 @@ describe('MonthTotalsTable', () => {
 
     expect(screen.getByRole('region', { name: 'Credits by month, monthly totals' })).toHaveAttribute('tabindex', '0')
   })
-
-  it('says so when no month in the period has a value', () => {
-    render(<MonthTotalsTable title="Credits by month" rows={[ROWS[1]]} columns={COLUMNS} />)
-
-    expect(screen.getByText('No values in this period.')).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
-  })
 })

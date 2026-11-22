@@ -42,7 +42,7 @@ import { generalErrorOf } from '../utils/fieldErrors'
 import './CreditsTab.css'
 import { CHART_TEXT_STYLE } from '../styles/chartText'
 import ChartValueLabel from './ChartValueLabel'
-import MonthTotalsTable from './MonthTotalsTable'
+import MonthChartBody from './MonthChartBody'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
   { value: 'Bar', label: 'Bar' },
@@ -298,9 +298,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
       <p id={chartTitleId} className="credits-tab__chart-title">Credits by month</p>
-      {selectedChartType === 'Table' ? (
-        <MonthTotalsTable title="Credits by month" rows={chartData} columns={totalsColumns} />
-      ) : (
+      <MonthChartBody title="Credits by month" rows={chartData} columns={totalsColumns} showTable={selectedChartType === 'Table'}>
         <div className="credits-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
           <ResponsiveContainer width="100%" height="100%">
             {selectedChartType === 'Bar' ? (
@@ -362,7 +360,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
             )}
           </ResponsiveContainer>
         </div>
-      )}
+      </MonthChartBody>
     </div>
   )
 }

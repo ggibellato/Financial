@@ -549,7 +549,7 @@ describe('CreditsTab', () => {
   })
 
   it('clicking_line_toggle_selects_line_and_renders_the_line_chart', async () => {
-    await renderAssetTab()
+    await renderAssetTab([CREDIT_DIVIDEND])
     fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
     expect(screen.getByRole('tab', { name: 'Line' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'false')
@@ -578,9 +578,20 @@ describe('CreditsTab', () => {
   })
 
   it('renders_bar_chart_unchanged_when_bar_selected', async () => {
-    await renderAssetTab()
+    await renderAssetTab([CREDIT_DIVIDEND])
     expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
     expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument()
+  })
+
+  it.each(['Bar', 'Line', 'Table'])('the_%s_view_says_so_in_the_charts_place_when_no_month_in_the_period_has_a_credit', async (view) => {
+    await renderAssetTab()
+
+    fireEvent.click(screen.getByRole('tab', { name: view }))
+
+    expect(screen.getByText('No values in this period.')).toBeInTheDocument()
+    expect(screen.getByText('Credits by month')).toBeInTheDocument()
+    expect(screen.queryByTestId('responsive-container')).not.toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Credits by month' })).not.toBeInTheDocument()
   })
 
   it('renders_single_total_line_when_grouped_and_line', async () => {

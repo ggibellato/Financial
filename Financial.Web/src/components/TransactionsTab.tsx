@@ -43,7 +43,7 @@ import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
 import { CHART_TEXT_STYLE } from '../styles/chartText'
 import ChartValueLabel from './ChartValueLabel'
-import MonthTotalsTable from './MonthTotalsTable'
+import MonthChartBody from './MonthChartBody'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
 // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
@@ -354,9 +354,7 @@ function TransactionsChart({
         />
       </div>
       <p id={chartTitleId} className="transactions-tab__chart-title">Net invested by month</p>
-      {selectedChartMode === 'Table' ? (
-        <MonthTotalsTable title="Net invested by month" rows={chartData} columns={NET_INVESTED_COLUMNS} />
-      ) : (
+      <MonthChartBody title="Net invested by month" rows={chartData} columns={NET_INVESTED_COLUMNS} showTable={selectedChartMode === 'Table'}>
         <div className="transactions-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
           <ResponsiveContainer width="100%" height="100%">
             {selectedChartMode === 'Bar' ? (
@@ -391,7 +389,7 @@ function TransactionsChart({
             )}
           </ResponsiveContainer>
         </div>
-      )}
+      </MonthChartBody>
     </div>
   )
 }

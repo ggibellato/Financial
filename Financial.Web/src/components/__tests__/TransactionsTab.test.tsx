@@ -311,6 +311,17 @@ describe('TransactionsTab', () => {
     expect(cells).toEqual([['03/2024', '420.50'], ['Period total', '420.50']])
   })
 
+  it.each(['Bar', 'Line', 'Table'])('the_%s_view_says_so_in_the_charts_place_when_no_month_in_the_period_has_a_transaction', async (view) => {
+    await renderAssetTab([])
+
+    fireEvent.click(screen.getByRole('tab', { name: view }))
+
+    expect(screen.getByText('No values in this period.')).toBeInTheDocument()
+    expect(screen.getByText('Net invested by month')).toBeInTheDocument()
+    expect(screen.queryByTestId('responsive-container')).not.toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Net invested by month' })).not.toBeInTheDocument()
+  })
+
   it('renders_bar_line_toggle_defaulting_to_bar', async () => {
     await renderAssetTab()
     expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'true')
