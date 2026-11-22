@@ -231,6 +231,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P63-F01-settlement-future-dates-02")]
     public async Task AddEntry_BlankDescriptionOrFutureDate_Returns400()
     {
         var blank = await Client.PostAsJsonAsync(EntriesUrl(MaeId), new SettlementEntryCreateDTO
@@ -253,6 +254,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P63-F01-settlement-future-dates-03")]
     public async Task EditEntry_InvalidRequest_Returns400WithTheMessage()
     {
         var future = await Client.PutAsJsonAsync(EntryUrl(MaeId, MaeEntryId), EntryUpdate(25.6m, TestClock.Today.AddDays(1)));
@@ -471,6 +473,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P63-F01-settlement-future-dates-04")]
     public async Task Settle_FutureDateOrUnknownAccount_IsRefused()
     {
         var future = await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(150m, 21.94m, date: TestClock.Today.AddDays(1)));
@@ -482,6 +485,64 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
             (await ProblemDetailAsync(future)).Should().Be("Date must not be in the future.");
             unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
             StoredEntries().Should().HaveCount(3);
+        }
+    }
+
+    private static readonly DateOnly PlannedDate = new(2026, 11, 20);
+
+    private async Task<AccountDetailDTO> SamuelInOctober() =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{SamuelId}/2026/10"))!;
+
+    [Fact]
+    [Trait("AC", "P63-F01-settlement-future-dates-01")]
+    [Trait("AC", "P63-F01-settlement-future-dates-05")]
+    [Trait("AC", "P63-F01-settlement-future-dates-07")]
+    public async Task AddEntry_OneCurrencyFutureDate_CountsInTheCurrentBalanceButNotThisMonth()
+    {
+        var response = await Client.PostAsJsonAsync(EntriesUrl(SamuelId), NewEntry(null, 25m, date: PlannedDate));
+        var returned = await response.Content.ReadFromJsonAsync<SettlementEntryDTO>();
+        var october = await SamuelInOctober();
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            StoredEntries().Single(entry => entry.Id == returned!.Id).Date.Should().Be(PlannedDate);
+            Figures(october).Should().Equal(("GBP", 85m));
+            october.Balance.Should().Be(60m);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P63-F01-settlement-future-dates-03")]
+    public async Task EditEntry_OneCurrencyFutureDate_Saved()
+    {
+        var response = await Client.PutAsJsonAsync(EntryUrl(SamuelId, SamuelEntryId), EntryUpdate(null, PlannedDate));
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            StoredEntries().Single(entry => entry.Id == Guid.Parse(SamuelEntryId)).Date.Should().Be(PlannedDate);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P63-F01-settlement-future-dates-04")]
+    [Trait("AC", "P63-F01-settlement-future-dates-06")]
+    public async Task Settle_OneCurrencyFutureDate_SettlesTheBalanceIncludingPlannedEntries()
+    {
+        await Client.PostAsJsonAsync(EntriesUrl(SamuelId), NewEntry(null, 25m, date: PlannedDate));
+
+        var response = await Client.PostAsJsonAsync(SettleUrl(SamuelId), Settlement(85m, null, "GBP", new DateOnly(2026, 12, 1)));
+        var october = await SamuelInOctober();
+        var again = await Client.PostAsJsonAsync(SettleUrl(SamuelId), Settlement(1m, null, "GBP"));
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            Figures(october).Should().Equal(("GBP", 0m));
+            october.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
+            again.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await ProblemDetailAsync(again)).Should().Be("Nothing to settle.");
         }
     }
 }

@@ -63,7 +63,7 @@ public class SettlementTransactionTests
     }
 
     [Fact]
-    public void Create_DateAfterToday_Refused()
+    public void Create_TwoCurrenciesDateAfterToday_Refused()
     {
         var act = () => SettlementTransaction.Create(
             Mae(), new DateOnly(2026, 10, 6), "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, new DateOnly(2026, 10, 5));
@@ -84,7 +84,7 @@ public class SettlementTransactionTests
     }
 
     [Fact]
-    public void Update_DateAfterToday_RefusedWithoutChangingTheDate()
+    public void Update_TwoCurrenciesDateAfterToday_RefusedWithoutChangingTheDate()
     {
         var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
 
@@ -105,6 +105,28 @@ public class SettlementTransactionTests
         entry.Update(date, "Entry", null, SettlementPayer.You, 10m, null, new DateOnly(2026, 10, 5));
 
         entry.Date.Should().Be(date);
+    }
+
+    [Theory]
+    [InlineData(2026, 10, 6)]
+    [InlineData(2027, 3, 31)]
+    public void Create_OneCurrencyDateAfterToday_Accepted(int year, int month, int day)
+    {
+        var date = new DateOnly(year, month, day);
+
+        var entry = SettlementTransaction.Create(Son(), date, "Pocket money", null, SettlementPayer.You, Currency.GBP, 10m, null, new DateOnly(2026, 10, 5));
+
+        entry.Date.Should().Be(date);
+    }
+
+    [Fact]
+    public void Update_OneCurrencyDateAfterToday_Accepted()
+    {
+        var entry = SettlementTransaction.Create(Son(), EntryDate, "Pocket money", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
+
+        entry.Update(new DateOnly(2026, 11, 1), "Pocket money", null, SettlementPayer.You, 10m, null, new DateOnly(2026, 10, 5));
+
+        entry.Date.Should().Be(new DateOnly(2026, 11, 1));
     }
 
     [Theory]

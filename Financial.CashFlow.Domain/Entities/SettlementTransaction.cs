@@ -33,7 +33,7 @@ public class SettlementTransaction : IAccountTransaction
         DateOnly today)
     {
         EnsureSettlementAccount(account);
-        TransactionDateRule.EnsureNotInFuture(date, today);
+        EnsureDateAllowed(account, date, today);
         EnsureAccountUses(account, currency);
         EnsureDescription(description);
 
@@ -53,7 +53,7 @@ public class SettlementTransaction : IAccountTransaction
     public void Update(
         DateOnly date, string description, string? note, SettlementPayer paidBy, decimal amount, decimal? convertedValue, DateOnly today)
     {
-        TransactionDateRule.EnsureNotInFuture(date, today);
+        EnsureDateAllowed(Account, date, today);
         EnsureDescription(description);
         UpdateValues(paidBy, amount, convertedValue);
 
@@ -84,6 +84,14 @@ public class SettlementTransaction : IAccountTransaction
         if (!account.Has(Capability.HasParticipants))
         {
             throw new ArgumentException($"{account.Name} is not a Settlement account.");
+        }
+    }
+
+    private static void EnsureDateAllowed(Account account, DateOnly date, DateOnly today)
+    {
+        if (account.Currencies.Count > 1)
+        {
+            TransactionDateRule.EnsureNotInFuture(date, today);
         }
     }
 
