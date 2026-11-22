@@ -116,7 +116,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList(),
                 DisabledActions = AccountActions.DisabledFor(account, currentBalances).ToDictionary(disabled => disabled.Key.ToString(), disabled => disabled.Value),
                 CurrentBalances = CurrencyBalanceMapper.ToDtos(currentBalances),
-                HasPlannedEntries = HasPlannedEntries(account, records),
+                HasPlannedEntries = account.Has(Capability.HasParticipants) && HasPlannedEntries(account, records),
                 OtherParticipant = account.OtherParticipant
             };
 

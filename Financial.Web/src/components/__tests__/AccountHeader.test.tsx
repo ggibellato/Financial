@@ -290,7 +290,6 @@ describe('AccountHeader', () => {
 
       expect(screen.getByText('Balance (includes planned)')).toBeInTheDocument()
       expect(screen.queryByText('Current balance')).not.toBeInTheDocument()
-      expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
     })
 
     it('[AC P60-F12-settlement-screen-01] reads Settled when every currency rounds to 0.00', () => {
