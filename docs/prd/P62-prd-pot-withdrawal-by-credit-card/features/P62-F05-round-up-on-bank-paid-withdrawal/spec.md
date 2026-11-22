@@ -43,9 +43,10 @@
 
 | File Path | New/Modified | Responsibilities |
 |---|---|---|
-| `Financial.Web/src/utils/roundUp.ts` | New | `computeRoundUpSuggestion(value)` moved here unchanged |
-| `Financial.Web/src/hooks/useExpenseForm.ts` | Modified | Imports it from the util; no longer exports it |
-| `Financial.Web/src/utils/__tests__/roundUp.test.ts` | New (moved) | The existing `computeRoundUpSuggestion` cases, moved from `useExpenseForm.test.ts` |
+| `Financial.Web/src/utils/roundUp.ts` | New | The whole web round-up rule, moved from the expense form: `computeRoundUpSuggestion(value)`, `roundsUp(banks, bankId)` (bank has round-up enabled), `suggestRoundUpAmount(banks, bankId, value)` (the field's suggestion), `parseRoundUpAmount(value)` and `ROUND_UP_RANGE_MESSAGE` (£0.00–£0.99) |
+| `Financial.Web/src/hooks/useExpenseForm.ts` | Modified | Uses the util; its private copies are gone |
+| `Financial.Web/src/components/ExpenseForm.tsx` | Modified | Shows the Round-up field through `roundsUp` |
+| `Financial.Web/src/utils/__tests__/roundUp.test.ts` | New | The existing `computeRoundUpSuggestion` Domain parity cases, moved from `useExpenseForm.test.ts`, plus `roundsUp`, `suggestRoundUpAmount` and `parseRoundUpAmount` cases |
 
 ### PR 2: F05
 
@@ -56,7 +57,7 @@
 | `Financial.CashFlow.Application/DTOs/PotOperationDTO.cs` | Modified | `RoundUpAmount` (decimal?, from the spend expense) |
 | `Financial.CashFlow.Domain/Rules/PotOperation.cs` | Modified | `RoundUpAmount => ChosenExpense?.RoundUpAmount` (the chosen expense is private today) |
 | `Financial.CashFlow.Application/Services/PotsService.cs` | Modified | Pass `request.RoundUpAmount` to `Build` on create and rebuild; map it to the DTO |
-| `Financial.Web/src/hooks/usePotWithdrawalForm.ts` | Modified | `roundUpAmount` value + auto flag, suggestion via `utils/roundUp`'s `computeRoundUpSuggestion`, validation, request field, cleared when Paid with leaves Bank |
+| `Financial.Web/src/hooks/usePotWithdrawalForm.ts` | Modified | `roundUpAmount` value + auto flag, suggestion via `utils/roundUp` (`suggestRoundUpAmount`, `parseRoundUpAmount`, `roundsUp`), validation, request field, cleared when Paid with leaves Bank |
 | `Financial.Web/src/components/PotWithdrawalForm.tsx` | Modified | "Round-up" field after Amount when Paid with = Bank and the bank has round-up enabled |
 
 Plus the regenerated OpenAPI snapshot and web types, and `context.md`. PR 2 has 7 non-test code files; folding PR 1 in would make 9, over the limit of 8.
@@ -76,9 +77,9 @@ Request adds `roundUpAmount` (number, optional, null). Response `PotOperationDTO
 ## 7. Web
 
 - Field order: … Amount, then **Round-up**, shown only when Paid with = Bank and the chosen bank has round-up enabled (same `Input type="number" step="0.01"` as the expense form).
-- New withdrawal: as the amount or bank changes, Round-up fills with the suggestion (`utils/roundUp`'s `computeRoundUpSuggestion`, the same one the expense form uses) until the user types in it; the user can change it or set `0`; blank saves no round-up.
+- New withdrawal: as the amount or bank changes, Round-up fills with the suggestion (`utils/roundUp`'s `suggestRoundUpAmount`, the same one the expense form uses) until the user types in it; the user can change it or set `0`; blank saves no round-up.
 - Edit: opens with the stored round-up (or blank); the suggestion follows amount/bank changes only while the field is untouched and was blank on open.
-- Validation: outside £0.00–£0.99 → "Round-up amount must be between £0.00 and £0.99." on the field; the form sends `roundUpAmount` only for Paid with = Bank on a round-up bank.
+- Validation: `parseRoundUpAmount`; outside £0.00–£0.99 → `ROUND_UP_RANGE_MESSAGE` ("Round-up amount must be between £0.00 and £0.99.") on the field; the field shows through `roundsUp`; the form sends `roundUpAmount` only for Paid with = Bank on a round-up bank.
 - States: unchanged form states (saving, server error, unsaved changes); the field takes part in the dirty check.
 
 ## 8. Testing Strategy
