@@ -213,7 +213,7 @@ public class CorporateActionHistoryAcceptanceTests : ApiEndpointTests
     public async Task DeletingACorporateAction_RetriggersReplay_AndOnlySupersedesTheLinkedTaxClassification_NeverRewritingItDirectly()
     {
         var before = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
-        var preExistingDisposal = before!.DisposalRecords.Should().ContainSingle(d => d.Status == RealisedGainStatus.Active).Subject;
+        var preExistingRealisedGain = before!.RealisedGains.Should().ContainSingle(r => r.Status == RealisedGainStatus.Active).Subject;
 
         var merger = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
         {
@@ -249,7 +249,7 @@ public class CorporateActionHistoryAcceptanceTests : ApiEndpointTests
 
         using var _ = new AssertionScope();
         afterDelete!.CorporateActions.Should().BeEmpty("deleting the corporate action re-triggers replay and removes it from the history list");
-        afterDelete.DisposalRecords.Should().ContainSingle(d => d.Id == preExistingDisposal.Id && d.Status == RealisedGainStatus.Active,
+        afterDelete.RealisedGains.Should().ContainSingle(r => r.Id == preExistingRealisedGain.Id && r.Status == RealisedGainStatus.Active,
             "a pre-existing RealisedGain is never directly rewritten by deleting an unrelated corporate action");
 
         var targetClassification = repository.GetAsset("XPI", "Default", "DELTARGET")!.TaxClassifications.Should().ContainSingle().Subject;

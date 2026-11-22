@@ -56,8 +56,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalBought: 2000,
   totalSold: 0,
   totalCredits: 50,
-  realizedGainLoss: 0,
-  realizedGainLossSharesOnly: 0,
+  realisedGainLoss: 0,
+  realisedGainLossSharesOnly: 0,
   marketValue: null,
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
@@ -70,7 +70,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   transactions: [],
   credits: [],
   priceSnapshots: [],
-  disposalRecords: [],
+  realisedGains: [],
   corporateActions: [],
   costBasisMethod: 'AverageCost',
   taxJurisdictions: [],
@@ -160,7 +160,7 @@ describe('useAssetSummary', () => {
   })
 
   it('fetches_portfolio_weight_from_portfolio_summary_for_historic_asset', async () => {
-    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250, realizedGainLoss: -1750 }
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250, realisedGainLoss: -1750 }
     getAssetDetailsMock.mockResolvedValue(historicAsset)
     const summaryItem: PortfolioAssetSummaryItemDto = {
       assetName: 'KLBN4',
@@ -174,8 +174,8 @@ describe('useAssetSummary', () => {
       totalBought: 2000,
       totalSold: 250,
       totalInvested: 1750,
-      realizedGainLoss: -1750,
-      realizedGainLossSharesOnly: -1750,
+      realisedGainLoss: -1750,
+      realisedGainLossSharesOnly: -1750,
       portfolioWeight: 100,
       marketValue: null,
       costOfUnitsHeld: 0,
@@ -203,8 +203,8 @@ describe('useAssetSummary', () => {
     await waitFor(() => expect(result.current.portfolioWeight).not.toBeNull())
     expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic')
     expect(result.current.portfolioWeight).toBe(100)
-    // realizedGainLoss comes directly from the asset details response, not a second round-trip
-    expect(result.current.asset?.realizedGainLoss).toBe(-1750)
+    // realisedGainLoss comes directly from the asset details response, not a second round-trip
+    expect(result.current.asset?.realisedGainLoss).toBe(-1750)
   })
 
   it('skips_current_price_fetch_for_historic_scope', async () => {

@@ -131,7 +131,7 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CorporateActionMergerResultDTO>();
-        result!.Target!.DisposalRecords.Should().BeEmpty("a merger never realises a disposal on the converted amount");
+        result!.Target!.RealisedGains.Should().BeEmpty("a merger never realises a gain on the converted amount");
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
         // moment the host loads (InvestmentLoader.LoadSync -> RealisedGainBackfill), independently
         // of this feature. The merger's effective date (2024-07-01) is after that sell, so recording
         // it must leave that pre-existing record completely untouched.
-        var preExisting = before!.DisposalRecords.Should().ContainSingle(d => d.Status == RealisedGainStatus.Active).Subject;
+        var preExisting = before!.RealisedGains.Should().ContainSingle(r => r.Status == RealisedGainStatus.Active).Subject;
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
         {
@@ -182,7 +182,7 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CorporateActionMergerResultDTO>();
-        result!.Source!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == RealisedGainStatus.Active);
+        result!.Source!.RealisedGains.Should().ContainSingle(r => r.Id == preExisting.Id && r.Status == RealisedGainStatus.Active);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CorporateActionMergerResultDTO>();
-        result!.Source!.DisposalRecords.Should().HaveCount(1, "the cash-in-lieu amount is a note field, never a disposal");
+        result!.Source!.RealisedGains.Should().HaveCount(1, "the cash-in-lieu amount is a note field, never a sale");
 
         var repository = Services.GetRequiredService<IInvestmentRepository>();
         var source = repository.GetAsset("XPI", "Default", "BCIA11");

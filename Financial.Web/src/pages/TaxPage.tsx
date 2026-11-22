@@ -90,7 +90,7 @@ export default function TaxPage() {
         <ErrorState message={optionsError} onRetry={retryOptions} />
       ) : jurisdictions.length === 0 ? (
         <EmptyState>
-          No classified disposals or income events yet — once one is recorded, its jurisdiction and tax
+          No classified realised gains or income events yet — once one is recorded, its jurisdiction and tax
           year will appear here.
         </EmptyState>
       ) : (

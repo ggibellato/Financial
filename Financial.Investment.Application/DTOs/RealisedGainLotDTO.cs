@@ -1,6 +1,6 @@
 namespace Financial.Investment.Application.DTOs;
 
-public class DisposalLotConsumptionDTO
+public class RealisedGainLotDTO
 {
     public Guid? SourceTransactionId { get; set; }
 

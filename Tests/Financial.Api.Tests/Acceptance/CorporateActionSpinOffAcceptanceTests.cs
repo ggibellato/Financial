@@ -93,7 +93,7 @@ public class CorporateActionSpinOffAcceptanceTests : ApiEndpointTests
 
         sell.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await sell.Content.ReadFromJsonAsync<AssetDetailsDTO>();
-        var realisedGain = asset!.DisposalRecords.Should().ContainSingle(d => d.Date == new DateTime(2024, 8, 1)).Subject;
+        var realisedGain = asset!.RealisedGains.Should().ContainSingle(r => r.Date == new DateTime(2024, 8, 1)).Subject;
         var lot = realisedGain.LotsConsumed.Should().ContainSingle().Subject;
         lot.Quantity.Should().Be(8m, "a spin-off never rescales lot quantity");
         lot.UnitCost.Should().Be(85m, "the pre-spin-off 100 unit cost reduced by the 15% allocation");
@@ -175,7 +175,7 @@ public class CorporateActionSpinOffAcceptanceTests : ApiEndpointTests
         // moment the host loads (InvestmentLoader.LoadSync -> RealisedGainBackfill), independently
         // of this feature. The spin-off's effective date (2024-07-01) is after that sell, so recording
         // it must leave that pre-existing record completely untouched and create no new one.
-        var preExisting = before!.DisposalRecords.Should().ContainSingle(d => d.Status == RealisedGainStatus.Active).Subject;
+        var preExisting = before!.RealisedGains.Should().ContainSingle(r => r.Status == RealisedGainStatus.Active).Subject;
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/spin-off", new CorporateActionSpinOffCreateDTO
         {
@@ -191,7 +191,7 @@ public class CorporateActionSpinOffAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CorporateActionSpinOffResultDTO>();
-        result!.Parent!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == RealisedGainStatus.Active,
+        result!.Parent!.RealisedGains.Should().ContainSingle(r => r.Id == preExisting.Id && r.Status == RealisedGainStatus.Active,
             "reducing cost basis without reducing quantity is not a sale");
     }
 }

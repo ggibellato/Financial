@@ -3,7 +3,7 @@ using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.DTOs;
 
-public class DisposalRecordDTO
+public class RealisedGainDTO
 {
     public Guid Id { get; set; }
 
@@ -14,9 +14,9 @@ public class DisposalRecordDTO
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public CostBasisMethod Method { get; set; }
 
-    public List<DisposalLotConsumptionDTO> LotsConsumed { get; set; } = new();
+    public List<RealisedGainLotDTO> LotsConsumed { get; set; } = new();
 
-    public decimal QuantityDisposed { get; set; }
+    public decimal QuantitySold { get; set; }
 
     public decimal Proceeds { get; set; }
 

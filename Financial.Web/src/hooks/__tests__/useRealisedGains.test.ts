@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetDetailsDto, DisposalRecordDto, SelectedNode } from '../../api/types'
+import type { AssetDetailsDto, RealisedGainDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
-import { ALL_TAX_YEARS, useDisposals } from '../useDisposals'
+import { ALL_TAX_YEARS, useRealisedGains } from '../useRealisedGains'
 
 const { getAssetDetailsMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -30,14 +30,14 @@ const BROKER_NODE: SelectedNode = {
   brokerName: 'Trading 212',
 }
 
-function disposal(overrides: Partial<DisposalRecordDto>): DisposalRecordDto {
+function realisedGain(overrides: Partial<RealisedGainDto>): RealisedGainDto {
   return {
-    id: 'd1',
+    id: 'g1',
     transactionId: 't1',
     date: '2025-11-03T00:00:00',
     method: 'AverageCost',
     lotsConsumed: [{ sourceTransactionId: null, quantity: 5, unitCost: 100 }],
-    quantityDisposed: 5,
+    quantitySold: 5,
     proceeds: 600,
     costBasis: 500,
     gainLoss: 100,
@@ -70,8 +70,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalBought: 1000,
   totalSold: 600,
   totalCredits: 0,
-  realizedGainLoss: 100,
-  realizedGainLossSharesOnly: 100,
+  realisedGainLoss: 100,
+  realisedGainLossSharesOnly: 100,
   marketValue: null,
   costOfUnitsHeld: 500,
   unrealisedGain: null,
@@ -84,30 +84,30 @@ const ASSET_DETAILS: AssetDetailsDto = {
   transactions: [],
   credits: [],
   priceSnapshots: [],
-  disposalRecords: [],
+  realisedGains: [],
   corporateActions: [],
   costBasisMethod: 'AverageCost',
   taxJurisdictions: [],
 }
 
-describe('useDisposals', () => {
+describe('useRealisedGains', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
   })
 
   it('returns initial empty state', () => {
     const { wrapper } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     expect(result.current.isLoading).toBe(false)
     expect(result.current.chains).toEqual([])
     expect(result.current.error).toBeNull()
     expect(result.current.selectedTaxYear).toBe(ALL_TAX_YEARS)
   })
 
-  it('fetches disposals on asset selection', async () => {
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [disposal({})] })
+  it('fetches realised gains on asset selection', async () => {
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [realisedGain({})] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('Trading 212', 'ISA', 'AAA', 'active'))
     await waitFor(() => expect(result.current.chains).toHaveLength(1))
@@ -115,16 +115,16 @@ describe('useDisposals', () => {
 
   it('does not fetch on broker selection', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(BROKER_NODE)
     expect(getAssetDetailsMock).not.toHaveBeenCalled()
     expect(result.current.chains).toEqual([])
   })
 
   it('resets chains when node is null', async () => {
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [disposal({})] })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [realisedGain({})] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(1))
     setNode(null)
@@ -133,9 +133,9 @@ describe('useDisposals', () => {
 
   it('retry refetches after a failure', async () => {
     getAssetDetailsMock.mockRejectedValueOnce(new Error('Network error'))
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [disposal({})] })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [realisedGain({})] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
     act(() => result.current.retry())
@@ -143,47 +143,47 @@ describe('useDisposals', () => {
   })
 
   it('groups a superseded record and its replacement into one chain, sorted newest-created-first', async () => {
-    const first = disposal({ id: 'd0', createdAt: '2025-10-01T09:00:00Z', status: 'Superseded', supersededByRecordId: 'd1' })
-    const original = disposal({ id: 'd1', createdAt: '2025-11-03T09:00:00Z', status: 'Superseded', supersededByRecordId: 'd2' })
-    const replacement = disposal({ id: 'd2', createdAt: '2025-12-01T09:00:00Z', status: 'Active', method: 'FIFO' })
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [first, replacement, original] })
+    const first = realisedGain({ id: 'g0', createdAt: '2025-10-01T09:00:00Z', status: 'Superseded', supersededByRecordId: 'g1' })
+    const original = realisedGain({ id: 'g1', createdAt: '2025-11-03T09:00:00Z', status: 'Superseded', supersededByRecordId: 'g2' })
+    const replacement = realisedGain({ id: 'g2', createdAt: '2025-12-01T09:00:00Z', status: 'Active', method: 'FIFO' })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [first, replacement, original] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(1))
 
     const chain = result.current.chains[0]
-    expect(chain.active.id).toBe('d2')
+    expect(chain.active.id).toBe('g2')
     expect(chain.history).toEqual([original, first])
   })
 
   it('excludes a transaction group with no Active record (retired with nothing to show)', async () => {
-    const retired = disposal({ id: 'd1', status: 'Superseded', supersededByRecordId: null })
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [retired] })
+    const retired = realisedGain({ id: 'g1', status: 'Superseded', supersededByRecordId: null })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [retired] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalled())
     expect(result.current.chains).toEqual([])
   })
 
-  it('[AC P50-F04-react-disposals-and-cost-basis-02] derives tax year options from the active disposals, newest first', async () => {
-    const older = disposal({ id: 'd1', transactionId: 't1', taxYear: '2024/25', date: '2024-06-01T00:00:00' })
-    const newer = disposal({ id: 'd2', transactionId: 't2', taxYear: '2025/26', date: '2025-11-03T00:00:00' })
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [older, newer] })
+  it('[AC P50-F04-react-disposals-and-cost-basis-02] derives tax year options from the active realised gains, newest first', async () => {
+    const older = realisedGain({ id: 'g1', transactionId: 't1', taxYear: '2024/25', date: '2024-06-01T00:00:00' })
+    const newer = realisedGain({ id: 'g2', transactionId: 't2', taxYear: '2025/26', date: '2025-11-03T00:00:00' })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [older, newer] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(2))
     expect(result.current.taxYearOptions).toEqual(['2025/26', '2024/25'])
   })
 
   it('setTaxYear filters chains to the selected tax year', async () => {
-    const older = disposal({ id: 'd1', transactionId: 't1', taxYear: '2024/25', date: '2024-06-01T00:00:00' })
-    const newer = disposal({ id: 'd2', transactionId: 't2', taxYear: '2025/26', date: '2025-11-03T00:00:00' })
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [older, newer] })
+    const older = realisedGain({ id: 'g1', transactionId: 't1', taxYear: '2024/25', date: '2024-06-01T00:00:00' })
+    const newer = realisedGain({ id: 'g2', transactionId: 't2', taxYear: '2025/26', date: '2025-11-03T00:00:00' })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [older, newer] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(2))
 
@@ -192,31 +192,31 @@ describe('useDisposals', () => {
     act(() => result.current.setTaxYear('2024/25'))
 
     expect(result.current.filteredChains).toHaveLength(1)
-    expect(result.current.filteredChains[0].active.id).toBe('d1')
+    expect(result.current.filteredChains[0].active.id).toBe('g1')
   })
 
-  it('toggleExpanded tracks expanded disposal ids', async () => {
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [disposal({ id: 'd1' })] })
+  it('toggleExpanded tracks expanded realised gain ids', async () => {
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [realisedGain({ id: 'g1' })] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(1))
 
-    act(() => result.current.toggleExpanded('d1'))
-    expect(result.current.expandedIds.has('d1')).toBe(true)
+    act(() => result.current.toggleExpanded('g1'))
+    expect(result.current.expandedIds.has('g1')).toBe(true)
 
-    act(() => result.current.toggleExpanded('d1'))
-    expect(result.current.expandedIds.has('d1')).toBe(false)
+    act(() => result.current.toggleExpanded('g1'))
+    expect(result.current.expandedIds.has('g1')).toBe(false)
   })
 
   it('starts from all years with nothing expanded when another asset is selected', async () => {
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [disposal({ id: 'd1' })] })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, realisedGains: [realisedGain({ id: 'g1' })] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useDisposals(), { wrapper })
+    const { result } = renderHook(() => useRealisedGains(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(1))
     act(() => result.current.setTaxYear('2024/25'))
-    act(() => result.current.toggleExpanded('d1'))
+    act(() => result.current.toggleExpanded('g1'))
 
     setNode({ ...ASSET_NODE, assetName: 'TRPL4' })
 

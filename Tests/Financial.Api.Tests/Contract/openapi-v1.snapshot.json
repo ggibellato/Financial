@@ -1409,12 +1409,6 @@
           "currency": {
             "type": "string"
           },
-          "disposalRecords": {
-            "items": {
-              "$ref": "#/components/schemas/DisposalRecordDTO"
-            },
-            "type": "array"
-          },
           "exchange": {
             "type": "string"
           },
@@ -1470,13 +1464,19 @@
             "format": "double",
             "type": "number"
           },
-          "realizedGainLoss": {
+          "realisedGainLoss": {
             "format": "double",
             "type": "number"
           },
-          "realizedGainLossSharesOnly": {
+          "realisedGainLossSharesOnly": {
             "format": "double",
             "type": "number"
+          },
+          "realisedGains": {
+            "items": {
+              "$ref": "#/components/schemas/RealisedGainDTO"
+            },
+            "type": "array"
           },
           "resultPercent": {
             "format": "double",
@@ -3282,88 +3282,6 @@
         ],
         "type": "object"
       },
-      "DisposalLotConsumptionDTO": {
-        "properties": {
-          "quantity": {
-            "format": "double",
-            "type": "number"
-          },
-          "sourceTransactionId": {
-            "format": "uuid",
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "unitCost": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "type": "object"
-      },
-      "DisposalRecordDTO": {
-        "properties": {
-          "costBasis": {
-            "format": "double",
-            "type": "number"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "date": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "gainLoss": {
-            "format": "double",
-            "type": "number"
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "lotsConsumed": {
-            "items": {
-              "$ref": "#/components/schemas/DisposalLotConsumptionDTO"
-            },
-            "type": "array"
-          },
-          "method": {
-            "$ref": "#/components/schemas/CostBasisMethod"
-          },
-          "proceeds": {
-            "format": "double",
-            "type": "number"
-          },
-          "quantityDisposed": {
-            "format": "double",
-            "type": "number"
-          },
-          "status": {
-            "$ref": "#/components/schemas/RealisedGainStatus"
-          },
-          "supersededByRecordId": {
-            "format": "uuid",
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "taxYear": {
-            "type": "string"
-          },
-          "transactionId": {
-            "format": "uuid",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "DividendHistoryItemDTO": {
         "properties": {
           "date": {
@@ -4904,11 +4822,11 @@
               "number"
             ]
           },
-          "realizedGainLoss": {
+          "realisedGainLoss": {
             "format": "double",
             "type": "number"
           },
-          "realizedGainLossSharesOnly": {
+          "realisedGainLossSharesOnly": {
             "format": "double",
             "type": "number"
           },
@@ -5569,6 +5487,88 @@
               "null",
               "string"
             ]
+          }
+        },
+        "type": "object"
+      },
+      "RealisedGainDTO": {
+        "properties": {
+          "costBasis": {
+            "format": "double",
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "gainLoss": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lotsConsumed": {
+            "items": {
+              "$ref": "#/components/schemas/RealisedGainLotDTO"
+            },
+            "type": "array"
+          },
+          "method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
+          "proceeds": {
+            "format": "double",
+            "type": "number"
+          },
+          "quantitySold": {
+            "format": "double",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RealisedGainStatus"
+          },
+          "supersededByRecordId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "taxYear": {
+            "type": "string"
+          },
+          "transactionId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RealisedGainLotDTO": {
+        "properties": {
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "sourceTransactionId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "unitCost": {
+            "format": "double",
+            "type": "number"
           }
         },
         "type": "object"

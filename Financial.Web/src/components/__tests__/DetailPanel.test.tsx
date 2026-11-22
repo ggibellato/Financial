@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetDetailsDto, DisposalRecordDto, SelectedNode } from '../../api/types'
+import type { AssetDetailsDto, RealisedGainDto, SelectedNode } from '../../api/types'
 import { ApiError } from '../../api/apiError'
 import { never } from '../../test-utils/deferred'
 
@@ -110,13 +110,13 @@ const activeAssetNode: SelectedNode = {
   exchange: 'BVMF',
   positionType: 'Long',
 }
-const SALE_DISPOSAL: DisposalRecordDto = {
+const SALE_REALISED_GAIN: RealisedGainDto = {
   id: 'd-new',
   transactionId: 't-new',
   date: '2024-05-01T00:00:00',
   method: 'AverageCost',
   lotsConsumed: [{ sourceTransactionId: null, quantity: 10, unitCost: 20 }],
-  quantityDisposed: 10,
+  quantitySold: 10,
   proceeds: 45,
   costBasis: 200,
   gainLoss: -155,
@@ -127,7 +127,7 @@ const SALE_DISPOSAL: DisposalRecordDto = {
   createdAt: '2024-05-01T09:00:00Z',
 }
 
-function assetDetails(disposalRecords: DisposalRecordDto[]): AssetDetailsDto {
+function assetDetails(realisedGains: RealisedGainDto[]): AssetDetailsDto {
   return {
     name: 'KLBN4',
     brokerName: 'XPI',
@@ -148,8 +148,8 @@ function assetDetails(disposalRecords: DisposalRecordDto[]): AssetDetailsDto {
     totalBought: 2000,
     totalSold: 0,
     totalCredits: 0,
-    realizedGainLoss: 0,
-    realizedGainLossSharesOnly: 0,
+    realisedGainLoss: 0,
+    realisedGainLossSharesOnly: 0,
     marketValue: null,
     costOfUnitsHeld: 2000,
     unrealisedGain: null,
@@ -162,7 +162,7 @@ function assetDetails(disposalRecords: DisposalRecordDto[]): AssetDetailsDto {
     transactions: [],
     credits: [],
     priceSnapshots: [],
-    disposalRecords,
+    realisedGains,
     corporateActions: [],
     costBasisMethod: 'AverageCost',
     taxJurisdictions: [],
@@ -183,7 +183,7 @@ beforeAll(async () => {
     import('../CreditsTab'),
     import('../TransactionsTab'),
     import('../PriceHistoryTab'),
-    import('../DisposalsTab'),
+    import('../RealisedGainsTab'),
     import('../CorporateActionsTab'),
   ])
 })
@@ -522,7 +522,7 @@ describe('DetailPanel', () => {
     await waitFor(() => expect(screen.getByText(/nothing has been sold from this holding/)).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    getAssetDetailsMock.mockResolvedValue(assetDetails([SALE_DISPOSAL]))
+    getAssetDetailsMock.mockResolvedValue(assetDetails([SALE_REALISED_GAIN]))
     fireEvent.click(screen.getByRole('tab', { name: 'Realised gains' }))
 
     await waitFor(() => expect(screen.getByText('01/05/2024')).toBeInTheDocument())

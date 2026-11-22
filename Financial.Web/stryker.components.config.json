@@ -15,7 +15,7 @@
     "src/components/CorporateActionForm.tsx",
     "src/components/CorporateActionsTab.tsx",
     "src/components/CreditsTab.tsx",
-    "src/components/DisposalsTab.tsx",
+    "src/components/RealisedGainsTab.tsx",
     "src/components/ExpenseForm.tsx",
     "src/components/IncomeForm.tsx",
     "src/components/IncomeTab.tsx",

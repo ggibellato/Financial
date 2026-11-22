@@ -125,7 +125,7 @@ public class CorporateActionSplitAcceptanceTests : ApiEndpointTests
         // BCIA11's seeded 2024-06-01 sell has no persisted RealisedGain, so it is backfilled the
         // moment the host loads (InvestmentLoader.LoadSync -> RealisedGainBackfill), independently
         // of this feature; filter to the 2024-08-01 sale this test itself created.
-        var realisedGain = asset!.DisposalRecords.Should().ContainSingle(d => d.Date == new DateTime(2024, 8, 1)).Subject;
+        var realisedGain = asset!.RealisedGains.Should().ContainSingle(r => r.Date == new DateTime(2024, 8, 1)).Subject;
         var lot = realisedGain.LotsConsumed.Should().ContainSingle().Subject;
         lot.Quantity.Should().Be(16m, "the pre-split 8-unit open lot must have been rescaled to 16 units");
         lot.UnitCost.Should().Be(50m, "the pre-split 100 unit cost must have been halved by the 2-for-1 split");
@@ -230,7 +230,7 @@ public class CorporateActionSplitAcceptanceTests : ApiEndpointTests
         // of this feature. The split's effective date (2024-07-01) is after that sell, so recording
         // it must leave that pre-existing record completely untouched: same id, same Active status,
         // no additional record created alongside it.
-        var preExisting = addedAsset!.DisposalRecords.Should().ContainSingle(d => d.Status == RealisedGainStatus.Active).Subject;
+        var preExisting = addedAsset!.RealisedGains.Should().ContainSingle(r => r.Status == RealisedGainStatus.Active).Subject;
 
         var repository = Services.GetRequiredService<IInvestmentRepository>();
         var actionId = repository.GetAsset("XPI", "Default", "BCIA11")!.CorporateActions.Single().Id;
@@ -246,7 +246,7 @@ public class CorporateActionSplitAcceptanceTests : ApiEndpointTests
         });
         updated.StatusCode.Should().Be(HttpStatusCode.OK);
         var updatedAsset = await updated.Content.ReadFromJsonAsync<AssetDetailsDTO>();
-        updatedAsset!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == RealisedGainStatus.Active);
+        updatedAsset!.RealisedGains.Should().ContainSingle(r => r.Id == preExisting.Id && r.Status == RealisedGainStatus.Active);
 
         using var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/corporate-actions")
         {
@@ -261,6 +261,6 @@ public class CorporateActionSplitAcceptanceTests : ApiEndpointTests
         var deleted = await Client.SendAsync(deleteRequest);
         deleted.StatusCode.Should().Be(HttpStatusCode.OK);
         var deletedAsset = await deleted.Content.ReadFromJsonAsync<AssetDetailsDTO>();
-        deletedAsset!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == RealisedGainStatus.Active);
+        deletedAsset!.RealisedGains.Should().ContainSingle(r => r.Id == preExisting.Id && r.Status == RealisedGainStatus.Active);
     }
 }
