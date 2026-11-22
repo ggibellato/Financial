@@ -539,4 +539,21 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
             after.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
         }
     }
+
+    [Fact]
+    [Trait("AC", "P63-F04-settlement-balance-label-01")]
+    public async Task AccountDetail_PlannedEntry_FlagsTheAccountUntilItsDate()
+    {
+        var before = await AccountDetail(SamuelId, 10);
+        await Client.PostAsJsonAsync(EntriesUrl(SamuelId), NewEntry(null, 25m, date: PlannedDate));
+        var after = await AccountDetail(SamuelId, 10);
+        var mae = await AccountDetail(MaeId);
+
+        using (new AssertionScope())
+        {
+            before.HasPlannedEntries.Should().BeFalse();
+            after.HasPlannedEntries.Should().BeTrue();
+            mae.HasPlannedEntries.Should().BeFalse();
+        }
+    }
 }

@@ -184,6 +184,9 @@
             },
             "type": "object"
           },
+          "hasPlannedEntries": {
+            "type": "boolean"
+          },
           "hasStatements": {
             "type": "boolean"
           },
@@ -247,7 +250,8 @@
           "viewedStatement",
           "allowedActions",
           "disabledActions",
-          "currentBalances"
+          "currentBalances",
+          "hasPlannedEntries"
         ],
         "type": "object"
       },

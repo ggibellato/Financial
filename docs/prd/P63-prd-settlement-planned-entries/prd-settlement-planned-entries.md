@@ -226,9 +226,9 @@ graph TD
 - [x] **P63-F03-settlement-planned-badge-06** On the Accounts page's All transactions tab a Settlement entry dated after today shows the same "Planned" badge; other rows show none
 
 ### F04. Planned Label on the Settlement Balance
-- [ ] **P63-F04-settlement-balance-label-01** The account detail of a Settlement account with an entry dated after today returns `hasPlannedEntries` true; with none it returns false
-- [ ] **P63-F04-settlement-balance-label-02** The Settlement header reads "Balance (includes planned)" when `hasPlannedEntries` is true and "Current balance" when false
-- [ ] **P63-F04-settlement-balance-label-03** The OpenAPI snapshot and the generated web types include the new field, and their freshness tests pass
+- [x] **P63-F04-settlement-balance-label-01** The account detail of a Settlement account with an entry dated after today returns `hasPlannedEntries` true; with none it returns false
+- [x] **P63-F04-settlement-balance-label-02** The Settlement header reads "Balance (includes planned)" when `hasPlannedEntries` is true and "Current balance" when false
+- [x] **P63-F04-settlement-balance-label-03** The OpenAPI snapshot and the generated web types include the new field, and their freshness tests pass
 
 ### Cross-Feature Integration
 - [x] **P63-CF-cross-feature-01** A planned entry saved through the form (F02) is accepted by the API (F01) and appears in the list with the "Planned" badge (F03)

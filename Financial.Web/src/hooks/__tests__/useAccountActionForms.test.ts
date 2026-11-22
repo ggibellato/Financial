@@ -59,6 +59,7 @@ const BARCLAYS: AccountDetailDto = {
   allowedActions: ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile'],
   disabledActions: {},
   currentBalances: [],
+  hasPlannedEntries: false,
   otherParticipant: null,
   year: 2026,
   month: 10,
