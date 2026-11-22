@@ -35,6 +35,7 @@ import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
+import SettlementEntryDescription from './SettlementEntryDescription'
 import {
   deleteConfirmation,
   deletedMessage,
@@ -176,7 +177,9 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'kind':
         return typeLabel(row)
       case 'description':
-        return <TruncatedText text={shownDescription(transaction)} />
+        return transaction.kind === 'SettlementEntry'
+          ? <SettlementEntryDescription text={shownDescription(transaction)} date={transaction.date} />
+          : <TruncatedText text={shownDescription(transaction)} />
       case 'category':
         return <TruncatedText text={transaction.categoryName} />
       default:

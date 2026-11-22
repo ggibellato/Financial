@@ -23,6 +23,7 @@ import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
+import SettlementEntryDescription from './SettlementEntryDescription'
 import { paidByLabel } from '../utils/paidBy'
 import {
   canMoveToStatement,
@@ -115,11 +116,16 @@ const CONVERTED_COLUMN: TransactionColumn = {
       : <MissingValue />,
 }
 
+const SETTLEMENT_DESCRIPTION_COLUMN: TransactionColumn = {
+  ...DESCRIPTION_COLUMN,
+  render: (row) => <SettlementEntryDescription text={shownDescription(row)} date={row.date} />,
+}
+
 function settlementColumns(otherParticipant: string, showsConverted: boolean): TransactionColumn[] {
   const paidByOf = (row: AccountTransactionDto) => paidByLabel(row.settlement?.paidBy, otherParticipant)
   return [
     DATE_COLUMN,
-    DESCRIPTION_COLUMN,
+    SETTLEMENT_DESCRIPTION_COLUMN,
     { key: 'paidBy', header: 'Paid by', accessor: paidByOf, render: (row) => <TruncatedText text={paidByOf(row)} /> },
     {
       ...AMOUNT_COLUMN,

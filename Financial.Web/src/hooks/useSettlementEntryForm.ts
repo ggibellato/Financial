@@ -3,9 +3,10 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, SettlementEntryDto } from '../api/types'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
-import { formatCurrency, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
+import { formatCurrency, formatMonthInputValue, formatStatementMonthLabel, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
+import type { YearMonth } from './useMonthSelection'
 import { paymentDateError } from '../utils/validators'
 
 const DATE_KEY = 'settlementEntry.date'
@@ -72,9 +73,13 @@ function convertedValueError(convertedValue: string): string | undefined {
     : undefined
 }
 
-function validate(values: SettlementEntryValues, asksCurrency: boolean, hasConvertedValue: boolean): FieldErrors<SettlementEntryField> {
+function dateError(date: string, acceptsFutureDates: boolean): string | undefined {
+  return acceptsFutureDates && date ? undefined : paymentDateError(date)
+}
+
+function validate(values: SettlementEntryValues, asksCurrency: boolean, hasConvertedValue: boolean, acceptsFutureDates: boolean): FieldErrors<SettlementEntryField> {
   return {
-    date: paymentDateError(values.date),
+    date: dateError(values.date, acceptsFutureDates),
     paidBy: values.paidBy ? undefined : 'Choose who paid.',
     currency: asksCurrency && !values.currency ? 'Choose the currency.' : undefined,
     description: values.description.trim() ? undefined : 'Description is required.',
@@ -149,13 +154,22 @@ function impliedRateText(values: SettlementEntryValues, convertedCurrency: strin
   return `Implied rate: 1 ${unit.currency} = ${formatCurrency(quoted.value / unit.value, quoted.currency)}`
 }
 
-function settlementSavedMessage(warning: string | null): string {
-  return warning ? `Settlement saved. ${warning}` : 'Settlement saved'
+function otherMonthSuffix(date: string, viewedMonth: YearMonth, preposition: string): string {
+  return date.startsWith(formatMonthInputValue(viewedMonth.year, viewedMonth.month)) ? '' : ` ${preposition} ${formatStatementMonthLabel(date)}`
+}
+
+function savedMessage(saved: SettlementEntryDto, viewedMonth: YearMonth, isSettling: boolean, isEditing: boolean): string {
+  const otherMonth = (preposition: string) => otherMonthSuffix(saved.date, viewedMonth, preposition)
+  if (isSettling) {
+    const settled = `Settlement saved${otherMonth('in')}`
+    return saved.warning ? `${settled}. ${saved.warning}` : settled
+  }
+  return isEditing ? `Entry updated${otherMonth('in')}` : `Entry added${otherMonth('to')}`
 }
 
 export function useSettlementEntryForm(
   account: SettlementEntryAccount | null,
-  viewedMonth: { year: number; month: number },
+  viewedMonth: YearMonth,
   onSaved: (message: string) => void,
 ) {
   const [state, setState] = useState<SettlementEntryFormState>(CLOSED_STATE)
@@ -165,6 +179,7 @@ export function useSettlementEntryForm(
   const isEditing = editingId !== null
   const otherParticipant = account ? settlementCounterparty(account) : ''
   const asksCurrency = !isEditing && currencies.length > 1
+  const acceptsFutureDates = currencies.length === 1
 
   const openAdd = () => {
     if (!account) return
@@ -219,7 +234,7 @@ export function useSettlementEntryForm(
       .then((saved) => {
         setStoredDefault(DATE_KEY, values.date)
         setState((previous) => (previous.isSaving ? afterSave(previous, saved) : previous))
-        onSaved(isSettling ? settlementSavedMessage(saved.warning) : isEditing ? 'Entry updated' : 'Entry added')
+        onSaved(savedMessage(saved, viewedMonth, isSettling, isEditing))
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, isSettling ? 'Failed to save the settlement.' : 'Failed to save the entry.')
@@ -229,7 +244,7 @@ export function useSettlementEntryForm(
 
   const submit = (): SettlementEntryField | null => {
     if (isSaving || !account) return null
-    const errors = validate(values, asksCurrency, convertedCurrency !== null)
+    const errors = validate(values, asksCurrency, convertedCurrency !== null, acceptsFutureDates)
     const firstInvalid = VALUE_FIELDS.find((field) => errors[field])
     if (firstInvalid) {
       setState((previous) => ({ ...previous, fieldErrors: errors, saveError: null }))
@@ -259,6 +274,7 @@ export function useSettlementEntryForm(
     currencies,
     otherParticipant,
     asksCurrency,
+    acceptsFutureDates,
     convertedCurrency,
     isSaving,
     saveError: state.saveError,

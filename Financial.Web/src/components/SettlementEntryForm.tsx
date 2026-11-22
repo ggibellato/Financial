@@ -21,7 +21,7 @@ const useEntryFormStyles = makeStyles({
 export default function SettlementEntryForm({ form, onCancel }: SettlementEntryFormProps) {
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
-  const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
+  const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, acceptsFutureDates, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
   const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'New entry'
   const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : 'Add entry'
   const validation = (field: SettlementEntryField) => ({
@@ -68,7 +68,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
           <div className={styles.grid}>
             {isSettling && currencyChoice}
             <Field label="Date" required {...validation('date')}>
-              <Input type="date" max={todayIsoDate()} {...inputProps('date')} />
+              <Input type="date" max={acceptsFutureDates ? undefined : todayIsoDate()} {...inputProps('date')} />
             </Field>
             <Field label="Paid by" required {...validation('paidBy')}>
               <RadioGroup name="paidBy" layout="horizontal" className={styles.radioRow} value={values.paidBy} onChange={(_, data) => setField('paidBy', data.value)}>

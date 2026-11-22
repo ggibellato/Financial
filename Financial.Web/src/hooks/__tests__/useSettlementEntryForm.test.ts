@@ -411,6 +411,72 @@ describe('useSettlementEntryForm', () => {
       expect(result.current.fieldErrors.paidBy).toBeUndefined()
       expect(result.current.fieldErrors.description).toBe('Description is required.')
     })
+
+    describe('a future date', () => {
+      const SAMUEL_ENTRY = { ...ENTRY, accountId: 'samuel', currency: 'GBP', convertedCurrency: null, convertedValue: null }
+
+      it('[AC P63-F02-settlement-entry-form-dates-01] [AC P63-F02-settlement-entry-form-dates-04] saves on a one-currency account in New entry and Edit entry, naming the month the entry went to', async () => {
+        createSettlementEntryMock.mockResolvedValue({ ...SAMUEL_ENTRY, date: '2026-12-01' })
+        updateSettlementEntryMock.mockResolvedValue({ ...SAMUEL_ENTRY, date: '2027-01-15' })
+        const { result, onSaved } = renderForm(SAMUEL)
+        expect(result.current.acceptsFutureDates).toBe(true)
+        act(() => result.current.openAdd())
+        fillValidEntry(result)
+        fill(result, { date: '2026-12-01' })
+
+        expect(submit(result)).toBeNull()
+        expect(createSettlementEntryMock).toHaveBeenCalledWith('samuel', expect.objectContaining({ date: '2026-12-01' }))
+        await waitFor(() => expect(onSaved).toHaveBeenCalledWith('Entry added to December 2026'))
+
+        act(() => result.current.openEdit(SAMUEL_ENTRY))
+        fill(result, { date: '2027-01-15' })
+
+        expect(submit(result)).toBeNull()
+        expect(updateSettlementEntryMock).toHaveBeenCalledWith('samuel', 'e1', expect.objectContaining({ date: '2027-01-15' }))
+        await waitFor(() => expect(onSaved).toHaveBeenCalledWith('Entry updated in January 2027'))
+      })
+
+      it('[AC P63-F02-settlement-entry-form-dates-01] [AC P63-F02-settlement-entry-form-dates-04] settles with a future date on a one-currency account, naming its month', async () => {
+        settleAccountMock.mockReset().mockResolvedValue({ ...SAMUEL_ENTRY, date: '2026-12-01', description: 'Settlement' })
+        const { result, onSaved } = openSettle(SAMUEL)
+        fill(result, { date: '2026-12-01' })
+
+        expect(submit(result)).toBeNull()
+        expect(result.current.confirmation).toBe('The total becomes zero.')
+        act(() => result.current.confirmSettle())
+
+        await waitFor(() => expect(onSaved).toHaveBeenCalledWith('Settlement saved in December 2026'))
+      })
+
+      it('[AC P63-F02-settlement-entry-form-dates-04] names no month when the entry stays in the viewed month', async () => {
+        const { result, onSaved } = renderForm(SAMUEL)
+        act(() => result.current.openAdd())
+        fillValidEntry(result)
+
+        submit(result)
+
+        await waitFor(() => expect(onSaved).toHaveBeenCalledWith('Entry added'))
+      })
+
+      it.each([
+        ['New entry', (result: Rendered) => act(() => result.current.openAdd())],
+        ['Edit entry', (result: Rendered) => act(() => result.current.openEdit(ENTRY))],
+        ['Settle', (result: Rendered) => act(() => result.current.openSettle())],
+      ])('[AC P63-F02-settlement-entry-form-dates-02] is refused in %s on a two-currency account without a request', (_, open) => {
+        const { result } = renderForm(MAE)
+        expect(result.current.acceptsFutureDates).toBe(false)
+        open(result)
+        fillValidEntry(result)
+        fill(result, { date: '2026-11-08' })
+
+        expect(submit(result)).toBe('date')
+
+        expect(result.current.fieldErrors.date).toBe('Date must not be in the future.')
+        expect(result.current.confirmation).toBeNull()
+        expect(createSettlementEntryMock).not.toHaveBeenCalled()
+        expect(updateSettlementEntryMock).not.toHaveBeenCalled()
+      })
+    })
   })
 
   describe('saving an Add', () => {
