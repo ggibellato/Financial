@@ -90,6 +90,9 @@ P62 builds on P60 (`docs/prd/P60-prd-cashflow-accounts-generalization/prd-cashfl
 - As the user, I want to settle a statement that has nothing to pay by choosing a bank and a date so that its pot charges get their investment withdrawal
 - As the user, I want to undo that settlement so that I can correct the bank or date
 
+### F05. Round-Up on a Bank-Paid Withdrawal
+- As the user, I want a pot withdrawal paid from a round-up bank to carry the bank's round-up, which I can review and change (including to 0), so that the bank balance matches a direct expense
+
 ## 6. Functionalities
 
 ### F01. Card-Paid Pot Withdrawal
@@ -192,6 +195,20 @@ P62 builds on P60 (`docs/prd/P60-prd-cashflow-accounts-generalization/prd-cashfl
 - Future date: 400 today's future-date message.
 - Save failure: all −X and the marker saved together or not at all; "Couldn't settle the statement. Try again."
 
+### F05. Round-Up on a Bank-Paid Withdrawal
+
+**Capabilities:**
+- **When offered:** Paid with = Bank and that bank has round-up enabled.
+- **Calculated:** the form suggests the round-up from the amount (up to the next whole unit), as for a direct bank expense; the user can change it, set it to 0 or clear it (no round-up).
+- **Recorded:** on the bank spend record (+X in the chosen category), exactly like a direct bank expense's round-up. The pot movement and the −X stay at the main amount; the bank goes down by the round-up overall.
+- **Edit:** the round-up can be changed when the withdrawal is edited; opening an older withdrawal without a round-up adds none unless the user changes it.
+- **Not offered:** card-paid or no-payment withdrawals.
+
+**Error Handling:**
+- Round-up on a bank without round-up: 400 "Bank '<name>' does not support round-up."
+- Outside £0.00–£0.99: 400 "Round-up amount must be between £0.00 and £0.99."
+- Round-up with a card or no payment: 400 "Round-up only applies to a withdrawal paid from a bank."
+
 ## 7. Out of Scope
 
 **Existing records**
@@ -219,6 +236,7 @@ P62 builds on P60 (`docs/prd/P60-prd-cashflow-accounts-generalization/prd-cashfl
 | F02 | Investment Withdrawal on Statement Payment | 1 | F01 |
 | F03 | Withdraw Forms on Pots Account and Card | 1 | F01, F02 |
 | F04 | Settle a Nothing-Due Statement | 2 | F02 |
+| F05 | Round-Up on a Bank-Paid Withdrawal | 2 | F03 |
 
 ### Part 3: Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
@@ -226,6 +244,7 @@ Features within the same wave can be built in parallel. A wave starts only after
 - **Wave 1**: F01
 - **Wave 2**: F02
 - **Wave 3**: F03, F04
+- **Wave 4**: F05
 
 ### Part 4: Priority levels
 - **1** = Essential — product does not work without it
@@ -240,6 +259,7 @@ graph TD
   F01 --> F03[F03 Withdraw forms]
   F02 --> F03
   F02 --> F04[F04 Settle nothing-due]
+  F03 --> F05[F05 Round-up on bank withdrawal]
 ```
 
 ## 9. Acceptance Criteria
@@ -274,6 +294,12 @@ graph TD
 - [x] **P62-F04-settle-a-nothing-due-statement-02** Settling with bank B and date D writes each charge's −X on B dated D and marks the statement settled, with no card payment transfer and no change to the card's credit or amount to pay
 - [x] **P62-F04-settle-a-nothing-due-statement-03** "Unmark settled" removes every −X and returns the statement to Nothing due
 - [x] **P62-F04-settle-a-nothing-due-statement-04** A settled statement rejects new charges; a statement that now has an amount to pay returns 409; a future date returns 400
+
+### F05. Round-Up on a Bank-Paid Withdrawal
+- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-01** The Withdraw form shows "Round-up" only for Paid with = Bank on a round-up bank, suggests it from the amount, and lets the user change it, including to 0
+- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-02** Saving with round-up R records R on the bank spend only; the pot and the −X stay at the main amount and the bank goes down by R overall
+- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-03** A round-up on a bank without round-up, or with a card or no payment, returns 400
+- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-04** Editing a withdrawal changes its round-up, and opening an older one without a round-up adds none
 
 ### Cross-Feature Integration
 - [x] **P62-CF-cross-feature-01** The operation id, amount, category, card and statement month written by F01 are the ones F02 uses for the −X when the statement is paid
