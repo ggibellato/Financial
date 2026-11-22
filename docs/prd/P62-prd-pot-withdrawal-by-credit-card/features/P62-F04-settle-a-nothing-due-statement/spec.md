@@ -157,3 +157,13 @@ graph TD
 - `SettleWithoutPayment(settledOn, today)` applies `TransactionDateRule.EnsureNotInFuture` itself (as `Transfer` does), and runs before any −X is added in the save.
 - `CardStatementService` shares `PayingBank`, `LedgerMonthOf` and `InvestmentWithdrawalsWrittenOn` between mark/unmark paid and settle/unsettle.
 - `CardChargeFilter.IsStatementPaid` keeps its name although it now means "closed"; `AccountGroupSummaryService` therefore reports a settled statement as paid on the Accounts overview, while `AccountStatementDTO.IsPaid` (ledger status) stays false and `settledOn` says it is settled. 4b shows the settled state from `settledOn`.
+
+## Implementation notes (stage 4b)
+
+- No separate `SettlePotWithdrawalsForm`: the card Statements tab's inline Pay panel takes a `kind` (`'pay' | 'settle'`) on `useCardStatements`' form state and is renamed `StatementBankForm`. Bank, Date, validation, focus, saving and unsaved-changes handling are shared; only the title, the read-only amount field and the save label differ. The hook keeps its `payForm` / `submitPayForm` names to limit churn. Its tests live in `CardStatementsTab.test.tsx` and `useCardStatements.test.ts`.
+- The settle form shows the sum of the pot withdrawals in a read-only "Total from pots" field (the read-only amount pattern of the Pay form) instead of a bold total in text; each line reads "Takes £X from <Pots account> (<pot>) on <bank>.".
+- Unmark on a settled row is "Unmark settled" and calls `unsettle-pot-withdrawals`; the hook picks the route from the statement's `settledOn`.
+- Status reads "Settled <date> — pot withdrawals only" on the Statements tab and the card header, so the date the user chose stays visible.
+- `utils/owedBalance` holds `isSettledStatement`, `isClosedStatement` (paid or settled, the web mirror of `CardStatement.IsClosed`) and `canSettleStatement`; the statement-month pickers (Withdraw form, Move charge) leave settled months out through `isClosedStatement`.
+- The Statements tab's wide action cell wraps instead of shrinking its buttons, so "Settle pot withdrawals" and "Due date" stay readable in the 200px column.
+- Save failures read "Couldn't settle the statement. Try again." and "Couldn't unmark the statement as settled. Try again." (PRD F04 Error Handling).
