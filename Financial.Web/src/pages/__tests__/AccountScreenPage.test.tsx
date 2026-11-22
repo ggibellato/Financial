@@ -27,7 +27,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
-import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
+import { account, accountDetail, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 import { deferred, never } from '../../test-utils/deferred'
 
 const {
@@ -176,7 +176,7 @@ const ACCOUNTS: AccountDto[] = [
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
   const isCard = id === AMEX_ID
-  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, viewedStatement: null, allowedActions: isCard ? ['AddCharge'] : [], disabledActions: {}, currentBalances: [], hasPlannedEntries: false }
+  return accountDetail({ ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, allowedActions: isCard ? ['AddCharge'] : [] })
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [
@@ -291,7 +291,7 @@ function withPotsAccount(transactions: AccountTransactionDto[] = [LEGACY_WITHDRA
   getAccountMock.mockImplementation((id, year, month) =>
     Promise.resolve(
       id === RESERVA_ID
-        ? { ...reserva, year, month, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'], disabledActions: {}, currentBalances: [], hasPlannedEntries: false }
+        ? accountDetail({ ...reserva, year, month, balance: 1500.5, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'] })
         : detailFor(id, year, month),
     ),
   )
@@ -864,7 +864,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     const reserva = potsAccount({ id: RESERVA_ID, name: 'Reserva', isActive: false })
     getAccountsMock.mockResolvedValue([...ACCOUNTS, reserva])
     getAccountMock.mockImplementation((id, year, month) =>
-      Promise.resolve({ ...reserva, id, year, month, balance: 0, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: [], disabledActions: {}, currentBalances: [], hasPlannedEntries: false }),
+      Promise.resolve(accountDetail({ ...reserva, id, year, month })),
     )
     getAccountTransactionsMock.mockResolvedValue([])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
@@ -1284,7 +1284,7 @@ describe('AccountScreenPage on a Pots account', () => {
     expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
 
-    pendingAccount.resolve({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: [], disabledActions: {}, currentBalances: [], hasPlannedEntries: false })
+    pendingAccount.resolve(accountDetail({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), balance: 1500.5 }))
 
     expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
   })
@@ -1328,20 +1328,14 @@ describe('AccountScreenPage on a Settlement account', () => {
     getAccountMock.mockImplementation((id, year, month) =>
       Promise.resolve(
         id === MAE_ID
-          ? {
+          ? accountDetail({
               ...mae,
               year,
               month,
               balance: 1,
-              balanceIsOwed: false,
-              hasStatements: false,
-              totalOwed: null,
-              viewedStatement: null,
               allowedActions: ['AddEntry', 'Settle'],
-              disabledActions: {},
               currentBalances: [{ currency: 'BRL', balance: 167.8768 }, { currency: 'GBP', balance: 7.94214099 }],
-              hasPlannedEntries: false,
-            }
+            })
           : detailFor(id, year, month),
       ),
     )

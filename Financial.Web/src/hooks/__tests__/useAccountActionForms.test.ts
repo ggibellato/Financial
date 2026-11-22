@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountDetailDto, BankOption, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto, PotOperationDto } from '../../api/types'
-import { potsAccount } from '../../test/account'
+import { accountDetail, potsAccount } from '../../test/account'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { pinDate } from '../../test-utils/pinDate'
 import type { AccountFormOptions } from '../useAccountFormOptions'
@@ -45,25 +45,12 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const BARCLAYS: AccountDetailDto = {
+const BARCLAYS = accountDetail({
   id: 'bank-barclays',
   name: 'Barclays',
-  currency: 'GBP',
-  templateName: 'Bank',
   balance: 1250,
-  balanceIsOwed: false,
-  hasStatements: false,
-  totalOwed: null,
-  viewedStatement: null,
-  isActive: true,
   allowedActions: ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile'],
-  disabledActions: {},
-  currentBalances: [],
-  hasPlannedEntries: false,
-  otherParticipant: null,
-  year: 2026,
-  month: 10,
-}
+})
 
 const BANKS: BankOption[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
