@@ -12,7 +12,7 @@ public sealed record TransactionTypeEffect(QuantityEffect Quantity, CashEffect C
 /// <summary>
 /// Declares each <see cref="Transaction.TransactionType"/>'s quantity/cash effect as data, so a
 /// future type is added by extending this switch rather than editing every consumer (validation,
-/// average-price/realized-gain replay, oversell coverage, replay tie-break, invested-amount
+/// average-price/realised-gain replay, oversell coverage, replay tie-break, invested-amount
 /// bucketing, and both front ends' entry forms all key off this one table).
 /// </summary>
 public static class TransactionTypeEffects

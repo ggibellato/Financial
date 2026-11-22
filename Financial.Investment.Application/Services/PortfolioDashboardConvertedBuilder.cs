@@ -49,7 +49,7 @@ internal static class PortfolioDashboardConvertedBuilder
         {
             var flows = await ConvertedAssetFlows.ConvertAsync(holding.Asset, context).ConfigureAwait(false);
             AddAssetFlows(totals, flows, holding.IsActive, yearStart);
-            await AddDisposalsAsync(totals, holding, context).ConfigureAwait(false);
+            await AddRealisedGainsAsync(totals, holding, context).ConfigureAwait(false);
         }
 
         await AddTerminalValueAsync(totals, holdings, context, asOf).ConfigureAwait(false);
@@ -76,11 +76,11 @@ internal static class PortfolioDashboardConvertedBuilder
         }
     }
 
-    private static async Task AddDisposalsAsync(ConvertedTotals totals, PortfolioHolding holding, CurrencyConversionContext context)
+    private static async Task AddRealisedGainsAsync(ConvertedTotals totals, PortfolioHolding holding, CurrencyConversionContext context)
     {
-        foreach (var disposal in holding.Asset.DisposalRecords.Where(record => record.Status == DisposalRecordStatus.Active))
+        foreach (var realisedGain in holding.Asset.RealisedGains.Where(record => record.Status == RealisedGainStatus.Active))
         {
-            var converted = await context.ConvertAsync(disposal.GainLoss, DateOnly.FromDateTime(disposal.Date)).ConfigureAwait(false);
+            var converted = await context.ConvertAsync(realisedGain.GainLoss, DateOnly.FromDateTime(realisedGain.Date)).ConfigureAwait(false);
             if (converted is decimal amount)
             {
                 totals.RealisedGainLoss += amount;

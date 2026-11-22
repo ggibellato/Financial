@@ -9,7 +9,7 @@ using FluentAssertions;
 namespace Financial.Investment.Domain.Tests;
 
 [Trait("Category", "Unit")]
-public class DisposalRecordCalculatorTests
+public class RealisedGainCalculatorTests
 {
     [Fact]
     [Trait("AC", "P50-F01-cost-basis-method-strategy-06")]
@@ -19,9 +19,9 @@ public class DisposalRecordCalculatorTests
         var secondBuy = Transaction.Create(new DateTime(2026, 1, 15), Transaction.TransactionType.Buy, 15m, 120m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 130m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
 
-        record.Status.Should().Be(DisposalRecordStatus.Active);
+        record.Status.Should().Be(RealisedGainStatus.Active);
         record.LotsConsumed.Should().ContainSingle();
         record.LotsConsumed[0].SourceTransactionId.Should().BeNull();
         record.LotsConsumed[0].UnitCost.Should().Be(112m);
@@ -35,7 +35,7 @@ public class DisposalRecordCalculatorTests
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 8m, 1m);
 
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
 
         record.Proceeds.Should().Be(sell.NetCash);
         record.GainLoss.Should().Be(record.Proceeds - record.CostBasis);
@@ -48,7 +48,7 @@ public class DisposalRecordCalculatorTests
         var secondBuy = Transaction.Create(new DateTime(2026, 1, 15), Transaction.TransactionType.Buy, 5m, 6m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 7m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.FIFO, "GBP", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.FIFO, "GBP", TestClock.Default);
 
         record.LotsConsumed.Should().HaveCount(2);
         record.LotsConsumed[0].SourceTransactionId.Should().Be(firstBuy.Id);
@@ -64,7 +64,7 @@ public class DisposalRecordCalculatorTests
         var secondBuy = Transaction.Create(new DateTime(2026, 1, 15), Transaction.TransactionType.Buy, 5m, 6m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 5m, 7m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.FIFO, "GBP", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.FIFO, "GBP", TestClock.Default);
 
         record.LotsConsumed.Should().ContainSingle().Which.SourceTransactionId.Should().Be(firstBuy.Id);
     }
@@ -77,7 +77,7 @@ public class DisposalRecordCalculatorTests
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 7m, 7m, 0m);
         var allocation = new[] { new SpecificLotAllocation(firstBuy.Id, 3m), new SpecificLotAllocation(secondBuy.Id, 4m) };
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { firstBuy, secondBuy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
 
         record.LotsConsumed.Should().HaveCount(2);
@@ -92,7 +92,7 @@ public class DisposalRecordCalculatorTests
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 7m, 0m);
         var allocation = new[] { new SpecificLotAllocation(secondBuy.Id, 4m) };
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { firstBuy, secondBuy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
 
         record.LotsConsumed.Should().ContainSingle();
@@ -107,7 +107,7 @@ public class DisposalRecordCalculatorTests
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 7m, 0m);
         var allocation = new[] { new SpecificLotAllocation(buy.Id, 3m) };
 
-        Action act = () => DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
+        Action act = () => RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
 
         act.Should().Throw<InvestmentRuleViolationException>();
     }
@@ -120,7 +120,7 @@ public class DisposalRecordCalculatorTests
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 7m, 0m);
         var allocation = new[] { new SpecificLotAllocation(buy.Id, 4m) };
 
-        Action act = () => DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
+        Action act = () => RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
 
         act.Should().Throw<InvestmentRuleViolationException>();
     }
@@ -132,7 +132,7 @@ public class DisposalRecordCalculatorTests
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 7m, 0m);
         var allocation = new[] { new SpecificLotAllocation(Guid.NewGuid(), 4m) };
 
-        Action act = () => DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
+        Action act = () => RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
 
         act.Should().Throw<InvestmentRuleViolationException>();
     }
@@ -143,7 +143,7 @@ public class DisposalRecordCalculatorTests
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 4m, 5m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 7m, 0m);
 
-        Action act = () => DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, null);
+        Action act = () => RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, null);
 
         act.Should().Throw<InvestmentRuleViolationException>();
     }
@@ -155,7 +155,7 @@ public class DisposalRecordCalculatorTests
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 4m, 5m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 1, 10), Transaction.TransactionType.Sell, 4m, 7m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
 
         record.TaxYear.Should().Be("2025/26");
     }
@@ -167,31 +167,31 @@ public class DisposalRecordCalculatorTests
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 4m, 5m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 1, 10), Transaction.TransactionType.Sell, 4m, 7m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "BRL", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(sell, new[] { buy }, CostBasisMethod.AverageCost, "BRL", TestClock.Default);
 
         record.TaxYear.Should().Be("2026");
     }
 
     [Fact]
-    public void Calculate_Redemption_IsTreatedAsADisposalLikeASell()
+    public void Calculate_Redemption_IsTreatedLikeASell()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
         var redemption = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Redemption, 10m, 6m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(redemption, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
+        var record = RealisedGainCalculator.Calculate(redemption, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default);
 
-        record.QuantityDisposed.Should().Be(10m);
+        record.QuantitySold.Should().Be(10m);
         record.Proceeds.Should().Be(redemption.NetCash);
     }
 
     [Fact]
-    public void Calculate_AverageCost_SplitPrecedesDisposal_TotalsAgainstRescaledCost()
+    public void Calculate_AverageCost_SplitPrecedesSale_TotalsAgainstRescaledCost()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
         var split = CorporateAction.CreateSplit(new DateTime(2026, 1, 15), 2.0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 60m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default, precedingCorporateActions: new[] { split });
 
         record.LotsConsumed.Should().ContainSingle();
@@ -200,13 +200,13 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
-    public void Calculate_Fifo_SplitPrecedesDisposal_ConsumesRescaledLots()
+    public void Calculate_Fifo_SplitPrecedesSale_ConsumesRescaledLots()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
         var split = CorporateAction.CreateSplit(new DateTime(2026, 1, 15), 2.0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 60m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { buy }, CostBasisMethod.FIFO, "GBP", TestClock.Default, precedingCorporateActions: new[] { split });
 
         record.LotsConsumed.Should().ContainSingle();
@@ -216,14 +216,14 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
-    public void Calculate_SpecificId_SplitPrecedesDisposal_AllocatesAgainstRescaledLot()
+    public void Calculate_SpecificId_SplitPrecedesSale_AllocatesAgainstRescaledLot()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
         var split = CorporateAction.CreateSplit(new DateTime(2026, 1, 15), 2.0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 60m, 0m);
         var allocation = new[] { new SpecificLotAllocation(buy.Id, 8m) };
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation, new[] { split });
 
         record.LotsConsumed.Should().ContainSingle();
@@ -231,14 +231,14 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
-    public void Calculate_AverageCost_MergerTargetPrecedesDisposal_TotalsAgainstBlendedCost()
+    public void Calculate_AverageCost_MergerTargetPrecedesSale_TotalsAgainstBlendedCost()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m);
         var mergerTarget = CorporateAction.CreateMergerTarget(
             new DateTime(2026, 1, 15), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 20m, 40m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default, precedingCorporateActions: new[] { mergerTarget });
 
         var expectedAveragePrice = (10m * 50m + 1000m) / 50m;
@@ -248,13 +248,13 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
-    public void Calculate_Fifo_MergerTargetPrecedesDisposal_ConsumesTheMergerCreatedLot()
+    public void Calculate_Fifo_MergerTargetPrecedesSale_ConsumesTheMergerCreatedLot()
     {
         var mergerTarget = CorporateAction.CreateMergerTarget(
             new DateTime(2026, 1, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 15m, 40m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, Array.Empty<Transaction>(), CostBasisMethod.FIFO, "GBP", TestClock.Default, precedingCorporateActions: new[] { mergerTarget });
 
         record.LotsConsumed.Should().ContainSingle();
@@ -264,14 +264,14 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
-    public void Calculate_SpecificId_MergerTargetPrecedesDisposal_AllocatesAgainstTheMergerCreatedLot()
+    public void Calculate_SpecificId_MergerTargetPrecedesSale_AllocatesAgainstTheMergerCreatedLot()
     {
         var mergerTarget = CorporateAction.CreateMergerTarget(
             new DateTime(2026, 1, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 15m, 40m, 0m);
         var allocation = new[] { new SpecificLotAllocation(mergerTarget.Id, 15m) };
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, Array.Empty<Transaction>(), CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation, new[] { mergerTarget });
 
         record.LotsConsumed.Should().ContainSingle();
@@ -285,7 +285,7 @@ public class DisposalRecordCalculatorTests
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
         var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 8m, 0m);
 
-        var record = DisposalRecordCalculator.Calculate(
+        var record = RealisedGainCalculator.Calculate(
             sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", TestClock.Default, precedingCorporateActions: null);
 
         record.LotsConsumed[0].UnitCost.Should().Be(5m);

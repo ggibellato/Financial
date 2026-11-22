@@ -119,7 +119,7 @@ public class PortfolioDashboardConvertedBuilderTests
             [ActiveHolding(asset, Currency.BRL, marketValue: null, unrealisedGain: null)], Currency.GBP, provider, AsOf);
 
         using var _ = new AssertionScope();
-        result.RealisedGainLoss.Should().Be(20m * 3m, "the disposal is dated 2025 and converts at that year's rate");
+        result.RealisedGainLoss.Should().Be(20m * 3m, "the sale is dated 2025 and converts at that year's rate");
         result.IncomeYtd.Should().Be(40m * 2m);
         result.IncomeLifetime.Should().Be((40m * 2m) + (100m * 3m));
     }

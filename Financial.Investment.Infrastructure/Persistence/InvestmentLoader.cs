@@ -18,9 +18,9 @@ public static class InvestmentLoader
         var investments = serializer.Deserialize(json);
         var createdAt = timeProvider.GetUtcNow();
 
-        foreach (var failure in DisposalRecordBackfill.Apply(investments, createdAt))
+        foreach (var failure in RealisedGainBackfill.Apply(investments, createdAt))
         {
-            Trace.TraceWarning($"DisposalRecord backfill skipped transaction {failure.TransactionId}: {failure.Message}");
+            Trace.TraceWarning($"RealisedGain backfill skipped transaction {failure.TransactionId}: {failure.Message}");
         }
 
         foreach (var failure in TaxClassificationBackfill.Apply(investments, createdAt))

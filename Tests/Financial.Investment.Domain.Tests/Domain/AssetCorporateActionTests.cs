@@ -26,7 +26,7 @@ public class AssetCorporateActionTests
     }
 
     [Fact]
-    public void RecordCorporateAction_SameDateAsSell_AppliesBeforeTheSaleAndRealizesGainAtRescaledCost()
+    public void RecordCorporateAction_SameDateAsSell_AppliesBeforeTheSaleAndRealisesGainAtRescaledCost()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         var date = new DateTime(2021, 6, 1);
@@ -36,8 +36,8 @@ public class AssetCorporateActionTests
         asset.RecordTransaction(Transaction.Create(date, Transaction.TransactionType.Sell, 5m, 60m, 0m));
 
         asset.Quantity.Should().Be(15m, "20 post-split units less the same-date sale of 5");
-        var disposal = asset.DisposalRecords.Single();
-        disposal.CostBasis.Should().Be(250m, "5 units at the post-split average cost of 50");
+        var realisedGain = asset.RealisedGains.Single();
+        realisedGain.CostBasis.Should().Be(250m, "5 units at the post-split average cost of 50");
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class AssetCorporateActionTests
     }
 
     [Fact]
-    public void RecordCorporateAction_SpecificId_LaterDisposalAgainstRescaledLotTotalsCorrectly()
+    public void RecordCorporateAction_SpecificId_LaterSaleAgainstRescaledLotTotalsCorrectly()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m);
@@ -70,9 +70,9 @@ public class AssetCorporateActionTests
             CostBasisMethod.SpecificId,
             new[] { new SpecificLotAllocation(buy.Id, 4m) });
 
-        var disposal = asset.DisposalRecords.Single();
-        disposal.LotsConsumed.Should().ContainSingle(l => l.SourceTransactionId == buy.Id);
-        disposal.CostBasis.Should().Be(200m, "4 units at the post-split unit cost of 50");
+        var realisedGain = asset.RealisedGains.Single();
+        realisedGain.LotsConsumed.Should().ContainSingle(l => l.SourceTransactionId == buy.Id);
+        realisedGain.CostBasis.Should().Be(200m, "4 units at the post-split unit cost of 50");
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class AssetCorporateActionTests
     }
 
     [Fact]
-    public void RecordCorporateAction_ReverseSplitShrinksLotBelowAnExistingSpecificIdDisposal_RollsBackAndRethrows()
+    public void RecordCorporateAction_ReverseSplitShrinksLotBelowAnExistingSpecificIdSale_RollsBackAndRethrows()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
@@ -200,18 +200,18 @@ public class AssetCorporateActionTests
         act.Should().Throw<InvestmentRuleViolationException>();
         asset.CorporateActions.Should().ContainSingle().Which.RatioFactor.Should().Be(2.0m);
         asset.Quantity.Should().Be(5m);
-        asset.DisposalRecords.Should().ContainSingle().Which.Status.Should().Be(DisposalRecordStatus.Active);
+        asset.RealisedGains.Should().ContainSingle().Which.Status.Should().Be(RealisedGainStatus.Active);
     }
 
     [Fact]
-    public void RecordCorporateAction_NoLaterDisposal_CreatesNoDisposalRecord()
+    public void RecordCorporateAction_NoLaterSale_CreatesNoRealisedGain()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
 
         asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
 
-        asset.DisposalRecords.Should().BeEmpty();
+        asset.RealisedGains.Should().BeEmpty();
     }
 
     [Fact]
@@ -487,7 +487,7 @@ public class AssetCorporateActionTests
     }
 
     [Fact]
-    public void RecordCorporateAction_SpinOffParent_NoLaterDisposal_CreatesNoDisposalRecord()
+    public void RecordCorporateAction_SpinOffParent_NoLaterSale_CreatesNoRealisedGain()
     {
         var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         parent.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
@@ -495,7 +495,7 @@ public class AssetCorporateActionTests
         parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
             new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "Asset B", 5m, 150m));
 
-        parent.DisposalRecords.Should().BeEmpty();
+        parent.RealisedGains.Should().BeEmpty();
     }
 
     [Fact]
@@ -517,18 +517,18 @@ public class AssetCorporateActionTests
     [Theory]
     [InlineData(2021, 6, 1, 2021, 2, 1)]
     [InlineData(2021, 2, 1, 2021, 6, 1)]
-    public void ReviseCorporateAction_MovingASplitAcrossADisposal_RegeneratesIt(int fromYear, int fromMonth, int fromDay, int toYear, int toMonth, int toDay)
+    public void ReviseCorporateAction_MovingASplitAcrossASale_RegeneratesIt(int fromYear, int fromMonth, int fromDay, int toYear, int toMonth, int toDay)
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         var split = CorporateAction.CreateSplit(new DateTime(fromYear, fromMonth, fromDay), 2.0m);
         asset.RecordCorporateAction(split);
         asset.RecordTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
 
         asset.ReviseCorporateAction(CorporateAction.CreateSplitWithId(split.Id, new DateTime(toYear, toMonth, toDay), 2.0m));
 
-        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        original.Status.Should().Be(RealisedGainStatus.Superseded);
     }
 
     [Fact]

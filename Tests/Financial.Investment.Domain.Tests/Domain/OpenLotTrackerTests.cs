@@ -51,7 +51,7 @@ public class OpenLotTrackerTests
 
     [Fact]
     [Trait("AC", "P50-F01-cost-basis-method-strategy-04")]
-    public void GetOpenLots_DisposalLargerThanOldestLot_SplitsAcrossNextLots()
+    public void GetOpenLots_SaleLargerThanOldestLot_SplitsAcrossNextLots()
     {
         var firstBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 5m, 0m);
         var secondBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 5m, 6m, 0m);

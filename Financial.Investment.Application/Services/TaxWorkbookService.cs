@@ -124,8 +124,8 @@ public sealed class TaxWorkbookService : ITaxWorkbookService
 
     private static TaxWorkbookEntryDTO ToEntryDto(Asset asset, TaxClassification classification, Investments investments)
     {
-        var date = classification.SourceType == SourceType.Disposal
-            ? asset.DisposalRecords.FirstOrDefault(r => r.Id == classification.SourceId)?.Date
+        var date = classification.SourceType == SourceType.RealisedGain
+            ? asset.RealisedGains.FirstOrDefault(r => r.Id == classification.SourceId)?.Date
             : asset.Credits.FirstOrDefault(c => c.Id == classification.SourceId)?.Date;
 
         var ruleLabel = classification.TaxRuleId is Guid ruleId

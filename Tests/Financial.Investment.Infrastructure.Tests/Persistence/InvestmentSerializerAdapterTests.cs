@@ -129,9 +129,9 @@ public class InvestmentSerializerAdapterTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
         TaxClassificationBackfill.Apply(investments, TestClock.Default);
-        var disposalClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.Disposal);
+        var realisedGainClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.RealisedGain);
         var creditClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.Credit);
-        creditClassification.Supersede(disposalClassification.Id);
+        creditClassification.Supersede(realisedGainClassification.Id);
 
         var json = Serializer.Serialize(investments);
         var result = Serializer.Deserialize(json);
@@ -139,14 +139,14 @@ public class InvestmentSerializerAdapterTests
         var resultAsset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
         resultAsset.TaxClassifications.Should().HaveCount(2);
 
-        var disposalResult = resultAsset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Disposal).Subject;
-        disposalResult.Jurisdiction.Should().Be(Jurisdiction.BR);
-        disposalResult.EventCategory.Should().Be(EventCategory.CapitalGain);
-        disposalResult.Proceeds.Should().Be(550m);
-        disposalResult.CostBasis.Should().Be(500m);
-        disposalResult.GainLoss.Should().Be(50m);
-        disposalResult.TaxRuleId.Should().BeNull();
-        disposalResult.Status.Should().Be(TaxClassificationStatus.Active);
+        var realisedGainResult = resultAsset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.RealisedGain).Subject;
+        realisedGainResult.Jurisdiction.Should().Be(Jurisdiction.BR);
+        realisedGainResult.EventCategory.Should().Be(EventCategory.CapitalGain);
+        realisedGainResult.Proceeds.Should().Be(550m);
+        realisedGainResult.CostBasis.Should().Be(500m);
+        realisedGainResult.GainLoss.Should().Be(50m);
+        realisedGainResult.TaxRuleId.Should().BeNull();
+        realisedGainResult.Status.Should().Be(TaxClassificationStatus.Active);
 
         var creditResult = resultAsset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Credit).Subject;
         creditResult.GrossAmount.Should().Be(100m);
@@ -154,7 +154,7 @@ public class InvestmentSerializerAdapterTests
         creditResult.NetAmount.Should().Be(90m);
         creditResult.TaxRuleId.Should().Be(rule.Id);
         creditResult.Status.Should().Be(TaxClassificationStatus.Superseded);
-        creditResult.SupersededByClassificationId.Should().Be(disposalClassification.Id);
+        creditResult.SupersededByClassificationId.Should().Be(realisedGainClassification.Id);
     }
 
     [Fact]
@@ -188,7 +188,54 @@ public class InvestmentSerializerAdapterTests
     {
         var json = Serializer.Serialize(Investments.Create());
 
-        json.Should().Contain("\"Version\": 5");
+        json.Should().Contain("\"Version\": 6");
+    }
+
+    [Theory]
+    [InlineData("ActiveBrokers")]
+    [InlineData("HistoricBrokers")]
+    public void Deserialize_Version5_RenamesDisposalRecordsKeepingIdsMethodsAndStatuses(string brokerGroup)
+    {
+        var result = Serializer.Deserialize(Version5RealisedGainDocument.Build(brokerGroup));
+
+        var brokers = brokerGroup == "ActiveBrokers" ? result.ActiveBrokers : result.HistoricBrokers;
+        var realisedGains = brokers.Single().Portfolios.Single().Assets.Single().RealisedGains;
+        realisedGains.Select(r => (r.Id, r.TransactionId, r.Method, r.Status, r.SupersededByRecordId, r.QuantitySold)).Should().BeEquivalentTo(new[]
+        {
+            (Version5RealisedGainDocument.SupersededRecordId, Version5RealisedGainDocument.SellId, CostBasisMethod.AverageCost,
+                RealisedGainStatus.Superseded, (Guid?)Version5RealisedGainDocument.ActiveRecordId, 4m),
+            (Version5RealisedGainDocument.ActiveRecordId, Version5RealisedGainDocument.SellId, CostBasisMethod.FIFO,
+                RealisedGainStatus.Active, (Guid?)null, 4m),
+        });
+    }
+
+    [Fact]
+    public void Deserialize_Version5_KeepsEachTaxClassificationLinkedToItsRealisedGain()
+    {
+        var result = Serializer.Deserialize(Version5RealisedGainDocument.Build());
+
+        var classifications = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().TaxClassifications;
+        classifications.Select(c => (c.Id, c.SourceType, c.SourceId)).Should().BeEquivalentTo(new[]
+        {
+            (Version5RealisedGainDocument.SupersededClassificationId, SourceType.RealisedGain, Version5RealisedGainDocument.SupersededRecordId),
+            (Version5RealisedGainDocument.ActiveClassificationId, SourceType.RealisedGain, Version5RealisedGainDocument.ActiveRecordId),
+        });
+    }
+
+    [Fact]
+    public void Serialize_AfterLoadingVersion5_WritesOnlyTheRealisedGainNamesAndReadsThemBack()
+    {
+        var json = Serializer.Serialize(Serializer.Deserialize(Version5RealisedGainDocument.Build()));
+
+        json.Should().Contain("\"Version\": 6")
+            .And.Contain("\"RealisedGains\"")
+            .And.Contain("\"QuantitySold\": 4")
+            .And.Contain("\"SourceType\": \"RealisedGain\"");
+        json.Should().NotContainAny("DisposalRecords", "QuantityDisposed", "\"Disposal\"", "GainLossSharesOnly");
+        Serializer.Deserialize(json).ActiveBrokers.Single().Portfolios.Single().Assets.Single().RealisedGains.Select(r => r.Id).Should().BeEquivalentTo(new[]
+        {
+            Version5RealisedGainDocument.SupersededRecordId, Version5RealisedGainDocument.ActiveRecordId,
+        });
     }
 
     [Fact]

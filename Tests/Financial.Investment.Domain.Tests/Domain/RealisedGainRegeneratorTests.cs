@@ -8,7 +8,7 @@ using FluentAssertions;
 namespace Financial.Investment.Domain.Tests;
 
 [Trait("Category", "Unit")]
-public class DisposalRecordRegeneratorTests
+public class RealisedGainRegeneratorTests
 {
     [Fact]
     [Trait("AC", "P50-F03-disposal-recalculation-policy-03")]
@@ -17,30 +17,30 @@ public class DisposalRecordRegeneratorTests
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
         original.CostBasis.Should().Be(500m);
 
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
 
-        original.Status.Should().Be(DisposalRecordStatus.Superseded);
-        var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        original.Status.Should().Be(RealisedGainStatus.Superseded);
+        var replacement = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         original.SupersededByRecordId.Should().Be(replacement.Id);
         replacement.CostBasis.Should().Be(375m);
     }
 
     [Fact]
-    public void RegenerateAsset_AnchorAfterEveryDisposal_ChangesNothing()
+    public void RegenerateAsset_AnchorAfterEverySale_ChangesNothing()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
 
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2023, 1, 1), TestClock.Default);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2023, 1, 1), TestClock.Default);
 
-        asset.DisposalRecords.Should().ContainSingle();
-        original.Status.Should().Be(DisposalRecordStatus.Active);
+        asset.RealisedGains.Should().ContainSingle();
+        original.Status.Should().Be(RealisedGainStatus.Active);
     }
 
     [Fact]
@@ -53,14 +53,14 @@ public class DisposalRecordRegeneratorTests
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m));
         portfolio.AddAsset(asset);
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
         original.CostBasis.Should().Be(750m);
 
         broker.SetCostBasisMethod(CostBasisMethod.FIFO);
-        DisposalRecordRegenerator.RegenerateBroker(broker, TestClock.Default);
+        RealisedGainRegenerator.RegenerateBroker(broker, TestClock.Default);
 
-        original.Status.Should().Be(DisposalRecordStatus.Superseded);
-        var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        original.Status.Should().Be(RealisedGainStatus.Superseded);
+        var replacement = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         replacement.CostBasis.Should().Be(500m);
     }
 
@@ -71,33 +71,33 @@ public class DisposalRecordRegeneratorTests
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 100m, 0m));
-        var first = asset.DisposalRecords.Single();
+        var first = asset.RealisedGains.Single();
 
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.FIFO, new DateTime(2021, 1, 1), TestClock.Default);
-        var second = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.FIFO, new DateTime(2021, 1, 1), TestClock.Default);
+        var second = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
 
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
-        var third = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
+        var third = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
 
-        first.Status.Should().Be(DisposalRecordStatus.Superseded);
+        first.Status.Should().Be(RealisedGainStatus.Superseded);
         first.SupersededByRecordId.Should().Be(second.Id);
-        second.Status.Should().Be(DisposalRecordStatus.Superseded);
+        second.Status.Should().Be(RealisedGainStatus.Superseded);
         second.SupersededByRecordId.Should().Be(third.Id);
-        asset.DisposalRecords.Should().HaveCount(3);
+        asset.RealisedGains.Should().HaveCount(3);
     }
 
     [Fact]
-    public void RegenerateAsset_SupersededRecord_ExcludedFromRealizedGainLoss()
+    public void RegenerateAsset_SupersededRecord_ExcludedFromRealisedGainLoss()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 100m, 0m));
 
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2020, 1, 1), TestClock.Default);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2020, 1, 1), TestClock.Default);
 
-        var active = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
-        asset.RealizedGainLoss.Should().Be(active.GainLoss);
+        var active = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
+        asset.RealisedGainLoss.Should().Be(active.GainLoss);
     }
 
     [Fact]
@@ -110,12 +110,12 @@ public class DisposalRecordRegeneratorTests
         asset.AddTransaction(buy2);
         var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 200m, 0m);
         asset.RecordTransaction(sell, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(buy2.Id, 5m) });
-        asset.DisposalRecords.Single().CostBasis.Should().Be(500m);
+        asset.RealisedGains.Single().CostBasis.Should().Be(500m);
 
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, new DateTime(2020, 1, 1), TestClock.Default);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, new DateTime(2020, 1, 1), TestClock.Default);
 
-        var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        var replacement = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         replacement.LotsConsumed.Should().ContainSingle(l => l.SourceTransactionId == buy2.Id);
         replacement.CostBasis.Should().Be(500m);
     }
@@ -128,17 +128,17 @@ public class DisposalRecordRegeneratorTests
         asset.AddTransaction(buy);
         var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 200m, 0m);
         asset.RecordTransaction(sell, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(buy.Id, 5m) });
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
 
         var shrunkBuy = Transaction.CreateWithId(
             buy.Id, buy.Date, buy.Type, 3m, buy.UnitPrice, buy.Fees, buy.Withheld, buy.Currency, buy.FxRateSnapshot);
         asset.UpdateTransaction(shrunkBuy);
 
-        Action act = () => DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, buy.Date, TestClock.Default);
+        Action act = () => RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, buy.Date, TestClock.Default);
 
         act.Should().Throw<InvestmentRuleViolationException>();
-        original.Status.Should().Be(DisposalRecordStatus.Active);
-        asset.DisposalRecords.Should().ContainSingle();
+        original.Status.Should().Be(RealisedGainStatus.Active);
+        asset.RealisedGains.Should().ContainSingle();
     }
 
     [Fact]
@@ -149,13 +149,13 @@ public class DisposalRecordRegeneratorTests
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 120m, 0m));
 
-        DisposalRecordRegenerator.RegenerateAsset(
+        RealisedGainRegenerator.RegenerateAsset(
             asset, CostBasisMethod.FIFO, DateTime.MinValue, TestClock.Default, investments: Investments.Create());
 
-        var record = asset.DisposalRecords.Should().ContainSingle(r => r.Status == DisposalRecordStatus.Active).Subject;
+        var record = asset.RealisedGains.Should().ContainSingle(r => r.Status == RealisedGainStatus.Active).Subject;
         record.CostBasis.Should().Be(500m);
-        asset.Transactions.RealizedCapitalGain.Should().Be(700m);
-        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Disposal && c.SourceId == record.Id);
+        asset.Transactions.RealisedCapitalGain.Should().Be(700m);
+        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.RealisedGain && c.SourceId == record.Id);
     }
 
     [Fact]
@@ -169,11 +169,11 @@ public class DisposalRecordRegeneratorTests
         asset.AddTransaction(buy2);
         asset.AddTransaction(sell);
 
-        DisposalRecordRegenerator.RegenerateAsset(
+        RealisedGainRegenerator.RegenerateAsset(
             asset, CostBasisMethod.SpecificId, sell.Date, TestClock.Default,
             seedTransactionId: sell.Id, seedAllocation: new[] { new SpecificLotAllocation(buy2.Id, 5m) });
 
-        var record = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        var record = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         record.LotsConsumed.Should().ContainSingle(l => l.SourceTransactionId == buy2.Id);
         record.CostBasis.Should().Be(500m);
     }
@@ -185,14 +185,14 @@ public class DisposalRecordRegeneratorTests
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
         var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 100m, 0m);
         asset.RecordTransaction(sell);
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
 
         asset.RemoveTransaction(sell.Id);
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, TestClock.Default);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, TestClock.Default);
 
-        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        original.Status.Should().Be(RealisedGainStatus.Superseded);
         original.SupersededByRecordId.Should().BeNull();
-        asset.DisposalRecords.Should().NotContain(r => r.Status == DisposalRecordStatus.Active);
+        asset.RealisedGains.Should().NotContain(r => r.Status == RealisedGainStatus.Active);
     }
 
     [Fact]
@@ -203,13 +203,13 @@ public class DisposalRecordRegeneratorTests
         var investments = Investments.Create();
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m), investments: investments);
-        var originalRecord = asset.DisposalRecords.Single();
+        var originalRecord = asset.RealisedGains.Single();
         var originalClassification = asset.TaxClassifications.Single();
 
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default, investments: investments);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default, investments: investments);
 
-        var replacementRecord = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        var replacementRecord = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         var activeClassification = asset.TaxClassifications.Single(c => c.Status == TaxClassificationStatus.Active);
 
         using (new FluentAssertions.Execution.AssertionScope())
@@ -232,7 +232,7 @@ public class DisposalRecordRegeneratorTests
         var originalClassification = asset.TaxClassifications.Single();
 
         asset.RemoveTransaction(sell.Id);
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, TestClock.Default, investments: investments);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, TestClock.Default, investments: investments);
 
         originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
         originalClassification.SupersededByClassificationId.Should().BeNull();
@@ -253,7 +253,7 @@ public class DisposalRecordRegeneratorTests
         var originalClassification = asset.TaxClassifications.Single();
 
         broker.SetCostBasisMethod(CostBasisMethod.FIFO);
-        DisposalRecordRegenerator.RegenerateBroker(broker, TestClock.Default, investments);
+        RealisedGainRegenerator.RegenerateBroker(broker, TestClock.Default, investments);
 
         originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
         asset.TaxClassifications.Should().ContainSingle(c => c.Status == TaxClassificationStatus.Active);
@@ -267,41 +267,41 @@ public class DisposalRecordRegeneratorTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
 
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
+        RealisedGainRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
 
         asset.TaxClassifications.Should().BeEmpty();
     }
 
     [Fact]
-    public void RegenerateAsset_ViaRecordCorporateAction_SplitBeforeExistingDisposal_SupersedesAndRescalesCostBasis()
+    public void RegenerateAsset_ViaRecordCorporateAction_SplitBeforeExistingSale_SupersedesAndRescalesCostBasis()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 60m, 0m));
-        var original = asset.DisposalRecords.Single();
+        var original = asset.RealisedGains.Single();
         original.CostBasis.Should().Be(500m);
 
         asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
 
-        original.Status.Should().Be(DisposalRecordStatus.Superseded);
-        var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        original.Status.Should().Be(RealisedGainStatus.Superseded);
+        var replacement = asset.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         original.SupersededByRecordId.Should().Be(replacement.Id);
         replacement.CostBasis.Should().Be(250m, "10 units at 100 become 20 units at 50 after the split, so the 5-unit sale now costs 250");
     }
 
     [Fact]
-    public void RegenerateAsset_RecordingASplitWithNoLaterDisposal_CreatesNoDisposalRecord()
+    public void RegenerateAsset_RecordingASplitWithNoLaterSale_CreatesNoRealisedGain()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
 
         asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
 
-        asset.DisposalRecords.Should().BeEmpty();
+        asset.RealisedGains.Should().BeEmpty();
     }
 
     [Fact]
-    public void RegenerateAsset_RetractCorporateAction_SpecificIdDisposalDependsOnSplitLots_RejectsWithSpecificMessageAndRollsBack()
+    public void RegenerateAsset_RetractCorporateAction_SpecificIdSaleDependsOnSplitLots_RejectsWithSpecificMessageAndRollsBack()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
         var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m);
@@ -315,12 +315,12 @@ public class DisposalRecordRegeneratorTests
         Action act = () => asset.RetractCorporateAction(split.Id, CostBasisMethod.SpecificId);
 
         act.Should().Throw<InvestmentRuleViolationException>()
-            .WithMessage("Cannot delete: a later disposal depends on lots created by this split.");
+            .WithMessage("Cannot delete: a later sale depends on lots created by this split.");
         asset.CorporateActions.Should().ContainSingle(ca => ca.Id == split.Id, "the failed delete rolled the corporate action back");
     }
 
     [Fact]
-    public void RegenerateAsset_RetractCorporateAction_SpecificIdDisposalDependsOnMergerLot_RejectsWithMergerSpecificMessageAndRollsBack()
+    public void RegenerateAsset_RetractCorporateAction_SpecificIdSaleDependsOnMergerLot_RejectsWithMergerSpecificMessageAndRollsBack()
     {
         var target = Asset.Create("Asset B", "ISIN-B", "LSE", "BBB");
         var mergerTarget = CorporateAction.CreateMergerTarget(
@@ -333,12 +333,12 @@ public class DisposalRecordRegeneratorTests
         Action act = () => target.RetractCorporateAction(mergerTarget.Id, CostBasisMethod.SpecificId);
 
         act.Should().Throw<InvestmentRuleViolationException>()
-            .WithMessage("Cannot delete: a later disposal depends on lots created by this merger.");
+            .WithMessage("Cannot delete: a later sale depends on lots created by this merger.");
         target.CorporateActions.Should().ContainSingle(ca => ca.Id == mergerTarget.Id, "the failed delete rolled the corporate action back");
     }
 
     [Fact]
-    public void RegenerateAsset_RetractCorporateAction_SpecificIdDisposalDependsOnSpinOffNewLot_RejectsWithSpinOffSpecificMessageAndRollsBack()
+    public void RegenerateAsset_RetractCorporateAction_SpecificIdSaleDependsOnSpinOffNewLot_RejectsWithSpinOffSpecificMessageAndRollsBack()
     {
         var newAsset = Asset.Create("Asset B", "ISIN-B", "LSE", "BBB");
         var spinOffNew = CorporateAction.CreateSpinOffNew(
@@ -351,24 +351,24 @@ public class DisposalRecordRegeneratorTests
         Action act = () => newAsset.RetractCorporateAction(spinOffNew.Id, CostBasisMethod.SpecificId);
 
         act.Should().Throw<InvestmentRuleViolationException>()
-            .WithMessage("Cannot delete: a later disposal depends on lots created by this spin-off.");
+            .WithMessage("Cannot delete: a later sale depends on lots created by this spin-off.");
         newAsset.CorporateActions.Should().ContainSingle(ca => ca.Id == spinOffNew.Id, "the failed delete rolled the corporate action back");
     }
 
     [Fact]
-    public void RegenerateAsset_DisposalOnParentAfterSpinOff_RecomputesAtTheReducedAverageCost()
+    public void RegenerateAsset_SaleOnParentAfterSpinOff_RecomputesAtTheReducedAverageCost()
     {
         var parent = Asset.Create("Asset A", "ISIN-A", "BVMF", "AAA");
         parent.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         parent.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        var original = parent.DisposalRecords.Single();
+        var original = parent.RealisedGains.Single();
         original.CostBasis.Should().Be(500m);
 
         parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
             new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "Asset B", 1m, 150m));
 
-        original.Status.Should().Be(DisposalRecordStatus.Superseded);
-        var replacement = parent.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        original.Status.Should().Be(RealisedGainStatus.Superseded);
+        var replacement = parent.RealisedGains.Single(r => r.Status == RealisedGainStatus.Active);
         original.SupersededByRecordId.Should().Be(replacement.Id);
         replacement.CostBasis.Should().Be(425m, "10 units at 100 become 10 units at 85 after the 15% spin-off allocation, so the 5-unit sale now costs 425");
     }

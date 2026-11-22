@@ -265,7 +265,7 @@ public class PortfolioDashboardAggregateAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P52-F01-dashboard-aggregate-03")]
     [Trait("AC", "P50-F03-disposal-recalculation-policy-01")]
     [Trait("AC", "P50-F03-disposal-recalculation-policy-04")]
-    public async Task RealisedGainLoss_CountsOnlyTheActiveDisposalRecord_NeverTheSupersededOne()
+    public async Task RealisedGainLoss_CountsOnlyTheActiveRealisedGain_NeverTheSupersededOne()
     {
         await SeedSecondBrokerAsync();
         var baseline = await Client.GetFromJsonAsync<PortfolioDashboardDTO>(DashboardRoute);
@@ -278,14 +278,14 @@ public class PortfolioDashboardAggregateAcceptanceTests : ApiEndpointTests
 
         var asset = await Client.GetFromJsonAsync<AssetDetailsDTO>(
             $"/api/v1/financial/assets/{NewBroker}/{NewPortfolio}/{NewAsset}");
-        var activeRecords = asset!.DisposalRecords.Where(record => record.Status == DisposalRecordStatus.Active).ToList();
+        var activeRecords = asset!.DisposalRecords.Where(record => record.Status == RealisedGainStatus.Active).ToList();
         var supersededGainLoss = asset.DisposalRecords
-            .Where(record => record.Status == DisposalRecordStatus.Superseded)
+            .Where(record => record.Status == RealisedGainStatus.Superseded)
             .Sum(record => record.GainLoss);
 
         using var _ = new AssertionScope();
         activeRecords.Should().ContainSingle();
-        supersededGainLoss.Should().Be(20m, "the original disposal was superseded, not rewritten");
+        supersededGainLoss.Should().Be(20m, "the original sale was superseded, not rewritten");
         (beforeSupersede!.RealisedGainLoss - baseline!.RealisedGainLoss).Should().Be(20m);
         (afterSupersede!.RealisedGainLoss - baseline.RealisedGainLoss).Should().Be(
             activeRecords[0].GainLoss, "only the surviving Active record counts");

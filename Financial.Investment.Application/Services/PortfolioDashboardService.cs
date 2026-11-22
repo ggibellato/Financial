@@ -175,12 +175,12 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         return new ActiveScopeTotals(marketValue, invested, unrealisedGainLoss, unvaluedHoldingCount);
     }
 
-    /// <summary>Never read <see cref="Asset.RealizedGainLoss"/> here: it also folds in every credit's
+    /// <summary>Never read <see cref="Asset.RealisedGainLoss"/> here: it also folds in every credit's
     /// gross value, which this DTO already reports separately as income.</summary>
     private static decimal SumRealisedGainLoss(IReadOnlyList<PortfolioHolding> holdings) =>
-        holdings.Sum(holding => holding.Asset.DisposalRecords
-            .Where(disposal => disposal.Status == DisposalRecordStatus.Active)
-            .Sum(disposal => disposal.GainLoss));
+        holdings.Sum(holding => holding.Asset.RealisedGains
+            .Where(realisedGain => realisedGain.Status == RealisedGainStatus.Active)
+            .Sum(realisedGain => realisedGain.GainLoss));
 
     private static (decimal Ytd, decimal Lifetime) SumIncome(IReadOnlyList<PortfolioHolding> holdings, DateOnly asOf)
     {

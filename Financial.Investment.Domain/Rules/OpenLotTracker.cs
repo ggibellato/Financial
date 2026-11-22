@@ -7,7 +7,7 @@ namespace Financial.Investment.Domain.Rules;
 
 public sealed record OpenLot(Guid SourceTransactionId, DateTime Date, decimal RemainingQuantity, decimal UnitCost);
 
-// Depletes oldest-first even for SpecificId brokers, as a fallback until DisposalRecord.LotsConsumed exists.
+// Depletes oldest-first even for SpecificId brokers, as a fallback until RealisedGain.LotsConsumed exists.
 public static class OpenLotTracker
 {
     private sealed class MutableLot

@@ -8,19 +8,19 @@ namespace Financial.Investment.Domain.Tests;
 public class TaxClassificationTests
 {
     [Fact]
-    public void CreateForDisposal_SetsProperties()
+    public void CreateForRealisedGain_SetsProperties()
     {
-        var disposalId = Guid.NewGuid();
+        var realisedGainId = Guid.NewGuid();
         var ruleId = Guid.NewGuid();
 
-        var classification = TaxClassification.CreateForDisposal(
-            disposalId, Jurisdiction.BR, "2026", 1000m, 600m, 400m, CalculationStatus.Final, ruleId, TestClock.Default);
+        var classification = TaxClassification.CreateForRealisedGain(
+            realisedGainId, Jurisdiction.BR, "2026", 1000m, 600m, 400m, CalculationStatus.Final, ruleId, TestClock.Default);
 
         using (new AssertionScope())
         {
             classification.Id.Should().NotBeEmpty();
-            classification.SourceType.Should().Be(SourceType.Disposal);
-            classification.SourceId.Should().Be(disposalId);
+            classification.SourceType.Should().Be(SourceType.RealisedGain);
+            classification.SourceId.Should().Be(realisedGainId);
             classification.Jurisdiction.Should().Be(Jurisdiction.BR);
             classification.TaxYear.Should().Be("2026");
             classification.EventCategory.Should().Be(EventCategory.CapitalGain);

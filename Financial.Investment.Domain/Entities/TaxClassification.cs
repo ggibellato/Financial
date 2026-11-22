@@ -59,8 +59,8 @@ public sealed class TaxClassification
         CreatedAt = createdAt;
     }
 
-    public static TaxClassification CreateForDisposal(
-        Guid disposalRecordId,
+    public static TaxClassification CreateForRealisedGain(
+        Guid realisedGainId,
         Jurisdiction jurisdiction,
         string taxYear,
         decimal proceeds,
@@ -70,7 +70,7 @@ public sealed class TaxClassification
         Guid? taxRuleId,
         DateTimeOffset createdAt) =>
         new(
-            Guid.NewGuid(), SourceType.Disposal, disposalRecordId, jurisdiction, taxYear, EventCategory.CapitalGain,
+            Guid.NewGuid(), SourceType.RealisedGain, realisedGainId, jurisdiction, taxYear, EventCategory.CapitalGain,
             proceeds, costBasis, gainLoss, null, null, null, calculationStatus, taxRuleId, createdAt);
 
     public static TaxClassification CreateForCredit(

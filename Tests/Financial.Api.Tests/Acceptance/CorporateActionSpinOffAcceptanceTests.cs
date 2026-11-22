@@ -93,8 +93,8 @@ public class CorporateActionSpinOffAcceptanceTests : ApiEndpointTests
 
         sell.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await sell.Content.ReadFromJsonAsync<AssetDetailsDTO>();
-        var disposal = asset!.DisposalRecords.Should().ContainSingle(d => d.Date == new DateTime(2024, 8, 1)).Subject;
-        var lot = disposal.LotsConsumed.Should().ContainSingle().Subject;
+        var realisedGain = asset!.DisposalRecords.Should().ContainSingle(d => d.Date == new DateTime(2024, 8, 1)).Subject;
+        var lot = realisedGain.LotsConsumed.Should().ContainSingle().Subject;
         lot.Quantity.Should().Be(8m, "a spin-off never rescales lot quantity");
         lot.UnitCost.Should().Be(85m, "the pre-spin-off 100 unit cost reduced by the 15% allocation");
     }
@@ -168,14 +168,14 @@ public class CorporateActionSpinOffAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P53-F03-spinoff-07")]
-    public async Task NoDisposalRecordIsCreatedOnTheParentAsset()
+    public async Task NoRealisedGainIsCreatedOnTheParentAsset()
     {
         var before = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
-        // BCIA11's seeded 2024-06-01 sell has no persisted DisposalRecord, so it is backfilled the
-        // moment the host loads (InvestmentLoader.LoadSync -> DisposalRecordBackfill), independently
+        // BCIA11's seeded 2024-06-01 sell has no persisted RealisedGain, so it is backfilled the
+        // moment the host loads (InvestmentLoader.LoadSync -> RealisedGainBackfill), independently
         // of this feature. The spin-off's effective date (2024-07-01) is after that sell, so recording
         // it must leave that pre-existing record completely untouched and create no new one.
-        var preExisting = before!.DisposalRecords.Should().ContainSingle(d => d.Status == DisposalRecordStatus.Active).Subject;
+        var preExisting = before!.DisposalRecords.Should().ContainSingle(d => d.Status == RealisedGainStatus.Active).Subject;
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/spin-off", new CorporateActionSpinOffCreateDTO
         {
@@ -191,7 +191,7 @@ public class CorporateActionSpinOffAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CorporateActionSpinOffResultDTO>();
-        result!.Parent!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == DisposalRecordStatus.Active,
-            "reducing cost basis without reducing quantity is not a disposal");
+        result!.Parent!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == RealisedGainStatus.Active,
+            "reducing cost basis without reducing quantity is not a sale");
     }
 }

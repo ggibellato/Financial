@@ -116,7 +116,7 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P53-F02-merger-05")]
-    public async Task NoDisposalRecordIsCreatedForTheConvertedPortion()
+    public async Task NoRealisedGainIsCreatedForTheConvertedPortion()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
         {
@@ -160,14 +160,14 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P53-F02-merger-07")]
-    public async Task AnExistingDisposalRecordOnTheSourceAssetPredatingTheMerger_IsLeftByteIdenticalAfterTheMergerIsRecorded()
+    public async Task AnExistingRealisedGainOnTheSourceAssetPredatingTheMerger_IsLeftByteIdenticalAfterTheMergerIsRecorded()
     {
         var before = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
-        // BCIA11's seeded 2024-06-01 sell has no persisted DisposalRecord, so it is backfilled the
-        // moment the host loads (InvestmentLoader.LoadSync -> DisposalRecordBackfill), independently
+        // BCIA11's seeded 2024-06-01 sell has no persisted RealisedGain, so it is backfilled the
+        // moment the host loads (InvestmentLoader.LoadSync -> RealisedGainBackfill), independently
         // of this feature. The merger's effective date (2024-07-01) is after that sell, so recording
         // it must leave that pre-existing record completely untouched.
-        var preExisting = before!.DisposalRecords.Should().ContainSingle(d => d.Status == DisposalRecordStatus.Active).Subject;
+        var preExisting = before!.DisposalRecords.Should().ContainSingle(d => d.Status == RealisedGainStatus.Active).Subject;
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
         {
@@ -182,12 +182,12 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CorporateActionMergerResultDTO>();
-        result!.Source!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == DisposalRecordStatus.Active);
+        result!.Source!.DisposalRecords.Should().ContainSingle(d => d.Id == preExisting.Id && d.Status == RealisedGainStatus.Active);
     }
 
     [Fact]
     [Trait("AC", "P53-F02-merger-08")]
-    public async Task CashInLieuAmount_WhenEntered_IsStoredOnTheMergerRecord_AndDoesNotCreateAnyDisposalRecord()
+    public async Task CashInLieuAmount_WhenEntered_IsStoredOnTheMergerRecord_AndDoesNotCreateAnyRealisedGain()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
         {

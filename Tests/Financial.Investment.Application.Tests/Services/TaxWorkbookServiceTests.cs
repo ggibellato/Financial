@@ -39,13 +39,13 @@ public class TaxWorkbookServiceTests
     }
 
     [Fact]
-    public void GetWorkbook_ExcludesASupersededDisposalClassification()
+    public void GetWorkbook_ExcludesASupersededSaleClassification()
     {
         var asset = SeedAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
         var sell = Transaction.Create(new DateTime(2026, 6, 1), Transaction.TransactionType.Sell, 5m, 100m, 0m);
         asset.RecordTransaction(sell, investments: _repository.Investments);
-        var taxYear = asset.DisposalRecords.Single().TaxYear;
+        var taxYear = asset.RealisedGains.Single().TaxYear;
 
         asset.RetractTransaction(sell.Id, investments: _repository.Investments);
 
@@ -137,18 +137,18 @@ public class TaxWorkbookServiceTests
     }
 
     [Fact]
-    public void GetWorkbook_DisposalSourcedEntry_ResolvesDateAndEvidenceReferenceFromTheDisposalRecord()
+    public void GetWorkbook_SaleSourcedEntry_ResolvesDateAndEvidenceReferenceFromTheRealisedGain()
     {
         var asset = SeedAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2026, 6, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m), investments: _repository.Investments);
-        var disposalRecord = asset.DisposalRecords.Single();
+        var realisedGain = asset.RealisedGains.Single();
 
-        var result = CreateService().GetWorkbook("BR", disposalRecord.TaxYear);
+        var result = CreateService().GetWorkbook("BR", realisedGain.TaxYear);
 
         var entry = result.Entries.Should().ContainSingle().Subject;
-        entry.Date.Should().Be(disposalRecord.Date);
-        entry.EvidenceReference.Should().Be(disposalRecord.Id);
+        entry.Date.Should().Be(realisedGain.Date);
+        entry.EvidenceReference.Should().Be(realisedGain.Id);
     }
 
     [Fact]

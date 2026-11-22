@@ -33,8 +33,8 @@ internal static class PortfolioAssetSummaryBuilder
         var totals = AssetTotals.For(asset);
         var valuation = holdingValuationService.GetValuation(asset, scope);
         var bases = AssetAmountBases.For(scope, totals, valuation.MarketValue);
-        var realizedGainLoss = asset.RealizedGainLoss;
-        var realizedGainLossSharesOnly = asset.RealizedGainLossSharesOnly;
+        var realisedGainLoss = asset.RealisedGainLoss;
+        var realisedGainLossSharesOnly = asset.RealisedGainLossSharesOnly;
         var averageSellPrice = asset.AverageSellPrice;
 
         var firstBuyDate = asset.Transactions
@@ -45,13 +45,13 @@ internal static class PortfolioAssetSummaryBuilder
 
         var creditsAnalysis = CreditsAnalysisCalculator.Calculate(asset.Credits, bases.IncomeYieldBasis, today);
         var result = scope == InvestmentScope.Historic
-            ? PositionResultCalculator.ForClosedPosition(realizedGainLoss, totals.TotalCredits, totals.TotalBought)
+            ? PositionResultCalculator.ForClosedPosition(realisedGainLoss, totals.TotalCredits, totals.TotalBought)
             : PositionResultCalculator.ForOpenPosition(valuation.UnrealisedGain, valuation.CostOfUnitsHeld, totals.TotalCredits);
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange, asset.Class,
             firstBuyDate, asset.Quantity, asset.AveragePrice, averageSellPrice,
-            totals.TotalBought, totals.TotalSold, bases.InvestedAmount, realizedGainLoss, realizedGainLossSharesOnly, bases.WeightBasis,
+            totals.TotalBought, totals.TotalSold, bases.InvestedAmount, realisedGainLoss, realisedGainLossSharesOnly, bases.WeightBasis,
             totals.TotalCredits, valuation, result,
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
             creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
@@ -73,8 +73,8 @@ internal static class PortfolioAssetSummaryBuilder
             TotalBought = c.TotalBought,
             TotalSold = c.TotalSold,
             TotalInvested = c.TotalInvested,
-            RealizedGainLoss = c.RealizedGainLoss,
-            RealizedGainLossSharesOnly = c.RealizedGainLossSharesOnly,
+            RealizedGainLoss = c.RealisedGainLoss,
+            RealizedGainLossSharesOnly = c.RealisedGainLossSharesOnly,
             PortfolioWeight = weight,
             MarketValue = c.Valuation.MarketValue,
             CostOfUnitsHeld = c.Valuation.CostOfUnitsHeld,
@@ -105,7 +105,7 @@ internal static class PortfolioAssetSummaryBuilder
     private sealed record AssetComputedData(
         string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
-        decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal RealizedGainLossSharesOnly, decimal? WeightBasis,
+        decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealisedGainLoss, decimal RealisedGainLossSharesOnly, decimal? WeightBasis,
         decimal TotalCredits, HoldingValuation Valuation, PositionResult Result,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,

@@ -95,8 +95,8 @@ public sealed class NavigationService : INavigationService
                 .OrderByDescending(p => p.Date)
                 .ToList();
 
-            var disposalRecords = asset.DisposalRecords
-                .Select(NavigationMapper.MapDisposalRecord)
+            var realisedGains = asset.RealisedGains
+                .Select(NavigationMapper.MapRealisedGain)
                 .ToList();
 
             var corporateActions = asset.CorporateActions
@@ -143,8 +143,8 @@ public sealed class NavigationService : INavigationService
                 TotalBought = totalBought,
                 TotalSold = totalSold,
                 TotalCredits = totalCredits,
-                RealizedGainLoss = asset.RealizedGainLoss,
-                RealizedGainLossSharesOnly = asset.RealizedGainLossSharesOnly,
+                RealizedGainLoss = asset.RealisedGainLoss,
+                RealizedGainLossSharesOnly = asset.RealisedGainLossSharesOnly,
                 MarketValue = valuation.MarketValue,
                 CostOfUnitsHeld = valuation.CostOfUnitsHeld,
                 UnrealisedGain = valuation.UnrealisedGain,
@@ -157,7 +157,7 @@ public sealed class NavigationService : INavigationService
                 Transactions = transactions,
                 Credits = credits,
                 PriceSnapshots = priceSnapshots,
-                DisposalRecords = disposalRecords,
+                DisposalRecords = realisedGains,
                 CorporateActions = corporateActions,
                 CostBasisMethod = costBasisMethod,
                 TaxJurisdictions = taxJurisdictions

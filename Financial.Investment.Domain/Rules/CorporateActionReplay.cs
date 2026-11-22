@@ -20,7 +20,7 @@ public sealed record CorporateActionReplayStep(CorporateAction CorporateAction) 
     public override DateTime Date => CorporateAction.EffectiveDate;
 }
 
-// Every replay consumer (position, lots, disposal calc) shares this ordering instead of re-deriving it.
+// Every replay consumer (position, lots, sale calc) shares this ordering instead of re-deriving it.
 public static class CorporateActionReplay
 {
     public static IEnumerable<ReplayStep> Merge(IEnumerable<Transaction> transactions, IEnumerable<CorporateAction> corporateActions)
@@ -71,7 +71,7 @@ public static class CorporateActionReplay
             _ => quantity
         };
 
-    // Shared by every average-cost position replay (a running "as of" preview and disposal cost-basis
+    // Shared by every average-cost position replay (a running "as of" preview and sale cost-basis
     // calculation both need the same quantity/average-price fold); stopBefore lets a caller cut the
     // replay short instead of always walking the whole sequence.
     public static (decimal Quantity, decimal AveragePrice) ReplayAveragePosition(

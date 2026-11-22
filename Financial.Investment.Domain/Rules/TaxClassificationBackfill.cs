@@ -29,21 +29,21 @@ public static class TaxClassificationBackfill
 
     private static void ApplyToAsset(Asset asset, Investments investments, DateTimeOffset createdAt, List<TaxClassificationBackfillFailure> failures)
     {
-        var classifiedDisposalIds = asset.TaxClassifications
-            .Where(c => c.SourceType == SourceType.Disposal)
+        var classifiedRealisedGainIds = asset.TaxClassifications
+            .Where(c => c.SourceType == SourceType.RealisedGain)
             .Select(c => c.SourceId)
             .ToHashSet();
 
-        foreach (var record in asset.DisposalRecords.Where(r => r.Status == DisposalRecordStatus.Active))
+        foreach (var record in asset.RealisedGains.Where(r => r.Status == RealisedGainStatus.Active))
         {
-            if (classifiedDisposalIds.Contains(record.Id))
+            if (classifiedRealisedGainIds.Contains(record.Id))
             {
                 continue;
             }
 
             try
             {
-                asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(record, investments, createdAt));
+                asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForRealisedGain(record, investments, createdAt));
             }
             catch (Exception ex)
             {

@@ -218,7 +218,7 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
-    public async Task DeleteCorporateActionAsync_WhenALaterSpecificIdDisposalDependsOnTheSplitLots_ThrowsWithSpecificMessageAndWritesNothing()
+    public async Task DeleteCorporateActionAsync_WhenALaterSpecificIdSaleDependsOnTheSplitLots_ThrowsWithSpecificMessageAndWritesNothing()
     {
         var specificIdBroker = Broker.Create("XPI", "BRL");
         specificIdBroker.SetCostBasisMethod(CostBasisMethod.SpecificId);
@@ -244,7 +244,7 @@ public class CorporateActionServiceTests
         });
 
         (await act.Should().ThrowAsync<InvestmentRuleViolationException>())
-            .WithMessage("Cannot delete: a later disposal depends on lots created by this split.");
+            .WithMessage("Cannot delete: a later sale depends on lots created by this split.");
         asset.CorporateActions.Should().ContainSingle();
         _repository.WriteCallCount.Should().Be(0);
     }
@@ -476,7 +476,7 @@ public class CorporateActionServiceTests
         });
 
         (await act.Should().ThrowAsync<InvestmentRuleViolationException>())
-            .WithMessage("Cannot delete: a later disposal depends on lots created by this merger.");
+            .WithMessage("Cannot delete: a later sale depends on lots created by this merger.");
         source.CorporateActions.Should().ContainSingle().Which.Id.Should().Be(sourceActionId);
         source.Quantity.Should().Be(0m, "the restored merger still closes the source position");
         target.CorporateActions.Should().ContainSingle();

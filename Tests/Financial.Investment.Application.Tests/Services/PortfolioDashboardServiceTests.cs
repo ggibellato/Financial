@@ -59,7 +59,7 @@ public class PortfolioDashboardServiceTests
     }
 
     [Fact]
-    public async Task GetDashboardAsync_RealisedGainLoss_SumsActiveDisposalRecordsAcrossBothScopes()
+    public async Task GetDashboardAsync_RealisedGainLoss_SumsActiveRealisedGainsAcrossBothScopes()
     {
         SeedInvestments(
             active: [MakeBroker("XPI", "BRL", DisposedAsset("AAAA", 10m, 10m, 4m, 15m))],
@@ -71,7 +71,7 @@ public class PortfolioDashboardServiceTests
     }
 
     [Fact]
-    public async Task GetDashboardAsync_RealisedGainLoss_ExcludesSupersededDisposalRecords()
+    public async Task GetDashboardAsync_RealisedGainLoss_ExcludesSupersededRealisedGains()
     {
         var asset = DisposedAsset("AAAA", 10m, 10m, 4m, 15m);
         asset.RecordTransaction(Transaction.Create(new DateTime(2025, 3, 1), Transaction.TransactionType.Buy, 10m, 20m, 0m));
@@ -80,14 +80,14 @@ public class PortfolioDashboardServiceTests
         var result = await CreateService().GetDashboardAsync();
 
         using var _ = new AssertionScope();
-        asset.DisposalRecords.Should().Contain(record => record.Status == DisposalRecordStatus.Superseded);
+        asset.RealisedGains.Should().Contain(record => record.Status == RealisedGainStatus.Superseded);
         result.RealisedGainLoss.Should().Be(
-            asset.DisposalRecords.Single(record => record.Status == DisposalRecordStatus.Active).GainLoss);
+            asset.RealisedGains.Single(record => record.Status == RealisedGainStatus.Active).GainLoss);
         result.RealisedGainLoss.Should().NotBe(20m, "the superseded record's own gain must not be counted as well");
     }
 
     [Fact]
-    public async Task GetDashboardAsync_RealisedGainLoss_DoesNotDoubleCountCreditsViaAssetRealizedGainLoss()
+    public async Task GetDashboardAsync_RealisedGainLoss_DoesNotDoubleCountCreditsViaAssetRealisedGainLoss()
     {
         var asset = DisposedAsset("AAAA", 10m, 10m, 4m, 15m);
         asset.AddCredit(Credit.Create(new DateTime(2025, 7, 1), Credit.CreditType.Dividend, 100m));
@@ -96,7 +96,7 @@ public class PortfolioDashboardServiceTests
         var result = await CreateService().GetDashboardAsync();
 
         using var _ = new AssertionScope();
-        asset.RealizedGainLoss.Should().Be(120m, "the entity property folds the credit's gross value in");
+        asset.RealisedGainLoss.Should().Be(120m, "the entity property folds the credit's gross value in");
         result.RealisedGainLoss.Should().Be(20m);
         result.IncomeLifetime.Should().Be(100m, "the credit is reported as income, once");
     }

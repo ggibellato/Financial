@@ -12,7 +12,7 @@ internal static class InvestmentDataMigrations
 {
     // Version 5's step (SharesForDividend backfill) needs domain-level lot tracking, not raw JSON,
     // so InvestmentSerializerAdapter applies it after deserialization instead of adding a step here.
-    public const int CurrentVersion = 5;
+    public const int CurrentVersion = 6;
 
     private static readonly string[] BrokerGroupNames = ["ActiveBrokers", "HistoricBrokers"];
 
@@ -32,7 +32,51 @@ internal static class InvestmentDataMigrations
         {
             BackfillCurrencyFromBroker(root);
         }
+
+        if (fromVersion < 6)
+        {
+            RenameDisposalsToRealisedGains(root);
+        }
     }
+
+    private static void RenameDisposalsToRealisedGains(JsonObject root)
+    {
+        foreach (var brokerGroupName in BrokerGroupNames)
+        {
+            foreach (var asset in EnumerateAssets(root, brokerGroupName))
+            {
+                RenameProperty(asset, "DisposalRecords", "RealisedGains");
+                asset.Remove("RealizedGainLossSharesOnly");
+
+                foreach (var realisedGain in EnumerateObjects(asset, "RealisedGains"))
+                {
+                    RenameProperty(realisedGain, "QuantityDisposed", "QuantitySold");
+                }
+
+                foreach (var classification in EnumerateObjects(asset, "TaxClassifications"))
+                {
+                    if (classification["SourceType"]?.GetValue<string>() == "Disposal")
+                    {
+                        classification["SourceType"] = "RealisedGain";
+                    }
+                }
+            }
+        }
+    }
+
+    private static void RenameProperty(JsonObject owner, string from, string to)
+    {
+        if (!owner.TryGetPropertyValue(from, out var value))
+        {
+            return;
+        }
+
+        owner.Remove(from);
+        owner[to] = value;
+    }
+
+    private static IEnumerable<JsonObject> EnumerateObjects(JsonObject owner, string collectionName) =>
+        owner[collectionName] is JsonArray items ? items.OfType<JsonObject>() : [];
 
     /// <summary>
     /// Sets every Transaction's and Credit's "Currency" from its own broker's "Currency" (P49 F02),

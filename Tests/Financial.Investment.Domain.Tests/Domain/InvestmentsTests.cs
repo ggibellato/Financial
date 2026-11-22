@@ -147,7 +147,7 @@ public class InvestmentsTests
         // The history is the whole reason a closed asset is kept; archiving must not disturb it.
         var investments = CreateInvestmentsWithClosedAsset(withHistoricCounterpart: true);
         var asset = investments.FindActiveBroker("XPI")!.FindPortfolio("Default")!.FindAsset("VOD")!;
-        var realized = asset.RealizedGainLoss;
+        var realised = asset.RealisedGainLoss;
 
         investments.ArchiveAsset("XPI", "Default", "VOD", "Closed");
 
@@ -157,7 +157,7 @@ public class InvestmentsTests
             archived.Should().BeSameAs(asset);
             archived.Transactions.Count.Should().Be(2);
             archived.Credits.Should().ContainSingle();
-            archived.RealizedGainLoss.Should().Be(realized);
+            archived.RealisedGainLoss.Should().Be(realised);
             archived.Quantity.Should().Be(0);
         }
     }

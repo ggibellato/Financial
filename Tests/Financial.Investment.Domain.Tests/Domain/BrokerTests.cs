@@ -108,7 +108,7 @@ public class BrokerTests
 
         var quantity = asset.Quantity;
         var averagePrice = asset.AveragePrice;
-        var realizedGainLoss = asset.RealizedGainLoss;
+        var realisedGainLoss = asset.RealisedGainLoss;
         var transactionCount = asset.Transactions.Count;
         var creditCount = asset.Credits.Count;
         var priceCount = asset.PriceSnapshots.Count;
@@ -120,7 +120,7 @@ public class BrokerTests
         {
             moved.Quantity.Should().Be(quantity);
             moved.AveragePrice.Should().Be(averagePrice);
-            moved.RealizedGainLoss.Should().Be(realizedGainLoss);
+            moved.RealisedGainLoss.Should().Be(realisedGainLoss);
             moved.Transactions.Count.Should().Be(transactionCount);
             moved.Credits.Count.Should().Be(creditCount);
             moved.PriceSnapshots.Count.Should().Be(priceCount);

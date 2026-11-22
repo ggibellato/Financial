@@ -107,7 +107,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetBrokerSummary_ScopeHistoric_ReturnsRealizedFromHistoricBrokerOnly()
+    public async Task GetBrokerSummary_ScopeHistoric_ReturnsRealisedFromHistoricBrokerOnly()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI?scope=historic");
 
@@ -142,7 +142,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
         var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
         items.Should().NotBeNull();
         items!.Should().ContainSingle(i => i.AssetName == "CLOSEDASSET");
-        // CLOSEDASSET: bought 5 x 60 = 300, sold 5 x 50 = 250, no credits — RealizedGainLoss = 250 - 300 + 0 = -50
+        // CLOSEDASSET: bought 5 x 60 = 300, sold 5 x 50 = 250, no credits — RealisedGainLoss = 250 - 300 + 0 = -50
         items!.Single().RealizedGainLoss.Should().Be(-50m);
         items!.Single().PortfolioWeight.Should().Be(100m);
     }

@@ -17,7 +17,7 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Credit),
         typeof(AssetPriceSnapshot),
         typeof(FxRateSnapshot),
-        typeof(DisposalRecord),
+        typeof(RealisedGain),
         typeof(TaxRule),
         typeof(TaxClassification),
         typeof(CorporateAction)
@@ -28,14 +28,15 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(Asset), nameof(Asset.AveragePrice)),
         (typeof(Asset), nameof(Asset.Quantity)),
         (typeof(Asset), nameof(Asset.AverageSellPrice)),
-        (typeof(Asset), nameof(Asset.RealizedGainLoss)),
+        (typeof(Asset), nameof(Asset.RealisedGainLoss)),
+        (typeof(Asset), nameof(Asset.RealisedGainLossSharesOnly)),
         (typeof(Asset), nameof(Asset.PositionType)),
         (typeof(Portfolio), nameof(Portfolio.IsEmpty)),
         (typeof(Transaction), nameof(Transaction.NetCash)),
         (typeof(Credit), nameof(Credit.NetAmount)),
         (typeof(AssetPriceSnapshot), nameof(AssetPriceSnapshot.IsManual)),
-        (typeof(DisposalRecord), nameof(DisposalRecord.CostBasis)),
-        (typeof(DisposalRecord), nameof(DisposalRecord.GainLoss))
+        (typeof(RealisedGain), nameof(RealisedGain.CostBasis)),
+        (typeof(RealisedGain), nameof(RealisedGain.GainLoss))
     ];
 
     public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)

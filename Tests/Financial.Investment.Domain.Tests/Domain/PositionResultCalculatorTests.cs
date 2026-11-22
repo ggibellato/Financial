@@ -45,7 +45,7 @@ public class PositionResultCalculatorTests
     [Fact]
     public void ForClosedPosition_ExcludesTheCreditsOnlyFromTheResultPercent()
     {
-        var result = PositionResultCalculator.ForClosedPosition(realizedGainLoss: 60m, totalCredits: 20m, totalBought: 400m);
+        var result = PositionResultCalculator.ForClosedPosition(realisedGainLoss: 60m, totalCredits: 20m, totalBought: 400m);
 
         result.ResultPercent.Should().Be(10m);
         result.ResultWithCreditsPercent.Should().Be(15m);
@@ -54,7 +54,7 @@ public class PositionResultCalculatorTests
     [Fact]
     public void ForClosedPosition_WithNothingBought_IsUnavailable()
     {
-        var result = PositionResultCalculator.ForClosedPosition(realizedGainLoss: 5m, totalCredits: 5m, totalBought: 0m);
+        var result = PositionResultCalculator.ForClosedPosition(realisedGainLoss: 5m, totalCredits: 5m, totalBought: 0m);
 
         result.ResultPercent.Should().BeNull();
         result.ResultWithCreditsPercent.Should().BeNull();
