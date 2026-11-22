@@ -205,6 +205,10 @@ inventing a new one.
   field and takes focus instead of the first field; with one invalid field,
   focus goes straight to it.
   The inline Settlement entry form (`SettlementEntryForm`) does the same.
+  Both use `useFieldErrorSummary`: the summary drops each field once it is
+  fixed and disappears when fewer than two remain or the form switches mode,
+  so it never lists errors that are gone. Give a new inline form the same
+  hook rather than copying the submit sequence.
 - Make messages specific and actionable.
 - Example: “Enter a quantity greater than 0.”
 - Do not use only “Invalid value” or “Required.”

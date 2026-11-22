@@ -21,3 +21,8 @@ export function getCreateFormDate(dateKey: string, viewedMonth?: { year: number;
   if (viewedMonthValue >= today.slice(0, 7)) return today
   return lastDayOfMonthIsoDate(viewedMonth.year, viewedMonth.month)
 }
+
+export function notAfterToday(date: string): string {
+  const today = todayIsoDate()
+  return date > today ? today : date
+}

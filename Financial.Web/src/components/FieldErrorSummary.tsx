@@ -1,13 +1,7 @@
 import { forwardRef, useId } from 'react'
 import { Link, MessageBar, MessageBarBody, MessageBarTitle, makeStyles, tokens } from '@fluentui/react-components'
 import type { FieldError } from '../utils/fieldErrors'
-import { EDITABLE_FIELD } from '../utils/focus'
-
-function focusField(fieldId: string) {
-  const field = document.getElementById(fieldId)
-  const target = field?.matches(EDITABLE_FIELD) ? field : (field?.querySelector<HTMLElement>(EDITABLE_FIELD) ?? field)
-  target?.focus()
-}
+import { focusField } from '../utils/focus'
 
 const useStyles = makeStyles({
   root: {

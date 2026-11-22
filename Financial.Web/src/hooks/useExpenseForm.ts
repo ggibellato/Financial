@@ -2,8 +2,8 @@ import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
 import type { BankOption, CategoryDto, ExpenseDto } from '../api/types'
-import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
-import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { getSaveErrorMessage, parseValidatedNumber, positiveAmount } from '../utils/formatters'
+import { getCreateFormDate, getStoredDefault, notAfterToday, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { parseRoundUpAmount, ROUND_UP_RANGE_MESSAGE, roundsUp, suggestRoundUpAmount } from '../utils/roundUp'
 import { selectableBanks } from '../utils/selectableBanks'
@@ -18,11 +18,6 @@ const DATE_KEY = 'expense.date'
 const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
 const MISSING_CARD_MESSAGE = "Add charges from the card's account screen."
 const CATEGORY_KEY = 'expense.categoryId'
-
-function notAfterToday(date: string): string {
-  const today = todayIsoDate()
-  return date > today ? today : date
-}
 
 const EDITABLE_FIELDS = [
   'date',

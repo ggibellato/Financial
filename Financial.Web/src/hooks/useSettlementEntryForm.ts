@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, SettlementEntryDto } from '../api/types'
-import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
+import { getCreateFormDate, notAfterToday, setStoredDefault } from '../utils/createFormDefaults'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
-import { formatCurrency, formatMonthInputValue, formatStatementMonthLabel, getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate, toPence } from '../utils/formatters'
+import { formatCurrency, formatMonthInputValue, formatStatementMonthLabel, getSaveErrorMessage, parseValidatedNumber, positiveAmount, toPence } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
@@ -182,8 +182,7 @@ export function useSettlementEntryForm(
   const acceptsFutureDates = currencies.length === 1
   const createDate = () => {
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
-    const today = todayIsoDate()
-    return acceptsFutureDates || date <= today ? date : today
+    return acceptsFutureDates ? date : notAfterToday(date)
   }
 
   const openAdd = () => {

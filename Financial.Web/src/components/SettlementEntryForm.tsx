@@ -1,10 +1,9 @@
-import { useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
+import { useRef } from 'react'
 import { Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Text, tokens } from '@fluentui/react-components'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
 import ActionErrorAlert from './ActionErrorAlert'
 import FieldErrorSummary from './FieldErrorSummary'
-import { collectFieldErrors, type FieldError } from '../utils/fieldErrors'
+import { useFieldErrorSummary } from '../hooks/useFieldErrorSummary'
 import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
 import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
@@ -18,7 +17,7 @@ interface SettlementEntryFormProps {
 }
 
 const FUTURE_DATE_HINT = 'A date after today records a planned entry.'
-const NO_FUTURE_DATE_HINT = "Today or earlier: a later date has no exchange rate yet."
+const NO_FUTURE_DATE_HINT = 'Use today or an earlier date. Later dates have no exchange rate yet.'
 
 const useEntryFormStyles = makeStyles({
   startsRow: { gridColumnStart: 1 },
@@ -29,8 +28,8 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
   const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, acceptsFutureDates, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
-  const errorSummary = useRef<HTMLDivElement | null>(null)
-  const [summarizedErrors, setSummarizedErrors] = useState<FieldError[]>([])
+  const formRef = useRef<HTMLFormElement | null>(null)
+  const { summaryRef, summarizedErrors, submitWithSummary } = useFieldErrorSummary(formRef)
   const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'New entry'
   const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : 'Add entry'
   const validation = (field: SettlementEntryField) => ({
@@ -55,28 +54,20 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   return (
     <>
       <form
+        ref={formRef}
         className={styles.panel}
         noValidate
         aria-labelledby="settlement-entry-title"
         onSubmit={(event) => {
           event.preventDefault()
-          const formElement = event.currentTarget
-          let firstInvalid: SettlementEntryField | null = null
-          flushSync(() => {
-            firstInvalid = submit()
-          })
-          const invalidFields = collectFieldErrors(formElement)
-          const hasSeveral = invalidFields.length > 1
-          flushSync(() => setSummarizedErrors(hasSeveral ? invalidFields : []))
-          if (hasSeveral) errorSummary.current?.focus()
-          else if (firstInvalid) formElement.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus()
+          submitWithSummary(submit)
         }}
       >
         <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
           <Text as="h2" id="settlement-entry-title" weight="semibold" size={400}>
             {title}
           </Text>
-          {summarizedErrors.length > 0 && <FieldErrorSummary ref={errorSummary} errors={summarizedErrors} />}
+          {summarizedErrors.length > 0 && <FieldErrorSummary ref={summaryRef} errors={summarizedErrors} />}
           <ActionErrorAlert message={saveError} />
           {warning && (
             <MessageBar role="status" intent="warning">
