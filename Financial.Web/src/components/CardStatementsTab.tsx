@@ -18,9 +18,9 @@ import {
   Text,
 } from '@fluentui/react-components'
 import type { AccountStatementDto } from '../api/types'
-import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
+import { isStoredStatement, type CardStatements, type PayForm, type PayFormKind } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
-import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
+import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate, sumPence } from '../utils/formatters'
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
@@ -32,7 +32,7 @@ import ReadOnlyInput from './ReadOnlyInput'
 import StatementDueDateForm from './StatementDueDateForm'
 import StatementPotWithdrawalsNote from './StatementPotWithdrawalsNote'
 import TruncatedText from './TruncatedText'
-import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
+import { canSettleStatement, isClosedStatement, isSettledStatement, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
@@ -87,7 +87,7 @@ const COLUMNS: StatementColumn[] = [
   {
     key: 'status',
     header: 'Status',
-    accessor: (statement) => `${statement.status} ${statement.paidOn ?? ''}`,
+    accessor: (statement) => `${isSettledStatement(statement) ? 'Settled' : statement.status} ${statement.paidOn ?? statement.settledOn ?? ''}`,
     render: (statement) => <TruncatedText text={statusOf(statement)} />,
   },
 ]
@@ -111,10 +111,31 @@ function monthOf(statement: AccountStatementDto): string {
   return formatLongMonthYear(statement.year, statement.month)
 }
 
-function unmarkMessage(statement: AccountStatementDto): string {
-  const removed = statement.potWithdrawals.length
-  const withdrawals = removed === 0 ? [] : [`This also removes ${removed} investment withdrawal${removed === 1 ? '' : 's'}.`]
-  return [`Unmark ${monthOf(statement)} as paid? The payment will be deleted.`, ...withdrawals].join(' ')
+function investmentWithdrawalsText(statement: AccountStatementDto): string {
+  const count = statement.potWithdrawals.length
+  return `${count} investment withdrawal${count === 1 ? '' : 's'}`
+}
+
+function unmarkText(statement: AccountStatementDto): { title: string; message: string; confirmLabel: string } {
+  const month = monthOf(statement)
+  if (isSettledStatement(statement)) {
+    return {
+      title: 'Unmark settled statement',
+      message: `Unmark ${month} as settled? This removes its ${investmentWithdrawalsText(statement)} and it goes back to Nothing due.`,
+      confirmLabel: 'Unmark settled',
+    }
+  }
+  const withdrawals = statement.potWithdrawals.length === 0 ? [] : [`This also removes ${investmentWithdrawalsText(statement)}.`]
+  return { title: 'Unmark statement', message: [`Unmark ${month} as paid? The payment will be deleted.`, ...withdrawals].join(' '), confirmLabel: 'Unmark' }
+}
+
+function potWithdrawalsTotal(statement: AccountStatementDto): number {
+  return sumPence(statement.potWithdrawals, (withdrawal) => withdrawal.amount) / 100
+}
+
+const BANK_FORM_TEXT: Record<PayFormKind, { title: (month: string) => string; amountLabel: string; saveLabel: string }> = {
+  pay: { title: (month) => `Pay ${month} statement`, amountLabel: 'Amount', saveLabel: 'Pay statement' },
+  settle: { title: (month) => `Settle ${month} pot withdrawals`, amountLabel: 'Total from pots', saveLabel: 'Settle pot withdrawals' },
 }
 
 function statusOf(statement: AccountStatementDto): string {
@@ -124,18 +145,21 @@ function statusOf(statement: AccountStatementDto): string {
   return `Paid ${formatN2(statement.paidAmount ?? 0)}${paidOn}${paidFrom}`
 }
 
-interface PayStatementFormProps {
+interface StatementBankFormProps {
   payForm: PayForm
   cardStatements: CardStatements
   currency: string
   onCancel: () => void
 }
 
-function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PayStatementFormProps) {
+function StatementBankForm({ payForm, cardStatements, currency, onCancel }: StatementBankFormProps) {
   const styles = useFormPanelStyles()
   const bankRef = useRef<HTMLSelectElement | null>(null)
   const dateRef = useRef<HTMLInputElement | null>(null)
   const { payers, isLoadingPayers, payersError, retryPayers, failedSubmit, setPayField, submitPayForm } = cardStatements
+  const text = BANK_FORM_TEXT[payForm.kind]
+  const isSettling = payForm.kind === 'settle'
+  const amount = isSettling ? potWithdrawalsTotal(payForm.statement) : payForm.statement.outstandingTotal
 
   useEffect(() => {
     bankRef.current?.focus()
@@ -158,7 +182,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
     >
       <fieldset disabled={payForm.isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h3" id="pay-statement-title" weight="semibold" size={400}>
-          Pay {monthOf(payForm.statement)} statement
+          {text.title(monthOf(payForm.statement))}
         </Text>
         <ActionErrorAlert message={payForm.error} />
         {payersError && <ErrorState message={payersError} onRetry={retryPayers} />}
@@ -197,18 +221,77 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
               onChange={(event) => setPayField('date', event.target.value)}
             />
           </Field>
-          <Field label="Amount">
-            <ReadOnlyInput value={formatCurrency(payForm.statement.outstandingTotal, currency)} />
+          <Field label={text.amountLabel}>
+            <ReadOnlyInput value={formatCurrency(amount, currency)} />
           </Field>
         </div>
         <StatementPotWithdrawalsNote
           withdrawals={payForm.statement.potWithdrawals}
           bankName={payers.find((bank) => bank.id === payForm.bankId)?.name}
           currency={currency}
+          withCardPayment={!isSettling}
         />
       </fieldset>
-      <FormSaveActions saveLabel="Pay statement" isSaving={payForm.isSaving} onCancel={onCancel} />
+      <FormSaveActions saveLabel={text.saveLabel} isSaving={payForm.isSaving} onCancel={onCancel} />
     </form>
+  )
+}
+
+interface StatementRowActionsProps {
+  statement: AccountStatementDto
+  cardStatements: CardStatements
+  disabled: boolean
+  openFormFrom: (button: HTMLButtonElement, openForm: () => void) => void
+}
+
+function StatementRowActions({ statement, cardStatements, disabled, openFormFrom }: StatementRowActionsProps) {
+  const { openPayForm, openSettleForm, requestUnmark, dueDateForm } = cardStatements
+  const month = monthOf(statement)
+  if (isClosedStatement(statement)) {
+    if (!isStoredStatement(statement)) return null
+    const isSettled = isSettledStatement(statement)
+    return (
+      <Button
+        appearance="primary"
+        aria-label={isSettled ? `Unmark settled for ${month}` : `Unmark ${month} statement`}
+        disabled={disabled}
+        onClick={() => requestUnmark(statement)}
+      >
+        {isSettled ? 'Unmark settled' : 'Unmark'}
+      </Button>
+    )
+  }
+  return (
+    <>
+      {isStoredStatement(statement) && statement.status === UNPAID_STATEMENT_STATUS && (
+        <Button
+          appearance="primary"
+          aria-label={`Pay ${month} statement`}
+          disabled={disabled}
+          onClick={(event) => openFormFrom(event.currentTarget, () => openPayForm(statement))}
+        >
+          Pay
+        </Button>
+      )}
+      {isStoredStatement(statement) && canSettleStatement(statement) && (
+        <Button
+          appearance="primary"
+          aria-label={`Settle pot withdrawals for ${month}`}
+          disabled={disabled}
+          onClick={(event) => openFormFrom(event.currentTarget, () => openSettleForm(statement))}
+        >
+          Settle pot withdrawals
+        </Button>
+      )}
+      <Button
+        appearance="primary"
+        aria-label={`Set the ${month} due date`}
+        disabled={disabled}
+        onClick={(event) => openFormFrom(event.currentTarget, () => dueDateForm.open(statement))}
+      >
+        Due date
+      </Button>
+    </>
   )
 }
 
@@ -220,8 +303,7 @@ export default function CardStatementsTab({
   canAct,
   guardChange,
 }: CardStatementsTabProps) {
-  const { statements, isLoading, error, retry, payForm, dueDateForm, savedCount, openPayForm, closeForms, requestUnmark, unmark, cancelUnmark, confirmUnmark } =
-    cardStatements
+  const { statements, isLoading, error, retry, payForm, dueDateForm, savedCount, closeForms, unmark, cancelUnmark, confirmUnmark } = cardStatements
   const headingRef = useRef<HTMLHeadingElement | null>(null)
   const viewedRowRef = useRef<HTMLTableRowElement | null>(null)
   const formOpenerRef = useRef<HTMLButtonElement | null>(null)
@@ -253,6 +335,8 @@ export default function CardStatementsTab({
     retry()
   }
 
+  const unmarkDialog = unmark ? unmarkText(unmark.statement) : null
+
   const isViewed = (statement: AccountStatementDto) => statement.year === viewedYear && statement.month === viewedMonth
 
   return (
@@ -262,10 +346,10 @@ export default function CardStatementsTab({
       </Text>
       {!canAct && (
         <MessageBar intent="info">
-          <MessageBarBody>This card is inactive, so its statements can't be paid, unmarked or given a due date here.</MessageBarBody>
+          <MessageBarBody>This card is inactive, so its statements can't be paid, settled, unmarked or given a due date here.</MessageBarBody>
         </MessageBar>
       )}
-      {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
+      {payForm && <StatementBankForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
       {dueDateForm.form && (
         <StatementDueDateForm
           key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
@@ -325,7 +409,6 @@ export default function CardStatementsTab({
                 ) : (
                   sortedRows.map((statement) => {
                     const viewed = isViewed(statement)
-                    const month = monthOf(statement)
                     return (
                       <TableRow
                         key={`${statement.year}-${statement.month}`}
@@ -345,34 +428,7 @@ export default function CardStatementsTab({
                         <TableCell className="data-table__col--action-wide">
                           {canAct && (
                             <div className="data-table__actions-cell">
-                              {statement.isPaid ? (
-                                isStoredStatement(statement) && (
-                                  <Button appearance="primary" aria-label={`Unmark ${month} statement`} disabled={isFormSaving} onClick={() => requestUnmark(statement)}>
-                                    Unmark
-                                  </Button>
-                                )
-                              ) : (
-                                <>
-                                  {isStoredStatement(statement) && statement.status === UNPAID_STATEMENT_STATUS && (
-                                    <Button
-                                      appearance="primary"
-                                      aria-label={`Pay ${month} statement`}
-                                      disabled={isFormSaving}
-                                      onClick={(event) => openFormFrom(event.currentTarget, () => openPayForm(statement))}
-                                    >
-                                      Pay
-                                    </Button>
-                                  )}
-                                  <Button
-                                    appearance="primary"
-                                    aria-label={`Set the ${month} due date`}
-                                    disabled={isFormSaving}
-                                    onClick={(event) => openFormFrom(event.currentTarget, () => dueDateForm.open(statement))}
-                                  >
-                                    Due date
-                                  </Button>
-                                </>
-                              )}
+                              <StatementRowActions statement={statement} cardStatements={cardStatements} disabled={isFormSaving} openFormFrom={openFormFrom} />
                             </div>
                           )}
                         </TableCell>
@@ -387,9 +443,9 @@ export default function CardStatementsTab({
       )}
       <ConfirmDialog
         open={unmark !== null}
-        title="Unmark statement"
-        message={unmark ? unmarkMessage(unmark.statement) : ''}
-        confirmLabel="Unmark"
+        title={unmarkDialog?.title ?? ''}
+        message={unmarkDialog?.message ?? ''}
+        confirmLabel={unmarkDialog?.confirmLabel ?? ''}
         cancelLabel="Cancel"
         isBusy={unmark?.isBusy ?? false}
         error={unmark?.error}

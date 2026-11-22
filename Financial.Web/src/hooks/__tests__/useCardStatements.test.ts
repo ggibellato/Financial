@@ -8,12 +8,15 @@ import { never } from '../../test-utils/deferred'
 import { pinDate } from '../../test-utils/pinDate'
 import { STATEMENTS_LOAD_ERROR, useCardStatements, type StoredStatement } from '../useCardStatements'
 
-const { getAccountStatementsMock, getAccountsMock, markCardStatementPaidMock, unmarkCardStatementPaidMock } = vi.hoisted(() => ({
-  getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
-  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
-  markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
-  unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
-}))
+const { getAccountStatementsMock, getAccountsMock, markCardStatementPaidMock, unmarkCardStatementPaidMock, settlePotWithdrawalsMock, unsettlePotWithdrawalsMock } =
+  vi.hoisted(() => ({
+    getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
+    getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
+    markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
+    unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
+    settlePotWithdrawalsMock: vi.fn<FinancialApiClient['settlePotWithdrawals']>(),
+    unsettlePotWithdrawalsMock: vi.fn<FinancialApiClient['unsettlePotWithdrawals']>(),
+  }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
@@ -21,6 +24,8 @@ vi.mock('../../api/financialApiClient', () => ({
     getAccounts: getAccountsMock,
     markCardStatementPaid: markCardStatementPaidMock,
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
+    settlePotWithdrawals: settlePotWithdrawalsMock,
+    unsettlePotWithdrawals: unsettlePotWithdrawalsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -31,6 +36,10 @@ const OCTOBER: StoredStatement = {
 }
 const SEPTEMBER: StoredStatement = {
   creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, settledOn: null, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [],
+}
+const AUGUST: StoredStatement = {
+  ...OCTOBER, id: 's-aug', month: 8, total: -35, outstandingTotal: 0, status: 'NothingDue', dueDate: null,
+  potWithdrawals: [{ operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }],
 }
 
 const ACCOUNTS = [
@@ -65,6 +74,8 @@ describe('useCardStatements', () => {
     getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     markCardStatementPaidMock.mockReset()
     unmarkCardStatementPaidMock.mockReset()
+    settlePotWithdrawalsMock.mockReset()
+    unsettlePotWithdrawalsMock.mockReset()
   })
 
   it('loads nothing without a card', () => {
@@ -154,6 +165,48 @@ describe('useCardStatements', () => {
     expect(markCardStatementPaidMock).toHaveBeenCalledWith('s-oct', { paymentSourceBankId: 'barclays', date: '2026-10-12' })
     expect(onChanged).toHaveBeenCalledWith('Statement paid')
     expect(getAccountStatementsMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('settles the pot withdrawals with the chosen bank and date, then closes, reloads and reports it', async () => {
+    const onChanged = vi.fn()
+    settlePotWithdrawalsMock.mockResolvedValue({ ...PAID_STATEMENT, isPaid: false, settledOn: '2026-10-12' })
+    const { result } = await renderLoaded(onChanged)
+    act(() => result.current.openSettleForm(AUGUST))
+    act(() => result.current.setPayField('bankId', 'barclays'))
+    act(() => result.current.setPayField('date', '2026-10-12'))
+
+    act(() => result.current.submitPayForm())
+
+    await waitFor(() => expect(result.current.payForm).toBeNull())
+    expect(settlePotWithdrawalsMock).toHaveBeenCalledWith('s-aug', { paymentSourceBankId: 'barclays', date: '2026-10-12' })
+    expect(markCardStatementPaidMock).not.toHaveBeenCalled()
+    expect(onChanged).toHaveBeenCalledWith('Pot withdrawals settled')
+  })
+
+  it('keeps the settle form with the reason when settling is refused', async () => {
+    settlePotWithdrawalsMock.mockRejectedValue(new ApiError('This statement now has an amount to pay; mark it paid instead.', 409))
+    const { result } = await renderLoaded()
+    act(() => result.current.openSettleForm(AUGUST))
+    act(() => result.current.setPayField('bankId', 'barclays'))
+
+    act(() => result.current.submitPayForm())
+
+    await waitFor(() => expect(result.current.payForm?.error).toBe('This statement now has an amount to pay; mark it paid instead.'))
+    expect(result.current.payForm?.kind).toBe('settle')
+  })
+
+  it('unmarks a settled statement through unsettle and reports it', async () => {
+    const onChanged = vi.fn()
+    unsettlePotWithdrawalsMock.mockResolvedValue({ ...PAID_STATEMENT, isPaid: false })
+    const { result } = await renderLoaded(onChanged)
+
+    act(() => result.current.requestUnmark({ ...AUGUST, settledOn: '2026-09-03' }))
+    act(() => result.current.confirmUnmark())
+
+    await waitFor(() => expect(result.current.unmark).toBeNull())
+    expect(unsettlePotWithdrawalsMock).toHaveBeenCalledWith('s-aug')
+    expect(unmarkCardStatementPaidMock).not.toHaveBeenCalled()
+    expect(onChanged).toHaveBeenCalledWith('Statement unmarked as settled')
   })
 
   it('keeps the form and shows the reason when the payment is refused', async () => {

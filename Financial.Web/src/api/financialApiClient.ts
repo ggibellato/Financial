@@ -74,6 +74,7 @@ import type {
   MoveAssetRequestDto,
   OpenLotDto,
   MarkCardStatementPaidDto,
+  SettlePotWithdrawalsDto,
   MoveChargeToStatementDto,
   MonthTransactionDto,
   PayableStatementDto,
@@ -273,6 +274,8 @@ export interface FinancialApiClient {
   deleteBalanceAdjustment: (accountId: string, id: string) => Promise<void>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
+  settlePotWithdrawals: (id: string, request: SettlePotWithdrawalsDto) => Promise<CardStatementDto>
+  unsettlePotWithdrawals: (id: string) => Promise<CardStatementDto>
   getCategoryTotalsAnnualForYear: (year: number) => Promise<CategoryTotalsAnnualDto>
   getInvestmentAnnualResultForYear: (year: number) => Promise<InvestmentAnnualResultDto>
   getHistoricSummaryAverageFromYear: (year: number) => Promise<CategoryAnnualAverageDto[]>
@@ -779,6 +782,15 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     unmarkCardStatementPaid: (id) =>
       request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/unmark-paid`, {
+        method: 'POST',
+      }),
+    settlePotWithdrawals: (id, requestBody) =>
+      request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/settle-pot-withdrawals`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    unsettlePotWithdrawals: (id) =>
+      request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/unsettle-pot-withdrawals`, {
         method: 'POST',
       }),
     getCategoryTotalsAnnualForYear: (year) =>

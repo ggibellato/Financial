@@ -29,7 +29,20 @@ export function nothingDueText(creditCarried: number): string {
   return creditCarried > 0 ? `Nothing due · ${formatN2(creditCarried)} credit carried` : 'Nothing due'
 }
 
+export function isSettledStatement(statement: AccountStatementDto): boolean {
+  return Boolean(statement.settledOn)
+}
+
+export function isClosedStatement(statement: AccountStatementDto): boolean {
+  return statement.isPaid || isSettledStatement(statement)
+}
+
+export function canSettleStatement(statement: AccountStatementDto): boolean {
+  return statement.status === NOTHING_DUE_STATEMENT_STATUS && !isSettledStatement(statement) && statement.potWithdrawals.length > 0
+}
+
 export function statementStatusText(statement: AccountStatementDto): string {
+  if (statement.settledOn) return `Settled ${formatDayMonthYearUtc(statement.settledOn)} — pot withdrawals only`
   if (statement.status === UNPAID_STATEMENT_STATUS) return 'Unpaid'
   if (statement.status === NOTHING_DUE_STATEMENT_STATUS) return nothingDueText(statement.creditCarried)
   if (statement.status !== PAID_STATEMENT_STATUS) return MISSING_VALUE_PLACEHOLDER

@@ -156,6 +156,12 @@ describe('AccountHeader', () => {
     expect(screen.getByText('Nothing due · 35.00 credit carried')).toBeInTheDocument()
   })
 
+  it('shows a statement settled for its pot withdrawals as settled', () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, total: 0, outstandingTotal: 0, status: 'NothingDue', settledOn: '2026-11-03' } })
+
+    expect(screen.getByText('Settled 3 Nov 2026 — pot withdrawals only')).toBeInTheDocument()
+  })
+
   it('shows a month before the card\'s first statement as 0.00 Nothing due', () => {
     renderHeader({ ...AMEX, viewedStatement: null })
 

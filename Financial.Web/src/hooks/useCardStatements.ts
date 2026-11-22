@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto, BankOption } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
+import { isSettledStatement } from '../utils/owedBalance'
 import { paymentDateError } from '../utils/validators'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { useAsyncResource } from './useAsyncResource'
@@ -20,7 +21,10 @@ export function isStoredStatement(statement: AccountStatementDto): statement is 
   return statement.id !== null
 }
 
+export type PayFormKind = 'pay' | 'settle'
+
 export interface PayForm {
+  kind: PayFormKind
   statement: StoredStatement
   bankId: string
   date: string
@@ -72,10 +76,14 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     dueDateForm.close()
   }
 
-  const openPayForm = (statement: StoredStatement) => {
+  const openForm = (kind: PayFormKind, statement: StoredStatement) => {
     if (payForm?.isSaving) return
-    setPayForm({ statement, bankId: '', date: todayIsoDate(), isSaving: false, error: null, fieldErrors: {} })
+    setPayForm({ kind, statement, bankId: '', date: todayIsoDate(), isSaving: false, error: null, fieldErrors: {} })
   }
+
+  const openPayForm = (statement: StoredStatement) => openForm('pay', statement)
+
+  const openSettleForm = (statement: StoredStatement) => openForm('settle', statement)
 
   const closePayForm = () => setPayForm(null)
 
@@ -99,14 +107,19 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     }
 
     setPayForm({ ...payForm, isSaving: true, error: null })
-    apiClient
-      .markCardStatementPaid(payForm.statement.id, { paymentSourceBankId: payForm.bankId, date: payForm.date })
+    const settling = payForm.kind === 'settle'
+    const request = { paymentSourceBankId: payForm.bankId, date: payForm.date }
+    const save = settling
+      ? apiClient.settlePotWithdrawals(payForm.statement.id, request)
+      : apiClient.markCardStatementPaid(payForm.statement.id, request)
+    save
       .then(() => {
         setPayForm(null)
-        afterSave('Statement paid')
+        afterSave(settling ? 'Pot withdrawals settled' : 'Statement paid')
       })
       .catch((err: unknown) => {
-        setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement.') })
+        const failed = settling ? "Couldn't settle the statement. Try again." : 'Failed to pay the statement.'
+        setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, failed) })
         void statements.refresh()
       })
   }
@@ -118,14 +131,16 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
   const confirmUnmark = () => {
     if (!unmark || unmark.isBusy) return
     setUnmark({ ...unmark, isBusy: true, error: null })
-    apiClient
-      .unmarkCardStatementPaid(unmark.statement.id)
+    const settled = isSettledStatement(unmark.statement)
+    const save = settled ? apiClient.unsettlePotWithdrawals(unmark.statement.id) : apiClient.unmarkCardStatementPaid(unmark.statement.id)
+    save
       .then(() => {
         setUnmark(null)
-        afterSave('Statement unmarked')
+        afterSave(settled ? 'Statement unmarked as settled' : 'Statement unmarked')
       })
       .catch((err: unknown) => {
-        setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement.') })
+        const failed = settled ? "Couldn't unmark the statement as settled. Try again." : 'Failed to unmark the statement.'
+        setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, failed) })
         void statements.refresh()
       })
   }
@@ -145,6 +160,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     isFormDirty: dueDateForm.isDirty || (payForm !== null && (payForm.bankId !== '' || payForm.date !== todayIsoDate())),
     dueDateForm,
     openPayForm,
+    openSettleForm,
     closeForms,
     setPayField,
     submitPayForm,

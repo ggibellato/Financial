@@ -38,6 +38,7 @@ const SEPTEMBER: StoredStatement = {
 const CARRYING: AccountStatementDto = {
   id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
 }
+const CARRYING_JULY: AccountStatementDto = { ...CARRYING, id: 's-jul', month: 7 }
 
 function dueDateHandle(overrides: Partial<StatementDueDateFormHandle> = {}): StatementDueDateFormHandle {
   return { form: null, failedValidations: 0, isDirty: false, open: vi.fn(), close: vi.fn(), setDate: vi.fn(), save: vi.fn(), clear: vi.fn(), ...overrides }
@@ -66,6 +67,7 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
     isFormDirty: false,
     dueDateForm: dueDateHandle(),
     openPayForm: vi.fn(),
+    openSettleForm: vi.fn(),
     closeForms: vi.fn(),
     setPayField: vi.fn(),
     submitPayForm: vi.fn(),
@@ -189,6 +191,50 @@ describe('CardStatementsTab', () => {
     expect(screen.queryByRole('button', { name: /^Unmark / })).not.toBeInTheDocument()
   })
 
+  it('[AC P62-F04-settle-a-nothing-due-statement-01] offers Settle pot withdrawals only on a stored Nothing due statement with pending pot withdrawals', async () => {
+    const withPots = { ...CARRYING, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
+    const statements = renderTab({
+      statements: [withPots, { ...NOVEMBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }, { ...OCTOBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }, CARRYING_JULY],
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Settle pot withdrawals for August 2026' }))
+
+    expect(statements.openSettleForm).toHaveBeenCalledWith(withPots)
+    expect(screen.getAllByRole('button', { name: /^Settle / })).toHaveLength(1)
+  })
+
+  it('shows a settled statement as settled with Unmark settled and no other action', async () => {
+    const settled = { ...CARRYING, settledOn: '2026-10-03', potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
+    const statements = renderTab({ statements: [settled] })
+    const row = rowOf('August 2026')
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Unmark settled for August 2026' }))
+
+    expect(within(row).getByText('Settled 3 Oct 2026 — pot withdrawals only')).toBeInTheDocument()
+    expect(within(row).getAllByRole('button')).toHaveLength(1)
+    expect(statements.requestUnmark).toHaveBeenCalledWith(settled)
+  })
+
+  it('shows the settle form with the pot withdrawals, their total and its own save label', () => {
+    const withPots = { ...CARRYING, potWithdrawals: [INVESTIMENTO_WITHDRAWAL, { ...INVESTIMENTO_WITHDRAWAL, operationId: 'op2', potName: 'Viagem', amount: 60 }] } as StoredStatement
+    renderTab({ statements: [withPots], payForm: { kind: 'settle', statement: withPots, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+    const form = screen.getByRole('form', { name: 'Settle August 2026 pot withdrawals' })
+
+    expect(within(form).getByLabelText('Total from pots')).toHaveValue('£180.00')
+    expect(within(form).getByText(potLine('Takes £120.00 from Reserva (Investimento) on Barclays.'))).toBeInTheDocument()
+    expect(within(form).getByText(potLine('Takes £60.00 from Reserva (Viagem) on Barclays.'))).toBeInTheDocument()
+    expect(within(form).getByRole('button', { name: 'Settle pot withdrawals' })).toBeInTheDocument()
+  })
+
+  it('asks before unmarking a settled statement and names the withdrawals it removes', () => {
+    const settled = { ...CARRYING, settledOn: '2026-09-03', potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
+    renderTab({ statements: [settled], unmark: { statement: settled, isBusy: false, error: null } })
+    const dialog = screen.getByRole('dialog', { name: 'Unmark settled statement' })
+
+    expect(within(dialog).getByText('Unmark August 2026 as settled? This removes its 1 investment withdrawal and it goes back to Nothing due.')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Unmark settled' })).toBeInTheDocument()
+  })
+
   it('shows the amount actually paid when carried credit made it differ from the total', () => {
     renderTab({ statements: [{ ...SEPTEMBER, creditIn: 100.3, paidAmount: 412 }] })
 
@@ -202,7 +248,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('moves focus to the Bank field when Pay opens on another statement', () => {
-    const payFormFor = (statement: StoredStatement) => ({ statement, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} })
+    const payFormFor = (statement: StoredStatement) => ({ kind: 'pay' as const, statement, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} })
     const statements = renderTab({ payForm: payFormFor(OCTOBER) })
     screen.getByLabelText(/^Date/).focus()
 
@@ -276,7 +322,7 @@ describe('CardStatementsTab', () => {
     renderTab({}, false)
 
     expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
-    expect(screen.getByText("This card is inactive, so its statements can't be paid, unmarked or given a due date here.")).toBeInTheDocument()
+    expect(screen.getByText("This card is inactive, so its statements can't be paid, settled, unmarked or given a due date here.")).toBeInTheDocument()
   })
 
   it('opens Pay only through the discard guard', async () => {
@@ -300,6 +346,7 @@ describe('CardStatementsTab', () => {
   it('shows the pay form with the amount read-only, its errors and its saving state', () => {
     renderTab({
       payForm: {
+        kind: 'pay',
         statement: OCTOBER,
         bankId: '',
         date: '2026-10-16',
@@ -321,7 +368,7 @@ describe('CardStatementsTab', () => {
   it('keeps the pay form and its error in view when the statements then fail to reload', () => {
     renderTab({
       error: 'Unable to load the statements',
-      payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-16', isSaving: false, error: 'Failed to pay the statement', fieldErrors: {} },
+      payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '2026-10-16', isSaving: false, error: 'Failed to pay the statement', fieldErrors: {} },
     })
 
     expect(screen.getByRole('heading', { name: 'Pay October 2026 statement' })).toBeInTheDocument()
@@ -340,7 +387,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('moves focus to the first invalid field after a failed submit', () => {
-    const payForm = { statement: OCTOBER, bankId: 'barclays', date: '', isSaving: false, error: null, fieldErrors: { date: 'Enter a date.' } }
+    const payForm = { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '', isSaving: false, error: null, fieldErrors: { date: 'Enter a date.' } }
     const statements = renderTab({ payForm })
 
     statements.rerenderWith({ payForm, failedSubmit: { firstInvalidField: 'date' } })
@@ -349,7 +396,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('moves focus back to the Bank field when a submit fails for want of a bank', () => {
-    const payForm = { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: { bankId: 'Select a bank.' } }
+    const payForm = { kind: 'pay' as const, statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: { bankId: 'Select a bank.' } }
     const statements = renderTab({ payForm })
     screen.getByRole('button', { name: 'Pay statement' }).focus()
 
@@ -359,7 +406,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('submits the pay form without leaving the page', () => {
-    const statements = renderTab({ payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+    const statements = renderTab({ payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
 
     const notPrevented = fireEvent.submit(screen.getByRole('form', { name: 'Pay October 2026 statement' }))
 
@@ -370,7 +417,7 @@ describe('CardStatementsTab', () => {
   it('says when the banks fail to load and retries them', async () => {
     const statements = renderTab({
       payersError: 'Unable to load the banks',
-      payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+      payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
     })
 
     expect(screen.getByText('Unable to load the banks')).toBeInTheDocument()
@@ -379,13 +426,13 @@ describe('CardStatementsTab', () => {
   })
 
   it('shows no bank load error while the banks are fine', () => {
-    renderTab({ payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+    renderTab({ payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
 
     expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument()
   })
 
   it('offers only active banks in the pay form', () => {
-    renderTab({ payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+    renderTab({ payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
 
     expect(screen.getByRole('option', { name: 'Select a bank' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Barclays' })).toBeInTheDocument()
@@ -396,7 +443,7 @@ describe('CardStatementsTab', () => {
     const creditLowered = { ...OCTOBER, creditIn: 60.45, outstandingTotal: 150 }
     renderTab({
       statements: [creditLowered],
-      payForm: { statement: creditLowered, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+      payForm: { kind: 'pay' as const, statement: creditLowered, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
     })
 
     expect(within(rowOf('October 2026')).getByText('150.00')).toBeInTheDocument()
@@ -406,7 +453,7 @@ describe('CardStatementsTab', () => {
   it('disables the bank picker while the banks load', () => {
     renderTab({
       isLoadingPayers: true,
-      payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+      payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
     })
 
     expect(screen.getByLabelText(/^Bank/)).toBeDisabled()
@@ -414,7 +461,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('disables the pay form fields and keeps Saving… focused while it saves', () => {
-    const payForm = { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} }
+    const payForm = { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} }
     const statements = renderTab({ payForm })
     screen.getByRole('button', { name: 'Pay statement' }).focus()
 
@@ -428,7 +475,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('disables every row action while a payment saves', () => {
-    renderTab({ payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} } })
+    renderTab({ payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} } })
 
     expect(screen.getByRole('button', { name: 'Pay October 2026 statement' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Set the November 2026 due date' })).toBeDisabled()
@@ -436,7 +483,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('moves focus to the server message when the payment fails', () => {
-    const payForm = { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} }
+    const payForm = { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} }
     const statements = renderTab({ payForm })
 
     statements.rerenderWith({ payForm: { ...payForm, isSaving: false, error: 'Barclays is inactive.' } })
@@ -447,7 +494,7 @@ describe('CardStatementsTab', () => {
 
   it('submits and cancels the pay form', async () => {
     const statements = renderTab({
-      payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+      payForm: { kind: 'pay' as const, statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
     })
 
     await userEvent.selectOptions(screen.getByLabelText(/^Bank/), 'barclays')
@@ -626,7 +673,7 @@ describe('CardStatementsTab', () => {
 
   it('[AC P62-F02-investment-withdrawal-on-statement-payment-06] names what paying takes from each pot, on the chosen bank once there is one', () => {
     const withPots = { ...OCTOBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }
-    const payForm = { statement: withPots, bankId: '', date: '2026-10-16', isSaving: false, error: null, fieldErrors: {} }
+    const payForm = { kind: 'pay' as const, statement: withPots, bankId: '', date: '2026-10-16', isSaving: false, error: null, fieldErrors: {} }
     const { rerenderWith } = renderTab({ payForm })
 
     expect(screen.getByText(potLine('Also takes £120.00 from Reserva (Investimento) on the paying bank.'))).toBeInTheDocument()

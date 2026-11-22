@@ -52,6 +52,10 @@ describe('statementStatusText', () => {
     expect(statementStatusText(statement({ creditCarried: 35 }))).toBe('Nothing due · 35.00 credit carried')
   })
 
+  it('names a statement settled for its pot withdrawals only', () => {
+    expect(statementStatusText(statement({ settledOn: '2026-11-03' }))).toBe('Settled 3 Nov 2026 — pot withdrawals only')
+  })
+
   it('names a paid statement Paid, with the date when known', () => {
     expect(statementStatusText(statement({ status: 'Paid', isPaid: true, paidOn: '2026-11-12' }))).toBe('Paid 12 Nov 2026')
     expect(statementStatusText(statement({ status: 'Paid', isPaid: true }))).toBe('Paid')
