@@ -4,12 +4,12 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate, useNavigationTyp
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../../api/types'
+import type { AccountDto, AccountTransactionDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { useAccountScreen } from '../useAccountScreen'
 import { never } from '../../test-utils/deferred'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { account, potsAccount, settlementAccount } from '../../test/account'
+import { account, accountDetail, potsAccount, settlementAccount } from '../../test/account'
 
 const { getAccountsMock, getAccountMock, getAccountTransactionsMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -30,25 +30,7 @@ const OTHER_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
 
 const ACCOUNTS: AccountDto[] = [account({ id: BARCLAYS_ID, name: 'Barclays' })]
 
-const DETAIL: AccountDetailDto = {
-  id: BARCLAYS_ID,
-  name: 'Barclays',
-  templateName: 'Bank',
-  currency: 'GBP',
-  isActive: true,
-  year: 2026,
-  month: 9,
-  balance: 1234.56,
-  balanceIsOwed: false,
-  hasStatements: false,
-  totalOwed: null,
-  viewedStatement: null,
-  allowedActions: [],
-  disabledActions: {},
-  currentBalances: [],
-  hasPlannedEntries: false,
-  otherParticipant: null,
-}
+const DETAIL = accountDetail({ id: BARCLAYS_ID, name: 'Barclays', month: 9, balance: 1234.56 })
 
 const TRANSACTIONS: AccountTransactionDto[] = [
   accountTransactionRow({ id: 't1', kind: 'Income', date: '2026-09-01', amount: 100, canEdit: true }),

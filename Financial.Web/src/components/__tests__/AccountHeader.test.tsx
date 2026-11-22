@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountHeader from '../AccountHeader'
-import { account, settlementAccount } from '../../test/account'
+import { account, accountDetail, settlementAccount } from '../../test/account'
 
 const ACCOUNTS: AccountDto[] = [
   account({ id: 'amex', name: 'BA Amex', templateName: 'CreditCard' }),
@@ -31,48 +31,20 @@ const OCTOBER_UNPAID: AccountStatementDto = {
   paidFromAccountName: null,
 }
 
-const AMEX: AccountDetailDto = {
+const AMEX = accountDetail({
   id: 'amex',
   name: 'BA Amex',
   templateName: 'CreditCard',
-  currency: 'GBP',
-  isActive: true,
-  year: 2026,
-  month: 10,
   balance: -812.33,
   balanceIsOwed: true,
   hasStatements: true,
   totalOwed: 740.12,
   viewedStatement: OCTOBER_UNPAID,
-  allowedActions: [],
-  disabledActions: {},
-  currentBalances: [],
-  hasPlannedEntries: false,
-  otherParticipant: null,
-}
+})
 
-const BARCLAYS: AccountDetailDto = {
-  id: 'barclays',
-  name: 'Barclays',
-  templateName: 'Bank',
-  currency: 'GBP',
-  isActive: true,
-  year: 2026,
-  month: 10,
-  balance: 1234.56,
-  balanceIsOwed: false,
-  hasStatements: false,
-  totalOwed: null,
-  viewedStatement: null,
-  allowedActions: [],
-  disabledActions: {},
-  currentBalances: [],
-  hasPlannedEntries: false,
-  otherParticipant: null,
-}
+const BARCLAYS = accountDetail({ id: 'barclays', name: 'Barclays', balance: 1234.56 })
 
-const MAE: AccountDetailDto = {
-  ...BARCLAYS,
+const MAE = accountDetail({
   id: 'mae',
   name: 'Mãe',
   templateName: 'Settlement',
@@ -83,7 +55,7 @@ const MAE: AccountDetailDto = {
     { currency: 'GBP', balance: 7.94214099 },
   ],
   otherParticipant: 'Mãe',
-}
+})
 
 function renderHeader(
   account: AccountDetailDto = BARCLAYS,

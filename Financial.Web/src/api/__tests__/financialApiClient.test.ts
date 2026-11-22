@@ -4,7 +4,6 @@ import { API_BASE_URL } from '../config'
 import { createFinancialApiClient } from '../financialApiClient'
 import type {
   AccountCreateDto,
-  AccountDetailDto,
   AccountDto,
   AccountGroupSummaryDto,
   AccountTemplateGroupDto,
@@ -87,7 +86,7 @@ import type {
   ReserveMovementUpdateDto,
 } from '../types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { account } from '../../test/account'
+import { account, accountDetail } from '../../test/account'
 
 const okResponse = <T,>(payload: T) =>
   ({
@@ -1710,25 +1709,7 @@ describe('financialApiClient', () => {
   })
 
   it('gets one account for a month', async () => {
-    const responseBody: AccountDetailDto = {
-      id: 'a1',
-      name: 'Barclays',
-      templateName: 'Bank',
-      currency: 'GBP',
-      isActive: true,
-      year: 2026,
-      month: 10,
-      balance: 1234.56,
-      balanceIsOwed: false,
-      hasStatements: false,
-      totalOwed: null,
-      viewedStatement: null,
-      allowedActions: ['AddExpense'],
-      disabledActions: {},
-      currentBalances: [],
-      hasPlannedEntries: false,
-      otherParticipant: null,
-    }
+    const responseBody = accountDetail({ id: 'a1', name: 'Barclays' })
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
