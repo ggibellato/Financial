@@ -5354,6 +5354,13 @@
             "format": "uuid",
             "type": "string"
           },
+          "roundUpAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "statementMonth": {
             "format": "int32",
             "type": [
@@ -5446,6 +5453,13 @@
           "potId": {
             "format": "uuid",
             "type": "string"
+          },
+          "roundUpAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "statementMonth": {
             "format": "int32",

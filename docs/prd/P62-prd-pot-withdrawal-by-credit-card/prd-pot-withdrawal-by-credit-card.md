@@ -296,10 +296,10 @@ graph TD
 - [x] **P62-F04-settle-a-nothing-due-statement-04** A settled statement rejects new charges; a statement that now has an amount to pay returns 409; a future date returns 400
 
 ### F05. Round-Up on a Bank-Paid Withdrawal
-- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-01** The Withdraw form shows "Round-up" only for Paid with = Bank on a round-up bank, suggests it from the amount, and lets the user change it, including to 0
-- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-02** Saving with round-up R records R on the bank spend only; the pot and the −X stay at the main amount and the bank goes down by R overall
-- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-03** A round-up on a bank without round-up, or with a card or no payment, returns 400
-- [ ] **P62-F05-round-up-on-bank-paid-withdrawal-04** Editing a withdrawal changes its round-up, and opening an older one without a round-up adds none
+- [x] **P62-F05-round-up-on-bank-paid-withdrawal-01** The Withdraw form shows "Round-up" only for Paid with = Bank on a round-up bank, suggests it from the amount, and lets the user change it, including to 0
+- [x] **P62-F05-round-up-on-bank-paid-withdrawal-02** Saving with round-up R records R on the bank spend only; the pot and the −X stay at the main amount and the bank goes down by R overall
+- [x] **P62-F05-round-up-on-bank-paid-withdrawal-03** A round-up on a bank without round-up, or with a card or no payment, returns 400
+- [x] **P62-F05-round-up-on-bank-paid-withdrawal-04** Editing a withdrawal changes its round-up, and opening an older one without a round-up adds none
 
 ### Cross-Feature Integration
 - [x] **P62-CF-cross-feature-01** The operation id, amount, category, card and statement month written by F01 are the ones F02 uses for the −X when the statement is paid

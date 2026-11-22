@@ -16,6 +16,7 @@ public class PotWithdrawalTests
     private readonly Category _reservaCategory = Category.Create("Reserva");
     private readonly Category _health = Category.Create("Saude");
     private readonly Account _bank = TestAccounts.Bank("Chase");
+    private readonly Account _roundUpBank = TestAccounts.Bank("Monzo", roundUpEnabled: true);
     private readonly Account _reserva;
     private readonly Pot _pot = Pot.Create("Investimento", 100m);
     private readonly Account _card = TestAccounts.CreditCard("Barclaycard");
@@ -206,5 +207,60 @@ public class PotWithdrawalTests
             _reserva, _pot, 10m, Date, "Flights", _bank, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 10, 1)));
 
         act.Should().Throw<ArgumentException>().WithMessage("Choose a bank or a credit card, not both.");
+    }
+
+    [Fact]
+    public void Build_ThroughARoundUpBankWithARoundUp_RecordsItOnTheSpendOnly()
+    {
+        var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _roundUpBank, _health, OperationId, Today, roundUpAmount: 0.75m);
+
+        using (new AssertionScope())
+        {
+            records.Transactions.Single().Amount.Should().Be(-38.25m);
+            records.Expenses.Select(expense => (expense.Value, expense.RoundUpAmount)).Should().Equal((-38.25m, (decimal?)null), (38.25m, 0.75m));
+            records.RoundUpAmount.Should().Be(0.75m);
+            records.Expenses.Sum(expense => expense.ContributionTo(_roundUpBank)).Should().Be(-0.75m);
+        }
+    }
+
+    [Fact]
+    public void Build_ThroughARoundUpBankWithAZeroRoundUp_RecordsZero()
+    {
+        var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _roundUpBank, _health, OperationId, Today, roundUpAmount: 0m);
+
+        records.RoundUpAmount.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Build_RoundUpOnABankWithoutRoundUp_Throws()
+    {
+        var act = () => PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId, Today, roundUpAmount: 0.75m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Bank 'Chase' does not support round-up.");
+    }
+
+    [Fact]
+    public void Build_RoundUpAboveTheMaximum_Throws()
+    {
+        var act = () => PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _roundUpBank, _health, OperationId, Today, roundUpAmount: 1m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Round-up amount must be between £0.00 and £0.99.");
+    }
+
+    [Fact]
+    public void Build_RoundUpWithACard_Throws()
+    {
+        var act = () => PotWithdrawal.Build(
+            _reserva, _pot, 10m, Date, "Flights", bank: null, _health, OperationId, Today, new PotWithdrawalCard(_card, new DateOnly(2026, 10, 1)), 0.5m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Round-up only applies to a withdrawal paid from a bank.");
+    }
+
+    [Fact]
+    public void Build_RoundUpWithoutAPayment_Throws()
+    {
+        var act = () => PotWithdrawal.Build(_reserva, _pot, 10m, Date, "Cash", bank: null, category: null, OperationId, Today, roundUpAmount: 0.5m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Round-up only applies to a withdrawal paid from a bank.");
     }
 }

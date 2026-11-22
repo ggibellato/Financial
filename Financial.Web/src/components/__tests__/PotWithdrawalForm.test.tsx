@@ -115,6 +115,7 @@ const OPERATION: PotOperationDto = {
   investmentWithdrawal: null,
   investmentWithdrawalBankId: null,
   investmentWithdrawalDate: null,
+  roundUpAmount: null,
   potId: 'pot-b',
   bankId: 'b1',
   categoryId: 'cat-saude',
@@ -125,12 +126,13 @@ interface HarnessProps {
   mode?: 'pots' | 'bank' | 'card'
   edit?: PotOperationDto
   accounts?: AccountDto[]
+  banks?: BankOption[]
   onSaved?: () => void
   onDelete?: () => void
   onCancel?: () => void
 }
 
-function Harness({ mode = 'pots', edit, accounts = ACCOUNTS, onSaved = vi.fn(), onDelete = vi.fn(), onCancel = vi.fn() }: HarnessProps) {
+function Harness({ mode = 'pots', edit, accounts = ACCOUNTS, banks = BANKS, onSaved = vi.fn(), onDelete = vi.fn(), onCancel = vi.fn() }: HarnessProps) {
   const form = usePotWithdrawalForm(accounts, CATEGORIES, { year: 2026, month: 10 }, onSaved)
   const { openEdit, openFromBank, openFromCard, openFromPotsAccount } = form
 
@@ -147,7 +149,7 @@ function Harness({ mode = 'pots', edit, accounts = ACCOUNTS, onSaved = vi.fn(), 
       {form.isOpen && (
         <PotWithdrawalForm
           form={form}
-          banks={BANKS}
+          banks={banks}
           lockedBank={mode === 'bank' ? { id: 'b1', name: 'Barclays' } : undefined}
           lockedCard={mode === 'card' ? { id: 'amex', name: 'Amex' } : undefined}
           onDelete={onDelete}
@@ -265,6 +267,7 @@ describe('PotWithdrawalForm from the Pots account', () => {
       creditCardId: null,
       statementYear: null,
       statementMonth: null,
+      roundUpAmount: null,
       confirmed: false,
     })
   })
@@ -474,6 +477,7 @@ describe('PotWithdrawalForm from a bank', () => {
       creditCardId: null,
       statementYear: null,
       statementMonth: null,
+      roundUpAmount: null,
       confirmed: false,
     })
   })
@@ -525,6 +529,7 @@ describe('PotWithdrawalForm editing an operation', () => {
       creditCardId: null,
       statementYear: null,
       statementMonth: null,
+      roundUpAmount: null,
       confirmed: false,
     })
   })
@@ -616,6 +621,7 @@ describe('PotWithdrawalForm paid by credit card', () => {
       statementYear: 2026,
       statementMonth: 12,
       categoryId: 'cat-ariana',
+      roundUpAmount: null,
       confirmed: false,
     })
   })
@@ -671,6 +677,7 @@ describe('PotWithdrawalForm paid by credit card', () => {
       statementYear: 2026,
       statementMonth: 10,
       categoryId: 'cat-ariana',
+      roundUpAmount: null,
       confirmed: false,
     })
   })
@@ -731,5 +738,111 @@ describe('PotWithdrawalForm paid by credit card', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
 
     await waitFor(() => expect(optionNames(statementSelect())).toContain('October 2026'))
+  })
+})
+
+describe('PotWithdrawalForm round-up', () => {
+  const CHASE = { id: 'chase', name: 'Chase', roundUpEnabled: true, isActive: true }
+  const ROUND_UP_ACCOUNTS = [...ACCOUNTS, account({ id: 'chase', name: 'Chase', roundUpEnabled: true })]
+  const ROUND_UP_BANKS = [...BANKS, CHASE]
+  const roundUp = () => screen.queryByLabelText(/^Round-up/)
+  const renderRoundUp = (props: Partial<HarnessProps> = {}) => render(<Harness accounts={ROUND_UP_ACCOUNTS} banks={ROUND_UP_BANKS} {...props} />)
+
+  it('[AC P62-F05-round-up-on-bank-paid-withdrawal-01] suggests the round-up for a round-up bank and lets the user change it, including to 0', async () => {
+    renderRoundUp()
+    await potsLoaded()
+    fillWithdrawal()
+    setThroughBank('chase')
+
+    expect(screen.getByLabelText('Round-up (GBP)')).toHaveValue(0.75)
+    expect(screen.getByText('Charged to the bank, not taken from the pot.')).toBeInTheDocument()
+    setValue(/^Round-up/, '0')
+    save()
+
+    await waitFor(() => expect(createPotWithdrawalMock).toHaveBeenCalledOnce())
+    expect(createPotWithdrawalMock.mock.calls[0][1]).toMatchObject({ bankId: 'chase', amount: 38.25, roundUpAmount: 0 })
+  })
+
+  it('[AC P62-F05-round-up-on-bank-paid-withdrawal-01] shows no round-up for a bank without it, a card or no payment, and sends none', async () => {
+    renderRoundUp()
+    await potsLoaded()
+    fillWithdrawal()
+
+    expect(roundUp()).not.toBeInTheDocument()
+    setThroughBank('b1')
+    expect(roundUp()).not.toBeInTheDocument()
+    choosePaidWith('Credit card')
+    expect(roundUp()).not.toBeInTheDocument()
+    setThroughBank('b1')
+    save()
+
+    await waitFor(() => expect(createPotWithdrawalMock).toHaveBeenCalledOnce())
+    expect(createPotWithdrawalMock.mock.calls[0][1]).toMatchObject({ bankId: 'b1', roundUpAmount: null })
+  })
+
+  it('follows the amount until the user changes the round-up, then keeps it', async () => {
+    renderRoundUp()
+    await potsLoaded()
+    setThroughBank('chase')
+
+    setValue(/^Amount/, '10.40')
+    expect(roundUp()).toHaveValue(0.6)
+    setValue(/^Round-up/, '0.10')
+    setValue(/^Amount/, '12.20')
+
+    expect(roundUp()).toHaveValue(0.1)
+  })
+
+  it('sends no round-up when the field is cleared', async () => {
+    renderRoundUp()
+    await potsLoaded()
+    fillWithdrawal()
+    setThroughBank('chase')
+
+    setValue(/^Round-up/, '')
+    save()
+
+    await waitFor(() => expect(createPotWithdrawalMock).toHaveBeenCalledOnce())
+    expect(createPotWithdrawalMock.mock.calls[0][1]).toMatchObject({ roundUpAmount: null })
+  })
+
+  it('refuses a round-up outside £0.00 to £0.99 and sends nothing', async () => {
+    renderRoundUp()
+    await potsLoaded()
+    fillWithdrawal()
+    setThroughBank('chase')
+
+    setValue(/^Round-up/, '1.50')
+    save()
+
+    expect(await screen.findByText('Round-up amount must be between £0.00 and £0.99.')).toBeInTheDocument()
+    expect(createPotWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('[AC P62-F05-round-up-on-bank-paid-withdrawal-04] opens an edit with its round-up and saves the change', async () => {
+    const onSaved = vi.fn()
+    renderRoundUp({ edit: { ...OPERATION, bankId: 'chase', roundUpAmount: 0.75 }, onSaved })
+    await potsLoaded()
+
+    expect(roundUp()).toHaveValue(0.75)
+    setValue(/^Round-up/, '0.50')
+    save('Save')
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
+    expect(updatePotWithdrawalMock.mock.calls[0][2]).toMatchObject({ roundUpAmount: 0.5 })
+  })
+
+  it('[AC P62-F05-round-up-on-bank-paid-withdrawal-04] adds no round-up when an older withdrawal without one is saved unchanged', async () => {
+    const onSaved = vi.fn()
+    renderRoundUp({ edit: { ...OPERATION, bankId: 'chase' }, onSaved })
+    await potsLoaded()
+
+    expect(roundUp()).toHaveValue(null)
+    expect(screen.getByText('clean')).toBeInTheDocument()
+    setValue(/^Description/, 'Boots and more')
+    save('Save')
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
+    expect(updatePotWithdrawalMock.mock.calls[0][2]).toMatchObject({ roundUpAmount: null })
   })
 })

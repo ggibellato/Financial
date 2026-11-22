@@ -20,4 +20,5 @@ public sealed class PotOperationDTO
     public string? InvestmentWithdrawal { get; init; }
     public Guid? InvestmentWithdrawalBankId { get; init; }
     public DateOnly? InvestmentWithdrawalDate { get; init; }
+    public decimal? RoundUpAmount { get; init; }
 }

@@ -11,5 +11,6 @@ public sealed class PotWithdrawalRequestDTO
     public int? StatementYear { get; init; }
     public int? StatementMonth { get; init; }
     public Guid? CategoryId { get; init; }
+    public decimal? RoundUpAmount { get; init; }
     public bool Confirmed { get; init; }
 }

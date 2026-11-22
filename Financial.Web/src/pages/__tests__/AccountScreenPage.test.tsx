@@ -279,6 +279,7 @@ const SAVED_OPERATION: PotOperationDto = {
   investmentWithdrawal: null,
   investmentWithdrawalBankId: null,
   investmentWithdrawalDate: null,
+  roundUpAmount: null,
   fundingLines: [],
 }
 
@@ -429,6 +430,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     investmentWithdrawal: null,
     investmentWithdrawalBankId: null,
     investmentWithdrawalDate: null,
+    roundUpAmount: null,
     fundingLines: [{ bankId: BARCLAYS_ID, amount: 90 }],
   }
   const WITHDRAWAL: PotOperationDto = {
@@ -446,6 +448,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     investmentWithdrawal: null,
     investmentWithdrawalBankId: null,
     investmentWithdrawalDate: null,
+    roundUpAmount: null,
     potId: 'pot-trips',
     bankId: BARCLAYS_ID,
     categoryId: 'category-home',
@@ -570,6 +573,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
         creditCardId: null,
         statementYear: null,
         statementMonth: null,
+        roundUpAmount: 0,
         confirmed: false,
       }),
     )
@@ -604,6 +608,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
         creditCardId: null,
         statementYear: null,
         statementMonth: null,
+        roundUpAmount: 0,
         confirmed: false,
       }),
     )
@@ -2600,6 +2605,7 @@ describe('AccountScreenPage card screen', () => {
         statementYear: 2026,
         statementMonth: 10,
         categoryId: 'category-home',
+        roundUpAmount: null,
         confirmed: false,
       }),
     )

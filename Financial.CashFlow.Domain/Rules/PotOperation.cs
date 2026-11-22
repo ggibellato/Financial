@@ -48,6 +48,7 @@ public sealed record PotOperation(
     public Category? Category => ChosenExpense?.Category;
     public Account? CreditCard => ChosenExpense?.CreditCard;
     public DateOnly? StatementMonth => ChosenExpense?.InvoiceDate;
+    public decimal? RoundUpAmount => ChosenExpense?.RoundUpAmount;
     public InvestmentWithdrawalStatus? InvestmentWithdrawal => CreditCard is null ? null
         : InvestmentWithdrawalExpense is null ? InvestmentWithdrawalStatus.Pending
         : InvestmentWithdrawalStatus.Done;

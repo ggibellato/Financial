@@ -8769,6 +8769,8 @@ export interface components {
             potId?: null | string;
             /** Format: uuid */
             potsAccountId: string;
+            /** Format: double */
+            roundUpAmount?: null | number;
             /** Format: int32 */
             statementMonth?: null | number;
             /** Format: int32 */
@@ -8797,6 +8799,8 @@ export interface components {
             description: string;
             /** Format: uuid */
             potId: string;
+            /** Format: double */
+            roundUpAmount?: null | number;
             /** Format: int32 */
             statementMonth?: null | number;
             /** Format: int32 */

@@ -19,6 +19,7 @@ import LockedValue from './LockedValue'
 import ReadOnlyInput from './ReadOnlyInput'
 
 const PAID_WITH_LABELS: Record<PaidWith, string> = { none: 'None', bank: 'Bank', card: 'Credit card' }
+const ROUND_UP_HINT = 'Charged to the bank, not taken from the pot.'
 const NO_ACTIVE_CARD = 'No active credit card.'
 const PAID_STATEMENT_LOCK = 'Its card statement is paid. Unmark the statement to change it.'
 const PAID_STATEMENT_DELETE = 'Unmark the statement to delete this withdrawal.'
@@ -284,6 +285,12 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, lockedCard,
             ) : (
               <Field label={form.currency ? `Amount (${form.currency})` : 'Amount'} required {...validation('amount')}>
                 <Input type="number" step="0.01" min="0" value={values.amount} onChange={(event) => form.setField('amount', event.target.value)} />
+              </Field>
+            )}
+
+            {form.takesRoundUp && (
+              <Field label={form.currency ? `Round-up (${form.currency})` : 'Round-up'} hint={ROUND_UP_HINT} {...validation('roundUpAmount')}>
+                <Input type="number" step="0.01" value={values.roundUpAmount} onChange={(event) => form.setField('roundUpAmount', event.target.value)} />
               </Field>
             )}
           </div>

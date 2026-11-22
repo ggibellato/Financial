@@ -11,6 +11,7 @@ public static class PotWithdrawal
     public const string BankAndCardMessage = "Choose a bank or a credit card, not both.";
     public const string StatementBeforeExpenseMessage = "The statement can't be before the expense date.";
     public const string CardWithoutCategoryMessage = "Category is required when a credit card is selected.";
+    public const string RoundUpWithoutBankMessage = "Round-up only applies to a withdrawal paid from a bank.";
 
     public static PotOperation Build(
         Account potsAccount,
@@ -22,7 +23,8 @@ public static class PotWithdrawal
         Category? category,
         Guid operationId,
         DateOnly today,
-        PotWithdrawalCard? card = null)
+        PotWithdrawalCard? card = null,
+        decimal? roundUpAmount = null)
     {
         TransactionDateRule.EnsureNotInFuture(date, today);
 
@@ -37,6 +39,8 @@ public static class PotWithdrawal
         }
 
         potsAccount.EnsureOwnsPot(pot.Id);
+
+        EnsureRoundUpOnlyWithBank(bank, roundUpAmount);
 
         var movement = PotTransaction.Create(pot, -amount, date, description, operationId: operationId);
         if (card is not null)
@@ -57,11 +61,22 @@ public static class PotWithdrawal
         var potsCategory = potsAccount.Category
             ?? throw new ArgumentException($"Set a category on {potsAccount.Name} first.");
 
+        var spend = Expense.Create(date, description, amount, category, bank, creditCard: null, operationId: operationId);
+        spend.SetRoundUpAmount(roundUpAmount);
+
         return new(operationId, potsAccount, [movement],
         [
             Expense.Create(date, description, -amount, potsCategory, bank, creditCard: null, operationId: operationId),
-            Expense.Create(date, description, amount, category, bank, creditCard: null, operationId: operationId)
+            spend
         ]);
+    }
+
+    public static void EnsureRoundUpOnlyWithBank(Account? bank, decimal? roundUpAmount)
+    {
+        if (bank is null && roundUpAmount is not null)
+        {
+            throw new ArgumentException(RoundUpWithoutBankMessage);
+        }
     }
 
     public static void EnsureUsableCategory(Category category, IEnumerable<Account> accounts)

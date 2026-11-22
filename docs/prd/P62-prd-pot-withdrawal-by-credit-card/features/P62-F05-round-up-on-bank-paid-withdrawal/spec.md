@@ -52,11 +52,11 @@
 
 | File Path | New/Modified | Responsibilities |
 |---|---|---|
-| `Financial.CashFlow.Domain/Rules/PotWithdrawal.cs` | Modified | `Build(..., decimal? roundUpAmount = null)`: bank path calls `SetRoundUpAmount` on the +X spend; card / none path rejects a non-null round-up |
+| `Financial.CashFlow.Domain/Rules/PotWithdrawal.cs` | Modified | `Build(..., decimal? roundUpAmount = null)`: bank path calls `SetRoundUpAmount` on the +X spend; card / none path rejects a non-null round-up through `EnsureRoundUpOnlyWithBank(bank, roundUpAmount)`, which the locked card relabel path also calls |
 | `Financial.CashFlow.Application/DTOs/PotWithdrawalRequestDTO.cs` | Modified | `RoundUpAmount` (decimal?) |
 | `Financial.CashFlow.Application/DTOs/PotOperationDTO.cs` | Modified | `RoundUpAmount` (decimal?, from the spend expense) |
 | `Financial.CashFlow.Domain/Rules/PotOperation.cs` | Modified | `RoundUpAmount => ChosenExpense?.RoundUpAmount` (the chosen expense is private today) |
-| `Financial.CashFlow.Application/Services/PotsService.cs` | Modified | Pass `request.RoundUpAmount` to `Build` on create and rebuild; map it to the DTO |
+| `Financial.CashFlow.Application/Services/PotsService.cs` | Modified | Pass `request.RoundUpAmount` to `Build` on create and rebuild; on the locked card relabel path call `PotWithdrawal.EnsureRoundUpOnlyWithBank`; map it to the DTO |
 | `Financial.Web/src/hooks/usePotWithdrawalForm.ts` | Modified | `roundUpAmount` value + auto flag, suggestion via `utils/roundUp` (`suggestRoundUpAmount`, `parseRoundUpAmount`, `roundsUp`), validation, request field, cleared when Paid with leaves Bank |
 | `Financial.Web/src/components/PotWithdrawalForm.tsx` | Modified | "Round-up" field after Amount when Paid with = Bank and the bank has round-up enabled |
 
@@ -99,4 +99,10 @@ Request adds `roundUpAmount` (number, optional, null). Response `PotOperationDTO
 | `PotWithdrawalForm.test.tsx` "[AC …-01] suggests the round-up for a round-up bank and lets the user change it, including to 0" | P62-F05-round-up-on-bank-paid-withdrawal-01 |
 | `Withdraw_FromRoundUpBank_RecordsRoundUpOnTheSpendOnly` | -02 |
 | `Withdraw_RoundUpOnBankWithoutRoundUp_Returns400`, `Withdraw_RoundUpWithCard_Returns400` | -03 |
-| `EditWithdrawal_ChangesTheRoundUp` | -04 |
+| `EditWithdrawal_ChangesTheRoundUp`, `EditWithdrawal_WithoutARoundUp_AddsNone` | -04 |
+
+## Implementation notes
+
+- The Round-up field reads "Round-up (<currency>)", like Amount on the same form, with the hint "Charged to the bank, not taken from the pot.", so it is clear the pot gives only the main amount.
+- A stored round-up is opened as two decimals ("0.50").
+- If a withdrawal's bank has since turned round-up off, the field is hidden and saving sends no round-up (the server would refuse one), as on the expense form.
