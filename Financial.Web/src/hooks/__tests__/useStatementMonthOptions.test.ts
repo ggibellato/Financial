@@ -43,6 +43,12 @@ describe('statementMonthOptions', () => {
     ])
   })
 
+  it('leaves out a statement settled for its pot withdrawals', () => {
+    const settled = { ...statement(2026, 11, false), status: 'NothingDue', settledOn: '2026-11-03' }
+
+    expect(statementMonthOptions('2026-10-20', [settled], '').map((option) => option.value)).toEqual(['2026-10', '2026-12', '2027-01'])
+  })
+
   it('keeps the month an edited withdrawal is on, even outside the window', () => {
     expect(values(statementMonthOptions('2026-10-02', [], '2027-03'))).toEqual(['2026-10', '2026-11', '2026-12', '2027-01', '2027-03'])
   })

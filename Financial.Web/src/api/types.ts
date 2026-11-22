@@ -177,6 +177,7 @@ export type InvestmentAccountDto = Schema<'InvestmentAccountDTO'>
 export type InvestmentAccountCreateDto = Schema<'InvestmentAccountCreateDTO'>
 export type InvestmentAccountUpdateDto = Schema<'InvestmentAccountUpdateDTO'>
 export type MarkCardStatementPaidDto = Schema<'MarkCardStatementPaidDTO'>
+export type SettlePotWithdrawalsDto = Schema<'SettlePotWithdrawalsDTO'>
 export type CategoryAnnualTotalDto = Schema<'CategoryAnnualTotalDTO'>
 export type InvestmentAnnualResultDto = Schema<'InvestmentAnnualResultDTO'>
 export type IncomeAnnualSummaryDto = Schema<'IncomeAnnualSummaryDTO'>

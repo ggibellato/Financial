@@ -46,7 +46,9 @@ Documented exceptions:
 - **Paying a card statement** (`PayCardStatementForm` from the bank,
   `CardStatementsTab`'s Pay form from the card): the payer or statement
   choice comes before Date, because Date defaults to today and rarely
-  changes while that choice drives the amount (P60 F08 spec).
+  changes while that choice drives the amount (P60 F08 spec). Settling a
+  Nothing due statement's pot withdrawals reuses the card's Pay form, so Bank
+  comes before Date there too (P62 F04 spec).
 - **Paying a recurring bill** (`PayRecurringBillForm`): the Bill picker comes
   first, because the expense fields only appear, pre-filled, once a bill is
   chosen; the fields themselves (`BillExpenseFields`) follow the default
@@ -385,9 +387,10 @@ A status indicator that isn't clickable (e.g. a lock glyph on a row that can't
 be edited) is not a row action and does not count toward this — it stays wherever
 it currently sits and never occupies the Actions cell.
 
-`CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are an
-exception: they are named text buttons in `.data-table__col--action-wide`, as
-the P60 F08 and F13 specs define them.
+`CardStatementsTab.tsx`'s Pay, Settle pot withdrawals, Unmark, Unmark settled
+and Due date buttons are an exception: they are named text buttons in
+`.data-table__col--action-wide`, as the P60 F08 and F13 and P62 F04 specs define
+them.
 
 A row's Edit and Delete are never reached through a link on its description:
 the description stays plain text. A row that another screen or record owns

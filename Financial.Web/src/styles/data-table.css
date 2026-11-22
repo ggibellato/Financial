@@ -90,6 +90,14 @@
   gap: 4px;
 }
 
+.data-table__col--action-wide .data-table__actions-cell {
+  flex-wrap: wrap;
+}
+
+.data-table__col--action-wide .data-table__actions-cell > * {
+  flex-shrink: 0;
+}
+
 .data-table tfoot td {
   font-weight: bold;
   background: var(--colorNeutralBackground1);

@@ -1,5 +1,6 @@
 import type { AccountStatementDto } from '../api/types'
 import { formatLongMonthYear, formatMonthInputValue, formatStatementMonthLabel, parseMonthInputValue } from './formatters'
+import { isClosedStatement } from './owedBalance'
 
 export interface StatementMonthOption {
   value: string
@@ -22,7 +23,7 @@ export function unpaidStatementMonths(
     const year = start.year + Math.floor(monthIndex / 12)
     const month = (monthIndex % 12) + 1
     const statement = statements.find((candidate) => candidate.year === year && candidate.month === month)
-    if (statement?.isPaid) continue
+    if (statement && isClosedStatement(statement)) continue
     months.push({ value: formatMonthInputValue(year, month), label: formatLongMonthYear(year, month), isStored: statement?.id != null })
   }
   return months
