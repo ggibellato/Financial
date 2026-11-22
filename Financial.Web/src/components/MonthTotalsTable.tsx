@@ -1,14 +1,8 @@
 import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import DataTableCell from './grid/DataTableCell'
-import EmptyState from './EmptyState'
 import { formatN2 } from '../utils/formatters'
+import { hasMonthValue, type MonthTotalsColumn } from '../utils/monthTotals'
 import './MonthTotalsTable.css'
-
-export interface MonthTotalsColumn<T> {
-  label: string
-  value: (row: T) => number
-  isTotal?: boolean
-}
 
 interface MonthTotalsTableProps<T extends { month: string }> {
   title: string
@@ -21,11 +15,7 @@ function sumOf<T>(rows: T[], column: MonthTotalsColumn<T>): number {
 }
 
 export default function MonthTotalsTable<T extends { month: string }>({ title, rows, columns }: MonthTotalsTableProps<T>) {
-  const monthsWithValues = rows.filter((row) => columns.some((column) => column.value(row) !== 0))
-
-  if (monthsWithValues.length === 0) {
-    return <EmptyState>No values in this period.</EmptyState>
-  }
+  const monthsWithValues = rows.filter((row) => hasMonthValue(row, columns))
 
   return (
     <div className="month-totals-table" role="region" aria-label={`${title}, monthly totals`} tabIndex={0}>

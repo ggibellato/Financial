@@ -560,7 +560,11 @@ Every chart must provide:
 - Legend where multiple series exist
 - Meaningful tooltips
 - Loading state
-- Empty state
+- Empty state. When no month in the selected period has a non-zero value (a
+  month whose amounts net to zero counts as empty), every View option (Bar, Line
+  and Table) shows "No values in this period." centred in the chart's place under
+  the chart title, not empty axes or an empty table. `components/MonthChartBody`
+  owns this check and the Table choice for every month-bucket chart.
 - Error state
 - Accessible alternative data or summary. For a chart of month buckets, that is a
   "Table" option in the chart's own View switch (next to Bar and Line), which
