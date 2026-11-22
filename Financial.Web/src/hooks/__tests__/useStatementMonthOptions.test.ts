@@ -22,7 +22,7 @@ const statement = (year: number, month: number, isPaid: boolean): AccountStateme
   outstandingTotal: isPaid ? 0 : 10,
   creditCarried: 0,
   status: isPaid ? 'Paid' : 'Unpaid',
-  isPaid,
+  isPaid, settledOn: null,
   dueDate: null,
   paidOn: null,
   paidAmount: null,

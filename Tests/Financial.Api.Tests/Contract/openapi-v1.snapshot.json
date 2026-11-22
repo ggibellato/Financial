@@ -484,6 +484,13 @@
             },
             "type": "array"
           },
+          "settledOn": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "status": {
             "type": "string"
           },
@@ -1984,6 +1991,13 @@
           "outstandingTotal": {
             "format": "double",
             "type": "number"
+          },
+          "settledOn": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "year": {
             "format": "int32",
@@ -5901,6 +5915,25 @@
         "properties": {
           "enabled": {
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "SettlePotWithdrawalsDTO": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paymentSourceBankId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "type": "object"
@@ -10607,6 +10640,88 @@
         ]
       }
     },
+    "/card-statements/{id}/settle-pot-withdrawals": {
+      "post": {
+        "parameters": [
+          {
+            "description": "The statement\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlePotWithdrawalsDTO"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlePotWithdrawalsDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlePotWithdrawalsDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardStatementDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Settles a statement that has nothing to pay, writing its pot withdrawals\u0027 investment withdrawals without a card payment.",
+        "tags": [
+          "CardStatements"
+        ]
+      }
+    },
     "/card-statements/{id}/unmark-paid": {
       "post": {
         "parameters": [
@@ -10654,6 +10769,58 @@
           }
         },
         "summary": "Reverts a card statement back to unpaid.",
+        "tags": [
+          "CardStatements"
+        ]
+      }
+    },
+    "/card-statements/{id}/unsettle-pot-withdrawals": {
+      "post": {
+        "parameters": [
+          {
+            "description": "The statement\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardStatementDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Reverts a settled statement, removing the investment withdrawals its settlement wrote.",
         "tags": [
           "CardStatements"
         ]

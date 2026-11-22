@@ -11,6 +11,7 @@ public sealed class AccountStatementDTO
     public required decimal CreditCarried { get; init; }
     public required string Status { get; init; }
     public required bool IsPaid { get; init; }
+    public DateOnly? SettledOn { get; init; }
     public DateOnly? DueDate { get; init; }
     public DateOnly? PaidOn { get; init; }
     public decimal? PaidAmount { get; init; }

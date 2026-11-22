@@ -16,6 +16,7 @@ public sealed class CardStatementService : ICardStatementService
 {
     private const string EntityType = "CardStatement";
     private const string PaymentChangedElsewhereMessage = "The payment for this statement was changed elsewhere. Reload and try again.";
+    private const string SettledMessage = "This statement is settled; unmark it as settled first.";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -40,38 +41,33 @@ public sealed class CardStatementService : ICardStatementService
 
             var statement = FindStatementOrThrow(id);
 
+            if (statement.IsSettled)
+            {
+                throw new StatementPaymentConflictException(SettledMessage);
+            }
+
             if (statement.IsPaid)
             {
                 throw new StatementPaymentConflictException("This statement is already paid.");
             }
 
-            if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetAccounts(), b => b.Id, out var bank))
-            {
-                throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
-            }
+            var bank = PayingBank(request.PaymentSourceBankId);
 
-            bank!.EnsureCanPay();
-
-            var ledgerMonth = CardStatementLedger.MonthOf(
-                statement.CreditCard, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), statement.Year, statement.Month);
+            var ledgerMonth = LedgerMonthOf(statement);
             if (ledgerMonth is not { IsUnpaid: true })
             {
                 throw new ArgumentException("There is nothing to pay on this statement.");
             }
 
             var today = _timeProvider.GetLocalToday();
-            var payment = Transfer.CreateStatementPayment(request.Date ?? today, bank!, statement.CreditCard, ledgerMonth.AmountToPay, today);
-            var investmentWithdrawals = PotWithdrawalsOn(statement).Select(operation => operation.WithdrawFromInvestment(bank!, payment.Date)).ToList();
+            var payment = Transfer.CreateStatementPayment(request.Date ?? today, bank, statement.CreditCard, ledgerMonth.AmountToPay, today);
+            var investmentWithdrawals = PotWithdrawalsOn(statement).Select(operation => operation.WithdrawFromInvestment(bank, payment.Date)).ToList();
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddTransfer(payment);
                 statement.MarkPaidBy(payment.Id);
-                foreach (var withdrawal in investmentWithdrawals)
-                {
-                    _repository.AddExpense(withdrawal);
-                }
-
+                investmentWithdrawals.ForEach(_repository.AddExpense);
                 return true;
             }).ConfigureAwait(false);
 
@@ -104,6 +100,85 @@ public sealed class CardStatementService : ICardStatementService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
+            return ToDto(statement);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<CardStatementDTO> SettlePotWithdrawalsAsync(Guid id, SettlePotWithdrawalsDTO request)
+    {
+        using var span = StartSpan("SettlePotWithdrawals");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var statement = FindStatementOrThrow(id);
+            if (statement.IsClosed)
+            {
+                throw new StatementPaymentConflictException("This statement is already paid or settled.");
+            }
+
+            var bank = PayingBank(request.PaymentSourceBankId);
+            var ledgerMonth = LedgerMonthOf(statement);
+            if (ledgerMonth is not { Status: CardStatementLedgerStatus.NothingDue })
+            {
+                throw new StatementPaymentConflictException("This statement now has an amount to pay; mark it paid instead.");
+            }
+
+            var today = _timeProvider.GetLocalToday();
+            var settledOn = request.Date ?? today;
+            var operations = PotWithdrawalsOn(statement);
+            if (operations.Count == 0)
+            {
+                throw new ArgumentException("This statement has no pot withdrawals to settle.");
+            }
+
+            var investmentWithdrawals = operations.Select(operation => operation.WithdrawFromInvestment(bank, settledOn)).ToList();
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                statement.SettleWithoutPayment(settledOn, today);
+                investmentWithdrawals.ForEach(_repository.AddExpense);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "SettlePotWithdrawals");
+            return ToDto(statement);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<CardStatementDTO> UnsettlePotWithdrawalsAsync(Guid id)
+    {
+        using var span = StartSpan("UnsettlePotWithdrawals");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            var statement = FindStatementOrThrow(id);
+            if (!statement.IsSettled)
+            {
+                throw new StatementPaymentConflictException("This statement is not settled.");
+            }
+
+            var investmentWithdrawals = InvestmentWithdrawalsWrittenOn(statement);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                investmentWithdrawals.ForEach(withdrawal => _repository.DeleteExpense(withdrawal.Id));
+                statement.UnsettleWithoutPayment();
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "UnsettlePotWithdrawals");
             return ToDto(statement);
         }
         catch (Exception ex)
@@ -152,18 +227,25 @@ public sealed class CardStatementService : ICardStatementService
             throw new StatementPaymentConflictException(PaymentChangedElsewhereMessage);
         }
 
-        var investmentWithdrawals = PotWithdrawalsOn(statement).Select(operation => operation.InvestmentWithdrawalExpense).OfType<Expense>().ToList();
+        var investmentWithdrawals = InvestmentWithdrawalsWrittenOn(statement);
         return () =>
         {
             _repository.DeleteTransfer(paymentId);
             statement.MarkUnpaid();
-            foreach (var withdrawal in investmentWithdrawals)
-            {
-                _repository.DeleteExpense(withdrawal.Id);
-            }
-
+            investmentWithdrawals.ForEach(withdrawal => _repository.DeleteExpense(withdrawal.Id));
             return true;
         };
+    }
+
+    private Account PayingBank(Guid? bankId)
+    {
+        if (!EntityIdResolver.TryResolve(bankId, _repository.GetAccounts(), b => b.Id, out var bank))
+        {
+            throw new ArgumentException($"Payment source '{bankId}' is not recognized.");
+        }
+
+        bank!.EnsureCanPay();
+        return bank;
     }
 
     private IReadOnlyList<PotOperation> PotWithdrawalsOn(CardStatement statement) =>
@@ -187,10 +269,14 @@ public sealed class CardStatementService : ICardStatementService
         };
     }
 
-    private decimal AmountToPay(CardStatement statement) =>
+    private decimal AmountToPay(CardStatement statement) => LedgerMonthOf(statement)?.AmountToPay ?? 0m;
+
+    private CardStatementLedgerMonth? LedgerMonthOf(CardStatement statement) =>
         CardStatementLedger.MonthOf(
-            statement.CreditCard, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), statement.Year, statement.Month)
-            ?.AmountToPay ?? 0m;
+            statement.CreditCard, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), statement.Year, statement.Month);
+
+    private List<Expense> InvestmentWithdrawalsWrittenOn(CardStatement statement) =>
+        PotWithdrawalsOn(statement).Select(operation => operation.InvestmentWithdrawalExpense).OfType<Expense>().ToList();
 
     private CardStatementDTO ToDto(CardStatement statement) => new()
     {
@@ -200,6 +286,7 @@ public sealed class CardStatementService : ICardStatementService
         Year = statement.Year,
         Month = statement.Month,
         IsPaid = statement.IsPaid,
+        SettledOn = statement.SettledOn,
         OutstandingTotal = AmountToPay(statement),
         AccumulatedOutstandingTotal = CardChargeFilter.TotalOwed(statement.CreditCard, AccountTransactionReader.Read(_repository))
     };

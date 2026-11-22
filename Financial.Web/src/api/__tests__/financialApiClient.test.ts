@@ -2191,7 +2191,7 @@ describe('financialApiClient', () => {
       creditCardName: 'BaAmex',
       year: 2026,
       month: 7,
-      isPaid: true,
+      isPaid: true, settledOn: null,
       outstandingTotal: 0,
       accumulatedOutstandingTotal: 0,
     }
@@ -2213,7 +2213,7 @@ describe('financialApiClient', () => {
       creditCardName: 'BaAmex',
       year: 2026,
       month: 7,
-      isPaid: false,
+      isPaid: false, settledOn: null,
       outstandingTotal: 100,
       accumulatedOutstandingTotal: 100,
     }

@@ -60,6 +60,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     [
         (typeof(Transfer), nameof(Transfer.DestinationAmount)),
         (typeof(CardStatement), nameof(CardStatement.PaymentTransferId)),
+        (typeof(CardStatement), nameof(CardStatement.SettledOn)),
         (typeof(Expense), nameof(Expense.OperationId)),
         (typeof(Expense), nameof(Expense.ReportingMonth)),
         (typeof(PotTransaction), nameof(PotTransaction.OperationId))
@@ -68,6 +69,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesNeverWritten =
     [
         (typeof(CardStatement), nameof(CardStatement.IsPaidByTransfer)),
+        (typeof(CardStatement), nameof(CardStatement.IsClosed)),
+        (typeof(CardStatement), nameof(CardStatement.IsSettled)),
         (typeof(Transfer), nameof(Transfer.IsStatementPayment)),
         (typeof(Transfer), nameof(Transfer.IsCreditRefund))
     ];

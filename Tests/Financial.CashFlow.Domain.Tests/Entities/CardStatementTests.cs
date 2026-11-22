@@ -137,4 +137,95 @@ public class CardStatementTests
 
         statement.IsAfter(year, month).Should().Be(expected);
     }
+
+    [Fact]
+    public void SettleWithoutPayment_OpenStatement_RecordsTheDateAndClosesItWithoutPayingIt()
+    {
+        var statement = CardStatement.Create(BaAmex, 2026, 10);
+
+        statement.SettleWithoutPayment(new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 21));
+
+        using (new AssertionScope())
+        {
+            statement.SettledOn.Should().Be(new DateOnly(2026, 11, 3));
+            statement.IsClosed.Should().BeTrue();
+            statement.IsPaid.Should().BeFalse();
+            statement.PaymentTransferId.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void SettleWithoutPayment_PaidOrSettledStatement_Throws()
+    {
+        var paid = CardStatement.Create(BaAmex, 2026, 10);
+        paid.MarkPaidBy(Guid.NewGuid());
+        var settled = CardStatement.Create(BaAmex, 2026, 11);
+        settled.SettleWithoutPayment(new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 21));
+
+        using (new AssertionScope())
+        {
+            FluentActions.Invoking(() => paid.SettleWithoutPayment(new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 21))).Should().Throw<InvalidOperationException>();
+            FluentActions.Invoking(() => settled.SettleWithoutPayment(new DateOnly(2026, 11, 4), new DateOnly(2026, 11, 21))).Should().Throw<InvalidOperationException>();
+        }
+    }
+
+    [Fact]
+    public void UnsettleWithoutPayment_SettledStatement_OpensItAgain()
+    {
+        var statement = CardStatement.Create(BaAmex, 2026, 10);
+        statement.SettleWithoutPayment(new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 21));
+
+        statement.UnsettleWithoutPayment();
+
+        using (new AssertionScope())
+        {
+            statement.SettledOn.Should().BeNull();
+            statement.IsClosed.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void UnsettleWithoutPayment_StatementNotSettled_Throws()
+    {
+        var statement = CardStatement.Create(BaAmex, 2026, 10);
+
+        FluentActions.Invoking(statement.UnsettleWithoutPayment).Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void IsClosed_IsTrueOnlyWhenPaidOrSettled()
+    {
+        var open = CardStatement.Create(BaAmex, 2026, 10);
+        var paid = CardStatement.Create(BaAmex, 2026, 11);
+        paid.MarkPaidBy(Guid.NewGuid());
+
+        using (new AssertionScope())
+        {
+            open.IsClosed.Should().BeFalse();
+            paid.IsClosed.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void MarkPaidBy_SettledStatement_Throws()
+    {
+        var statement = CardStatement.Create(BaAmex, 2026, 10);
+        statement.SettleWithoutPayment(new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 21));
+
+        FluentActions.Invoking(() => statement.MarkPaidBy(Guid.NewGuid())).Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void SettleWithoutPayment_DateAfterToday_ThrowsAndStaysOpen()
+    {
+        var statement = CardStatement.Create(BaAmex, 2026, 10);
+
+        var act = () => statement.SettleWithoutPayment(new DateOnly(2026, 11, 22), new DateOnly(2026, 11, 21));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+            statement.IsClosed.Should().BeFalse();
+        }
+    }
 }

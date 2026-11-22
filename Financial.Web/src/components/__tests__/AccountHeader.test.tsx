@@ -24,7 +24,7 @@ const OCTOBER_UNPAID: AccountStatementDto = {
   outstandingTotal: 650.1,
   creditCarried: 0,
   status: 'Unpaid',
-  isPaid: false,
+  isPaid: false, settledOn: null,
   dueDate: '2026-11-03',
   paidOn: null,
   paidAmount: null,

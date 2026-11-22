@@ -3,6 +3,7 @@ using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Rules;
 using Financial.TestUtilities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests.Rules;
 
@@ -215,5 +216,19 @@ public class CardChargeFilterTests
         otherMonth.Settle(_barclays, new DateOnly(2026, 10, 2));
 
         CardChargeFilter.SettledChargesFor([settled, unpaid, otherMonth], _amex, 2026, 10).Should().Equal(settled);
+    }
+
+    [Fact]
+    public void IsStatementPaid_SettledStatement_CountsAsPaid()
+    {
+        var settled = CardStatement.Create(_amex, 2026, 10);
+        settled.SettleWithoutPayment(new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 21));
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        using (new AssertionScope())
+        {
+            CardChargeFilter.IsStatementPaid([settled], _amex, 2026, 10).Should().BeTrue();
+            CardChargeFilter.IsOnPaidStatement(charge, [settled]).Should().BeTrue();
+        }
     }
 }

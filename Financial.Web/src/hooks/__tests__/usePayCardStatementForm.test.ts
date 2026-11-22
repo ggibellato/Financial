@@ -31,7 +31,7 @@ const PAID: CardStatementDto = {
   creditCardName: 'Amex',
   year: 2026,
   month: 10,
-  isPaid: true,
+  isPaid: true, settledOn: null,
   outstandingTotal: 0,
   accumulatedOutstandingTotal: 12,
 }

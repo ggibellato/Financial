@@ -66,7 +66,7 @@ const paidStatement = (year: number, month: number): AccountStatementDto => ({
   outstandingTotal: 0,
   creditCarried: 0,
   status: 'Paid',
-  isPaid: true,
+  isPaid: true, settledOn: null,
   dueDate: null,
   paidOn: '2026-11-03',
   paidAmount: 10,

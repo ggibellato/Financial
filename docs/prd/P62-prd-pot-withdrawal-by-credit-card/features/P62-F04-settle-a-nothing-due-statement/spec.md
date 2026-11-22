@@ -43,7 +43,7 @@ graph TD
 | Paid-statement rule | `CardStatement.IsClosed => IsPaid \|\| SettledOn is not null`; `CardChargeFilter.IsStatementPaid` checks `IsClosed` | Add a second check at each call site | One place: F01's locks (`PotOperation.IsOnPaidStatement`), F01's paid-statement rejection, `ExpenseService`'s add/move/edit refusals and the transactions grid all treat a settled statement as paid, as the PRD requires |
 | Where the rule lives | `SettleWithoutPayment` on `CardStatement` (rejects when already paid or settled); the "nothing due" and "has a pending pot withdrawal" checks in the service, which already reads the ledger | All in the service | Entity guards its own state; the ledger is an Application read today (mark paid does the same) |
 | Bank and date of a settlement | Kept on the −X records (as F02); the statement stores only `SettledOn` | Store the bank on the statement | The operation already reports `investmentWithdrawalBankId/Date`; no duplicate |
-| Mark paid on a settled statement | Rejected: 409 "This statement is settled; unmark it first." | Allow | A settled statement has nothing to pay; the rule keeps the two states exclusive |
+| Mark paid on a settled statement | Rejected: 409 "This statement is settled; unmark it as settled first." | Allow | A settled statement has nothing to pay; the rule keeps the two states exclusive |
 | Two stages | 4a backend (domain, service, API, contract); 4b web | One PR | Keeps each PR near the size target |
 
 ## 4. Component Overview
@@ -116,7 +116,7 @@ graph TD
 | Pots account without category | 400 | "Set a category on <Pots account> first." |
 | Future date / unknown bank | 400 | Existing messages |
 | Unsettle when not settled | 409 | "This statement is not settled." |
-| Mark paid on a settled statement | 409 | "This statement is settled; unmark it first." |
+| Mark paid on a settled statement | 409 | "This statement is settled; unmark it as settled first." |
 
 ## 6. Data Model
 
@@ -150,3 +150,10 @@ graph TD
 - Settlement is stored as `SettledOn`, not `IsPaid` (ledger credit stays right); a settled statement is "closed" for every paid-statement rule (spec-writer decision, PRD F04 Capabilities).
 - Two stages, two PRs (size target): 4a backend + contract, 4b web.
 - The settle form mirrors the Pay form (inline panel, Bank then Date), and reuses `StatementPotWithdrawalsNote` for the lines.
+
+## Implementation notes (stage 4a)
+
+- `CardStatement` exposes `IsSettled` beside `IsPaid`; `IsClosed => IsPaid || IsSettled`. `MarkPaidBy` now refuses a closed statement too, so "settled cannot be marked paid" holds in the entity; the service maps it to the 409 first.
+- `SettleWithoutPayment(settledOn, today)` applies `TransactionDateRule.EnsureNotInFuture` itself (as `Transfer` does), and runs before any −X is added in the save.
+- `CardStatementService` shares `PayingBank`, `LedgerMonthOf` and `InvestmentWithdrawalsWrittenOn` between mark/unmark paid and settle/unsettle.
+- `CardChargeFilter.IsStatementPaid` keeps its name although it now means "closed"; `AccountGroupSummaryService` therefore reports a settled statement as paid on the Accounts overview, while `AccountStatementDTO.IsPaid` (ledger status) stays false and `settledOn` says it is settled. 4b shows the settled state from `settledOn`.

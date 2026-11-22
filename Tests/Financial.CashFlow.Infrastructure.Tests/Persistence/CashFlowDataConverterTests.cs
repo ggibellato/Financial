@@ -150,6 +150,23 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
+    public void LoadAndSave_SettledStatement_KeepsItsSettledDateByteIdenticalAndOthersWriteNone()
+    {
+        var settled = V5File.Replace(UnpaidOctoberStatement, "\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null,\"SettledOn\":\"2026-11-03\"}");
+
+        var data = _serializer.Deserialize(settled);
+        var saved = _serializer.Serialize(data);
+
+        using (new AssertionScope())
+        {
+            settled.Should().NotBe(V5File);
+            data.CardStatements.Single(statement => statement.Month == 10).SettledOn.Should().Be(new DateOnly(2026, 11, 3));
+            saved.Should().Be(settled);
+            _serializer.Serialize(_serializer.Deserialize(V5File)).Should().NotContain("\"SettledOn\"").And.NotContain("\"IsClosed\"");
+        }
+    }
+
+    [Fact]
     public void Load_StatementPaidByTransfer_LinksTheStatementToItsPayment()
     {
         var data = _serializer.Deserialize(V5FileWithPayment);
