@@ -444,7 +444,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = income.Description,
         Counterpart = income.IncomeSource.Name,
         Amount = income.NetValue,
-        IsInterest = account is not null && account.Has(Capability.EarnsInterest) && income.IncomeSource.Group == IncomeGroup.DividendoJuros,
+        IsInterest = income.IsInterest,
         Currency = account?.Currency.ToString(),
         CanEdit = account?.IsActive ?? true,
         Income = IncomeService.ToDto(income, IncomeService.DepositExpensesOf(income.Id, _repository))

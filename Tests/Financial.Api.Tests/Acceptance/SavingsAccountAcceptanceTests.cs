@@ -52,25 +52,16 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
         }
     }
 
-    [Theory]
+    [Fact]
     [Trait("AC", "P64-F01-savings-template-04")]
-    [Trait("AC", "P64-F01-savings-template-05")]
-    [InlineData("Weekly", 5, 4.5, "Choose how often interest is paid.")]
-    [InlineData("Monthly", null, 4.5, "Interest payment day must be between 1 and 31.")]
-    [InlineData("Daily", 5, 4.5, "Interest paid daily has no payment day.")]
-    [InlineData("Monthly", 5, 100.5, "Interest rate must be between 0% and 100%.")]
-    [InlineData("Monthly", 5, 4.125, "Interest rate can have at most 2 decimal places.")]
-    public async Task PostAccount_SavingsWithInvalidTerms_Returns400WithTheFieldMessage(
-        string frequency, int? paymentDay, double rate, string message)
+    public async Task PostAccount_SavingsWithAnUnknownFrequency_Returns400WithTheRuleMessage()
     {
-        var terms = SavingsTerms(frequency, paymentDay, isTaxFree: false, (decimal)rate);
-
-        var response = await Client.PostAsJsonAsync($"{Api}/accounts", NewSavings(terms));
+        var response = await Client.PostAsJsonAsync($"{Api}/accounts", NewSavings(SavingsTerms("Weekly", 5, isTaxFree: false)));
 
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await response.Content.ReadAsStringAsync()).Should().Contain(message);
+            (await response.Content.ReadAsStringAsync()).Should().Contain("Choose how often interest is paid.");
         }
     }
 
@@ -152,14 +143,15 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
     {
         var transferIn = await PostTransferAsync(BarclaysId, ChaseSaveId, 300m);
         var transferOut = await PostTransferAsync(ChaseSaveId, BarclaysId, 120m);
+        var chaseSave = await DetailAsync(ChaseSaveId);
 
         using (new AssertionScope())
         {
             transferIn.StatusCode.Should().Be(HttpStatusCode.OK);
             transferOut.StatusCode.Should().Be(HttpStatusCode.OK);
-            (await DetailAsync(ChaseSaveId)).Balance.Should().Be(680m);
+            chaseSave.Balance.Should().Be(680m);
             (await DetailAsync(BarclaysId)).Balance.Should().Be(820m);
-            (await DetailAsync(ChaseSaveId)).AllowedActions.Should().Contain(["AddIncome", "TransferTo", "TransferFrom", "Reconcile"]).And.NotContain(["AddExpense", "PayRecurringBill"]);
+            chaseSave.AllowedActions.Should().Contain(["AddIncome", "TransferTo", "TransferFrom", "Reconcile"]).And.NotContain(["AddExpense", "PayRecurringBill"]);
         }
     }
 
@@ -274,12 +266,12 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
         Savings = terms
     };
 
-    private static SavingsTermsDTO SavingsTerms(string frequency, int? paymentDay, bool isTaxFree, decimal rate = 4.5m) => new()
+    private static SavingsTermsDTO SavingsTerms(string frequency, int? paymentDay, bool isTaxFree) => new()
     {
         InterestFrequency = frequency,
         PaymentDay = paymentDay,
         IsTaxFree = isTaxFree,
-        Rates = [new InterestRateDTO { AnnualPercent = rate, EffectiveFrom = new DateOnly(2026, 9, 1) }]
+        Rates = [new InterestRateDTO { AnnualPercent = 4.5m, EffectiveFrom = new DateOnly(2026, 9, 1) }]
     };
 
     private Task<HttpResponseMessage> PutChaseSaveAsync(SavingsTermsDTO terms) =>

@@ -10,6 +10,7 @@ public sealed class SavingsTerms
     public const int MinPaymentDay = 1;
     public const int MaxPaymentDay = 31;
     public const string NoRatesMessage = "A savings account needs at least one rate.";
+    public const string UnknownFrequencyMessage = "Choose how often interest is paid.";
 
     public InterestFrequency Frequency { get; }
     public int? PaymentDay { get; }
@@ -52,7 +53,7 @@ public sealed class SavingsTerms
     {
         if (!Enum.IsDefined(frequency))
         {
-            throw new ArgumentException("Choose how often interest is paid.");
+            throw new ArgumentException(UnknownFrequencyMessage);
         }
 
         if (frequency == InterestFrequency.Monthly && paymentDay is not (>= MinPaymentDay and <= MaxPaymentDay))

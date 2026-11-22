@@ -87,6 +87,8 @@ public class Income : IAccountTransaction
         }
     }
 
+    public bool IsInterest => Account?.Has(Capability.EarnsInterest) == true && IncomeSource.Group == IncomeGroup.DividendoJuros;
+
     public decimal ContributionTo(Account account) => Account?.Id == account.Id ? NetValue : 0m;
 
     private static void ValidateAccount(Account? account)

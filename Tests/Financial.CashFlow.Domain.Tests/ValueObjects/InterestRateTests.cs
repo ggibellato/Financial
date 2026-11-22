@@ -23,6 +23,7 @@ public class InterestRateTests
     }
 
     [Theory]
+    [Trait("AC", "P64-F01-savings-template-05")]
     [InlineData(-0.01)]
     [InlineData(100.01)]
     public void Create_OutsideZeroToOneHundred_Throws(decimal annualPercent)
@@ -33,6 +34,7 @@ public class InterestRateTests
     }
 
     [Fact]
+    [Trait("AC", "P64-F01-savings-template-05")]
     public void Create_WithThreeDecimalPlaces_Throws()
     {
         var act = () => InterestRate.Create(4.125m, new DateOnly(2026, 9, 1));

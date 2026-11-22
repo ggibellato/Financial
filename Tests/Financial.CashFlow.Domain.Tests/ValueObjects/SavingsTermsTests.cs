@@ -33,75 +33,42 @@ public class SavingsTermsTests
         terms.PaymentDay.Should().BeNull();
     }
 
+    public static TheoryData<InterestFrequency, int?, InterestRate[], string> InvalidTerms => new()
+    {
+        { InterestFrequency.Monthly, null, [September], "Interest payment day must be between 1 and 31." },
+        { InterestFrequency.Monthly, 0, [September], "Interest payment day must be between 1 and 31." },
+        { InterestFrequency.Monthly, 32, [September], "Interest payment day must be between 1 and 31." },
+        { InterestFrequency.Daily, 5, [September], "Interest paid daily has no payment day." },
+        { (InterestFrequency)99, null, [September], SavingsTerms.UnknownFrequencyMessage },
+        { InterestFrequency.Daily, null, [], SavingsTerms.NoRatesMessage },
+        { InterestFrequency.Daily, null, [September, InterestRate.Create(5m, new DateOnly(2026, 9, 1))], "Two rates can't take effect on the same date." }
+    };
+
     [Theory]
-    [InlineData(null)]
-    [InlineData(0)]
-    [InlineData(32)]
-    public void Create_MonthlyWithoutADayFrom1To31_Throws(int? paymentDay)
+    [Trait("AC", "P64-F01-savings-template-04")]
+    [Trait("AC", "P64-F01-savings-template-05")]
+    [MemberData(nameof(InvalidTerms))]
+    public void Create_WithInvalidTerms_ThrowsTheRuleMessage(InterestFrequency frequency, int? paymentDay, InterestRate[] rates, string message)
     {
-        var act = () => SavingsTerms.Create(InterestFrequency.Monthly, paymentDay, isTaxFree: false, [September]);
+        var act = () => SavingsTerms.Create(frequency, paymentDay, isTaxFree: false, rates);
 
-        act.Should().Throw<ArgumentException>().WithMessage("Interest payment day must be between 1 and 31.");
-    }
-
-    [Fact]
-    public void Create_DailyWithAPaymentDay_Throws()
-    {
-        var act = () => SavingsTerms.Create(InterestFrequency.Daily, 5, isTaxFree: false, [September]);
-
-        act.Should().Throw<ArgumentException>().WithMessage("Interest paid daily has no payment day.");
-    }
-
-    [Fact]
-    public void Create_WithAnUnknownFrequency_Throws()
-    {
-        var act = () => SavingsTerms.Create((InterestFrequency)99, null, isTaxFree: false, [September]);
-
-        act.Should().Throw<ArgumentException>().WithMessage("Choose how often interest is paid.");
-    }
-
-    [Fact]
-    public void Create_WithoutRates_Throws()
-    {
-        var act = () => SavingsTerms.Create(InterestFrequency.Daily, null, isTaxFree: false, []);
-
-        act.Should().Throw<ArgumentException>().WithMessage("A savings account needs at least one rate.");
-    }
-
-    [Fact]
-    public void Create_WithTwoRatesOnTheSameDate_Throws()
-    {
-        var act = () => SavingsTerms.Create(
-            InterestFrequency.Daily, null, isTaxFree: false, [September, InterestRate.Create(5m, new DateOnly(2026, 9, 1))]);
-
-        act.Should().Throw<ArgumentException>().WithMessage("Two rates can't take effect on the same date.");
+        act.Should().Throw<ArgumentException>().WithMessage(message);
     }
 
     [Theory]
+    [InlineData("2026-08-31", null, 4.5)]
     [InlineData("2026-09-01", 4.5, 3.75)]
     [InlineData("2026-12-31", 4.5, 3.75)]
     [InlineData("2027-01-01", 3.75, null)]
-    public void CurrentAndUpcomingRate_AreTheLatestRateInEffectAndTheNextOne(string today, double current, double? upcoming)
+    public void CurrentAndUpcomingRate_AreTheLatestRateInEffectAndTheNextOne(string today, double? current, double? upcoming)
     {
         var terms = SavingsTerms.Create(InterestFrequency.Monthly, 1, isTaxFree: false, [September, January]);
         var asOf = DateOnly.Parse(today, System.Globalization.CultureInfo.InvariantCulture);
 
         using (new AssertionScope())
         {
-            terms.CurrentRate(asOf)!.AnnualPercent.Should().Be((decimal)current);
+            (terms.CurrentRate(asOf)?.AnnualPercent).Should().Be((decimal?)current);
             (terms.UpcomingRate(asOf)?.AnnualPercent).Should().Be((decimal?)upcoming);
-        }
-    }
-
-    [Fact]
-    public void CurrentRate_WhenEveryRateIsInTheFuture_IsNoneAndTheFirstIsUpcoming()
-    {
-        var terms = SavingsTerms.Create(InterestFrequency.Monthly, 1, isTaxFree: false, [September, January]);
-
-        using (new AssertionScope())
-        {
-            terms.CurrentRate(new DateOnly(2026, 8, 31)).Should().BeNull();
-            terms.UpcomingRate(new DateOnly(2026, 8, 31)).Should().Be(September);
         }
     }
 }
