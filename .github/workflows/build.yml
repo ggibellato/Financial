@@ -118,7 +118,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.403
+        dotnet-version: 10.0.x
 
     - name: Build
       run: dotnet build --configuration Release
@@ -175,7 +175,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.403
+        dotnet-version: 10.0.x
 
     - name: Install dependencies
       working-directory: Financial.Web
