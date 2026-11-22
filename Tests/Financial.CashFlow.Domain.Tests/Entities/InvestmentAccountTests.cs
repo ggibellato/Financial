@@ -1,7 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.ValueObjects;
-using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Financial.TestUtilities;
@@ -296,17 +294,10 @@ public class InvestmentAccountTests
         act.Should().Throw<ArgumentException>();
     }
 
-    private static Account ChaseSave() =>
-        Account.Create(
-            "Chase Save",
-            AccountTemplate.Savings,
-            Currency.GBP,
-            SavingsTerms.Create(InterestFrequency.Daily, null, isTaxFree: false, [InterestRate.Create(4.5m, new DateOnly(2026, 9, 1))]));
-
     [Fact]
     public void Create_WithSourceSavingsAccountBalanceAndASavingsAccount_NamesIt()
     {
-        var chaseSave = ChaseSave();
+        var chaseSave = TestAccounts.Savings("Chase Save");
 
         var account = InvestmentAccount.Create(
             "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance, savingsAccount: chaseSave);
@@ -326,7 +317,7 @@ public class InvestmentAccountTests
     public void Create_WithASavingsAccountAndAnotherSource_Throws()
     {
         var act = () => InvestmentAccount.Create(
-            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.None, savingsAccount: ChaseSave());
+            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.None, savingsAccount: TestAccounts.Savings("Chase Save"));
 
         act.Should().Throw<ArgumentException>().WithMessage("Only a savings-account-sourced investment account can name a Savings account.");
     }
@@ -344,7 +335,7 @@ public class InvestmentAccountTests
     public void Update_SwitchingAwayFromSavingsAccountBalance_ClearsTheSavingsAccount()
     {
         var account = InvestmentAccount.Create(
-            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance, savingsAccount: ChaseSave());
+            "Chase savings", isActive: true, isLiability: false, InvestmentAccountSource.SavingsAccountBalance, savingsAccount: TestAccounts.Savings("Chase Save"));
 
         account.Update("Chase savings", isActive: true, isLiability: false);
 

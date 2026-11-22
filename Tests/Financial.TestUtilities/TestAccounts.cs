@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
+using Financial.CashFlow.Domain.ValueObjects;
 using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.TestUtilities;
@@ -59,4 +60,11 @@ public static class TestAccounts
 
         return account;
     }
+
+    public static Account Savings(string name, SavingsTerms? terms = null) =>
+        Account.Create(
+            name,
+            AccountTemplate.Savings,
+            Currency.GBP,
+            terms ?? SavingsTerms.Create(InterestFrequency.Monthly, 5, isTaxFree: false, [InterestRate.Create(4.5m, new DateOnly(2026, 9, 1))]));
 }

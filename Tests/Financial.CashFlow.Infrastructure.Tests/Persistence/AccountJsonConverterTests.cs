@@ -24,11 +24,11 @@ public class AccountJsonConverterTests
     private const string Mae =
         """{"Id":"5db5c88d-0000-0000-0000-000000000008","Name":"Mãe","Template":"Settlement","Currency":"BRL","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":null,"CategoryId":null,"Currencies":["BRL","GBP"],"OtherParticipant":"Mãe"}""";
 
-    private const string ChaseSave =
-        """{"Id":"5db5c88d-0000-0000-0000-000000000009","Name":"Chase Save","Template":"Savings","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":500,"StartDate":"2026-09-01"},"RoundUp":null,"Pots":null,"CategoryId":null,"Savings":{"Frequency":"Monthly","PaymentDay":5,"IsTaxFree":false,"Rates":[{"AnnualPercent":4.5,"EffectiveFrom":"2026-09-01"},{"AnnualPercent":3.75,"EffectiveFrom":"2027-01-01"}]}}""";
-
     private const string SavingsKey =
         ""","Savings":{"Frequency":"Monthly","PaymentDay":5,"IsTaxFree":false,"Rates":[{"AnnualPercent":4.5,"EffectiveFrom":"2026-09-01"},{"AnnualPercent":3.75,"EffectiveFrom":"2027-01-01"}]}""";
+
+    private const string ChaseSave =
+        """{"Id":"5db5c88d-0000-0000-0000-000000000009","Name":"Chase Save","Template":"Savings","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":500,"StartDate":"2026-09-01"},"RoundUp":null,"Pots":null,"CategoryId":null""" + SavingsKey + "}";
 
     private readonly JsonSerializerOptions _options;
 

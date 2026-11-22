@@ -32,10 +32,8 @@ public class InvestmentAccount
         }
 
         ValidateSourceShape(source, creditCard);
-        ValidatePotsAccount(source, potsAccount);
-        ActiveAccountRule.EnsureUsable(null, potsAccount);
-        ValidateSavingsAccount(source, savingsAccount);
-        ActiveAccountRule.EnsureUsable(null, savingsAccount);
+        ValidatePotsAccount(source, null, potsAccount);
+        ValidateSavingsAccount(source, null, savingsAccount);
 
         return new()
         {
@@ -65,10 +63,8 @@ public class InvestmentAccount
         }
 
         ValidateSourceShape(source, creditCard);
-        ValidatePotsAccount(source, potsAccount);
-        ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
-        ValidateSavingsAccount(source, savingsAccount);
-        ActiveAccountRule.EnsureUsable(SavingsAccount, savingsAccount);
+        ValidatePotsAccount(source, PotsAccount, potsAccount);
+        ValidateSavingsAccount(source, SavingsAccount, savingsAccount);
 
         Name = name;
         IsActive = isActive;
@@ -79,21 +75,22 @@ public class InvestmentAccount
         SavingsAccount = savingsAccount;
     }
 
-    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? potsAccount) =>
-        ValidateLinkedAccount(source, InvestmentAccountSource.PotsAccountTotal, potsAccount, Capability.HasPots, "pots-account", "Pots account");
+    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? current, Account? potsAccount) =>
+        ValidateLinkedAccount(source, InvestmentAccountSource.PotsAccountTotal, current, potsAccount, Capability.HasPots, "Pots account");
 
-    private static void ValidateSavingsAccount(InvestmentAccountSource source, Account? savingsAccount) =>
-        ValidateLinkedAccount(
-            source, InvestmentAccountSource.SavingsAccountBalance, savingsAccount, Capability.EarnsInterest, "savings-account", "Savings account");
+    private static void ValidateSavingsAccount(InvestmentAccountSource source, Account? current, Account? savingsAccount) =>
+        ValidateLinkedAccount(source, InvestmentAccountSource.SavingsAccountBalance, current, savingsAccount, Capability.EarnsInterest, "Savings account");
 
     private static void ValidateLinkedAccount(
         InvestmentAccountSource source,
         InvestmentAccountSource linkingSource,
+        Account? current,
         Account? linkedAccount,
         Capability requiredCapability,
-        string sourceLabel,
         string accountLabel)
     {
+        var sourceLabel = accountLabel.ToLowerInvariant().Replace(' ', '-');
+
         if (source == linkingSource && linkedAccount is null)
         {
             throw new ArgumentException($"A {sourceLabel}-sourced investment account requires a {accountLabel}.");
@@ -108,6 +105,8 @@ public class InvestmentAccount
         {
             throw new ArgumentException($"{linkedAccount.Name} is not a {accountLabel}.");
         }
+
+        ActiveAccountRule.EnsureUsable(current, linkedAccount);
     }
 
     private static void ValidateSourceShape(InvestmentAccountSource source, Account? creditCard)

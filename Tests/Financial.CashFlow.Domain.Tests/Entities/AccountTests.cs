@@ -1175,7 +1175,7 @@ public class AccountTests
     [Fact]
     public void SetSavings_OnASavingsAccount_ReplacesTheTerms()
     {
-        var account = Account.Create("Chase Save", AccountTemplate.Savings, Currency.GBP, MonthlyTerms());
+        var account = TestAccounts.Savings("Chase Save");
         var daily = SavingsTerms.Create(InterestFrequency.Daily, null, isTaxFree: true, [InterestRate.Create(3m, new DateOnly(2026, 1, 1))]);
 
         account.SetSavings(daily);
@@ -1225,7 +1225,7 @@ public class AccountTests
     [Fact]
     public void ChangeSetup_AwayFromSavings_DropsTheTerms()
     {
-        var account = Account.Create("Chase Save", AccountTemplate.Savings, Currency.GBP, MonthlyTerms());
+        var account = TestAccounts.Savings("Chase Save");
 
         account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: false);
 

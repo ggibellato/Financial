@@ -16,7 +16,7 @@ internal static class SavingsTermsMapper
 
         if (!EnumParser.TryParseEnum<InterestFrequency>(dto.InterestFrequency, out var frequency))
         {
-            throw new ArgumentException("Choose how often interest is paid.");
+            throw new ArgumentException(SavingsTerms.UnknownFrequencyMessage);
         }
 
         return SavingsTerms.Create(

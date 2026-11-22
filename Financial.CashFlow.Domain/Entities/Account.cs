@@ -87,6 +87,7 @@ public class Account
     {
         if (IsSetUpAs(template, currencies))
         {
+            AssignSavings(savings);
             return;
         }
 

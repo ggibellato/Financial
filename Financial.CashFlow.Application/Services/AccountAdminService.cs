@@ -127,7 +127,6 @@ public sealed class AccountAdminService : IAccountAdminService
             {
                 account.Update(request.Name);
                 account.ChangeSetup(template, currencies, hasRecords, savings);
-                ApplySavings(account, savings);
                 ApplyOtherParticipant(account, request.OtherParticipant);
                 ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
                 ApplyCategory(account, category);
@@ -236,14 +235,6 @@ public sealed class AccountAdminService : IAccountAdminService
         var preview = Account.Create(accountName, template, currencies[0], savings);
         preview.ApplyCurrencies(currencies);
         ApplyOtherParticipant(preview, otherParticipant);
-    }
-
-    private static void ApplySavings(Account account, SavingsTerms? savings)
-    {
-        if (savings is not null)
-        {
-            account.SetSavings(savings);
-        }
     }
 
     private static void ApplyOtherParticipant(Account account, string? otherParticipant)
