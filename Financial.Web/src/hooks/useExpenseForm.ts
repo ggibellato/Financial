@@ -5,6 +5,7 @@ import type { BankOption, CategoryDto, ExpenseDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
+import { parseRoundUpAmount, ROUND_UP_RANGE_MESSAGE, roundsUp, suggestRoundUpAmount } from '../utils/roundUp'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -13,31 +14,14 @@ import { futureDateError } from '../utils/validators'
 
 export type PaymentMode = 'bank' | 'card'
 
-const MIN_ROUND_UP_AMOUNT = 0
-const MAX_ROUND_UP_AMOUNT = 0.99
-
 const DATE_KEY = 'expense.date'
 const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
 const MISSING_CARD_MESSAGE = "Add charges from the card's account screen."
 const CATEGORY_KEY = 'expense.categoryId'
 
-export function computeRoundUpSuggestion(value: number): number {
-  return Math.round((Math.ceil(value) - value) * 100) / 100
-}
-
 function notAfterToday(date: string): string {
   const today = todayIsoDate()
   return date > today ? today : date
-}
-
-function suggestRoundUpAmount(banks: BankOption[], bankId: string, value: string): string | null {
-  const bank = banks.find((b) => b.id === bankId)
-  if (!bank?.roundUpEnabled) return null
-
-  const parsedValue = Number(value)
-  if (!value.trim() || !isFinite(parsedValue) || parsedValue <= 0) return null
-
-  return computeRoundUpSuggestion(parsedValue).toFixed(2)
 }
 
 const EDITABLE_FIELDS = [
@@ -316,15 +300,12 @@ export function useExpenseForm(
       errors.value = state.isRefund ? 'Amount must be greater than zero.' : 'Value must be a non-zero number.'
     }
 
-    const selectedBank = banks.find((b) => b.id === state.paymentSource)
-    const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+    const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && roundsUp(banks, state.paymentSource)
 
     let roundUpAmount: number | null = null
     if (roundUpEligible && state.roundUpAmount.trim() !== '') {
-      roundUpAmount = parseValidatedNumber(state.roundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
-      if (roundUpAmount === null) {
-        errors.roundUpAmount = `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}.`
-      }
+      roundUpAmount = parseRoundUpAmount(state.roundUpAmount)
+      if (roundUpAmount === null) errors.roundUpAmount = ROUND_UP_RANGE_MESSAGE
     }
 
     const isMissingCard = !state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === ''

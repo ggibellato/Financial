@@ -7,6 +7,7 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { formatStatementMonthLabel, todayIsoDate } from '../utils/formatters'
+import { roundsUp } from '../utils/roundUp'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
@@ -89,7 +90,7 @@ export default function ExpenseForm({
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0
   const formRef = useFormErrorFocus(saveErrorFields)
   const selectedBank = banks.find((b) => b.id === paymentSource)
-  const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+  const showRoundUpField = paymentMode === 'bank' && roundsUp(banks, paymentSource)
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
   const cardName = lockedCard?.name || creditCardName || creditCardId
