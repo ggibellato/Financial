@@ -1,6 +1,7 @@
 # Rename "disposal" to "realised gain" in the back end
 
-Status: PR 1 merged (#1423); PR 2 in progress (branch `refactor/realised-gain-api-web`).
+Status: complete, 2026-11-22. PR 1 #1423 (domain and data version 6), PR 2 #1424 (API and web) and the
+no-setter follow-up #1425 are merged. The deploy steps below are still to do.
 
 ## Why
 
@@ -175,11 +176,11 @@ As built:
   drops every property with no setter of any visibility, replacing this list and CashFlow's
   `PropertiesNeverWritten`. The CashFlow audit also found six computed `Expense` getters still written
   (`PaymentStatus`, `RoundUpSuggestion`, `SuggestedRoundUpAmount`, `IsInvestment`, `ReportingDate`,
-  `ListingDate`); they leave the file on its next save, with no data-version bump.
-- The older steps in `InvestmentDataMigrations` (versions 2–4) can use the new `RenameProperty` and
+  `ListingDate`); they leave the file on its next save, with no data-version bump. Merged in #1425.
+- [ ] Optional, not scheduled: the older steps in `InvestmentDataMigrations` (versions 2–4) can use the new `RenameProperty` and
   `EnumerateObjects` helpers.
 
 ## Deploy
 
-After PR 1 merges: back up `data-investment.json` (local and the Google Drive copy if that provider is in
+Before the first deploy that includes #1423: back up `data-investment.json` (local and the Google Drive copy if that provider is in
 use), deploy, restart, and confirm the file now says `"Version": 6`. PR 2 deploys like any other change.
