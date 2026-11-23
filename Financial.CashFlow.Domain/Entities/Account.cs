@@ -20,6 +20,7 @@ public class Account
     private IReadOnlySet<Capability>? _capabilitiesOverride;
     private IReadOnlyList<Pot> _pots = [];
     private IReadOnlyList<Currency> _currencies = [];
+    private CashbackSetting? _cashback;
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -30,7 +31,7 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
-    public CashbackSetting? Cashback { get; private set; }
+    public CashbackSetting? Cashback => Has(Capability.SupportsCashback) ? _cashback ?? CashbackSetting.Off : null;
     public SavingsTerms? Savings { get; private set; }
     public IReadOnlyList<Pot>? Pots => Has(Capability.HasPots) ? _pots : null;
     public Category? Category { get; private set; }
@@ -179,7 +180,7 @@ public class Account
     {
         ArgumentNullException.ThrowIfNull(cashback);
         EnsureSupportsCashback(Has, Name);
-        Cashback = cashback;
+        _cashback = cashback;
     }
 
     public void SetSavings(SavingsTerms savings)
@@ -365,8 +366,8 @@ public class Account
     {
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
-        Cashback = Has(Capability.SupportsCashback) ? Cashback ?? CashbackSetting.Off : null;
         Savings = Has(Capability.EarnsInterest) ? Savings : null;
+        _cashback = Has(Capability.SupportsCashback) ? _cashback : null;
         _currencies = Has(Capability.MultiCurrency) ? [Currency] : [];
         OtherParticipant = Has(Capability.HasParticipants) ? OtherParticipant : null;
         if (!Has(Capability.HasPots))

@@ -122,7 +122,9 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         AccountNextStatementDTO? nextStatement)
     {
         var balances = AccountBalanceRule.Balances(account, endOfMonth, records);
-        var paidFromAccount = listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).ToList();
+        var paidFromAccount = account.Has(Capability.SupportsRoundUp) || account.Has(Capability.SupportsCashback)
+            ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).ToList()
+            : [];
         return new()
         {
             AccountId = account.Id,

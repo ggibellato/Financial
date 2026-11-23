@@ -52,9 +52,7 @@ public class Expense : IAccountTransaction
             : RoundUpSuggestion;
 
     public decimal? SuggestedCashbackAmount =>
-        PaymentStatus == ExpensePaymentStatus.ImmediatePayment && PaymentSourceAccount?.Cashback is { Enabled: true } cashback && Value > 0
-            ? cashback.SuggestionFor(Value)
-            : null;
+        IsPaidFromCashbackBank && Value > 0 ? PaymentSourceAccount!.Cashback!.SuggestionFor(Value) : null;
 
     public bool IsInvestment => Category.IsInvestment;
 

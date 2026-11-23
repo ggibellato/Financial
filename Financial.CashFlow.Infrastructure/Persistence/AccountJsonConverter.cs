@@ -50,10 +50,6 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
         {
             account.SetCashback(CashbackSetting.On(cashback.RatePercent));
         }
-        else if (account.Has(Capability.SupportsCashback))
-        {
-            account.SetCashback(CashbackSetting.Off);
-        }
 
         if (account.Has(Capability.HasPots) != record.Pots is not null)
         {

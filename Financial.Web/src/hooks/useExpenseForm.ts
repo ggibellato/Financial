@@ -61,6 +61,7 @@ interface ExpenseFormState {
   // True until the user directly edits the round-up field, or an edit form loads a saved
   // amount - both "freeze" it so later Value/PaymentSource edits stop recomputing it.
   roundUpAmountAuto: boolean
+  savedCashback: SavedCashback | null
   countsAsTithe: string
   paymentMode: PaymentMode
   isRefund: boolean
@@ -68,6 +69,11 @@ interface ExpenseFormState {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<ExpenseFormField, string>>
+}
+
+interface SavedCashback {
+  bankId: string
+  amount: number
 }
 
 type ExpenseFormAction =
@@ -105,6 +111,7 @@ const BLANK_FORM = {
   paymentMode: 'bank' as PaymentMode,
   isRefund: false,
   isSettled: false,
+  savedCashback: null,
 } as const
 
 const INITIAL_STATE: ExpenseFormState = {
@@ -157,6 +164,10 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         // A saved amount is frozen (not auto-recomputed), same as a user-typed one, so
         // re-editing Value/PaymentSource here doesn't silently change what was saved.
         roundUpAmountAuto: expense.roundUpAmount == null,
+        savedCashback:
+          expense.cashbackAmount != null && expense.paymentSourceBankId != null
+            ? { bankId: expense.paymentSourceBankId, amount: expense.cashbackAmount }
+            : null,
         countsAsTithe: String(expense.countsAsTithe),
         paymentMode: isCardChargeStatus(expense.paymentStatus) ? 'card' : 'bank',
         isRefund,
@@ -335,7 +346,8 @@ export function useExpenseForm(
           ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date)}-01`
           : null,
       roundUpAmount,
-      cashbackAmount: null,
+      cashbackAmount:
+        state.savedCashback?.bankId === paymentFields.paymentSourceBankId ? state.savedCashback.amount : null,
       countsAsTithe: state.countsAsTithe === 'true',
     }
 

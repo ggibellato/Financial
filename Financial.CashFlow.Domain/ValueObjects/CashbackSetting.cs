@@ -5,11 +5,10 @@ namespace Financial.CashFlow.Domain.ValueObjects;
 
 public sealed record CashbackSetting
 {
-    public const decimal MaxRatePercent = 100m;
-    public const string MissingRateMessage = "Enter the cashback rate.";
-    public const string RateWithoutCashbackMessage = "A cashback rate can only be set while cashback is on.";
-    private const decimal PercentBase = 100m;
+    private const decimal MaxRatePercent = 100m;
     private const decimal PenniesInAPound = 100m;
+    private const string MissingRateMessage = "Enter the cashback rate.";
+    private const string RateWithoutCashbackMessage = "A cashback rate can only be set while cashback is on.";
 
     public static readonly CashbackSetting Off = new(ratePercent: null);
 
@@ -48,6 +47,6 @@ public sealed record CashbackSetting
 
     public decimal SuggestionFor(decimal value) =>
         RatePercent is { } rate && value > 0
-            ? Math.Floor(value * rate / PercentBase * PenniesInAPound) / PenniesInAPound
+            ? Math.Floor(value * rate) / PenniesInAPound
             : 0m;
 }

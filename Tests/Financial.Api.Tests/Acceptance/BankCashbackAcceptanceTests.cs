@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -70,11 +71,7 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
     {
         var response = await Client.PostAsJsonAsync($"{Api}/accounts", NewBank("Monzo", enabled, (decimal?)ratePercent));
 
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await response.Content.ReadAsStringAsync()).Should().Contain(message);
-        }
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, message);
     }
 
     [Fact]
@@ -93,11 +90,7 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
             CashbackRatePercent = 2m
         });
 
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await response.Content.ReadAsStringAsync()).Should().Contain("Mãe does not support cashback.");
-        }
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, "Mãe does not support cashback.");
     }
 
     [Fact]
@@ -155,13 +148,9 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
     [InlineData(0.255)]
     public async Task PostExpense_CashbackOutsideRange_Returns400(double cashback)
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", Expense(ChaseId, null, 12.50m, (decimal)cashback));
+        var response = await Client.PostAsJsonAsync($"{Api}/expenses", NewExpense(ChaseId, null, 12.50m, (decimal)cashback));
 
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await response.Content.ReadAsStringAsync()).Should().Contain("Cashback must be between 0 and the expense value, with at most 2 decimal places.");
-        }
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, Expense.CashbackRangeMessage);
     }
 
     [Theory]
@@ -170,13 +159,9 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
     [InlineData(null, AmexId)]
     public async Task PostExpense_CashbackFromABankWithCashbackOffOrByCard_Returns400(string? bankId, string? cardId)
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", Expense(bankId, cardId, 12.50m, 0.25m));
+        var response = await Client.PostAsJsonAsync($"{Api}/expenses", NewExpense(bankId, cardId, 12.50m, 0.25m));
 
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await response.Content.ReadAsStringAsync()).Should().Contain("Cashback only applies to an expense paid from a bank with cashback on.");
-        }
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, Expense.CashbackWithoutBankMessage);
     }
 
     [Fact]
@@ -276,7 +261,7 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
         CashbackRatePercent = ratePercent
     };
 
-    private static ExpenseCreateDTO Expense(string? bankId, string? cardId, decimal value, decimal? cashback, decimal? roundUp = null) => new()
+    private static ExpenseCreateDTO NewExpense(string? bankId, string? cardId, decimal value, decimal? cashback, decimal? roundUp = null) => new()
     {
         Date = new DateOnly(2026, 10, 3),
         Description = "Lunch",
@@ -290,7 +275,7 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
 
     private async Task<ExpenseDTO> PostExpenseAsync(string bankId, decimal value, decimal? cashback, decimal? roundUp = null)
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", Expense(bankId, null, value, cashback, roundUp));
+        var response = await Client.PostAsJsonAsync($"{Api}/expenses", NewExpense(bankId, null, value, cashback, roundUp));
         response.IsSuccessStatusCode.Should().BeTrue(await response.Content.ReadAsStringAsync());
         return (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!;
     }
