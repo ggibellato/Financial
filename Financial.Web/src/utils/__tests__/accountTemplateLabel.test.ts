@@ -21,9 +21,9 @@ describe('accountTemplateLabel', () => {
 
 describe('accountTemplateOrder', () => {
   it('orders templates as the Accounts page groups them, any other template last', () => {
-    const templates = ['Cash', 'Settlement', 'Pots', 'CreditCard', 'Bank']
+    const templates = ['Cash', 'Savings', 'Settlement', 'Pots', 'CreditCard', 'Bank']
 
-    expect(templates.sort((a, b) => accountTemplateOrder(a) - accountTemplateOrder(b))).toEqual(['Bank', 'CreditCard', 'Pots', 'Settlement', 'Cash'])
+    expect(templates.sort((a, b) => accountTemplateOrder(a) - accountTemplateOrder(b))).toEqual(['Bank', 'CreditCard', 'Pots', 'Settlement', 'Savings', 'Cash'])
   })
 })
 
@@ -42,6 +42,10 @@ describe('accountTemplateGrid', () => {
 
   it('shows Settlement accounts with who owes whom under "Settlement", with linked rows and no footer', () => {
     expect(accountTemplateGrid('Settlement')).toEqual({ heading: 'Settlement', columns: 'settlement', linksRows: true })
+  })
+
+  it('[AC P64-F04-savings-web-03] shows Savings accounts with their balance under "Savings", totalled as "Savings total", with linked rows', () => {
+    expect(accountTemplateGrid('Savings')).toEqual({ heading: 'Savings', footerLabel: 'Savings total', columns: 'balance', linksRows: true })
   })
 
   it('shows any other template under its label with a "Total" footer, its balance and plain-text rows', () => {

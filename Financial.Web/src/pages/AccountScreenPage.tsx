@@ -27,6 +27,7 @@ import PotsTab from '../components/PotsTab'
 import SettlementEntryForm from '../components/SettlementEntryForm'
 import TransferForm from '../components/TransferForm'
 import { useAccountActionForms } from '../hooks/useAccountActionForms'
+import { interestIncomeSources } from '../hooks/useIncomeForm'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
 import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../hooks/useAccountScreen'
@@ -316,7 +317,12 @@ export default function AccountScreenPage() {
             onRetryPotsAccounts={incomeForm.retryPotsAccounts}
             funding={incomeForm.incomeFunding}
             banks={formOptions.options.banks}
-            incomeSources={formOptions.options.incomeSources}
+            incomeSources={
+              incomeForm.isInterestForm
+                ? interestIncomeSources(formOptions.options.incomeSources)
+                : formOptions.options.incomeSources
+            }
+            isInterest={incomeForm.isInterestForm}
             isSaving={incomeForm.isSavingIncome}
             lockedBank={incomeForm.incomeLockedBank}
             saveError={incomeForm.saveIncomeError}

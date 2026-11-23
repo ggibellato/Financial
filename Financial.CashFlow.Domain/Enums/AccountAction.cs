@@ -7,6 +7,7 @@ public enum AccountAction
     AddRefund,
     RefundCreditToBank,
     AddIncome,
+    AddInterest,
     TransferTo,
     TransferFrom,
     PayRecurringBill,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, monthRowEdit, rowDeleteBlockedReason, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
+import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, rowKindLabel, monthRowEdit, rowDeleteBlockedReason, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -102,6 +102,12 @@ describe('isOlderIncomeLine', () => {
 
 describe('a settlement entry row', () => {
   const ENTRY = accountTransactionRow({ id: 's1', kind: 'SettlementEntry', date: '2026-10-11', amount: 80 })
+
+  it('[AC P64-F04-savings-web-05] labels Add interest, and an interest row as Interest', () => {
+    expect(ACTION_LABELS.AddInterest).toBe('Add interest')
+    expect(rowKindLabel({ kind: 'Income', isInterest: true })).toBe('Interest')
+    expect(rowKindLabel({ kind: 'Income', isInterest: false })).toBe('Income')
+  })
 
   it('is labelled as an entry', () => {
     expect(ACTION_LABELS.AddEntry).toBe('New entry')

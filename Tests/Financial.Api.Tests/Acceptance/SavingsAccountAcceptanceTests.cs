@@ -151,7 +151,7 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
             transferOut.StatusCode.Should().Be(HttpStatusCode.OK);
             chaseSave.Balance.Should().Be(680m);
             (await DetailAsync(BarclaysId)).Balance.Should().Be(820m);
-            chaseSave.AllowedActions.Should().Contain(["AddIncome", "TransferTo", "TransferFrom", "Reconcile"]).And.NotContain(["AddExpense", "PayRecurringBill"]);
+            chaseSave.AllowedActions.Should().Contain(["AddIncome", "AddInterest", "TransferTo", "TransferFrom", "Reconcile"]).And.NotContain(["AddExpense", "PayRecurringBill"]);
         }
     }
 

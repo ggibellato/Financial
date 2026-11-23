@@ -487,3 +487,29 @@ describe('IncomeForm with a locked bank', () => {
     expect(optionNames(screen.getByLabelText('Bank'))).toContain('Chase')
   })
 })
+
+describe('IncomeForm interest', () => {
+  const SAVINGS_LOCK = { id: 'save', name: 'Chase Save' }
+  const ISA_INTEREST: IncomeSourceDto = { id: '7', name: 'ISA interest', isActive: true, group: 'DividendoJuros', potsAccountId: null, hasReferences: false }
+
+  it('[AC P64-F04-savings-web-05] is titled and confirmed as Add interest on the locked account, with only the interest sources', () => {
+    render(<IncomeForm {...baseProps} isInterest incomeSource="4" lockedBank={SAVINGS_LOCK} incomeSources={[INCOME_SOURCES[3]]} />)
+
+    expect(screen.getByRole('heading', { name: 'Add interest' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add interest' })).toBeInTheDocument()
+    expect(screen.getByText('Chase Save')).toBeInTheDocument()
+    expect(optionNames(screen.getByLabelText(/^Source/))).toEqual(['DividendoJuros'])
+  })
+
+  it('asks for a source when several interest sources are offered', () => {
+    render(<IncomeForm {...baseProps} isInterest incomeSource="" lockedBank={SAVINGS_LOCK} incomeSources={[INCOME_SOURCES[3], ISA_INTEREST]} />)
+
+    expect(optionNames(screen.getByLabelText(/^Source/))).toEqual(['Select a source', 'DividendoJuros', 'ISA interest'])
+  })
+
+  it('says where to add an interest source when there is none', () => {
+    render(<IncomeForm {...baseProps} isInterest incomeSource="" lockedBank={SAVINGS_LOCK} incomeSources={[]} />)
+
+    expect(screen.getByText('Add a Dividendo/Juros income source in Admin → CashFlow → Income sources first.')).toBeInTheDocument()
+  })
+})

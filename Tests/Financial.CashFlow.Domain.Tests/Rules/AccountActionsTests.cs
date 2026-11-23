@@ -153,6 +153,19 @@ public class AccountActionsTests
     }
 
     [Fact]
+    [Trait("AC", "P64-F04-savings-web-05")]
+    public void AllowedFor_SavingsAccount_OffersAddInterestAfterAddIncome()
+    {
+        AccountActions.AllowedFor(TestAccounts.Savings("Chase Save")).Should().Equal(
+            AccountAction.AddIncome,
+            AccountAction.AddInterest,
+            AccountAction.TransferTo,
+            AccountAction.TransferFrom,
+            AccountAction.ReceiveCardCredit,
+            AccountAction.Reconcile);
+    }
+
+    [Fact]
     public void AllowedFor_SettlementAccount_ReturnsAddEntryAndSettle()
     {
         var mae = Mae();

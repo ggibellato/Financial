@@ -94,7 +94,16 @@ export function useAccountActionForms(
   const incomeForm = useIncomeForm(
     options.incomeSources,
     options.banks,
-    (_, isEdit, potsAccountName) => saved(isEdit ? 'Income updated' : hasPots && potsAccountName ? 'Deposit saved' : incomeSavedMessage(potsAccountName)),
+    (_, isEdit, potsAccountName, isInterest) =>
+      saved(
+        isEdit
+          ? 'Income updated'
+          : isInterest
+            ? 'Interest added'
+            : hasPots && potsAccountName
+              ? 'Deposit saved'
+              : incomeSavedMessage(potsAccountName),
+      ),
     { ...settings, keepOpenAfterSave: !hasPots },
   )
   const adjustmentForm = useBalanceAdjustmentForm(
@@ -132,6 +141,7 @@ export function useAccountActionForms(
     RefundCreditToBank: () => creditRefundForm.open(),
     ReceiveCardCredit: () => creditRefundForm.open(),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
+    AddInterest: () => incomeForm.showInterestForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
     PayRecurringBill: () => payBillForm.open(),
@@ -147,6 +157,7 @@ export function useAccountActionForms(
 
   const createAction = (): AccountFormAction | null => {
     if (expenseForm.isOpen && !expenseForm.isEditing) return expenseForm.isRefund ? 'AddRefund' : isCard ? 'AddCharge' : 'AddExpense'
+    if (incomeForm.isInterestForm) return 'AddInterest'
     if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return hasPots ? 'Deposit' : 'AddIncome'
     if (depositForm.isOpen && !depositForm.isEditing) return 'Deposit'
     if (withdrawalForm.isOpen && !withdrawalForm.isEditing) return withdrawalForm.isPaymentLocked ? 'WithdrawFromPots' : 'Withdraw'

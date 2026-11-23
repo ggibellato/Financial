@@ -8,6 +8,7 @@ export type AccountFormAction =
   | 'RefundCreditToBank'
   | 'ReceiveCardCredit'
   | 'AddIncome'
+  | 'AddInterest'
   | 'TransferTo'
   | 'TransferFrom'
   | 'PayRecurringBill'
@@ -27,6 +28,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   RefundCreditToBank: 'Refund credit to bank',
   ReceiveCardCredit: 'Receive card credit',
   AddIncome: 'New income',
+  AddInterest: 'Add interest',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
   PayRecurringBill: 'Pay recurring bill',
@@ -95,6 +97,10 @@ export function canTransfer(allowedActions: readonly string[]): boolean {
 
 export function kindLabel(kind: string): string {
   return Object.hasOwn(KIND_LABELS, kind) ? KIND_LABELS[kind] : kind
+}
+
+export function rowKindLabel(row: Pick<AccountTransactionDto, 'kind' | 'isInterest'>): string {
+  return row.isInterest ? 'Interest' : kindLabel(row.kind)
 }
 
 export function recordNoun(kind: string): string {

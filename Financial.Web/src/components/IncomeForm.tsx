@@ -48,6 +48,7 @@ interface IncomeFormProps {
   funding: IncomeFunding
   banks: BankOption[]
   incomeSources: IncomeSourceDto[]
+  isInterest?: boolean
   isSaving: boolean
   lockedBank?: LockedBank
   saveError: string | null
@@ -80,6 +81,7 @@ export default function IncomeForm({
   funding,
   banks,
   incomeSources,
+  isInterest = false,
   isSaving,
   lockedBank,
   saveError,
@@ -102,6 +104,7 @@ export default function IncomeForm({
   const isPotsAccountUnlisted = potsAccountId !== '' && !potsAccounts.some((account) => account.id === potsAccountId)
   const canChoosePotsAccount = potsAccountsStatus === 'ready' && potsAccounts.length > 0
   const titleId = useId()
+  const createLabel = isInterest ? 'Add interest' : 'New income'
 
   return (
     <form
@@ -116,7 +119,7 @@ export default function IncomeForm({
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
-          {isEditing ? 'Edit income' : 'New income'}
+          {isEditing ? 'Edit income' : createLabel}
         </Text>
         <ActionErrorAlert message={hasFieldErrors ? null : saveError} />
 
@@ -133,10 +136,16 @@ export default function IncomeForm({
           <Field
             label="Source"
             required
+            hint={
+              isInterest && activeIncomeSources.length === 0
+                ? 'Add a Dividendo/Juros income source in Admin → CashFlow → Income sources first.'
+                : undefined
+            }
             validationState={fieldError('incomeSource') ? 'error' : 'none'}
             validationMessage={fieldError('incomeSource')}
           >
             <Select value={incomeSource} onChange={(e) => onFieldChange('incomeSource', e.target.value)}>
+              {incomeSource === '' && <option value="">Select a source</option>}
               {activeIncomeSources.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -247,7 +256,7 @@ export default function IncomeForm({
         {funding.isShown && <FundedFromSection funding={funding} banks={banks} />}
       </fieldset>
       <FormSaveActions
-        saveLabel={isEditing ? 'Save' : 'Add income'}
+        saveLabel={isEditing ? 'Save' : isInterest ? 'Add interest' : 'Add income'}
         isSaving={isSaving}
         isSaveDisabled={funding.mismatch !== null}
         onCancel={onCancel}
