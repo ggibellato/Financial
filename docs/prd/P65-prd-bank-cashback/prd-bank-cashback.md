@@ -104,7 +104,7 @@ This PRD is the second of three planned together. Savings accounts (P64) came fi
 - **Balances:** cashback doesn't change the bank's balance, or any other account's. Until P66, it stays recorded on the bank that earned it.
 - **Not income:** cashback is not counted in the Income tab, Summary income, the Result or the tithe base. Category totals still count the full expense value.
 - **Account transactions:** each expense row on the bank's transactions returns its cashback amount (positive), next to the existing round-up.
-- **Accounts tab:** each Bank account with `SupportsCashback` returns its cashback total for the month: the sum of the cashback on its expenses dated in that month. Each currency's footer total gains a cashback total, as it already has a round-up total.
+- **Accounts tab:** each Bank account with cashback on, or with cashback stored on that month's expenses, returns its cashback total for the month: the sum of the cashback on its expenses dated in that month. Other accounts return no total. Each currency's footer total gains a cashback total, as it already has a round-up total.
 - **Changing the paying bank:** moving an expense to another bank or to a card drops its stored cashback, so any amount sent with it is checked against the new payment.
 - Expenses paid by credit card, pot withdrawals by card (P62) and bill payments don't take cashback in this PRD.
 
@@ -121,7 +121,7 @@ This PRD is the second of three planned together. Savings accounts (P64) came fi
 - **Admin → Accounts:** for the Bank template, a "Cashback" switch next to the existing "Round-up" switch, and a "Cashback rate (%)" field shown only while the switch is on. Switching it off hides the rate and drops its value.
 - **Expense form:** when the payment bank has cashback on, a "Cashback" field appears next to Round-up. On a new expense it is pre-filled with the suggestion and follows changes to the value until the user edits it. Clearing it saves no cashback. It is hidden for card payments and settled expenses, as Round-up is.
 - **Bank transactions:** a "Cashback" column next to Round-up on banks with `SupportsCashback`.
-- **Accounts tab:** a "Cashback" column next to Round-up in the Bank group, with the group's footer total.
+- **Accounts tab:** a "Cashback" column next to Round-up in the Bank group. A bank with no cashback total shows the missing-value mark, and the group's footer adds a "Cashback total" line for each currency that has at least one cashback bank.
 - Every touched view follows `docs/rules/ui.md` and `docs/ui/review-checklist.md`: labels, keyboard operation, visible focus, inline validation with focus on the first invalid field, numbers right-aligned, and saving and server-error states.
 
 **Experience:**
@@ -195,11 +195,11 @@ graph TD
 - [x] **P65-F02-cashback-expenses-06** Round-up amounts, suggestions and totals are unchanged
 
 ### F03. Cashback in the Web App
-- [ ] **P65-F03-cashback-web-01** Admin → Accounts shows the Cashback switch for Bank accounts only, and the rate field only while it is on
-- [ ] **P65-F03-cashback-web-02** The expense form shows Cashback only for an unsettled expense paid from a cashback bank, pre-filled with the suggestion until the user edits it
-- [ ] **P65-F03-cashback-web-03** Invalid cashback or rate values show inline errors, with focus on the first invalid field
-- [ ] **P65-F03-cashback-web-04** The bank's transactions and the Accounts tab show a right-aligned Cashback column, and the Accounts tab footer shows its total
-- [ ] **P65-F03-cashback-web-05** Every touched view passes `docs/ui/review-checklist.md`
+- [x] **P65-F03-cashback-web-01** Admin → Accounts shows the Cashback switch for Bank accounts only, and the rate field only while it is on
+- [x] **P65-F03-cashback-web-02** The expense form shows Cashback only for an unsettled expense paid from a cashback bank, pre-filled with the suggestion until the user edits it
+- [x] **P65-F03-cashback-web-03** Invalid cashback or rate values show inline errors, with focus on the first invalid field
+- [x] **P65-F03-cashback-web-04** The bank's transactions and the Accounts tab show a right-aligned Cashback column, and the Accounts tab footer shows its total
+- [x] **P65-F03-cashback-web-05** Every touched view passes `docs/ui/review-checklist.md`
 
 ### Cross-Feature Integration
-- [ ] **P65-CF-cross-feature-01** A Bank account set to 2% cashback in the web app (F03, F01) gets an expense of 12.50 with the suggested 0.25 (F02), which shows in its transactions and in the month's Accounts tab total, while its balance and the month's income are unchanged
+- [x] **P65-CF-cross-feature-01** A Bank account set to 2% cashback in the web app (F03, F01) gets an expense of 12.50 with the suggested 0.25 (F02), which shows in its transactions and in the month's Accounts tab total, while its balance and the month's income are unchanged
