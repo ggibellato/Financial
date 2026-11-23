@@ -179,20 +179,20 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Cashback Setting on Bank Accounts
-- [ ] **P65-F01-cashback-setting-01** Creating a Bank account with cashback on and a rate returns 201, and the account detail returns the flag and rate; with cashback off, no rate is returned
-- [ ] **P65-F01-cashback-setting-02** A Bank account with cashback on but no rate, a rate outside the range or with more than 2 decimal places, or a rate with cashback off is refused with 400 naming the field; an update without cashback fields keeps the setting
-- [ ] **P65-F01-cashback-setting-03** A cashback setting on an account whose template isn't Bank is refused with 400
-- [ ] **P65-F01-cashback-setting-04** The rate can be changed and cashback switched off on an account with transactions, and the stored cashback on its expenses is kept
-- [ ] **P65-F01-cashback-setting-05** A data file with no cashback settings loads with cashback off on every Bank account and saves unchanged otherwise; a cashback setting survives a save-load round trip
-- [ ] **P65-F01-cashback-setting-06** The OpenAPI snapshot and the generated web types include the cashback fields, and their freshness tests pass
+- [x] **P65-F01-cashback-setting-01** Creating a Bank account with cashback on and a rate returns 201, and the account detail returns the flag and rate; with cashback off, no rate is returned
+- [x] **P65-F01-cashback-setting-02** A Bank account with cashback on but no rate, a rate outside the range or with more than 2 decimal places, or a rate with cashback off is refused with 400 naming the field; an update without cashback fields keeps the setting
+- [x] **P65-F01-cashback-setting-03** A cashback setting on an account whose template isn't Bank is refused with 400
+- [x] **P65-F01-cashback-setting-04** The rate can be changed and cashback switched off on an account with transactions, and the stored cashback on its expenses is kept
+- [x] **P65-F01-cashback-setting-05** A data file with no cashback settings loads with cashback off on every Bank account and saves unchanged otherwise; a cashback setting survives a save-load round trip
+- [x] **P65-F01-cashback-setting-06** The OpenAPI snapshot and the generated web types include the cashback fields, and their freshness tests pass
 
 ### F02. Cashback on Expenses
-- [ ] **P65-F02-cashback-expenses-01** An expense paid from a bank with cashback on saves and returns its cashback amount, and the expense detail returns rate × value rounded down to the penny as the suggestion
-- [ ] **P65-F02-cashback-expenses-02** A cashback amount below 0, above the expense value or with more than 2 decimal places is refused with 400
-- [ ] **P65-F02-cashback-expenses-03** A new cashback amount on an expense paid by card, or from a bank with cashback off, is refused with 400; an unchanged amount on an older expense still saves after cashback is switched off
-- [ ] **P65-F02-cashback-expenses-04** Cashback doesn't change any account's balance, and isn't in the Income tab, Summary income, the Result or the tithe base
-- [ ] **P65-F02-cashback-expenses-05** The bank's transactions return each expense's cashback, and the Accounts tab returns each cashback bank's monthly total and the currency footer total
-- [ ] **P65-F02-cashback-expenses-06** Round-up amounts, suggestions and totals are unchanged
+- [x] **P65-F02-cashback-expenses-01** An expense paid from a bank with cashback on saves and returns its cashback amount, and the expense detail returns rate × value rounded down to the penny as the suggestion
+- [x] **P65-F02-cashback-expenses-02** A cashback amount below 0, above the expense value or with more than 2 decimal places is refused with 400
+- [x] **P65-F02-cashback-expenses-03** A new cashback amount on an expense paid by card, or from a bank with cashback off, is refused with 400; an unchanged amount on an older expense still saves after cashback is switched off
+- [x] **P65-F02-cashback-expenses-04** Cashback doesn't change any account's balance, and isn't in the Income tab, Summary income, the Result or the tithe base
+- [x] **P65-F02-cashback-expenses-05** The bank's transactions return each expense's cashback, and the Accounts tab returns each cashback bank's monthly total and the currency footer total
+- [x] **P65-F02-cashback-expenses-06** Round-up amounts, suggestions and totals are unchanged
 
 ### F03. Cashback in the Web App
 - [ ] **P65-F03-cashback-web-01** Admin → Accounts shows the Cashback switch for Bank accounts only, and the rate field only while it is on
