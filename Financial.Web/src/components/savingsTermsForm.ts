@@ -1,5 +1,6 @@
 import type { SavingsTermsDto } from '../api/types'
 import { parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { nextRowKey } from '../utils/rowKeys'
 
 export type InterestFrequency = 'Monthly' | 'Daily'
 
@@ -30,11 +31,8 @@ export interface SavingsErrors {
   rates: RateErrors[]
 }
 
-let lastRateKey = 0
-
 export function newRateRow(annualPercent = '', effectiveFrom = todayIsoDate()): RateRow {
-  lastRateKey += 1
-  return { key: `rate-${lastRateKey}`, annualPercent, effectiveFrom }
+  return { key: nextRowKey('rate'), annualPercent, effectiveFrom }
 }
 
 export function initialSavingsValues(savings: SavingsTermsDto | null | undefined): SavingsFormValues {

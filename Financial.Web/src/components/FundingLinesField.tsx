@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react'
 import { Button, Field, Input, Select, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { BankOption } from '../api/types'
 import { fundingLineErrorKey, MAX_FUNDING_LINES, type FundingLineChange, type FundingLineValues } from '../utils/fundingLines'
 import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
+import { useRowListFocus } from '../hooks/useRowListFocus'
 import './FundingLinesField.css'
 
 interface FundingLinesFieldProps {
@@ -29,20 +29,8 @@ export default function FundingLinesField({
   onAdd,
   onRemove,
 }: FundingLinesFieldProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const addLineRef = useRef<HTMLButtonElement | null>(null)
-  const previousLineCount = useRef(lines.length)
+  const { containerRef, addButtonRef } = useRowListFocus(lines.length, 'select')
   const isAtLimit = lines.length >= MAX_FUNDING_LINES
-
-  useEffect(() => {
-    if (lines.length > previousLineCount.current) {
-      const selects = containerRef.current?.querySelectorAll('select')
-      selects?.[selects.length - 1]?.focus()
-    } else if (lines.length < previousLineCount.current) {
-      addLineRef.current?.focus()
-    }
-    previousLineCount.current = lines.length
-  }, [lines.length])
 
   return (
     <div ref={containerRef} className="funding-lines">
@@ -90,7 +78,7 @@ export default function FundingLinesField({
         )
       })}
       <div className="funding-lines__footer">
-        <Button ref={addLineRef} appearance="primary" icon={<AddRegular />} disabled={isAtLimit} onClick={onAdd}>
+        <Button ref={addButtonRef} appearance="primary" icon={<AddRegular />} disabled={isAtLimit} onClick={onAdd}>
           Add line
         </Button>
         {isAtLimit && <Text>A deposit has at most {MAX_FUNDING_LINES} funding lines.</Text>}

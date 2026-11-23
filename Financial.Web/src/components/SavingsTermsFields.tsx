@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useId } from 'react'
 import { Button, Field, Input, Select, Switch, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import {
@@ -10,6 +10,8 @@ import {
   type SavingsErrors,
   type SavingsFormValues,
 } from './savingsTermsForm'
+import { useRowListFocus } from '../hooks/useRowListFocus'
+import { withChangedRow } from '../utils/rowKeys'
 import './SavingsTermsFields.css'
 
 interface SavingsTermsFieldsProps {
@@ -26,20 +28,8 @@ const validation = (message: string | undefined) => ({
 export default function SavingsTermsFields({ values, errors, onChange }: SavingsTermsFieldsProps) {
   const ratesLabelId = useId()
   const ratesHintId = useId()
-  const ratesRef = useRef<HTMLDivElement | null>(null)
-  const addRateButton = useRef<HTMLButtonElement | null>(null)
-  const previousRateCount = useRef(values.rates.length)
+  const { containerRef, addButtonRef } = useRowListFocus(values.rates.length, '.savings-terms__percent input')
   const canRemoveRate = values.rates.length > 1
-
-  useEffect(() => {
-    if (values.rates.length > previousRateCount.current) {
-      const percentInputs = ratesRef.current?.querySelectorAll<HTMLInputElement>('.savings-terms__percent input')
-      percentInputs?.[percentInputs.length - 1]?.focus()
-    } else if (values.rates.length < previousRateCount.current) {
-      addRateButton.current?.focus()
-    }
-    previousRateCount.current = values.rates.length
-  }, [values.rates.length])
 
   const change = (next: Partial<SavingsFormValues>) => onChange({ ...values, ...next })
 
@@ -47,7 +37,7 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
     change({ interestFrequency, paymentDay: interestFrequency === 'Daily' ? '' : values.paymentDay })
 
   const changeRate = (key: string, next: Partial<RateRow>) =>
-    change({ rates: values.rates.map((rate) => (rate.key === key ? { ...rate, ...next } : rate)) })
+    change({ rates: withChangedRow(values.rates, key, next) })
 
   return (
     <>
@@ -86,7 +76,7 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
       </Field>
 
       <div
-        ref={ratesRef}
+        ref={containerRef}
         className="savings-terms__rates"
         role="group"
         aria-labelledby={ratesLabelId}
@@ -139,7 +129,7 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
         })}
         <div>
           <Button
-            ref={addRateButton}
+            ref={addButtonRef}
             appearance="primary"
             icon={<AddRegular />}
             onClick={() => change({ rates: [...values.rates, newRateRow()] })}

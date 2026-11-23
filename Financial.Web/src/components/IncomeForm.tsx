@@ -106,6 +106,7 @@ export default function IncomeForm({
   const canChoosePotsAccount = potsAccountsStatus === 'ready' && potsAccounts.length > 0
   const titleId = useId()
   const noun = isInterest ? 'interest' : 'income'
+  const createTitle = ACTION_LABELS[isInterest ? 'AddInterest' : 'AddIncome']
 
   return (
     <form
@@ -120,7 +121,7 @@ export default function IncomeForm({
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
-          {isEditing ? `Edit ${noun}` : isInterest ? ACTION_LABELS.AddInterest : ACTION_LABELS.AddIncome}
+          {isEditing ? `Edit ${noun}` : createTitle}
         </Text>
         <ActionErrorAlert message={hasFieldErrors ? null : saveError} />
 

@@ -335,7 +335,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('otherParticipant')}
         >
           <Input
-           
             value={values.otherParticipant}
             onChange={(_, data) => setField('otherParticipant', data.value)}
           />
@@ -357,7 +356,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('category')}
         >
           <Select
-           
             value={values.categoryId}
             disabled={!hasCategoryChoices}
             onChange={(_, data) => setField('categoryId', data.value)}
@@ -382,7 +380,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
             validationMessage={fieldMessage('openingBalance')}
           >
             <Input
-             
               type="number"
               step="0.01"
               min="0"
@@ -400,7 +397,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
             validationMessage={fieldMessage('balanceStartDate')}
           >
             <Input
-             
               type="date"
               max={todayIsoDate()}
               value={values.balanceStartDate}

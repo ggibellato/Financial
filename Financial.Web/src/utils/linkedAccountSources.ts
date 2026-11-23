@@ -18,5 +18,5 @@ export const LINKED_ACCOUNT_SOURCES: Record<LinkedAccountSource, LinkedAccount> 
 }
 
 export function isLinkedAccountSource(source: string): source is LinkedAccountSource {
-  return source in LINKED_ACCOUNT_SOURCES
+  return Object.hasOwn(LINKED_ACCOUNT_SOURCES, source)
 }
