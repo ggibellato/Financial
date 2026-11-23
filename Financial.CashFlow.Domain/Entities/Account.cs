@@ -30,10 +30,12 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
+    public CashbackSetting? Cashback { get; private set; }
     public SavingsTerms? Savings { get; private set; }
     public IReadOnlyList<Pot>? Pots => Has(Capability.HasPots) ? _pots : null;
     public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
+    public bool EarnsCashback => Cashback?.Enabled == true;
     public string TemplateName => Template.ToString();
     public int TemplateOrder => AccountTemplates.Available.ToList().IndexOf(Template);
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -173,6 +175,13 @@ public class Account
         RoundUp = new RoundUpSetting(enabled);
     }
 
+    public void SetCashback(CashbackSetting cashback)
+    {
+        ArgumentNullException.ThrowIfNull(cashback);
+        EnsureSupportsCashback(Has, Name);
+        Cashback = cashback;
+    }
+
     public void SetSavings(SavingsTerms savings)
     {
         ArgumentNullException.ThrowIfNull(savings);
@@ -267,6 +276,14 @@ public class Account
         }
     }
 
+    public static void EnsureSupportsCashback(Func<Capability, bool> has, string accountName)
+    {
+        if (!has(Capability.SupportsCashback))
+        {
+            throw new ArgumentException($"{accountName} does not support cashback.");
+        }
+    }
+
     public static void EnsureHasCategorySetting(Func<Capability, bool> has, string accountName)
     {
         if (!has(Capability.HasPots))
@@ -348,6 +365,7 @@ public class Account
     {
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
+        Cashback = Has(Capability.SupportsCashback) ? Cashback ?? CashbackSetting.Off : null;
         Savings = Has(Capability.EarnsInterest) ? Savings : null;
         _currencies = Has(Capability.MultiCurrency) ? [Currency] : [];
         OtherParticipant = Has(Capability.HasParticipants) ? OtherParticipant : null;

@@ -27,6 +27,8 @@ public sealed class ExpenseUpdateDTO
     /// <summary>Round-up amount. Full-replace: whatever is sent (including null) becomes the new stored value.</summary>
     public decimal? RoundUpAmount { get; init; }
 
+    public decimal? CashbackAmount { get; init; }
+
     /// <summary>Whether this expense counts toward the tithe-paid total. Only meaningful for a tithe-flagged category. Defaults to true.</summary>
     public bool CountsAsTithe { get; init; } = true;
 }

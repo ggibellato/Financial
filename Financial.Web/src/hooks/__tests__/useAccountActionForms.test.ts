@@ -85,6 +85,8 @@ const EXPENSE: ExpenseDto = {
   paymentStatus: 'ImmediatePayment',
   roundUpAmount: null,
   suggestedRoundUpAmount: null,
+  cashbackAmount: null,
+  suggestedCashbackAmount: null,
   countsAsTithe: true,
 }
 

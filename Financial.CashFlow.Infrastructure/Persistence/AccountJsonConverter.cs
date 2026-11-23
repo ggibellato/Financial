@@ -46,6 +46,15 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
             account.SetRoundUp(roundUp.Enabled);
         }
 
+        if (record.Cashback is { } cashback)
+        {
+            account.SetCashback(CashbackSetting.On(cashback.RatePercent));
+        }
+        else if (account.Has(Capability.SupportsCashback))
+        {
+            account.SetCashback(CashbackSetting.Off);
+        }
+
         if (account.Has(Capability.HasPots) != record.Pots is not null)
         {
             throw new JsonException($"Account {record.Id} must have Pots exactly when its template has pots.");
@@ -82,7 +91,8 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
             value.Category,
             value.Has(Capability.MultiCurrency) ? [.. value.Currencies] : null,
             value.OtherParticipant,
-            value.Savings is { } savings ? ToRecord(savings) : null);
+            value.Savings is { } savings ? ToRecord(savings) : null,
+            value.Cashback?.RatePercent is { } cashbackRate ? new CashbackRecord(cashbackRate) : null);
 
         JsonSerializer.Serialize(writer, record, _recordOptions);
     }
@@ -159,11 +169,14 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
         [property: JsonPropertyName("CategoryId")] Category? Category,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Currency>? Currencies,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OtherParticipant,
-        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SavingsRecord? Savings);
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SavingsRecord? Savings,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CashbackRecord? Cashback);
 
     private sealed record OpeningBalanceRecord(decimal Amount, DateOnly StartDate);
 
     private sealed record RoundUpRecord(bool Enabled);
+
+    private sealed record CashbackRecord(decimal RatePercent);
 
     private sealed record SavingsRecord(
         InterestFrequency Frequency,

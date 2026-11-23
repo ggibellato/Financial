@@ -48,6 +48,8 @@ const CHARGE: ExpenseDto = {
   paymentStatus: 'CreditCardCharge',
   roundUpAmount: null,
   suggestedRoundUpAmount: null,
+  cashbackAmount: null,
+  suggestedCashbackAmount: null,
   countsAsTithe: true,
 }
 

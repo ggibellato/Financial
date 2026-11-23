@@ -112,6 +112,8 @@ describe('AdminAccountsPage', () => {
         openingBalance: null,
         balanceStartDate: null,
         roundUpEnabled: null,
+        cashbackEnabled: null,
+        cashbackRatePercent: null,
         categoryId: null,
         savings: null,
       }),
@@ -197,6 +199,8 @@ describe('AdminAccountsPage', () => {
       openingBalance: null,
       balanceStartDate: null,
       roundUpEnabled: null,
+      cashbackEnabled: null,
+      cashbackRatePercent: null,
       categoryId: 'c1',
       savings: null,
     })

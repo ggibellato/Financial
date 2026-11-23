@@ -11,6 +11,7 @@ public sealed class AccountTransactionDTO
     public required decimal Amount { get; init; }
     public required string? Currency { get; init; }
     public decimal? RoundUp { get; init; }
+    public decimal? Cashback { get; init; }
     public required bool CanEdit { get; init; }
     public AccountTransactionStatementDTO? Statement { get; init; }
     public AccountTransactionOperationDTO? Operation { get; init; }

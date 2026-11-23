@@ -4,7 +4,7 @@ import { currencyFooterItems, type CurrencyFigure } from '../currencyFooterItems
 import { formatN2 } from '../formatters'
 
 function total(currency: string, balance: number): CurrencyTotalDto {
-  return { currency, balance, roundUpTotal: 0, cardOutstandingTotal: 0 }
+  return { currency, balance, roundUpTotal: 0, cashbackTotal: 0, cardOutstandingTotal: 0 }
 }
 
 const BALANCE: CurrencyFigure[] = [{ label: 'Balance', pick: (t) => t.balance }]

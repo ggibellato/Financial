@@ -335,6 +335,7 @@ export function useExpenseForm(
           ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date)}-01`
           : null,
       roundUpAmount,
+      cashbackAmount: null,
       countsAsTithe: state.countsAsTithe === 'true',
     }
 

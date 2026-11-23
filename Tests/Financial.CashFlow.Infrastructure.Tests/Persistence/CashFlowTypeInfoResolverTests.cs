@@ -117,6 +117,33 @@ public class CashFlowTypeInfoResolverTests
     }
 
     [Fact]
+    [Trait("AC", "P65-F01-cashback-setting-05")]
+    public void Serialize_ExpenseWithoutCashback_OmitsTheCashbackKey()
+    {
+        var bank = TestAccounts.Bank("Chase");
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Lunch", 12.50m, Category.Create("Mercado"), bank, null);
+
+        JsonSerializer.Serialize(expense, CreateOptions()).Should().NotContain(nameof(Expense.CashbackAmount));
+    }
+
+    [Fact]
+    public void GetTypeInfo_RoundTripsExpenseCashback()
+    {
+        var bank = TestAccounts.Bank("Chase", cashbackRatePercent: 2m);
+        var category = Category.Create("Mercado");
+        var context = new ReferenceResolutionContext();
+        context.Accounts[bank.Id] = bank;
+        context.Categories[category.Id] = category;
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Lunch", 12.50m, category, bank, null);
+        expense.SetCashbackAmount(0.25m);
+
+        var json = JsonSerializer.Serialize(expense, CreateOptions());
+        var deserialized = JsonSerializer.Deserialize<Expense>(json, CreateOptions(context))!;
+
+        deserialized.CashbackAmount.Should().Be(0.25m);
+    }
+
+    [Fact]
     public void GetTypeInfo_RoundTripsExpense_RecomputesPaymentStatusFromCreditCardAndPaymentSource()
     {
         var creditCard = TestAccounts.CreditCard("Chase Mastercard 4023");

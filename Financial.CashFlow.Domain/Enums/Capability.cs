@@ -18,5 +18,6 @@ public enum Capability
     HasParticipants,
     MultiCurrency,
     CanSettle,
-    EarnsInterest
+    EarnsInterest,
+    SupportsCashback
 }

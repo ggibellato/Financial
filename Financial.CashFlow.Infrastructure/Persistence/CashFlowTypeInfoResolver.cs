@@ -64,6 +64,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(CardStatement), nameof(CardStatement.SettledOn)),
         (typeof(Expense), nameof(Expense.OperationId)),
         (typeof(Expense), nameof(Expense.ReportingMonth)),
+        (typeof(Expense), nameof(Expense.CashbackAmount)),
         (typeof(PotTransaction), nameof(PotTransaction.OperationId)),
         (typeof(InvestmentAccount), nameof(InvestmentAccount.SavingsAccount))
     ];

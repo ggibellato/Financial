@@ -26,7 +26,8 @@ public static class AccountTemplates
                 Capability.CanReceiveTransfers,
                 Capability.CanReconcile,
                 Capability.CanPayBills,
-                Capability.SupportsRoundUp
+                Capability.SupportsRoundUp,
+                Capability.SupportsCashback
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.GBP]),
             JoinsDefaultGroup: true),

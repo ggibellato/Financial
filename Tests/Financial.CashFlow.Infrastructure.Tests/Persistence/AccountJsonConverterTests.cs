@@ -266,6 +266,42 @@ public class AccountJsonConverterTests
     }
 
     [Fact]
+    [Trait("AC", "P65-F01-cashback-setting-05")]
+    public void ReadThenWrite_BankWithoutCashbackKey_HasCashbackOffAndProducesIdenticalBytes()
+    {
+        var account = JsonSerializer.Deserialize<Account>(V4Bank, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.Cashback.Should().Be(CashbackSetting.Off);
+            JsonSerializer.Serialize(account, _options).Should().Be(V4Bank);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F01-cashback-setting-05")]
+    public void ReadThenWrite_BankWithCashback_KeepsTheRateAndProducesIdenticalBytes()
+    {
+        var json = V4Bank.Replace("\"CategoryId\":null}", "\"CategoryId\":null,\"Cashback\":{\"RatePercent\":1.5}}");
+
+        var account = JsonSerializer.Deserialize<Account>(json, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.Cashback.Should().Be(CashbackSetting.On(1.5m));
+            JsonSerializer.Serialize(account, _options).Should().Be(json);
+        }
+    }
+
+    [Fact]
+    public void Read_SavingsAccountWithCashback_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(ChaseSave.Replace(SavingsKey, SavingsKey + ",\"Cashback\":{\"RatePercent\":2}"), _options);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase Save does not support cashback.");
+    }
+
+    [Fact]
     public void Read_SavingsAccountWithoutTerms_Fails()
     {
         var act = () => JsonSerializer.Deserialize<Account>(ChaseSave.Replace(SavingsKey, ""), _options);

@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.ValueObjects;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -554,6 +555,158 @@ public class ExpenseTests
     }
 
     private sealed record RoundUpCase(string Value, string Suggestion);
+
+    private static Account CashbackBank(string name = "Chase") => TestAccounts.Bank(name, cashbackRatePercent: 2m);
+
+    private static Expense CreateCashbackExpense(Account? bank = null) =>
+        Expense.Create(new DateOnly(2026, 7, 1), "Lunch", 12.50m, Mercado, bank ?? CashbackBank(), null);
+
+    [Theory]
+    [Trait("AC", "P65-F02-cashback-expenses-01")]
+    [InlineData(0)]
+    [InlineData(0.25)]
+    [InlineData(12.50)]
+    public void SetCashbackAmount_FromACashbackBankWithinRange_StoresIt(decimal amount)
+    {
+        var expense = CreateCashbackExpense();
+
+        expense.SetCashbackAmount(amount);
+
+        expense.CashbackAmount.Should().Be(amount);
+    }
+
+    [Theory]
+    [Trait("AC", "P65-F02-cashback-expenses-02")]
+    [InlineData(-0.01)]
+    [InlineData(12.51)]
+    [InlineData(0.255)]
+    public void SetCashbackAmount_OutsideRangeOrPrecision_Throws(decimal amount)
+    {
+        var expense = CreateCashbackExpense();
+
+        var act = () => expense.SetCashbackAmount(amount);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage(Expense.CashbackRangeMessage);
+            expense.CashbackAmount.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F02-cashback-expenses-03")]
+    public void SetCashbackAmount_FromABankWithCashbackOff_Throws()
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.SetCashbackAmount(0.20m);
+
+        act.Should().Throw<ArgumentException>().WithMessage(Expense.CashbackWithoutBankMessage);
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F02-cashback-expenses-03")]
+    public void SetCashbackAmount_OnACardCharge_Throws()
+    {
+        var expense = CreateCardCharge();
+
+        var act = () => expense.SetCashbackAmount(0.20m);
+
+        act.Should().Throw<ArgumentException>().WithMessage(Expense.CashbackWithoutBankMessage);
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F02-cashback-expenses-03")]
+    public void SetCashbackAmount_UnchangedAfterCashbackIsSwitchedOff_KeepsIt()
+    {
+        var bank = CashbackBank();
+        var expense = CreateCashbackExpense(bank);
+        expense.SetCashbackAmount(0.25m);
+        bank.SetCashback(CashbackSetting.Off);
+
+        expense.SetCashbackAmount(0.25m);
+
+        expense.CashbackAmount.Should().Be(0.25m);
+    }
+
+    [Fact]
+    public void SetCashbackAmount_ChangedAfterCashbackIsSwitchedOff_Throws()
+    {
+        var bank = CashbackBank();
+        var expense = CreateCashbackExpense(bank);
+        expense.SetCashbackAmount(0.25m);
+        bank.SetCashback(CashbackSetting.Off);
+
+        var act = () => expense.SetCashbackAmount(0.20m);
+
+        act.Should().Throw<ArgumentException>().WithMessage(Expense.CashbackWithoutBankMessage);
+    }
+
+    [Fact]
+    public void SetCashbackAmount_Null_ClearsIt()
+    {
+        var expense = CreateCashbackExpense();
+        expense.SetCashbackAmount(0.25m);
+
+        expense.SetCashbackAmount(null);
+
+        expense.CashbackAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateDetails_ToAnotherBank_DropsTheCashbackSoItIsCheckedAgainstTheNewBank()
+    {
+        var expense = CreateCashbackExpense();
+        expense.SetCashbackAmount(0.25m);
+
+        expense.UpdateDetails(expense.Date, expense.Description, expense.Value, expense.Category, Barclays, null);
+
+        using (new AssertionScope())
+        {
+            expense.CashbackAmount.Should().BeNull();
+            expense.Invoking(e => e.SetCashbackAmount(0.25m)).Should().Throw<ArgumentException>().WithMessage(Expense.CashbackWithoutBankMessage);
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_SameBank_KeepsTheCashback()
+    {
+        var bank = CashbackBank();
+        var expense = CreateCashbackExpense(bank);
+        expense.SetCashbackAmount(0.25m);
+
+        expense.UpdateDetails(expense.Date, "Dinner", expense.Value, expense.Category, bank, null);
+
+        expense.CashbackAmount.Should().Be(0.25m);
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F02-cashback-expenses-01")]
+    public void SuggestedCashbackAmount_FromACashbackBank_IsTheRateTimesTheValue()
+    {
+        CreateCashbackExpense().SuggestedCashbackAmount.Should().Be(0.25m);
+    }
+
+    [Fact]
+    public void SuggestedCashbackAmount_FromABankWithCashbackOffOrACard_IsNull()
+    {
+        using (new AssertionScope())
+        {
+            CreateImmediateExpense().SuggestedCashbackAmount.Should().BeNull();
+            CreateCardCharge().SuggestedCashbackAmount.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F02-cashback-expenses-04")]
+    public void ContributionTo_TheBank_IgnoresTheCashback()
+    {
+        var bank = CashbackBank();
+        var expense = CreateCashbackExpense(bank);
+        expense.SetCashbackAmount(0.25m);
+
+        expense.ContributionTo(bank).Should().Be(-12.50m);
+    }
 
     [Fact]
     public void SetRoundUpAmount_OnImmediatePaymentWithinRange_Succeeds()
