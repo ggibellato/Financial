@@ -46,7 +46,7 @@ const EDITED_ROW_UNAVAILABLE = 'This transaction is no longer in this month or c
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const navigate = useNavigate()
-  const { account, hasPots, hasParticipants } = screen
+  const { account, hasPots, hasParticipants, supportsCashback } = screen
   const allowedActions = account?.allowedActions ?? []
   const usesFormOptions = screen.operationId !== null || formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
@@ -138,7 +138,7 @@ export default function AccountScreenPage() {
   const gridColumns =
     hasParticipants && account
       ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account), showsConverted: account.currentBalances.length > 1 } as const)
-      : ({ columns: hasPots ? 'pots' : 'account' } as const)
+      : ({ columns: hasPots ? 'pots' : supportsCashback ? 'cashback' : 'account' } as const)
 
   useEffect(() => {
     if (!isRefreshAfterSavePending.current) return
@@ -265,6 +265,9 @@ export default function AccountScreenPage() {
             invoiceDate={expenseForm.invoiceDate}
             invoiceMonthMovedFrom={expenseForm.invoiceMonthMovedFrom}
             roundUpAmount={expenseForm.roundUpAmount}
+            cashbackAmount={expenseForm.cashbackAmount}
+            cashbackRate={expenseForm.cashbackRate}
+            showsCashbackField={expenseForm.showsCashbackField}
             countsAsTithe={expenseForm.countsAsTithe === 'true'}
             paymentMode={expenseForm.paymentMode}
             banks={formOptions.options.banks}

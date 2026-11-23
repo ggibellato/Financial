@@ -6,6 +6,7 @@ import { getSaveErrorMessage, parseValidatedNumber, positiveAmount } from '../ut
 import { getCreateFormDate, getStoredDefault, notAfterToday, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { parseRoundUpAmount, ROUND_UP_RANGE_MESSAGE, roundsUp, suggestRoundUpAmount } from '../utils/roundUp'
+import { CASHBACK_RANGE_MESSAGE, cashbackRateOf, parseCashbackAmount, suggestCashbackAmount } from '../utils/cashback'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -28,6 +29,7 @@ const EDITABLE_FIELDS = [
   'creditCardId',
   'invoiceDate',
   'roundUpAmount',
+  'cashbackAmount',
   'countsAsTithe',
   'paymentMode',
 ] as const
@@ -36,6 +38,12 @@ type EditableValues = Pick<ExpenseFormState, (typeof EDITABLE_FIELDS)[number]>
 
 function withOpenedValues(state: ExpenseFormState): ExpenseFormState {
   return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
+}
+
+function showsCashbackField(state: ExpenseFormState, banks: readonly BankOption[]): boolean {
+  if (state.isSettled || state.paymentMode !== 'bank') return false
+  const keepsSavedCashback = state.isEditing && state.paymentSource === state.openedValues?.paymentSource && state.openedValues.cashbackAmount !== ''
+  return keepsSavedCashback || cashbackRateOf(banks, state.paymentSource) !== null
 }
 
 function invoiceMonthMovedFrom(state: ExpenseFormState): string | null {
@@ -61,7 +69,8 @@ interface ExpenseFormState {
   // True until the user directly edits the round-up field, or an edit form loads a saved
   // amount - both "freeze" it so later Value/PaymentSource edits stop recomputing it.
   roundUpAmountAuto: boolean
-  savedCashback: SavedCashback | null
+  cashbackAmount: string
+  cashbackAmountAuto: boolean
   countsAsTithe: string
   paymentMode: PaymentMode
   isRefund: boolean
@@ -69,11 +78,6 @@ interface ExpenseFormState {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<ExpenseFormField, string>>
-}
-
-interface SavedCashback {
-  bankId: string
-  amount: number
 }
 
 type ExpenseFormAction =
@@ -85,6 +89,7 @@ type ExpenseFormAction =
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: ExpenseFormField; value: string } }
   | { type: 'SET_ROUND_UP_SUGGESTION'; payload: { value: string } }
+  | { type: 'SET_CASHBACK_SUGGESTION'; payload: { value: string } }
   | { type: 'SET_INVOICE_DATE_DEFAULT'; payload: { value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
@@ -96,6 +101,8 @@ const BLANK_ENTRY = {
   value: '',
   roundUpAmount: '',
   roundUpAmountAuto: true,
+  cashbackAmount: '',
+  cashbackAmountAuto: true,
   countsAsTithe: 'true',
 } as const
 
@@ -111,7 +118,6 @@ const BLANK_FORM = {
   paymentMode: 'bank' as PaymentMode,
   isRefund: false,
   isSettled: false,
-  savedCashback: null,
 } as const
 
 const INITIAL_STATE: ExpenseFormState = {
@@ -164,10 +170,8 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         // A saved amount is frozen (not auto-recomputed), same as a user-typed one, so
         // re-editing Value/PaymentSource here doesn't silently change what was saved.
         roundUpAmountAuto: expense.roundUpAmount == null,
-        savedCashback:
-          expense.cashbackAmount != null && expense.paymentSourceBankId != null
-            ? { bankId: expense.paymentSourceBankId, amount: expense.cashbackAmount }
-            : null,
+        cashbackAmount: expense.cashbackAmount != null ? expense.cashbackAmount.toFixed(2) : '',
+        cashbackAmountAuto: false,
         countsAsTithe: String(expense.countsAsTithe),
         paymentMode: isCardChargeStatus(expense.paymentStatus) ? 'card' : 'bank',
         isRefund,
@@ -182,12 +186,17 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
       if (action.payload.field === 'roundUpAmount') {
         return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
       }
+      if (action.payload.field === 'cashbackAmount') {
+        return { ...state, cashbackAmount: action.payload.value, cashbackAmountAuto: false }
+      }
       if (action.payload.field === 'invoiceDate') {
         return { ...state, invoiceDate: action.payload.value, invoiceMonthPinned: true }
       }
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SET_ROUND_UP_SUGGESTION':
       return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: true }
+    case 'SET_CASHBACK_SUGGESTION':
+      return { ...state, cashbackAmount: action.payload.value, cashbackAmountAuto: true }
     case 'SET_INVOICE_DATE_DEFAULT':
       return { ...state, invoiceDate: action.payload.value }
     case 'SAVE_START':
@@ -217,6 +226,9 @@ export interface UseExpenseFormResult {
   invoiceDate: string
   invoiceMonthMovedFrom: string | null
   roundUpAmount: string
+  cashbackAmount: string
+  cashbackRate: number | null
+  showsCashbackField: boolean
   countsAsTithe: string
   paymentMode: PaymentMode
   isRefund: boolean
@@ -275,11 +287,15 @@ export function useExpenseForm(
 
   function setField(field: ExpenseFormField, value: string) {
     dispatch({ type: 'SET_FIELD', payload: { field, value } })
-    if ((field === 'paymentSource' || field === 'value') && state.roundUpAmountAuto) {
+    if (field === 'paymentSource' || field === 'value') {
       const bankId = field === 'paymentSource' ? value : state.paymentSource
       const expenseValue = field === 'value' ? value : state.value
-      const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
-      dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestion ?? '' } })
+      if (state.roundUpAmountAuto) {
+        dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestRoundUpAmount(banks, bankId, expenseValue) ?? '' } })
+      }
+      if (field === 'paymentSource' || state.cashbackAmountAuto) {
+        dispatch({ type: 'SET_CASHBACK_SUGGESTION', payload: { value: suggestCashbackAmount(banks, bankId, expenseValue) ?? '' } })
+      }
     }
     if (field === 'date' && state.paymentMode === 'card' && !state.invoiceMonthPinned) {
       dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: computeDefaultInvoiceMonth(value) } })
@@ -314,6 +330,12 @@ export function useExpenseForm(
       if (roundUpAmount === null) errors.roundUpAmount = ROUND_UP_RANGE_MESSAGE
     }
 
+    let cashbackAmount: number | null = null
+    if (showsCashbackField(state, banks) && state.cashbackAmount.trim() !== '') {
+      cashbackAmount = parseCashbackAmount(state.cashbackAmount, value ?? 0)
+      if (cashbackAmount === null) errors.cashbackAmount = CASHBACK_RANGE_MESSAGE
+    }
+
     const isMissingCard = !state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === ''
     if (Object.keys(errors).length > 0 || isMissingCard) {
       dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? MISSING_CARD_MESSAGE, fields: errors } })
@@ -346,8 +368,7 @@ export function useExpenseForm(
           ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date)}-01`
           : null,
       roundUpAmount,
-      cashbackAmount:
-        state.savedCashback?.bankId === paymentFields.paymentSourceBankId ? state.savedCashback.amount : null,
+      cashbackAmount,
       countsAsTithe: state.countsAsTithe === 'true',
     }
 
@@ -390,6 +411,9 @@ export function useExpenseForm(
     invoiceDate: state.invoiceDate,
     invoiceMonthMovedFrom: invoiceMonthMovedFrom(state),
     roundUpAmount: state.roundUpAmount,
+    cashbackAmount: state.cashbackAmount,
+    cashbackRate: state.paymentMode === 'bank' ? cashbackRateOf(banks, state.paymentSource) : null,
+    showsCashbackField: showsCashbackField(state, banks),
     countsAsTithe: state.countsAsTithe,
     paymentMode: state.paymentMode,
     isRefund: state.isRefund,

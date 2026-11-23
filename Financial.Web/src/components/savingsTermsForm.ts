@@ -1,5 +1,5 @@
 import type { SavingsTermsDto } from '../api/types'
-import { parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { hasAtMostTwoDecimals, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { nextRowKey } from '../utils/rowKeys'
 
 export type InterestFrequency = 'Monthly' | 'Daily'
@@ -58,8 +58,7 @@ function annualPercentError(annualPercent: string): string | undefined {
   const percent = parseValidatedNumber(annualPercent)
   if (percent === null) return 'Enter the rate as a number, for example 4.50.'
   if (percent < 0 || percent > MAX_ANNUAL_PERCENT) return `Interest rate must be between 0% and ${MAX_ANNUAL_PERCENT}%.`
-  const significantDecimals = (annualPercent.trim().split('.')[1] ?? '').replace(/0+$/, '')
-  if (significantDecimals.length > 2) return 'Interest rate can have at most 2 decimal places.'
+  if (!hasAtMostTwoDecimals(annualPercent)) return 'Interest rate can have at most 2 decimal places.'
   return undefined
 }
 

@@ -76,6 +76,7 @@ export interface AccountScreen {
   account: AccountDetailDto | null
   hasPots: boolean
   hasParticipants: boolean
+  supportsCashback: boolean
   transactions: AccountTransactionDto[]
   isLoading: boolean
   isNotFound: boolean
@@ -162,6 +163,7 @@ export function useAccountScreen(): AccountScreen {
     account: loaded?.account ?? null,
     hasPots,
     hasParticipants: loaded !== null && loadedAccountHas(loaded, 'HasParticipants'),
+    supportsCashback: loaded !== null && loadedAccountHas(loaded, 'SupportsCashback'),
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',

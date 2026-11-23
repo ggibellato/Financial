@@ -169,6 +169,10 @@ export function positiveAmount(value: string): number | null {
   return amount !== null && amount > 0 ? amount : null
 }
 
+export function hasAtMostTwoDecimals(value: string): boolean {
+  return (value.trim().split('.')[1] ?? '').replace(/0+$/, '').length <= 2
+}
+
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {
   const parsed = Number(value)
   if (!value.trim() || !isFinite(parsed)) return null

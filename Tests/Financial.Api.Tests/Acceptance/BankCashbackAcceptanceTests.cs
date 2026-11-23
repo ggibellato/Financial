@@ -223,7 +223,7 @@ public class BankCashbackAcceptanceTests : ApiEndpointTests
             var chase = summary!.Members.Single(member => member.Name == "Chase");
             chase.CashbackTotal.Should().Be(0.34m);
             chase.RoundUpTotal.Should().Be(0.70m);
-            summary.Members.Single(member => member.Name == "Barclays").CashbackTotal.Should().Be(0m);
+            summary.Members.Single(member => member.Name == "Barclays").CashbackTotal.Should().BeNull();
             summary.Members.Single(member => member.Name == "Amex").CashbackTotal.Should().BeNull();
             summary.Totals.Single(total => total.Currency == "GBP").CashbackTotal.Should().Be(0.34m);
         }

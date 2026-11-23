@@ -29,7 +29,7 @@ describe('accountTemplateOrder', () => {
 
 describe('accountTemplateGrid', () => {
   it('shows banks with their balance under "Banks", totalled as "Bank total", with linked rows', () => {
-    expect(accountTemplateGrid('Bank')).toEqual({ heading: 'Banks', footerLabel: 'Bank total', columns: 'balance', linksRows: true })
+    expect(accountTemplateGrid('Bank')).toEqual({ heading: 'Banks', footerLabel: 'Bank total', columns: 'bank', linksRows: true })
   })
 
   it('shows cards with their next statement and total owed under "Credit cards", totalled as "Net owed", with linked rows', () => {

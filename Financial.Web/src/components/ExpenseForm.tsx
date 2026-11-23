@@ -6,7 +6,7 @@ import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
-import { formatStatementMonthLabel, todayIsoDate } from '../utils/formatters'
+import { formatPercentN2, formatStatementMonthLabel, todayIsoDate } from '../utils/formatters'
 import { roundsUp } from '../utils/roundUp'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionErrorAlert from './ActionErrorAlert'
@@ -26,6 +26,7 @@ export type ExpenseFormField =
   | 'creditCardId'
   | 'invoiceDate'
   | 'roundUpAmount'
+  | 'cashbackAmount'
   | 'countsAsTithe'
 
 interface ExpenseFormProps {
@@ -40,6 +41,9 @@ interface ExpenseFormProps {
   invoiceDate: string
   invoiceMonthMovedFrom: string | null
   roundUpAmount: string
+  cashbackAmount: string
+  cashbackRate: number | null
+  showsCashbackField: boolean
   countsAsTithe: boolean
   paymentMode: PaymentMode
   banks: BankOption[]
@@ -68,6 +72,9 @@ export default function ExpenseForm({
   invoiceDate,
   invoiceMonthMovedFrom,
   roundUpAmount,
+  cashbackAmount,
+  cashbackRate,
+  showsCashbackField,
   countsAsTithe,
   paymentMode,
   banks,
@@ -221,6 +228,28 @@ export default function ExpenseForm({
                 step="0.01"
                 value={roundUpAmount}
                 onChange={(e) => onFieldChange('roundUpAmount', e.target.value)}
+              />
+            </Field>
+          )}
+
+          {showsCashbackField && (
+            <Field
+              label="Cashback"
+              hint={
+                cashbackRate === null
+                  ? 'Cashback is off for this bank. Keep or clear the saved amount.'
+                  : `${formatPercentN2(cashbackRate)} of the value. Clear it if this purchase doesn't earn cashback.`
+              }
+              validationState={fieldError('cashbackAmount') ? 'error' : 'none'}
+              validationMessage={fieldError('cashbackAmount')}
+            >
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                value={cashbackAmount}
+                onChange={(e) => onFieldChange('cashbackAmount', e.target.value)}
               />
             </Field>
           )}

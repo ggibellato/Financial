@@ -75,8 +75,8 @@ function member(accountId: string, name: string, templateName: string, fields: P
 const BANKS: AccountTemplateGroupDto = {
   templateName: 'Bank',
   members: [
-    member('barclays', 'Barclays', 'Bank', { balance: 2800.25, roundUpTotal: 1.2 }),
-    member('chase', 'Chase', 'Bank', { balance: 500 }),
+    member('barclays', 'Barclays', 'Bank', { balance: 2800.25, roundUpTotal: 1.2, cashbackTotal: 0 }),
+    member('chase', 'Chase', 'Bank', { balance: 500, cashbackTotal: 0.34 }),
     member('itau', 'Itau', 'Bank', { currency: 'BRL', balance: 1000 }),
     member('old', 'Old Savings', 'Bank', { balance: 10, isActive: false }),
   ],
@@ -225,12 +225,12 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(1)
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 10)
     expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots'])
-    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance', 'Round-up'])
+    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance', 'Round-up', 'Cashback'])
     expect(accountNames(banks)).toEqual(['Barclays', 'Chase', 'Itau', 'Old SavingsInactive'])
     expect(within(bodyRows(banks)[0]).getByText('2,800.25')).toBeInTheDocument()
     expect(within(bodyRows(banks)[2]).getByText('BRL')).toBeInTheDocument()
     expect(within(bodyRows(banks)[0]).queryByText('Inactive')).not.toBeInTheDocument()
-    expect(footer(banks)).toBe('Bank total GBP: 3,310.25 · Bank total BRL: 1,000.00')
+    expect(footer(banks)).toBe('Bank total GBP: 3,310.25 · Bank total BRL: 1,000.00 · Cashback total GBP: 0.34')
 
     const pots = screen.getByRole('table', { name: 'Pots' })
     expect(headers(pots)).toEqual(['Account', 'Currency', 'Balance'])
@@ -287,7 +287,7 @@ describe('AccountsPage', () => {
 
     renderPage()
 
-    expect(footer(await screen.findByRole('table', { name: 'Banks' }))).toBe('Bank total GBP: -20.00')
+    expect(footer(await screen.findByRole('table', { name: 'Banks' }))).toBe('Bank total GBP: -20.00 · Cashback total GBP: 0.34')
   })
 
   it('sorts the cards by total owed', async () => {
@@ -465,9 +465,22 @@ describe('AccountsPage', () => {
     const banks = await screen.findByRole('table', { name: 'Banks' })
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 9)
     const [barclays, chase] = bodyRows(banks)
-    expect(within(barclays).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]*:/, ''))).toEqual(['Barclays', 'GBP', '2,800.25', '1.20'])
-    expect(within(chase).getAllByRole('cell').at(-1)?.textContent).toContain('0.00')
+    expect(within(barclays).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]*:/, ''))).toEqual(['Barclays', 'GBP', '2,800.25', '1.20', '0.00'])
+    expect(within(chase).getAllByRole('cell').at(-2)?.textContent).toContain('0.00')
     expect(headers(screen.getByRole('table', { name: 'Pots' }))).toEqual(['Account', 'Currency', 'Balance'])
+  })
+
+  it("[AC P65-F03-cashback-web-04] shows each bank's cashback right-aligned and the Bank group's cashback total per currency", async () => {
+    renderPage()
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    const chaseCashback = within(bodyRows(banks)[1]).getAllByRole('cell').at(-1)
+    expect(chaseCashback?.textContent).toContain('0.34')
+    expect(chaseCashback).toHaveClass('data-table__col--numeric')
+    expect(footer(banks)).toContain('Cashback total GBP: 0.34')
+    expect(footer(banks)).not.toContain('Cashback total BRL')
+    expect(within(bodyRows(banks)[2]).getAllByRole('cell').at(-1)?.textContent).toContain('—')
+    expect(headers(screen.getByRole('table', { name: 'Pots' }))).not.toContain('Cashback')
   })
 
   it('names the page with one level-1 heading above the grids’ level-2 headings', async () => {

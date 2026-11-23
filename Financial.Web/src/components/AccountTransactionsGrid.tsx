@@ -14,7 +14,7 @@ import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { formatAmount, formatCurrency, formatN2, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import ClearFiltersToolbar from './grid/ClearFiltersToolbar'
 import { focusFilterTrigger } from './grid/columnFilterText'
 import ColumnHeaderFilter, { type ColumnFilterKind } from './grid/ColumnHeaderFilter'
@@ -40,6 +40,7 @@ import {
 } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
+import { orMissing } from '../utils/orMissing'
 
 interface TransactionColumn {
   key: string
@@ -99,9 +100,19 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
     header: 'Round-up',
     numeric: true,
     accessor: (row) => row.roundUp,
-    render: (row) => (row.roundUp == null ? '' : formatSignedN2(row.roundUp)),
+    render: (row) => orMissing(row.roundUp, formatSignedN2, 'None'),
   },
 ]
+
+const CASHBACK_COLUMN: TransactionColumn = {
+  key: 'cashback',
+  header: 'Cashback',
+  numeric: true,
+  accessor: (row) => row.cashback,
+  render: (row) => orMissing(row.cashback, formatN2, 'None'),
+}
+
+const CASHBACK_COLUMNS: TransactionColumn[] = [...ACCOUNT_COLUMNS, CASHBACK_COLUMN]
 
 const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
@@ -137,10 +148,11 @@ function settlementColumns(otherParticipant: string, showsConverted: boolean): T
   ]
 }
 
-type ColumnSelection = { columns?: 'account' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
+type ColumnSelection = { columns?: 'account' | 'cashback' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
 
 function columnsOf(selection: ColumnSelection): TransactionColumn[] {
   if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant, selection.showsConverted)
+  if (selection.columns === 'cashback') return CASHBACK_COLUMNS
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 

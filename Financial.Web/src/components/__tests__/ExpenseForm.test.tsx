@@ -31,6 +31,9 @@ const baseProps = {
   invoiceDate: '',
   invoiceMonthMovedFrom: null,
   roundUpAmount: '',
+  cashbackAmount: '',
+  cashbackRate: null,
+  showsCashbackField: false,
   countsAsTithe: true,
   paymentMode: 'bank' as const,
   banks: BANKS,
@@ -489,5 +492,39 @@ describe('ExpenseForm with a locked card', () => {
     render(<ExpenseForm {...cardProps} date="2026-10-14" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
 
     expect(screen.getByLabelText(/^Date/)).not.toHaveAttribute('max')
+  })
+
+  describe('Cashback', () => {
+    const cashbackProps = { ...baseProps, cashbackRate: 2, showsCashbackField: true }
+
+    it('[AC P65-F03-cashback-web-02] shows Cashback with the bank rate', () => {
+      render(<ExpenseForm {...cashbackProps} cashbackAmount="0.25" />)
+
+      const cashback = screen.getByLabelText('Cashback')
+      expect(cashback).toHaveValue(0.25)
+      expect(cashback).toHaveAccessibleDescription("2.00% of the value. Clear it if this purchase doesn't earn cashback.")
+    })
+
+    it('[AC P65-F03-cashback-web-02] hides Cashback when the hook says it does not apply', () => {
+      render(<ExpenseForm {...baseProps} />)
+
+      expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+    })
+
+    it('explains a saved amount kept on a bank whose cashback is now off', () => {
+      render(<ExpenseForm {...cashbackProps} isEditing cashbackRate={null} cashbackAmount="0.25" />)
+
+      expect(screen.getByLabelText('Cashback')).toHaveAccessibleDescription('Cashback is off for this bank. Keep or clear the saved amount.')
+    })
+
+    it('reports cashback changes and shows its validation message', () => {
+      const onFieldChange = vi.fn()
+      render(<ExpenseForm {...cashbackProps} onFieldChange={onFieldChange} saveErrorFields={{ cashbackAmount: 'Cashback is too large' }} />)
+
+      fireEvent.change(screen.getByLabelText('Cashback'), { target: { value: '0.20' } })
+
+      expect(onFieldChange).toHaveBeenCalledWith('cashbackAmount', '0.20')
+      expect(screen.getByLabelText('Cashback')).toHaveAccessibleDescription(expect.stringContaining('Cashback is too large'))
+    })
   })
 })
