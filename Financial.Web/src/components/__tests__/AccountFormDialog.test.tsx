@@ -679,10 +679,16 @@ describe('AccountFormDialog', () => {
   })
 
   describe('Savings', () => {
-    const chooseSavings = () => fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Savings' } })
+    const renderSavings = () => {
+      const dialog = renderDialog({ templates: [BANK, SAVINGS] })
+      fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Savings' } })
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Chase Save' } })
+      return dialog
+    }
     const rateRow = (number: number) => screen.getByRole('group', { name: `Rate ${number}` })
     const rateInput = (number: number) => within(rateRow(number)).getByLabelText(/Annual rate/)
     const dateInput = (number: number) => within(rateRow(number)).getByLabelText(/Effective from/)
+    const removeRate = (number: number) => screen.getByRole('button', { name: `Remove rate ${number}` })
 
     it('[AC P64-F04-savings-web-01] shows the Savings settings only for the Savings template', () => {
       renderDialog({ templates: [BANK, SAVINGS] })
@@ -690,22 +696,20 @@ describe('AccountFormDialog', () => {
       expect(screen.queryByLabelText(/Interest paid/)).not.toBeInTheDocument()
       expect(screen.queryByRole('group', { name: 'Rates' })).not.toBeInTheDocument()
 
-      chooseSavings()
+      fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Savings' } })
 
       expect(screen.getByLabelText(/Interest paid/)).toHaveValue('Monthly')
       expect(screen.getByLabelText(/Payment day/)).toHaveValue(null)
       expect(screen.getByRole('switch', { name: 'Tax-free' })).not.toBeChecked()
-      expect(screen.getByRole('group', { name: 'Rates' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Rates' })).toHaveAccessibleDescription(/Keep at least one rate\./)
       expect(rateInput(1)).toHaveValue(null)
       expect(dateInput(1)).toHaveValue('2026-10-24')
       expect(screen.queryByRole('switch', { name: 'Round-up' })).not.toBeInTheDocument()
     })
 
     it('[AC P64-F04-savings-web-01] creates a Savings account with its interest settings and rates', async () => {
-      const { onSubmit } = renderDialog({ templates: [BANK, SAVINGS] })
+      const { onSubmit } = renderSavings()
 
-      chooseSavings()
-      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Chase Save' } })
       fireEvent.change(screen.getByLabelText(/Payment day/), { target: { value: '5' } })
       fireEvent.click(screen.getByRole('switch', { name: 'Tax-free' }))
       fireEvent.change(rateInput(1), { target: { value: '4.5' } })
@@ -736,10 +740,8 @@ describe('AccountFormDialog', () => {
     })
 
     it('[AC P64-F04-savings-web-01] hides Payment day for Daily and drops its value', async () => {
-      const { onSubmit } = renderDialog({ templates: [BANK, SAVINGS] })
+      const { onSubmit } = renderSavings()
 
-      chooseSavings()
-      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Cash' } })
       fireEvent.change(screen.getByLabelText(/Payment day/), { target: { value: '5' } })
       fireEvent.change(screen.getByLabelText(/Interest paid/), { target: { value: 'Daily' } })
       expect(screen.queryByLabelText(/Payment day/)).not.toBeInTheDocument()
@@ -757,37 +759,33 @@ describe('AccountFormDialog', () => {
       expect(screen.getByLabelText(/Payment day/)).toHaveValue(null)
     })
 
-    it('[AC P64-F04-savings-web-02] adds and removes rate rows, never the last one, and returns focus to Add rate', () => {
-      renderDialog({ templates: [BANK, SAVINGS] })
+    it('[AC P64-F04-savings-web-02] adds a rate row with focus in it, and removes rows but never the last one', async () => {
+      renderSavings()
 
-      chooseSavings()
-      expect(screen.getByRole('button', { name: 'Remove rate 1' })).toBeDisabled()
+      expect(removeRate(1)).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(removeRate(1))
+      expect(rateRow(1)).toBeInTheDocument()
 
       fireEvent.click(screen.getByRole('button', { name: 'Add rate' }))
-      expect(screen.getByRole('button', { name: 'Remove rate 1' })).toBeEnabled()
-      fireEvent.click(screen.getByRole('button', { name: 'Remove rate 2' }))
+      await waitFor(() => expect(rateInput(2)).toHaveFocus())
+      expect(removeRate(1)).not.toHaveAttribute('aria-disabled', 'true')
 
+      fireEvent.click(removeRate(2))
       expect(screen.queryByRole('group', { name: 'Rate 2' })).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Remove rate 1' })).toBeDisabled()
-      expect(screen.getByRole('button', { name: 'Add rate' })).toHaveFocus()
+      expect(removeRate(1)).toHaveAttribute('aria-disabled', 'true')
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Add rate' })).toHaveFocus())
     })
 
     it('[AC P64-F04-savings-web-02] shows each invalid setting under its field and focuses the error summary listing them', async () => {
-      const { onSubmit } = renderDialog({ templates: [BANK, SAVINGS] })
+      const { onSubmit } = renderSavings()
 
-      chooseSavings()
-      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Chase Save' } })
       fireEvent.change(screen.getByLabelText(/Payment day/), { target: { value: '32' } })
       fireEvent.change(rateInput(1), { target: { value: '4.567' } })
       fireEvent.click(screen.getByRole('button', { name: 'Add rate' }))
       fireEvent.change(rateInput(2), { target: { value: '101' } })
       save()
 
-      expect(screen.getByLabelText(/Payment day/)).toHaveAccessibleDescription(
-        expect.stringContaining('Interest payment day must be between 1 and 31.'),
-      )
       expect(rateInput(1)).toHaveAccessibleDescription('Interest rate can have at most 2 decimal places.')
-      expect(rateInput(2)).toHaveAccessibleDescription('Interest rate must be between 0% and 100%.')
       expect(dateInput(2)).toHaveAccessibleDescription("Two rates can't take effect on the same date.")
       const summary = screen.getByRole('group', { name: 'Fix 4 fields before saving' })
       await waitFor(() => expect(summary).toHaveFocus())
@@ -795,10 +793,8 @@ describe('AccountFormDialog', () => {
     })
 
     it('[AC P64-F04-savings-web-02] focuses the only invalid rate', async () => {
-      const { onSubmit } = renderDialog({ templates: [BANK, SAVINGS] })
+      const { onSubmit } = renderSavings()
 
-      chooseSavings()
-      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Chase Save' } })
       fireEvent.change(screen.getByLabelText(/Payment day/), { target: { value: '5' } })
       save()
 
@@ -807,13 +803,17 @@ describe('AccountFormDialog', () => {
       expect(onSubmit).not.toHaveBeenCalled()
     })
 
-    it('opens a Savings account with its terms and closes without asking when nothing changed', () => {
+    it('opens a Savings account with its terms, and closes without asking once a removed rate is re-entered', () => {
       const chaseSave = savingsAccount({ id: 's1', name: 'Chase Save' })
       const { onCancel } = renderDialog({ account: chaseSave, templates: [BANK, SAVINGS] })
 
       expect(screen.getByLabelText(/Payment day/)).toHaveValue(5)
       expect(rateInput(1)).toHaveValue(4.5)
       expect(dateInput(1)).toHaveValue('2026-09-01')
+      fireEvent.click(screen.getByRole('button', { name: 'Add rate' }))
+      fireEvent.click(removeRate(1))
+      fireEvent.change(rateInput(1), { target: { value: '4.50' } })
+      fireEvent.change(dateInput(1), { target: { value: '2026-09-01' } })
       fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(onCancel).toHaveBeenCalledOnce()

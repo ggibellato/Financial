@@ -13,6 +13,7 @@ import {
 import AdminEntityPage from '../components/AdminEntityPage'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import InvestmentAccountFormDialog from '../components/InvestmentAccountFormDialog'
+import { isLinkedAccountSource, LINKED_ACCOUNT_SOURCES } from '../utils/linkedAccountSources'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState } from '../components/grid/rowDeleteState'
@@ -24,19 +25,16 @@ import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import MissingValue from '../components/MissingValue'
 
-function linkedAccountDisplay(accounts: AccountDto[], accountId: string | null | undefined, value: string): ReactNode {
-  const linkedAccount = accounts.find((a) => a.id === accountId)
-  if (!linkedAccount) return <MissingValue label="None" />
-  return linkedAccount.isActive ? `${linkedAccount.name} ${value}` : `${linkedAccount.name} ${value} (inactive)`
-}
-
 function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): ReactNode {
   if (account.source === 'CreditCard') {
     return accounts.find((a) => a.id === account.creditCardId)?.name ?? <MissingValue label="None" />
   }
-  if (account.source === 'PotsAccountTotal') return linkedAccountDisplay(accounts, account.potsAccountId, 'total')
-  if (account.source === 'SavingsAccountBalance') return linkedAccountDisplay(accounts, account.savingsAccountId, 'balance')
-  return <MissingValue label="None" />
+  if (!isLinkedAccountSource(account.source)) return <MissingValue label="None" />
+  const { idField, snapshotValue } = LINKED_ACCOUNT_SOURCES[account.source]
+  const linkedAccount = accounts.find((a) => a.id === account[idField])
+  if (!linkedAccount) return <MissingValue label="None" />
+  const display = `${linkedAccount.name} ${snapshotValue}`
+  return linkedAccount.isActive ? display : `${display} (inactive)`
 }
 
 export default function InvestmentAccountsPage() {

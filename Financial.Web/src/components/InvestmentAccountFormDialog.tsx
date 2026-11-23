@@ -6,19 +6,9 @@ import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountsWith } from '../utils/accountCapabilities'
+import { isLinkedAccountSource, LINKED_ACCOUNT_SOURCES } from '../utils/linkedAccountSources'
 
-export type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccountTotal' | 'SavingsAccountBalance'
-
-type LinkedAccountSource = 'PotsAccountTotal' | 'SavingsAccountBalance'
-
-const LINKED_ACCOUNT_SOURCES: Record<LinkedAccountSource, { capability: string; label: string; snapshotValue: string }> = {
-  PotsAccountTotal: { capability: 'HasPots', label: 'Pots account', snapshotValue: 'total' },
-  SavingsAccountBalance: { capability: 'EarnsInterest', label: 'Savings account', snapshotValue: 'balance' },
-}
-
-function isLinkedAccountSource(source: InvestmentAccountSourceOption): source is LinkedAccountSource {
-  return source in LINKED_ACCOUNT_SOURCES
-}
+type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccountTotal' | 'SavingsAccountBalance'
 
 interface InvestmentAccountFormDialogProps {
   investmentAccount: InvestmentAccountDto | null
@@ -43,7 +33,10 @@ export default function InvestmentAccountFormDialog({
     (investmentAccount?.source as InvestmentAccountSourceOption | undefined) ?? 'None',
   )
   const [creditCardId, setCreditCardId] = useState(investmentAccount?.creditCardId ?? '')
-  const initialLinkedAccountId = investmentAccount?.potsAccountId ?? investmentAccount?.savingsAccountId ?? undefined
+  const initialLinkedAccountId =
+    investmentAccount && isLinkedAccountSource(investmentAccount.source)
+      ? (investmentAccount[LINKED_ACCOUNT_SOURCES[investmentAccount.source].idField] ?? undefined)
+      : undefined
   const [linkedAccountId, setLinkedAccountId] = useState(initialLinkedAccountId ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The investment account could not be saved.')
   const form = useEntityForm({ name, isActive, isLiability, source, creditCardId, linkedAccountId })
@@ -86,8 +79,9 @@ export default function InvestmentAccountFormDialog({
         isLiability,
         source,
         creditCardId: source === 'CreditCard' ? creditCardId : null,
-        potsAccountId: source === 'PotsAccountTotal' ? shownLinkedAccountId : null,
-        savingsAccountId: source === 'SavingsAccountBalance' ? shownLinkedAccountId : null,
+        potsAccountId: null,
+        savingsAccountId: null,
+        ...(linked && { [linked.idField]: shownLinkedAccountId }),
       }),
     )
   }

@@ -1,5 +1,5 @@
 import type { SavingsTermsDto } from '../api/types'
-import { todayIsoDate } from '../utils/formatters'
+import { parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 
 export type InterestFrequency = 'Monthly' | 'Daily'
 
@@ -49,17 +49,17 @@ export function initialSavingsValues(savings: SavingsTermsDto | null | undefined
 
 function paymentDayError(values: SavingsFormValues): string | undefined {
   if (values.interestFrequency !== 'Monthly') return undefined
-  const day = Number(values.paymentDay)
   if (values.paymentDay.trim().length === 0) return 'Enter the day interest is paid.'
-  if (!Number.isInteger(day) || day < MIN_PAYMENT_DAY || day > MAX_PAYMENT_DAY)
+  const day = parseValidatedNumber(values.paymentDay, { min: MIN_PAYMENT_DAY, max: MAX_PAYMENT_DAY })
+  if (day === null || !Number.isInteger(day))
     return `Interest payment day must be between ${MIN_PAYMENT_DAY} and ${MAX_PAYMENT_DAY}.`
   return undefined
 }
 
 function annualPercentError(annualPercent: string): string | undefined {
-  const percent = Number(annualPercent)
-  if (annualPercent.trim().length === 0 || !Number.isFinite(percent)) return 'Enter the rate as a number, for example 4.50.'
-  if (percent < 0 || percent > MAX_ANNUAL_PERCENT) return `Interest rate must be between 0% and ${MAX_ANNUAL_PERCENT}%.`
+  if (parseValidatedNumber(annualPercent) === null) return 'Enter the rate as a number, for example 4.50.'
+  if (parseValidatedNumber(annualPercent, { min: 0, max: MAX_ANNUAL_PERCENT }) === null)
+    return `Interest rate must be between 0% and ${MAX_ANNUAL_PERCENT}%.`
   const significantDecimals = (annualPercent.trim().split('.')[1] ?? '').replace(/0+$/, '')
   if (significantDecimals.length > 2) return 'Interest rate can have at most 2 decimal places.'
   return undefined
@@ -85,6 +85,12 @@ export function validateSavings(values: SavingsFormValues): SavingsErrors {
 
 export function hasSavingsErrors(errors: SavingsErrors): boolean {
   return errors.paymentDay !== undefined || errors.rates.some((rate) => rate.annualPercent || rate.effectiveFrom)
+}
+
+export function sameSavings(a: SavingsFormValues, b: SavingsFormValues): boolean {
+  const comparable = ({ interestFrequency, paymentDay, isTaxFree, rates }: SavingsFormValues) =>
+    JSON.stringify([interestFrequency, paymentDay, isTaxFree, rates.map((rate) => [rate.annualPercent, rate.effectiveFrom])])
+  return comparable(a) === comparable(b)
 }
 
 export function toSavingsTermsDto(values: SavingsFormValues): SavingsTermsDto {

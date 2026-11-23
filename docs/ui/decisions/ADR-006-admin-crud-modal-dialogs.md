@@ -63,8 +63,9 @@ that later grows a chart or becomes part of a repeated-entry workflow should
 move to inline instead of being grandfathered into this exception.
 
 Account (P60 F06, Admin → CashFlow → Accounts) joined the list later: it has
-the same shape, a flat list with a short per-template form (at most seven
-fields) and no chart.
+the same shape, a flat list with a short per-template form and no chart. The
+Savings template (P64) is the longest: nine fields plus its Rates rows, still
+one short dialog.
 
 ReserveBucket became Manage pots (P60 F10), opened from a Pots account's screen:
 the same reference data edited as one list saved together, because the active

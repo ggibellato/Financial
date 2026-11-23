@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { Button, Field, Input, Select, Switch, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import {
@@ -18,10 +18,28 @@ interface SavingsTermsFieldsProps {
   onChange: (values: SavingsFormValues) => void
 }
 
+const validation = (message: string | undefined) => ({
+  validationState: message ? ('error' as const) : ('none' as const),
+  validationMessage: message,
+})
+
 export default function SavingsTermsFields({ values, errors, onChange }: SavingsTermsFieldsProps) {
   const ratesLabelId = useId()
+  const ratesHintId = useId()
+  const ratesRef = useRef<HTMLDivElement | null>(null)
   const addRateButton = useRef<HTMLButtonElement | null>(null)
+  const previousRateCount = useRef(values.rates.length)
   const canRemoveRate = values.rates.length > 1
+
+  useEffect(() => {
+    if (values.rates.length > previousRateCount.current) {
+      const percentInputs = ratesRef.current?.querySelectorAll<HTMLInputElement>('.savings-terms__percent input')
+      percentInputs?.[percentInputs.length - 1]?.focus()
+    } else if (values.rates.length < previousRateCount.current) {
+      addRateButton.current?.focus()
+    }
+    previousRateCount.current = values.rates.length
+  }, [values.rates.length])
 
   const change = (next: Partial<SavingsFormValues>) => onChange({ ...values, ...next })
 
@@ -30,16 +48,6 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
 
   const changeRate = (key: string, next: Partial<RateRow>) =>
     change({ rates: values.rates.map((rate) => (rate.key === key ? { ...rate, ...next } : rate)) })
-
-  const removeRate = (key: string) => {
-    change({ rates: values.rates.filter((rate) => rate.key !== key) })
-    addRateButton.current?.focus()
-  }
-
-  const validation = (message: string | undefined) => ({
-    validationState: message ? ('error' as const) : ('none' as const),
-    validationMessage: message,
-  })
 
   return (
     <>
@@ -77,19 +85,31 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
         <Switch checked={values.isTaxFree} onChange={(_, data) => change({ isTaxFree: data.checked })} />
       </Field>
 
-      <div className="savings-terms__rates" role="group" aria-labelledby={ratesLabelId}>
+      <div
+        ref={ratesRef}
+        className="savings-terms__rates"
+        role="group"
+        aria-labelledby={ratesLabelId}
+        aria-describedby={ratesHintId}
+      >
         <Text id={ratesLabelId} weight="semibold">
           Rates
         </Text>
-        <Text size={200}>The rate in force on a date is the latest one that took effect on or before it.</Text>
+        <Text id={ratesHintId} size={200}>
+          The rate in force on a date is the latest one that took effect on or before it. Keep at least one rate.
+        </Text>
         {values.rates.map((rate, index) => {
           const rateErrors = errors?.rates[index]
           const rateName = `Rate ${index + 1}`
           return (
             <div key={rate.key} className="savings-terms__rate" role="group" aria-label={rateName}>
-              <Field label="Annual rate (%)" required {...validation(rateErrors?.annualPercent)}>
+              <Field
+                className="savings-terms__percent"
+                label="Annual rate (%)"
+                required
+                {...validation(rateErrors?.annualPercent)}
+              >
                 <Input
-                  className="savings-terms__percent"
                   type="number"
                   min={0}
                   max={100}
@@ -111,8 +131,8 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
                 appearance="subtle"
                 icon={<DeleteRegular />}
                 aria-label={`Remove ${rateName.toLowerCase()}`}
-                disabled={!canRemoveRate}
-                onClick={() => removeRate(rate.key)}
+                disabledFocusable={!canRemoveRate}
+                onClick={() => change({ rates: values.rates.filter((candidate) => candidate.key !== rate.key) })}
               />
             </div>
           )

@@ -8,6 +8,7 @@ import SavingsTermsFields from './SavingsTermsFields'
 import {
   hasSavingsErrors,
   initialSavingsValues,
+  sameSavings,
   toSavingsTermsDto,
   validateSavings,
   type SavingsFormValues,
@@ -166,10 +167,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const categoryRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
-  const isDirty =
-    hasChangedFields(values, initial, FORM_FIELDS) ||
-    values.currencies.join() !== initial.currencies.join() ||
-    JSON.stringify(values.savings) !== JSON.stringify(initial.savings)
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
   const capabilities = template?.capabilities ?? []
@@ -179,6 +176,10 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const isMultiCurrency = capabilities.includes('MultiCurrency')
   const hasParticipants = capabilities.includes('HasParticipants')
   const earnsInterest = capabilities.includes('EarnsInterest')
+  const isDirty =
+    hasChangedFields(values, initial, FORM_FIELDS) ||
+    values.currencies.join() !== initial.currencies.join() ||
+    (earnsInterest && !sameSavings(values.savings, initial.savings))
   const selectableCategories = categoryOptions(categories, initial.categoryId)
   const currencies = template?.currencies ?? [values.currency]
   const isCurrencyFixed = isLocked || currencies.length <= 1
