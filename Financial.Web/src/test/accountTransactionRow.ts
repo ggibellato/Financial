@@ -9,6 +9,7 @@ export function accountTransactionRow(fields: RequiredRowFields & Partial<Accoun
     categoryName: null,
     counterpart: null,
     roundUp: null,
+    cashback: null,
     canEdit: true,
     expense: null,
     income: null,

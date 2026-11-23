@@ -403,6 +403,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Amount = -expense.Value,
             Currency = account.Currency.ToString(),
             RoundUp = roundUp,
+            Cashback = expense.CashbackAmount,
             CanEdit = canEdit && expense.OperationId is null,
             Operation = OperationLink(expense.OperationId),
             Expense = ExpenseService.ToDto(expense, statements)
@@ -542,6 +543,8 @@ public sealed class AccountQueryService : IAccountQueryService
         OpeningBalance = account.OpeningBalance?.Amount,
         BalanceStartDate = account.OpeningBalance?.StartDate,
         RoundUpEnabled = account.RoundUp?.Enabled,
+        CashbackEnabled = account.Cashback?.Enabled,
+        CashbackRatePercent = account.Cashback?.RatePercent,
         CategoryId = account.Category?.Id,
         Savings = SavingsTermsMapper.ToDto(account.Savings),
         DueDate = dueDate,

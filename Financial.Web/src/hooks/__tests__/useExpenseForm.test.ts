@@ -48,6 +48,8 @@ const EXPENSE: ExpenseDto = {
   paymentStatus: 'ImmediatePayment',
   roundUpAmount: null,
   suggestedRoundUpAmount: null,
+  cashbackAmount: null,
+  suggestedCashbackAmount: null,
   countsAsTithe: true,
 }
 
@@ -168,6 +170,28 @@ describe('useExpenseForm', () => {
       expect.objectContaining({ description: 'Lidl', value: 50, categoryId: 'category-mercado' }),
     )
     expect(onSaved).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the saved cashback when an edit leaves the bank unchanged', async () => {
+    updateExpenseMock.mockResolvedValue(EXPENSE)
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showEditForm({ ...EXPENSE, cashbackAmount: 0.85 }))
+    act(() => result.current.setField('description', 'Lidl weekly'))
+    await act(() => result.current.submit())
+
+    expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ cashbackAmount: 0.85 }))
+  })
+
+  it('drops the saved cashback when an edit moves the expense to another bank', async () => {
+    updateExpenseMock.mockResolvedValue(EXPENSE)
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showEditForm({ ...EXPENSE, cashbackAmount: 0.85 }))
+    act(() => result.current.setField('paymentSource', 'bank-chase'))
+    await act(() => result.current.submit())
+
+    expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ cashbackAmount: null }))
   })
 
   it('creates in bank mode with a null card tag by default', async () => {

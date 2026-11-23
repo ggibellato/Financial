@@ -26,6 +26,8 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
     openingBalance: 0,
     balanceStartDate: '2026-01-01',
     roundUpEnabled: false,
+    cashbackEnabled: false,
+    cashbackRatePercent: null,
     categoryId: null,
     savings: null,
     dueDate: null,
@@ -41,6 +43,8 @@ export function cardAccount(fields: RequiredAccountFields & Partial<AccountDto>)
     openingBalance: null,
     balanceStartDate: null,
     roundUpEnabled: null,
+    cashbackEnabled: null,
+    cashbackRatePercent: null,
     capabilities: ['HasCategories', 'HasStatements', 'ReceivesPayments'],
     ...fields,
   })
@@ -52,6 +56,8 @@ export function potsAccount(fields: RequiredAccountFields & Partial<AccountDto>)
     openingBalance: null,
     balanceStartDate: null,
     roundUpEnabled: null,
+    cashbackEnabled: null,
+    cashbackRatePercent: null,
     capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'],
     ...fields,
   })
@@ -70,6 +76,8 @@ export function savingsAccount(fields: RequiredAccountFields & Partial<AccountDt
   return account({
     templateName: 'Savings',
     roundUpEnabled: null,
+    cashbackEnabled: null,
+    cashbackRatePercent: null,
     savings: {
       interestFrequency: 'Monthly',
       paymentDay: 5,
@@ -90,6 +98,8 @@ export function settlementAccount(fields: RequiredAccountFields & Partial<Accoun
     openingBalance: null,
     balanceStartDate: null,
     roundUpEnabled: null,
+    cashbackEnabled: null,
+    cashbackRatePercent: null,
     capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
     ...fields,
   })

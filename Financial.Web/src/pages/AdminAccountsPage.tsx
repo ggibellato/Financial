@@ -51,8 +51,20 @@ export default function AdminAccountsPage() {
       await updateAccount(formTarget.account.id, request)
       showSuccess('Account updated')
     } else {
-      const { templateName, name, currency, currencies, otherParticipant, openingBalance, balanceStartDate, roundUpEnabled, categoryId, savings } =
-        request
+      const {
+        templateName,
+        name,
+        currency,
+        currencies,
+        otherParticipant,
+        openingBalance,
+        balanceStartDate,
+        roundUpEnabled,
+        cashbackEnabled,
+        cashbackRatePercent,
+        categoryId,
+        savings,
+      } = request
       await createAccount({
         templateName,
         name,
@@ -62,6 +74,8 @@ export default function AdminAccountsPage() {
         openingBalance,
         balanceStartDate,
         roundUpEnabled,
+        cashbackEnabled,
+        cashbackRatePercent,
         categoryId,
         savings,
       })

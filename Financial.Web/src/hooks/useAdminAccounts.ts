@@ -46,6 +46,8 @@ function toUpdateRequest(account: AccountDto): AccountUpdateDto {
     openingBalance: account.openingBalance,
     balanceStartDate: account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled,
+    cashbackEnabled: account.cashbackEnabled,
+    cashbackRatePercent: account.cashbackRatePercent,
     categoryId: account.categoryId,
     savings: account.savings,
     isActive: account.isActive,

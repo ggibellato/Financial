@@ -99,7 +99,7 @@ public class AccountAdminServiceTests
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
                 "HasOpeningBalance", "ReceivesIncome", "HasCategories", "CanSendTransfers",
-                "CanReceiveTransfers", "CanReconcile", "CanPayBills", "SupportsRoundUp");
+                "CanReceiveTransfers", "CanReconcile", "CanPayBills", "SupportsRoundUp", "SupportsCashback");
             var card = templates[1];
             card.Currencies.Should().Equal("GBP");
             card.Capabilities.Should().Equal("HasCategories", "HasStatements", "ReceivesPayments");
@@ -280,6 +280,26 @@ public class AccountAdminServiceTests
             (await futureStart.Should().ThrowAsync<ArgumentException>()).WithMessage("Balance start date can't be in the future.");
             _chase.Name.Should().Be("Chase");
             _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_InvalidCashback_ThrowsBeforeChangingTheAccountAndRecordsAFailedSpan()
+    {
+        var request = new AccountUpdateDTO
+        {
+            TemplateName = "Bank", Name = "Chase Saver", Currency = "GBP", OpeningBalance = 0m,
+            BalanceStartDate = Today, RoundUpEnabled = false, IsActive = true, CashbackEnabled = true
+        };
+
+        var act = () => _sut.UpdateAsync(_chase.Id, request);
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Enter the cashback rate.");
+            _chase.Name.Should().Be("Chase");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
         }
     }
 

@@ -46,6 +46,7 @@ public sealed class ExpenseService : IExpenseService
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
             expense.SetRoundUpAmount(request.RoundUpAmount);
+            expense.SetCashbackAmount(request.CashbackAmount);
             if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements()))
             {
                 throw new ArgumentException(PaidStatementMessage);
@@ -93,6 +94,7 @@ public sealed class ExpenseService : IExpenseService
             {
                 expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.CountsAsTithe);
                 expense.SetRoundUpAmount(request.RoundUpAmount);
+                expense.SetCashbackAmount(request.CashbackAmount);
 
                 if (request.InvoiceDate is not null && request.InvoiceDate != expense.InvoiceDate)
                 {
@@ -324,6 +326,8 @@ public sealed class ExpenseService : IExpenseService
         PaymentStatus = PaymentStatusOf(expense, statements),
         RoundUpAmount = expense.RoundUpAmount,
         SuggestedRoundUpAmount = expense.SuggestedRoundUpAmount,
+        CashbackAmount = expense.CashbackAmount,
+        SuggestedCashbackAmount = expense.SuggestedCashbackAmount,
         CountsAsTithe = expense.CountsAsTithe
     };
 }

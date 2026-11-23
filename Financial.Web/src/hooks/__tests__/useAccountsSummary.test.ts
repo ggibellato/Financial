@@ -29,7 +29,7 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 7,
   members: [],
-  totals: [{ currency: 'GBP', balance: 1825.32, roundUpTotal: 0.1, cardOutstandingTotal: 64.1 }],
+  totals: [{ currency: 'GBP', balance: 1825.32, roundUpTotal: 0.1, cashbackTotal: 0, cardOutstandingTotal: 64.1 }],
   categoryTotalsSum: 1234.56,
   incomeTotals: [{ incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 }],
   totalIncoming: 720,

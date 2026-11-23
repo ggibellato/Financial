@@ -19,17 +19,18 @@ public class AccountTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     [Fact]
-    public void Create_WithBankTemplate_HasAllEightCapabilitiesAndIsActive()
+    public void Create_WithBankTemplate_HasAllNineCapabilitiesAndIsActive()
     {
         var account = CreateBank();
 
         using (new AssertionScope())
         {
-            Enum.GetValues<Capability>().Count(account.Has).Should().Be(8);
+            Enum.GetValues<Capability>().Count(account.Has).Should().Be(9);
             account.Has(Capability.HasStatements).Should().BeFalse();
             account.IsActive.Should().BeTrue();
             account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, new DateOnly(1, 1, 1)));
             account.RoundUp.Should().Be(new RoundUpSetting(false));
+            account.Cashback.Should().Be(CashbackSetting.Off);
         }
     }
 
@@ -218,6 +219,35 @@ public class AccountTests
     }
 
     [Fact]
+    public void SetCashback_OnABank_ReplacesTheSetting()
+    {
+        var account = CreateBank();
+
+        account.SetCashback(CashbackSetting.On(2m));
+
+        using (new AssertionScope())
+        {
+            account.Cashback.Should().Be(CashbackSetting.On(2m));
+            account.EarnsCashback.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P65-F01-cashback-setting-03")]
+    public void SetCashback_WithoutCapability_ThrowsArgumentException()
+    {
+        var account = CreateSettlement();
+
+        var act = () => account.SetCashback(CashbackSetting.On(2m));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Mãe does not support cashback.");
+            account.Cashback.Should().BeNull();
+        }
+    }
+
+    [Fact]
     public void SetRoundUp_WithOnlyThatCapability_Succeeds()
     {
         var account = CreateMinimal(Capability.SupportsRoundUp);
@@ -356,7 +386,7 @@ public class AccountTests
         using (new AssertionScope())
         {
             account.Template.Should().Be(AccountTemplate.Bank);
-            Enum.GetValues<Capability>().Count(account.Has).Should().Be(8);
+            Enum.GetValues<Capability>().Count(account.Has).Should().Be(9);
             account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, default));
             account.RoundUp.Should().Be(new RoundUpSetting(false));
         }

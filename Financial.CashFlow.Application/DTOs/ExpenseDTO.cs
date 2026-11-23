@@ -42,6 +42,10 @@ public sealed class ExpenseDTO
     /// <summary>Suggested round-up amount (difference to the next whole £1), present only when eligible and not yet saved.</summary>
     public decimal? SuggestedRoundUpAmount { get; init; }
 
+    public decimal? CashbackAmount { get; init; }
+
+    public decimal? SuggestedCashbackAmount { get; init; }
+
     /// <summary>Whether this expense counts toward the tithe-paid total. Only meaningful for a tithe-flagged category.</summary>
     public bool CountsAsTithe { get; init; } = true;
 }

@@ -10,7 +10,7 @@ namespace Financial.CashFlow.Domain.Tests.Rules;
 public class AccountTemplatesTests
 {
     [Fact]
-    public void CapabilitiesOf_Bank_IsExactlyTheEightBankCapabilities()
+    public void CapabilitiesOf_Bank_IsExactlyTheNineBankCapabilities()
     {
         AccountTemplates.CapabilitiesOf(AccountTemplate.Bank).Should().BeEquivalentTo(new[]
         {
@@ -21,7 +21,8 @@ public class AccountTemplatesTests
             Capability.CanReceiveTransfers,
             Capability.CanReconcile,
             Capability.CanPayBills,
-            Capability.SupportsRoundUp
+            Capability.SupportsRoundUp,
+            Capability.SupportsCashback
         });
     }
 

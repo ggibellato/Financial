@@ -10,6 +10,8 @@ public class Expense : IAccountTransaction
     public const decimal MaxRoundUpAmount = 0.99m;
     public const string OnlyUnpaidChargeMovesMessage = "Only an unpaid card charge can move to another statement.";
     public const string LaterUnpaidStatementMessage = "Charges can only move to a later, unpaid statement.";
+    public const string CashbackRangeMessage = "Cashback must be between 0 and the expense value, with at most 2 decimal places.";
+    public const string CashbackWithoutBankMessage = "Cashback only applies to an expense paid from a bank with cashback on.";
 
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
@@ -21,6 +23,7 @@ public class Expense : IAccountTransaction
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
     public decimal? RoundUpAmount { get; private set; }
+    public decimal? CashbackAmount { get; private set; }
     public bool CountsAsTithe { get; private set; } = true;
     public Guid? OperationId { get; private set; }
     public DateOnly? ReportingMonth { get; private set; }
@@ -47,6 +50,9 @@ public class Expense : IAccountTransaction
         || PaymentSourceAccount?.RoundsUp != true
             ? null
             : RoundUpSuggestion;
+
+    public decimal? SuggestedCashbackAmount =>
+        IsPaidFromCashbackBank && Value > 0 ? PaymentSourceAccount!.Cashback!.SuggestionFor(Value) : null;
 
     public bool IsInvestment => Category.IsInvestment;
 
@@ -119,6 +125,11 @@ public class Expense : IAccountTransaction
 
             InvoiceDate = InvoiceDateAfterUpdate(date, creditCard);
             ChargeDate = creditCard is not null ? date : null;
+            if (paymentSourceAccount?.Id != PaymentSourceAccount?.Id)
+            {
+                CashbackAmount = null;
+            }
+
             PaymentSourceAccount = paymentSourceAccount;
             CreditCard = creditCard;
         }
@@ -250,6 +261,30 @@ public class Expense : IAccountTransaction
 
         RoundUpAmount = amount;
     }
+
+    public void SetCashbackAmount(decimal? amount)
+    {
+        if (amount is not { } cashback)
+        {
+            CashbackAmount = null;
+            return;
+        }
+
+        if (cashback < 0 || cashback > Value || MoneyRounding.ToCents(cashback) != cashback)
+        {
+            throw new ArgumentException(CashbackRangeMessage);
+        }
+
+        if (cashback != CashbackAmount && !IsPaidFromCashbackBank)
+        {
+            throw new ArgumentException(CashbackWithoutBankMessage);
+        }
+
+        CashbackAmount = cashback;
+    }
+
+    private bool IsPaidFromCashbackBank =>
+        PaymentStatus == ExpensePaymentStatus.ImmediatePayment && PaymentSourceAccount?.EarnsCashback == true;
 
     public bool IsUnpaidChargeOn(Account card) =>
         PaymentStatus == ExpensePaymentStatus.CreditCardCharge && CreditCard!.Id == card.Id;

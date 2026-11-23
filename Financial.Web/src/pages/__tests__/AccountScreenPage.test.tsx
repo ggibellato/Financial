@@ -1714,6 +1714,8 @@ describe('AccountScreenPage actions', () => {
     paymentStatus: 'ImmediatePayment',
     roundUpAmount: 0.6,
     suggestedRoundUpAmount: null,
+    cashbackAmount: null,
+    suggestedCashbackAmount: null,
     countsAsTithe: true,
   }
 
@@ -2206,6 +2208,8 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     paymentStatus: 'ImmediatePayment',
     roundUpAmount: 0.9,
     suggestedRoundUpAmount: null,
+    cashbackAmount: null,
+    suggestedCashbackAmount: null,
     countsAsTithe: true,
   }
 
@@ -2545,6 +2549,8 @@ describe('AccountScreenPage card screen', () => {
     paymentStatus: 'CreditCardCharge',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
+    cashbackAmount: null,
+    suggestedCashbackAmount: null,
     countsAsTithe: true,
   }
 

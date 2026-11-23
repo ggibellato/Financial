@@ -70,10 +70,12 @@ public sealed class AccountAdminService : IAccountAdminService
             var currencies = RequestedCurrencies(account.Has, account.Name, currency, request.Currencies);
             EnsureOtherParticipantFits(account.Has, account.Name, request.OtherParticipant);
             EnsureCapabilityFieldsArePresent(account.Has, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+            var cashback = RequestedCashback(account.Has, account.Name, request.CashbackEnabled, request.CashbackRatePercent);
             var category = ResolveCategory(account.Has, account.Name, request.CategoryId, currentCategory: null);
             account.ApplyCurrencies(currencies);
             ApplyOtherParticipant(account, request.OtherParticipant);
             ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+            ApplyCashback(account, cashback);
             ApplyCategory(account, category);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -121,6 +123,7 @@ public sealed class AccountAdminService : IAccountAdminService
             EnsureOtherParticipantFits(targetHas, trimmedName, request.OtherParticipant);
             EnsureTemplateFieldsAreValid(trimmedName, template, currencies, request.OtherParticipant, savings);
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+            var cashback = RequestedCashback(targetHas, trimmedName, request.CashbackEnabled, request.CashbackRatePercent);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -129,6 +132,7 @@ public sealed class AccountAdminService : IAccountAdminService
                 account.ChangeSetup(template, currencies, hasRecords, savings);
                 ApplyOtherParticipant(account, request.OtherParticipant);
                 ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+                ApplyCashback(account, cashback);
                 ApplyCategory(account, category);
                 account.SetActive(request.IsActive);
                 return true;
@@ -255,6 +259,25 @@ public sealed class AccountAdminService : IAccountAdminService
         if (roundUpEnabled is { } enabled)
         {
             account.SetRoundUp(enabled);
+        }
+    }
+
+    private static CashbackSetting? RequestedCashback(Func<Capability, bool> has, string accountName, bool? enabled, decimal? ratePercent)
+    {
+        if (enabled is null && ratePercent is null)
+        {
+            return null;
+        }
+
+        Account.EnsureSupportsCashback(has, accountName);
+        return CashbackSetting.From(enabled ?? false, ratePercent);
+    }
+
+    private static void ApplyCashback(Account account, CashbackSetting? cashback)
+    {
+        if (cashback is not null)
+        {
+            account.SetCashback(cashback);
         }
     }
 

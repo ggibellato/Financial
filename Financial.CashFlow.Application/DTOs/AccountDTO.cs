@@ -13,6 +13,8 @@ public sealed class AccountDTO
     public decimal? OpeningBalance { get; init; }
     public DateOnly? BalanceStartDate { get; init; }
     public bool? RoundUpEnabled { get; init; }
+    public bool? CashbackEnabled { get; init; }
+    public decimal? CashbackRatePercent { get; init; }
     public Guid? CategoryId { get; init; }
     public SavingsTermsDTO? Savings { get; init; }
     public DateOnly? DueDate { get; init; }

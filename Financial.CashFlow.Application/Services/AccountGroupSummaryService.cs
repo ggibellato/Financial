@@ -122,6 +122,9 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         AccountNextStatementDTO? nextStatement)
     {
         var balances = AccountBalanceRule.Balances(account, endOfMonth, records);
+        var paidFromAccount = account.Has(Capability.SupportsRoundUp) || account.Has(Capability.SupportsCashback)
+            ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).ToList()
+            : [];
         return new()
         {
             AccountId = account.Id,
@@ -132,9 +135,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Balance = balances.First(balance => balance.Currency == account.Currency).Balance,
             CurrencyBalances = CurrencyBalanceMapper.ToDtos(balances),
             OtherParticipant = account.OtherParticipant,
-            RoundUpTotal = account.Has(Capability.SupportsRoundUp)
-                ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
-                : null,
+            RoundUpTotal = account.Has(Capability.SupportsRoundUp) ? paidFromAccount.Sum(e => e.RoundUpAmount ?? 0m) : null,
+            CashbackTotal = account.Has(Capability.SupportsCashback) ? paidFromAccount.Sum(e => e.CashbackAmount ?? 0m) : null,
             Statement = statement,
             BalanceIsOwed = account.BalanceIsOwed,
             TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
@@ -171,6 +173,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
                 Currency = group.Key,
                 Balance = group.Where(member => member.Statement is null).Sum(member => member.Balance),
                 RoundUpTotal = group.Sum(member => member.RoundUpTotal ?? 0m),
+                CashbackTotal = group.Sum(member => member.CashbackTotal ?? 0m),
                 CardOutstandingTotal = group.Sum(member => member.Statement?.OutstandingTotal ?? 0m)
             })
             .ToList();

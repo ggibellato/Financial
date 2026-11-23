@@ -53,7 +53,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         var chase = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{ChaseId}/2026/9");
 
         var expectedShape =
-            $$"""{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}""";
+            $$"""{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"cashbackAmount":null,"suggestedCashbackAmount":null,"countsAsTithe":true}""";
         using (new AssertionScope())
         {
             createdJson.Should().Be(expectedShape);

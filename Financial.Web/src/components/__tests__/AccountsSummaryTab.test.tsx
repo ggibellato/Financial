@@ -36,7 +36,7 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 10,
   members: [],
-  totals: [{ currency: 'GBP', balance: 51.3, roundUpTotal: 0.6, cardOutstandingTotal: 100 }],
+  totals: [{ currency: 'GBP', balance: 51.3, roundUpTotal: 0.6, cashbackTotal: 0, cardOutstandingTotal: 100 }],
   categoryTotalsSum: 2840.1,
   incomeTotals: [
     { incomeSourceId: '1', name: 'Salary', netValue: 4100, grossValue: 5200 },

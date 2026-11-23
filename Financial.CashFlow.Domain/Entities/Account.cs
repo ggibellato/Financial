@@ -20,6 +20,7 @@ public class Account
     private IReadOnlySet<Capability>? _capabilitiesOverride;
     private IReadOnlyList<Pot> _pots = [];
     private IReadOnlyList<Currency> _currencies = [];
+    private CashbackSetting? _cashback;
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -30,10 +31,12 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
+    public CashbackSetting? Cashback => Has(Capability.SupportsCashback) ? _cashback ?? CashbackSetting.Off : null;
     public SavingsTerms? Savings { get; private set; }
     public IReadOnlyList<Pot>? Pots => Has(Capability.HasPots) ? _pots : null;
     public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
+    public bool EarnsCashback => Cashback?.Enabled == true;
     public string TemplateName => Template.ToString();
     public int TemplateOrder => AccountTemplates.Available.ToList().IndexOf(Template);
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -173,6 +176,13 @@ public class Account
         RoundUp = new RoundUpSetting(enabled);
     }
 
+    public void SetCashback(CashbackSetting cashback)
+    {
+        ArgumentNullException.ThrowIfNull(cashback);
+        EnsureSupportsCashback(Has, Name);
+        _cashback = cashback;
+    }
+
     public void SetSavings(SavingsTerms savings)
     {
         ArgumentNullException.ThrowIfNull(savings);
@@ -267,6 +277,14 @@ public class Account
         }
     }
 
+    public static void EnsureSupportsCashback(Func<Capability, bool> has, string accountName)
+    {
+        if (!has(Capability.SupportsCashback))
+        {
+            throw new ArgumentException($"{accountName} does not support cashback.");
+        }
+    }
+
     public static void EnsureHasCategorySetting(Func<Capability, bool> has, string accountName)
     {
         if (!has(Capability.HasPots))
@@ -349,6 +367,7 @@ public class Account
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
         Savings = Has(Capability.EarnsInterest) ? Savings : null;
+        _cashback = Has(Capability.SupportsCashback) ? _cashback : null;
         _currencies = Has(Capability.MultiCurrency) ? [Currency] : [];
         OtherParticipant = Has(Capability.HasParticipants) ? OtherParticipant : null;
         if (!Has(Capability.HasPots))

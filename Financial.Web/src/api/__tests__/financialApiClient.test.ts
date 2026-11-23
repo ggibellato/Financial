@@ -1593,9 +1593,9 @@ describe('financialApiClient', () => {
       year: 2026,
       month: 7,
       members: [
-        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, currencyBalances: [{ currency: 'GBP', balance: 1500 }], otherParticipant: null, roundUpTotal: 0.5, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, currencyBalances: [{ currency: 'GBP', balance: 1500 }], otherParticipant: null, roundUpTotal: 0.5, cashbackTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
       ],
-      totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5, cardOutstandingTotal: 0 }],
+      totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5, cashbackTotal: 0, cardOutstandingTotal: 0 }],
       categoryTotalsSum: 320,
       incomeTotals: [{ incomeSourceId: 's1', name: 'Salary', netValue: 2000, grossValue: 2500 }],
       totalIncoming: 2000,
@@ -1613,7 +1613,7 @@ describe('financialApiClient', () => {
       {
         templateName: 'Pots',
         members: [
-          { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 704.08, currencyBalances: [{ currency: 'GBP', balance: 704.08 }], otherParticipant: null, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+          { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 704.08, currencyBalances: [{ currency: 'GBP', balance: 704.08 }], otherParticipant: null, roundUpTotal: null, cashbackTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
         ],
         totals: [{ currency: 'GBP', total: 704.08 }],
       },
@@ -1656,6 +1656,8 @@ describe('financialApiClient', () => {
       openingBalance: 250,
       balanceStartDate: '2026-10-24',
       roundUpEnabled: true,
+      cashbackEnabled: null,
+      cashbackRatePercent: null,
       categoryId: null,
       savings: null,
       currencies: null,
@@ -1681,6 +1683,8 @@ describe('financialApiClient', () => {
       openingBalance: 250,
       balanceStartDate: '2026-10-24',
       roundUpEnabled: true,
+      cashbackEnabled: null,
+      cashbackRatePercent: null,
       categoryId: null,
       savings: null,
       currencies: null,
@@ -2017,6 +2021,7 @@ describe('financialApiClient', () => {
       invoiceDate: null,
       paymentSourceBankId: null,
       roundUpAmount: null,
+      cashbackAmount: null,
     }
     const responseBody = { id: 'e1', categoryName: 'Mercado', paymentStatus: 'ImmediatePayment', ...requestBody } as ExpenseDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -2041,6 +2046,7 @@ describe('financialApiClient', () => {
       invoiceDate: null,
       paymentSourceBankId: null,
       roundUpAmount: null,
+      cashbackAmount: null,
     }
     const responseBody = { id: 'e1', categoryName: 'Mercado', paymentStatus: 'ImmediatePayment', ...requestBody } as ExpenseDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

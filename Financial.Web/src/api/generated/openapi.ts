@@ -7211,6 +7211,9 @@ export interface components {
         AccountCreateDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            cashbackEnabled?: null | boolean;
+            /** Format: double */
+            cashbackRatePercent?: null | number;
             /** Format: uuid */
             categoryId?: null | string;
             currencies?: null | string[];
@@ -7227,6 +7230,9 @@ export interface components {
             /** Format: date */
             balanceStartDate?: null | string;
             capabilities: string[];
+            cashbackEnabled?: null | boolean;
+            /** Format: double */
+            cashbackRatePercent?: null | number;
             /** Format: uuid */
             categoryId?: null | string;
             currencies: string[];
@@ -7279,6 +7285,8 @@ export interface components {
             /** Format: double */
             balance: number;
             balanceIsOwed: boolean;
+            /** Format: double */
+            cashbackTotal?: null | number;
             currency: string;
             currencyBalances: components["schemas"]["CurrencyBalanceDTO"][];
             isActive: boolean;
@@ -7366,6 +7374,8 @@ export interface components {
             /** Format: double */
             amount: number;
             canEdit: boolean;
+            /** Format: double */
+            cashback?: null | number;
             categoryName?: null | string;
             counterpart?: null | string;
             currency: null | string;
@@ -7455,6 +7465,9 @@ export interface components {
         AccountUpdateDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            cashbackEnabled?: null | boolean;
+            /** Format: double */
+            cashbackRatePercent?: null | number;
             /** Format: uuid */
             categoryId?: null | string;
             currencies?: null | string[];
@@ -8098,6 +8111,8 @@ export interface components {
             balance: number;
             /** Format: double */
             cardOutstandingTotal: number;
+            /** Format: double */
+            cashbackTotal: number;
             currency: string;
             /** Format: double */
             roundUpTotal: number;
@@ -8156,6 +8171,8 @@ export interface components {
         /** @enum {unknown} */
         EventCategory: "CapitalGain" | "Dividend" | "Interest" | "SecuritiesLendingIncome" | "Unrecognized" | "CorporateAction";
         ExpenseCreateDTO: {
+            /** Format: double */
+            cashbackAmount?: null | number;
             /** Format: uuid */
             categoryId: string;
             countsAsTithe?: boolean;
@@ -8174,6 +8191,8 @@ export interface components {
             value: number;
         };
         ExpenseDTO: {
+            /** Format: double */
+            cashbackAmount?: null | number;
             /** Format: uuid */
             categoryId: string;
             categoryName: string;
@@ -8197,11 +8216,15 @@ export interface components {
             /** Format: double */
             roundUpAmount?: null | number;
             /** Format: double */
+            suggestedCashbackAmount?: null | number;
+            /** Format: double */
             suggestedRoundUpAmount?: null | number;
             /** Format: double */
             value: number;
         };
         ExpenseUpdateDTO: {
+            /** Format: double */
+            cashbackAmount?: null | number;
             /** Format: uuid */
             categoryId: string;
             countsAsTithe?: boolean;
