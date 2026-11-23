@@ -204,7 +204,7 @@ uses the repo folder.
 |---|---|---|---|---|
 | 10.1 | Add each reviewed project to the nightly `stryker-dotnet` matrix with its own break threshold | ✅ | [#1353](https://github.com/ggibellato/Financial/pull/1353), [#1355](https://github.com/ggibellato/Financial/pull/1355) | Seven projects added, each breaking 5 points below its score measured on 2026-11-19 |
 | 10.2 | Widen the nightly StrykerJS `mutate` to the reviewed components | ✅ | [#1356](https://github.com/ggibellato/Financial/pull/1356) | Separate `Web.Components` entry over the 30 reviewed files, 95.0%, break 90; Web.Logic unchanged |
-| 10.3 | Raise the existing break thresholds once scores hold for a week (`docs/ci-affected-pipeline.md`) | ⬜ | | |
+| 10.3 | Raise the existing break thresholds once scores hold for a week (`docs/ci-affected-pipeline.md`) | ✅ | | Raised to the lowest nightly score of the week minus 5: CashFlow.Domain 72 → 88, Investment.Domain 72 → 82, Web.Logic 55.9 → 77. The entries added on 2026-11-19 already break 5 below their measured score and have not risen |
 | 10.4 | Decide on an advisory PR job mutating changed files only (`--since origin/main`) | ✅ | | Decided 2026-11-19: no PR job. The nightly mutates every reviewed project and component and opens the `nightly-failure` issue when one drops below its break, so a regression shows within a day without adding minutes to every PR |
 
 ## Slice notes
@@ -323,3 +323,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-19 | 10.4 | No advisory PR mutation job; the nightly covers it |
 | 2026-11-19 | 8.4–8.8 | Fixed the product issues the slices noticed: confirm dialogs keep their message while closing, Mensais closes the edit of a deleted bill, Current values lists failed fetches, ArrowUp opens the ticker picker |
 | 2026-11-19 | 5.8 | Fixed the defect it found: the price history and credits period filters read a date as a local calendar date, so a first-day price stays in the window at a negative UTC offset |
+| 2026-11-23 | 10.3 | Break thresholds raised: CashFlow.Domain 88, Investment.Domain 82, Web.Logic 77; batch 10 is done |

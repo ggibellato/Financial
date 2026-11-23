@@ -611,7 +611,7 @@ graph TD
 - [x] A missing baseline file fails the gate closed.
 - [x] Web coverage excludes `src/test/**` and `src/test-utils/**`.
 - [x] Every PR comment shows Line, Branch, Δ vs baseline, Diff line and Diff branch per job.
-- [ ] Diff coverage is advisory for its first 2–4 weeks. The switch to blocking is a separate PR citing the false-positive rate over ≥ 20 PRs.
+- [x] Diff coverage is advisory for its first 2–4 weeks. The switch to blocking is a separate PR citing the false-positive rate over ≥ 20 PRs. Closed 2026-11-23 as stays advisory: 8 flags over about 450 PRs, at least half false positives (`docs/ci-affected-pipeline.md`).
 - [x] A PR touching coverage exclusions shows the ⚠ exclusion line in the comment.
 
 ### F10. High-Risk Branch Coverage
