@@ -17,7 +17,7 @@ import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
-import { todayIsoDate } from '../utils/formatters'
+import { hasAtMostTwoDecimals, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { PAID_BY_YOU } from '../utils/paidBy'
 
 const UNSET_START_DATE = '0001-01-01'
@@ -26,6 +26,7 @@ const OTHER_PARTICIPANT_MAX_LENGTH = 60
 const LOCKED_HINT = "Can't change once the account has transactions."
 const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
+const MAX_CASHBACK_RATE_PERCENT = 100
 const CATEGORY_INFO = "When money moves between a bank and this account, the bank's entry is recorded in this category."
 
 type FieldName =
@@ -37,6 +38,7 @@ type FieldName =
   | 'category'
   | 'openingBalance'
   | 'balanceStartDate'
+  | 'cashbackRate'
 
 type FieldErrors = Partial<Record<FieldName, string>>
 
@@ -52,6 +54,8 @@ interface FormValues {
   openingBalance: string
   balanceStartDate: string
   roundUpEnabled: boolean
+  cashbackEnabled: boolean
+  cashbackRatePercent: string
   savings: SavingsFormValues
   isActive: boolean
 }
@@ -65,6 +69,8 @@ const FORM_FIELDS: readonly (keyof FormValues)[] = [
   'openingBalance',
   'balanceStartDate',
   'roundUpEnabled',
+  'cashbackEnabled',
+  'cashbackRatePercent',
   'isActive',
 ]
 
@@ -89,6 +95,8 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
       openingBalance: '0.00',
       balanceStartDate: todayIsoDate(),
       roundUpEnabled: false,
+      cashbackEnabled: false,
+      cashbackRatePercent: '',
       savings: initialSavingsValues(null),
       isActive: true,
     }
@@ -103,6 +111,8 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
     openingBalance: account.openingBalance?.toFixed(2) ?? '0.00',
     balanceStartDate: !account.balanceStartDate || account.balanceStartDate === UNSET_START_DATE ? '' : account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled ?? false,
+    cashbackEnabled: account.cashbackEnabled ?? false,
+    cashbackRatePercent: account.cashbackRatePercent?.toFixed(2) ?? '',
     savings: initialSavingsValues(account.savings),
     isActive: account.isActive,
   }
@@ -138,7 +148,20 @@ function validateAccountForm(
     else if (values.balanceStartDate > todayIsoDate()) errors.balanceStartDate = "Balance start date can't be in the future."
   }
   if (template?.capabilities.includes('HasPots') && !values.categoryId) errors.category = CATEGORY_REQUIRED
+  if (template?.capabilities.includes('SupportsCashback') && values.cashbackEnabled) {
+    const cashbackRateError = cashbackRateMessage(values.cashbackRatePercent)
+    if (cashbackRateError) errors.cashbackRate = cashbackRateError
+  }
   return errors
+}
+
+function cashbackRateMessage(ratePercent: string): string | undefined {
+  if (!ratePercent.trim()) return 'Enter the cashback rate.'
+  const rate = parseValidatedNumber(ratePercent)
+  if (rate === null) return 'Enter the rate as a number, for example 1.50.'
+  if (rate <= 0 || rate > MAX_CASHBACK_RATE_PERCENT) return `Cashback rate must be more than 0% and at most ${MAX_CASHBACK_RATE_PERCENT}%.`
+  if (!hasAtMostTwoDecimals(ratePercent)) return 'Cashback rate can have at most 2 decimal places.'
+  return undefined
 }
 
 function categoryOptions(categories: CategoryDto[], keptId: string): CategoryDto[] {
@@ -162,6 +185,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const capabilities = template?.capabilities ?? []
   const hasOpeningBalance = capabilities.includes('HasOpeningBalance')
   const supportsRoundUp = capabilities.includes('SupportsRoundUp')
+  const supportsCashback = capabilities.includes('SupportsCashback')
   const hasPots = capabilities.includes('HasPots')
   const isMultiCurrency = capabilities.includes('MultiCurrency')
   const hasParticipants = capabilities.includes('HasParticipants')
@@ -203,6 +227,9 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     }))
   }
 
+  const changeCashbackEnabled = (cashbackEnabled: boolean) =>
+    setValues((current) => ({ ...current, cashbackEnabled, cashbackRatePercent: cashbackEnabled ? current.cashbackRatePercent : '' }))
+
   const toggleCurrency = (currency: string, ticked: boolean) =>
     setValues((current) => ({
       ...current,
@@ -219,8 +246,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
     balanceStartDate: hasOpeningBalance ? values.balanceStartDate || UNSET_START_DATE : null,
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
-    cashbackEnabled: null,
-    cashbackRatePercent: null,
+    cashbackEnabled: supportsCashback ? values.cashbackEnabled : null,
+    cashbackRatePercent: supportsCashback && values.cashbackEnabled ? Number(values.cashbackRatePercent) : null,
     savings: earnsInterest ? toSavingsTermsDto(values.savings) : null,
     isActive: values.isActive,
   })
@@ -419,6 +446,32 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       {supportsRoundUp && (
         <Field label="Round-up">
           <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
+        </Field>
+      )}
+
+      {supportsCashback && (
+        <Field label="Cashback">
+          <Switch checked={values.cashbackEnabled} onChange={(_, data) => changeCashbackEnabled(data.checked)} />
+        </Field>
+      )}
+
+      {supportsCashback && values.cashbackEnabled && (
+        <Field
+          label="Cashback rate (%)"
+          required
+          hint="Suggests the cashback on each expense paid from this bank."
+          validationState={fieldState('cashbackRate')}
+          validationMessage={fieldMessage('cashbackRate')}
+        >
+          <Input
+            type="number"
+            min={0}
+            max={MAX_CASHBACK_RATE_PERCENT}
+            step="0.01"
+            inputMode="decimal"
+            value={values.cashbackRatePercent}
+            onChange={(_, data) => setField('cashbackRatePercent', data.value)}
+          />
         </Field>
       )}
 

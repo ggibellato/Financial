@@ -263,6 +263,20 @@ describe('AccountTransactionsGrid', () => {
     expect(screen.getByRole('columnheader', { name: 'Amount' })).toHaveClass('data-table__col--numeric')
   })
 
+  it('[AC P65-F03-cashback-web-04] adds a right-aligned Cashback column for a bank', () => {
+    const rows = ROWS.map((row, index) => (index === 0 ? { ...row, cashback: 0.84 } : row))
+    render(<AccountTransactionsGrid accountId="bank-1" columns="bank" transactions={rows} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    expect(screen.getByRole('columnheader', { name: 'Cashback' })).toHaveClass('data-table__col--numeric')
+    expect(within(bodyRows()[0]).getByText('0.84').closest('td')).toHaveClass('data-table__col--numeric')
+  })
+
+  it('shows no Cashback column for an account that is not a bank', () => {
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    expect(screen.queryByRole('columnheader', { name: 'Cashback' })).not.toBeInTheDocument()
+  })
+
   it('leaves the round-up cell blank on a row with no round-up', () => {
     render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 

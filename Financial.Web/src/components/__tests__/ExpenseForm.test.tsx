@@ -17,6 +17,8 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true, hasReferences: false },
 ]
 
+const CHASE_CASHBACK: BankOption = { id: 'bank-chase-cashback', name: 'Chase', roundUpEnabled: false, isActive: true, cashbackEnabled: true, cashbackRatePercent: 2 }
+
 const INACTIVE_BANK: BankOption = { ...BANKS[0], id: 'bank-chase', name: 'Chase', isActive: false }
 
 const baseProps = {
@@ -31,6 +33,7 @@ const baseProps = {
   invoiceDate: '',
   invoiceMonthMovedFrom: null,
   roundUpAmount: '',
+  cashbackAmount: '',
   countsAsTithe: true,
   paymentMode: 'bank' as const,
   banks: BANKS,
@@ -489,5 +492,38 @@ describe('ExpenseForm with a locked card', () => {
     render(<ExpenseForm {...cardProps} date="2026-10-14" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
 
     expect(screen.getByLabelText(/^Date/)).not.toHaveAttribute('max')
+  })
+
+  describe('Cashback', () => {
+    const cashbackProps = { ...baseProps, banks: [...BANKS, CHASE_CASHBACK], paymentSource: CHASE_CASHBACK.id }
+
+    it('[AC P65-F03-cashback-web-02] shows Cashback with the bank rate for a bank with cashback on', () => {
+      render(<ExpenseForm {...cashbackProps} cashbackAmount="0.25" />)
+
+      const cashback = screen.getByLabelText('Cashback')
+      expect(cashback).toHaveValue(0.25)
+      expect(cashback).toHaveAccessibleDescription("2.00% of the value. Clear it if this purchase doesn't earn cashback.")
+    })
+
+    it('[AC P65-F03-cashback-web-02] hides Cashback for a bank without cashback, a card payment and a settled expense', () => {
+      const { rerender } = render(<ExpenseForm {...cashbackProps} paymentSource="bank-barclays" />)
+      expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+
+      rerender(<ExpenseForm {...cashbackProps} paymentMode="card" creditCardId="card-baamex" />)
+      expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+
+      rerender(<ExpenseForm {...cashbackProps} isEditing isSettled />)
+      expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+    })
+
+    it('reports cashback changes and shows its validation message', () => {
+      const onFieldChange = vi.fn()
+      render(<ExpenseForm {...cashbackProps} onFieldChange={onFieldChange} saveErrorFields={{ cashbackAmount: 'Cashback is too large' }} />)
+
+      fireEvent.change(screen.getByLabelText('Cashback'), { target: { value: '0.20' } })
+
+      expect(onFieldChange).toHaveBeenCalledWith('cashbackAmount', '0.20')
+      expect(screen.getByLabelText('Cashback')).toHaveAccessibleDescription(expect.stringContaining('Cashback is too large'))
+    })
   })
 })

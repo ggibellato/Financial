@@ -41,6 +41,7 @@ import { settlementCounterparty } from '../utils/settlementBalance'
 import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
+const BANK_TEMPLATE = 'Bank'
 const EDITED_ROW_UNAVAILABLE = 'This transaction is no longer in this month or can no longer be edited.'
 
 export default function AccountScreenPage() {
@@ -138,7 +139,7 @@ export default function AccountScreenPage() {
   const gridColumns =
     hasParticipants && account
       ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account), showsConverted: account.currentBalances.length > 1 } as const)
-      : ({ columns: hasPots ? 'pots' : 'account' } as const)
+      : ({ columns: hasPots ? 'pots' : account?.templateName === BANK_TEMPLATE ? 'bank' : 'account' } as const)
 
   useEffect(() => {
     if (!isRefreshAfterSavePending.current) return
@@ -265,6 +266,7 @@ export default function AccountScreenPage() {
             invoiceDate={expenseForm.invoiceDate}
             invoiceMonthMovedFrom={expenseForm.invoiceMonthMovedFrom}
             roundUpAmount={expenseForm.roundUpAmount}
+            cashbackAmount={expenseForm.cashbackAmount}
             countsAsTithe={expenseForm.countsAsTithe === 'true'}
             paymentMode={expenseForm.paymentMode}
             banks={formOptions.options.banks}

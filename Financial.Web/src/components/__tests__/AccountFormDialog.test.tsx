@@ -684,6 +684,83 @@ describe('AccountFormDialog', () => {
     })
   })
 
+  describe('Cashback', () => {
+    const CASHBACK_BANK: AccountTemplateDto = { ...BANK, capabilities: [...BANK.capabilities, 'SupportsCashback'] }
+    const renderBank = (props: Partial<Parameters<typeof AccountFormDialog>[0]> = {}) => {
+      const dialog = renderDialog({ templates: [CASHBACK_BANK, PLAIN], ...props })
+      if (!props.account) fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Chase' } })
+      return dialog
+    }
+    const rateInput = () => screen.getByLabelText(/Cashback rate/)
+
+    it('[AC P65-F03-cashback-web-01] shows the Cashback switch only for a template that supports it, and the rate only while it is on', () => {
+      renderBank()
+
+      expect(screen.getByRole('switch', { name: 'Cashback' })).not.toBeChecked()
+      expect(screen.queryByLabelText(/Cashback rate/)).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+      expect(rateInput()).toHaveAccessibleDescription('Suggests the cashback on each expense paid from this bank.')
+
+      fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Plain' } })
+      expect(screen.queryByRole('switch', { name: 'Cashback' })).not.toBeInTheDocument()
+    })
+
+    it('[AC P65-F03-cashback-web-01] creates a bank with cashback and its rate', async () => {
+      const { onSubmit } = renderBank()
+
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+      fireEvent.change(rateInput(), { target: { value: '1.5' } })
+      save()
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ cashbackEnabled: true, cashbackRatePercent: 1.5 })),
+      )
+    })
+
+    it('[AC P65-F03-cashback-web-01] switching cashback off drops the rate and sends it off', async () => {
+      const chase = account({ id: 'a1', name: 'Chase', cashbackEnabled: true, cashbackRatePercent: 2 })
+      const { onSubmit } = renderBank({ account: chase })
+
+      expect(rateInput()).toHaveValue(2)
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+      expect(rateInput()).toHaveValue(null)
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+      save('Save')
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ cashbackEnabled: false, cashbackRatePercent: null })),
+      )
+    })
+
+    it.each([
+      ['', 'Enter the cashback rate.'],
+      ['0', 'Cashback rate must be more than 0% and at most 100%.'],
+      ['100.5', 'Cashback rate must be more than 0% and at most 100%.'],
+      ['1.555', 'Cashback rate can have at most 2 decimal places.'],
+    ])('[AC P65-F03-cashback-web-03] refuses the rate "%s" inline and focuses it', async (rate, message) => {
+      const { onSubmit } = renderBank()
+
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+      fireEvent.change(rateInput(), { target: { value: rate } })
+      save()
+
+      expect(rateInput()).toHaveAccessibleDescription(expect.stringContaining(message))
+      await waitFor(() => expect(rateInput()).toHaveFocus())
+      expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it('asks before closing once the rate changed', () => {
+      const chase = account({ id: 'a1', name: 'Chase', cashbackEnabled: true, cashbackRatePercent: 2 })
+      const { onCancel } = renderBank({ account: chase })
+
+      fireEvent.change(rateInput(), { target: { value: '3' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      expect(onCancel).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Savings', () => {
     const renderSavings = () => {
       const dialog = renderDialog({ templates: [BANK, SAVINGS] })

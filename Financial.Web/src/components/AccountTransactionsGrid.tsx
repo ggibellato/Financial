@@ -14,7 +14,7 @@ import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { formatAmount, formatCurrency, formatN2, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import ClearFiltersToolbar from './grid/ClearFiltersToolbar'
 import { focusFilterTrigger } from './grid/columnFilterText'
 import ColumnHeaderFilter, { type ColumnFilterKind } from './grid/ColumnHeaderFilter'
@@ -103,6 +103,16 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
   },
 ]
 
+const CASHBACK_COLUMN: TransactionColumn = {
+  key: 'cashback',
+  header: 'Cashback',
+  numeric: true,
+  accessor: (row) => row.cashback,
+  render: (row) => (row.cashback == null ? '' : formatN2(row.cashback)),
+}
+
+const BANK_COLUMNS: TransactionColumn[] = [...ACCOUNT_COLUMNS, CASHBACK_COLUMN]
+
 const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
 const CONVERTED_COLUMN: TransactionColumn = {
@@ -137,10 +147,11 @@ function settlementColumns(otherParticipant: string, showsConverted: boolean): T
   ]
 }
 
-type ColumnSelection = { columns?: 'account' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
+type ColumnSelection = { columns?: 'account' | 'bank' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
 
 function columnsOf(selection: ColumnSelection): TransactionColumn[] {
   if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant, selection.showsConverted)
+  if (selection.columns === 'bank') return BANK_COLUMNS
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 
