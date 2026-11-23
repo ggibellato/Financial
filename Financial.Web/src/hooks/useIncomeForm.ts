@@ -161,8 +161,8 @@ interface IncomeFormState extends FundingFields {
 }
 
 type IncomeFormAction =
-  | { type: 'SHOW_CREATE_FORM'; payload: { date: string; bank: string; source: string; split: SplitFields; isInterest?: boolean } }
-  | { type: 'SHOW_EDIT_FORM'; payload: { income: IncomeDto; funding: FundingFields } }
+  | { type: 'SHOW_CREATE_FORM'; payload: { date: string; bank: string; source: string; split: SplitFields; isInterest: boolean } }
+  | { type: 'SHOW_EDIT_FORM'; payload: { income: IncomeDto; funding: FundingFields; isInterest: boolean } }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: IncomeFormField; value: string } }
   | { type: 'SET_SPLIT'; payload: SplitFields }
@@ -223,10 +223,10 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         bank: action.payload.bank,
         incomeSource: action.payload.source,
         ...action.payload.split,
-        isInterest: action.payload.isInterest ?? false,
+        isInterest: action.payload.isInterest,
       })
     case 'SHOW_EDIT_FORM': {
-      const { income, funding } = action.payload
+      const { income, funding, isInterest } = action.payload
       return withOpenedValues({
         ...state,
         ...funding,
@@ -242,7 +242,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         description: income.description ?? '',
         splitToReserve: String(income.potsAccountId != null),
         potsAccountId: income.potsAccountId ?? '',
-        isInterest: false,
+        isInterest,
         saveError: null,
         saveErrorFields: {},
       })
@@ -338,7 +338,8 @@ export interface UseIncomeFormResult {
   showInterestForm: () => void
   isInterestForm: boolean
   showDepositIncomeForm: (potsAccountId: string) => void
-  showEditIncomeForm: (income: IncomeDto) => void
+  showEditIncomeForm: (income: IncomeDto, isInterest?: boolean) => void
+  incomeSourceChoices: IncomeSourceDto[]
   cancelIncomeForm: () => void
   setIncomeField: (field: IncomeFormField, value: string) => void
   submitIncome: () => void
@@ -394,49 +395,38 @@ export function useIncomeForm(
     return lockedBank?.id ?? (storedBank && selectableBanks(banks).some((b) => b.id === storedBank) ? storedBank : '')
   }
 
-  function showDepositIncomeForm(potsAccountId: string) {
-    const activeSources = selectActiveIncomeSources(incomeSources)
-    const source = activeSources.find((s) => s.potsAccountId === potsAccountId) ?? activeSources.find((s) => s.potsAccountId != null)
+  function openCreateForm(source: string, split: SplitFields, isInterest = false) {
     dispatch({
       type: 'SHOW_CREATE_FORM',
-      payload: {
-        date: getCreateFormDate(DATE_KEY, viewedMonth),
-        bank: defaultBank(),
-        source: source?.id ?? '',
-        split: { splitToReserve: 'true', potsAccountId },
-      },
+      payload: { date: getCreateFormDate(DATE_KEY, viewedMonth), bank: defaultBank(), source, split, isInterest },
     })
   }
 
+  function showDepositIncomeForm(potsAccountId: string) {
+    const activeSources = selectActiveIncomeSources(incomeSources)
+    const source = activeSources.find((s) => s.potsAccountId === potsAccountId) ?? activeSources.find((s) => s.potsAccountId != null)
+    openCreateForm(source?.id ?? '', { splitToReserve: 'true', potsAccountId })
+  }
+
   function showCreateIncomeForm() {
-    const date = getCreateFormDate(DATE_KEY, viewedMonth)
-    const bank = defaultBank()
     const storedSource = getStoredDefault(SOURCE_KEY)
     const source =
       state.incomeSource ||
       (storedSource && incomeSources.some((s) => s.id === storedSource) ? storedSource : (selectActiveIncomeSources(incomeSources)[0]?.id ?? ''))
-    dispatch({ type: 'SHOW_CREATE_FORM', payload: { date, bank, source, split: sourceSplit(incomeSources, accounts, source) } })
+    openCreateForm(source, sourceSplit(incomeSources, accounts, source))
   }
 
   function showInterestForm() {
     const sources = interestIncomeSources(incomeSources)
     const source = sources.length === 1 ? sources[0].id : ''
-    dispatch({
-      type: 'SHOW_CREATE_FORM',
-      payload: {
-        date: getCreateFormDate(DATE_KEY, viewedMonth),
-        bank: defaultBank(),
-        source,
-        split: sourceSplit(incomeSources, accounts, source),
-        isInterest: true,
-      },
-    })
+    openCreateForm(source, sourceSplit(incomeSources, accounts, source), true)
   }
 
-  const showEditIncomeForm = (income: IncomeDto) =>
+  const showEditIncomeForm = (income: IncomeDto, isInterest = false) =>
     dispatch({
       type: 'SHOW_EDIT_FORM',
       payload: {
+        isInterest,
         income,
         funding: {
           isOlderSplit: isOlderSplitIncome(income),
@@ -603,6 +593,7 @@ export function useIncomeForm(
     showCreateIncomeForm,
     showInterestForm,
     isInterestForm: state.isOpen && state.isInterest,
+    incomeSourceChoices: state.isInterest ? interestIncomeSources(incomeSources) : incomeSources,
     showDepositIncomeForm,
     showEditIncomeForm,
     cancelIncomeForm,

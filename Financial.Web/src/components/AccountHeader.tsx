@@ -89,7 +89,7 @@ export default function AccountHeader({
               </Badge>
             )}
             {account.savings?.isTaxFree && (
-              <Badge appearance="outline" color="success">
+              <Badge appearance="outline" color="informative">
                 Tax-free
               </Badge>
             )}

@@ -501,6 +501,13 @@ describe('IncomeForm interest', () => {
     expect(optionNames(screen.getByLabelText(/^Source/))).toEqual(['DividendoJuros'])
   })
 
+  it('is titled Edit interest when editing an interest row', () => {
+    render(<IncomeForm {...baseProps} isInterest isEditing incomeSource="4" lockedBank={SAVINGS_LOCK} incomeSources={[INCOME_SOURCES[3]]} />)
+
+    expect(screen.getByRole('heading', { name: 'Edit interest' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+  })
+
   it('asks for a source when several interest sources are offered', () => {
     render(<IncomeForm {...baseProps} isInterest incomeSource="" lockedBank={SAVINGS_LOCK} incomeSources={[INCOME_SOURCES[3], ISA_INTEREST]} />)
 

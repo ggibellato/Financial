@@ -18,6 +18,7 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionErrorAlert from './ActionErrorAlert'
+import { ACTION_LABELS } from './accountActions'
 import FormSaveActions from './FormSaveActions'
 import FundedFromSection from './FundedFromSection'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -104,7 +105,7 @@ export default function IncomeForm({
   const isPotsAccountUnlisted = potsAccountId !== '' && !potsAccounts.some((account) => account.id === potsAccountId)
   const canChoosePotsAccount = potsAccountsStatus === 'ready' && potsAccounts.length > 0
   const titleId = useId()
-  const createLabel = isInterest ? 'Add interest' : 'New income'
+  const noun = isInterest ? 'interest' : 'income'
 
   return (
     <form
@@ -119,7 +120,7 @@ export default function IncomeForm({
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
-          {isEditing ? 'Edit income' : createLabel}
+          {isEditing ? `Edit ${noun}` : isInterest ? ACTION_LABELS.AddInterest : ACTION_LABELS.AddIncome}
         </Text>
         <ActionErrorAlert message={hasFieldErrors ? null : saveError} />
 
@@ -256,7 +257,7 @@ export default function IncomeForm({
         {funding.isShown && <FundedFromSection funding={funding} banks={banks} />}
       </fieldset>
       <FormSaveActions
-        saveLabel={isEditing ? 'Save' : isInterest ? 'Add interest' : 'Add income'}
+        saveLabel={isEditing ? 'Save' : `Add ${noun}`}
         isSaving={isSaving}
         isSaveDisabled={funding.mismatch !== null}
         onCancel={onCancel}

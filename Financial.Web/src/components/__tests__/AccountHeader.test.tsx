@@ -397,7 +397,7 @@ describe('AccountHeader', () => {
         }),
       )
 
-      expect(screen.getByText('4.50% since 1 Sept 2026 · 3.75% from 1 Jan 2027')).toBeInTheDocument()
+      expect(screen.getByText('4.50% a year since 1 Sept 2026 · 3.75% a year from 1 Jan 2027')).toBeInTheDocument()
       expect(screen.getByText('Interest paid monthly on day 5')).toBeInTheDocument()
       expect(screen.getByText('Tax-free')).toBeInTheDocument()
     })
@@ -413,7 +413,7 @@ describe('AccountHeader', () => {
         }),
       )
 
-      expect(screen.getByText('No rate in force yet · 3.00% from 1 Dec 2026')).toBeInTheDocument()
+      expect(screen.getByText('No rate in force yet · 3.00% a year from 1 Dec 2026')).toBeInTheDocument()
       expect(screen.getByText('Interest paid daily')).toBeInTheDocument()
       expect(screen.queryByText('Tax-free')).not.toBeInTheDocument()
     })

@@ -103,6 +103,10 @@ export function rowKindLabel(row: Pick<AccountTransactionDto, 'kind' | 'isIntere
   return row.isInterest ? 'Interest' : kindLabel(row.kind)
 }
 
+function rowNoun(row: Pick<AccountTransactionDto, 'kind' | 'isInterest'>): string {
+  return row.isInterest ? 'interest' : recordNoun(row.kind)
+}
+
 export function recordNoun(kind: string): string {
   return Object.hasOwn(RECORD_NOUNS, kind) ? RECORD_NOUNS[kind] : 'record'
 }
@@ -121,7 +125,7 @@ export function isCreditRefund(row: AccountTransactionDto): boolean {
 }
 
 export function deleteConfirmation(row: AccountTransactionDto): string {
-  const question = `Delete this ${recordNoun(row.kind)}?`
+  const question = `Delete this ${rowNoun(row)}?`
   if (isCreditRefund(row)) return `${question} The card's credit returns.`
   const lines = linesDeletedWith(row)
   return lines > 1
@@ -131,6 +135,7 @@ export function deleteConfirmation(row: AccountTransactionDto): string {
 
 export function deletedMessage(row: AccountTransactionDto): string {
   const lines = linesDeletedWith(row)
+  if (row.isInterest) return 'Interest deleted'
   return lines > 1 ? `${lines} ${recordNoun(row.kind)} lines deleted` : `${recordTitle(row.kind)} deleted`
 }
 
@@ -200,7 +205,7 @@ export function shownDescription(row: AccountTransactionDto): string | null {
 }
 
 export function transactionRowName(row: AccountTransactionDto): string {
-  const kind = row.operation ? operationNoun(row.operation) : recordNoun(row.kind)
+  const kind = row.operation ? operationNoun(row.operation) : rowNoun(row)
   const description = shownDescription(row)
   const pot = row.kind === 'PotTransaction' ? row.counterpart : null
   return [description ? `${kind} ${description}` : kind, pot, formatShortDateUtc(row.date)].filter(Boolean).join(', ')

@@ -3,7 +3,7 @@ import type { InterestRateDto, SavingsSummaryDto } from '../api/types'
 import { formatDayMonthYearUtc, formatPercentN2 } from '../utils/formatters'
 
 const rateText = (rate: InterestRateDto, preposition: string) =>
-  `${formatPercentN2(rate.annualPercent)} ${preposition} ${formatDayMonthYearUtc(rate.effectiveFrom)}`
+  `${formatPercentN2(rate.annualPercent)} a year ${preposition} ${formatDayMonthYearUtc(rate.effectiveFrom)}`
 
 function scheduleText(savings: SavingsSummaryDto): string {
   return savings.interestFrequency === 'Daily'

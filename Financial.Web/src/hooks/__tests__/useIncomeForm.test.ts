@@ -1305,6 +1305,21 @@ describe('useIncomeForm account settings', () => {
       expect(result.current.incomeLockedBank).toEqual(CHASE_SAVE)
     })
 
+    it('edits an interest row in interest mode, offering only the interest sources', () => {
+      const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: CHASE_SAVE }))
+
+      act(() =>
+        result.current.showEditIncomeForm(
+          { id: 'i9', date: '2026-10-05', incomeSourceId: '4', netValue: 2.1, grossValue: null, bankId: 's1', description: null, potsAccountId: null, fundingLines: [] } as unknown as IncomeDto,
+          true,
+        ),
+      )
+
+      expect(result.current.isInterestForm).toBe(true)
+      expect(result.current.isIncomeEditing).toBe(true)
+      expect(result.current.incomeSourceChoices.map((source) => source.id)).toEqual(['4'])
+    })
+
     it('leaves the source to choose when several Dividendo/Juros sources are active', () => {
       const sources: IncomeSourceDto[] = [
         ...INCOME_SOURCES,

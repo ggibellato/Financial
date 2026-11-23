@@ -237,6 +237,25 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P64-CF-cross-feature-01")]
+    public async Task Suggestions_SavingsSourcedAccount_IncludeTheInterestFromTheFollowingMonth()
+    {
+        await PostIncomeAsync(InterestId, 2.10m);
+        await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Chase savings",
+            IsActive = true,
+            IsLiability = false,
+            Source = "SavingsAccountBalance",
+            SavingsAccountId = Guid.Parse(ChaseSaveId)
+        });
+
+        var suggestions = await Client.GetFromJsonAsync<InvestmentSnapshotSuggestionsDTO>($"{Api}/investment-snapshots/2026/11/suggestions");
+
+        suggestions!.Suggestions.Should().ContainSingle().Which.SuggestedValue.Should().Be(502.10m);
+    }
+
+    [Fact]
     [Trait("AC", "P64-F03-savings-snapshot-01")]
     public async Task PostInvestmentAccount_SavingsSourceWithABank_Returns400()
     {

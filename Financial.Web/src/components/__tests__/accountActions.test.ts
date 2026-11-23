@@ -109,6 +109,14 @@ describe('a settlement entry row', () => {
     expect(rowKindLabel({ kind: 'Income', isInterest: false })).toBe('Income')
   })
 
+  it('names, asks about and reports a deleted interest row as interest', () => {
+    const interest = accountTransactionRow({ id: 'i1', kind: 'Income', date: '2026-10-05', amount: 2.1, isInterest: true })
+
+    expect(transactionRowName(interest)).toBe('interest, 05/10/2026')
+    expect(deleteConfirmation(interest)).toBe('Delete this interest? This cannot be undone.')
+    expect(deletedMessage(interest)).toBe('Interest deleted')
+  })
+
   it('is labelled as an entry', () => {
     expect(ACTION_LABELS.AddEntry).toBe('New entry')
     expect(needsFormOptions('AddEntry')).toBe(false)
