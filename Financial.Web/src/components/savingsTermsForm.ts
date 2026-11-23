@@ -20,7 +20,7 @@ export interface SavingsFormValues {
   rates: RateRow[]
 }
 
-export interface RateErrors {
+interface RateErrors {
   annualPercent?: string
   effectiveFrom?: string
 }
@@ -57,9 +57,9 @@ function paymentDayError(values: SavingsFormValues): string | undefined {
 }
 
 function annualPercentError(annualPercent: string): string | undefined {
-  if (parseValidatedNumber(annualPercent) === null) return 'Enter the rate as a number, for example 4.50.'
-  if (parseValidatedNumber(annualPercent, { min: 0, max: MAX_ANNUAL_PERCENT }) === null)
-    return `Interest rate must be between 0% and ${MAX_ANNUAL_PERCENT}%.`
+  const percent = parseValidatedNumber(annualPercent)
+  if (percent === null) return 'Enter the rate as a number, for example 4.50.'
+  if (percent < 0 || percent > MAX_ANNUAL_PERCENT) return `Interest rate must be between 0% and ${MAX_ANNUAL_PERCENT}%.`
   const significantDecimals = (annualPercent.trim().split('.')[1] ?? '').replace(/0+$/, '')
   if (significantDecimals.length > 2) return 'Interest rate can have at most 2 decimal places.'
   return undefined

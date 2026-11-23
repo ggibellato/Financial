@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { Checkbox, Field, FieldContextProvider, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
@@ -28,18 +28,15 @@ const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
 const CATEGORY_INFO = "When money moves between a bank and this account, the bank's entry is recorded in this category."
 
-const FIELD_ORDER = [
-  'template',
-  'name',
-  'currency',
-  'currencies',
-  'otherParticipant',
-  'category',
-  'openingBalance',
-  'balanceStartDate',
-] as const
-
-type FieldName = (typeof FIELD_ORDER)[number]
+type FieldName =
+  | 'template'
+  | 'name'
+  | 'currency'
+  | 'currencies'
+  | 'otherParticipant'
+  | 'category'
+  | 'openingBalance'
+  | 'balanceStartDate'
 
 type FieldErrors = Partial<Record<FieldName, string>>
 
@@ -157,16 +154,9 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const [values, setValues] = useState(initial)
   const [showValidation, setShowValidation] = useState(false)
   const { isSaving, error, failure, submit } = useDialogSubmit('The account could not be saved.')
-  const templateRef = useRef<FieldControl>(null)
-  const currencyRef = useRef<FieldControl>(null)
-  const currenciesRef = useRef<FieldControl>(null)
-  const otherParticipantRef = useRef<FieldControl>(null)
   const currenciesLabelId = useId()
   const currenciesHintId = useId()
   const currenciesMessageId = useId()
-  const categoryRef = useRef<FieldControl>(null)
-  const openingBalanceRef = useRef<FieldControl>(null)
-  const balanceStartDateRef = useRef<FieldControl>(null)
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
   const capabilities = template?.capabilities ?? []
@@ -188,6 +178,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const { nameRef, nameError, summaryError } = useDuplicateNameField<FieldControl>(failure, error, trimmedName)
   const errors = validateAccountForm(values, template, keepsUnsetStartDate)
   const savingsErrors = earnsInterest ? validateSavings(values.savings) : null
+  const savingsInvalid = savingsErrors !== null && hasSavingsErrors(savingsErrors)
 
   const fieldMessage = (field: FieldName) => {
     if (field === 'name' && nameError) return nameError
@@ -234,22 +225,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
 
   const handleSave = () => {
     setShowValidation(true)
-    const firstInvalid = FIELD_ORDER.find((field) => errors[field])
-    if (firstInvalid) {
-      const fieldRefs = {
-        template: templateRef,
-        name: nameRef,
-        currency: currencyRef,
-        currencies: currenciesRef,
-        otherParticipant: otherParticipantRef,
-        category: categoryRef,
-        openingBalance: openingBalanceRef,
-        balanceStartDate: balanceStartDateRef,
-      }
-      fieldRefs[firstInvalid].current?.focus()
-      return
-    }
-    if (savingsErrors && hasSavingsErrors(savingsErrors)) return
+    if (Object.keys(errors).length > 0 || savingsInvalid) return
     void submit(() => onSubmit(toRequest()))
   }
 
@@ -281,9 +257,9 @@ export default function AccountFormDialog({ account, templates, categories, onCa
         validationMessage={fieldMessage('template')}
       >
         {isLocked ? (
-          <ReadOnlyInput ref={templateRef} value={templateLabel} />
+          <ReadOnlyInput value={templateLabel} />
         ) : (
-          <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
+          <Select value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
             {templates.map((candidate) => (
               <option key={candidate.name} value={candidate.name}>
                 {accountTemplateLabel(candidate.name)}
@@ -306,7 +282,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
         >
           {isLocked ? (
-            <ReadOnlyInput ref={currenciesRef} value={values.currencies.join(', ')} aria-labelledby={currenciesLabelId} />
+            <ReadOnlyInput value={values.currencies.join(', ')} aria-labelledby={currenciesLabelId} />
           ) : (
             <FieldContextProvider value={undefined}>
               <div
@@ -317,7 +293,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
                 {currencies.map((currency, index) => (
                   <Checkbox
                     key={currency}
-                    ref={index === 0 ? currenciesRef : undefined}
                     aria-invalid={index === 0 && fieldMessage('currencies') ? true : undefined}
                     aria-describedby={index === 0 && fieldMessage('currencies') ? currenciesMessageId : undefined}
                     label={currency}
@@ -338,9 +313,9 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('currency')}
         >
           {isCurrencyFixed ? (
-            <ReadOnlyInput ref={currencyRef} value={values.currency} />
+            <ReadOnlyInput value={values.currency} />
           ) : (
-            <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
+            <Select value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
               {currencies.map((currency) => (
                 <option key={currency} value={currency}>
                   {currency}
@@ -360,7 +335,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('otherParticipant')}
         >
           <Input
-            ref={otherParticipantRef}
+           
             value={values.otherParticipant}
             onChange={(_, data) => setField('otherParticipant', data.value)}
           />
@@ -382,7 +357,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('category')}
         >
           <Select
-            ref={categoryRef}
+           
             value={values.categoryId}
             disabled={!hasCategoryChoices}
             onChange={(_, data) => setField('categoryId', data.value)}
@@ -407,7 +382,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
             validationMessage={fieldMessage('openingBalance')}
           >
             <Input
-              ref={openingBalanceRef}
+             
               type="number"
               step="0.01"
               min="0"
@@ -425,7 +400,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
             validationMessage={fieldMessage('balanceStartDate')}
           >
             <Input
-              ref={balanceStartDateRef}
+             
               type="date"
               max={todayIsoDate()}
               value={values.balanceStartDate}

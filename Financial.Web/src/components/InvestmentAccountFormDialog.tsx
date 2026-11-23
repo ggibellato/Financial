@@ -6,9 +6,10 @@ import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountsWith } from '../utils/accountCapabilities'
-import { isLinkedAccountSource, LINKED_ACCOUNT_SOURCES } from '../utils/linkedAccountSources'
+import { isLinkedAccountSource, LINKED_ACCOUNT_SOURCES, type LinkedAccountSource } from '../utils/linkedAccountSources'
+import { inactiveMarked } from '../utils/selectableBanks'
 
-type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccountTotal' | 'SavingsAccountBalance'
+type InvestmentAccountSourceOption = 'None' | 'CreditCard' | LinkedAccountSource
 
 interface InvestmentAccountFormDialogProps {
   investmentAccount: InvestmentAccountDto | null
@@ -35,7 +36,7 @@ export default function InvestmentAccountFormDialog({
   const [creditCardId, setCreditCardId] = useState(investmentAccount?.creditCardId ?? '')
   const initialLinkedAccountId =
     investmentAccount && isLinkedAccountSource(investmentAccount.source)
-      ? (investmentAccount[LINKED_ACCOUNT_SOURCES[investmentAccount.source].idField] ?? undefined)
+      ? investmentAccount[LINKED_ACCOUNT_SOURCES[investmentAccount.source].idField] || undefined
       : undefined
   const [linkedAccountId, setLinkedAccountId] = useState(initialLinkedAccountId ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The investment account could not be saved.')
@@ -161,7 +162,7 @@ export default function InvestmentAccountFormDialog({
             <option value="">{hasLinkedAccountChoices ? `Select ${linked.label}…` : `No active ${linked.label}s`}</option>
             {linkedAccountOptions.map((account) => (
               <option key={account.id} value={account.id}>
-                {account.isActive ? account.name : `${account.name} (inactive)`}
+                {inactiveMarked(account)}
               </option>
             ))}
           </Select>

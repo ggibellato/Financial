@@ -14,6 +14,7 @@ import AdminEntityPage from '../components/AdminEntityPage'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import InvestmentAccountFormDialog from '../components/InvestmentAccountFormDialog'
 import { isLinkedAccountSource, LINKED_ACCOUNT_SOURCES } from '../utils/linkedAccountSources'
+import { inactiveMarked } from '../utils/selectableBanks'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState } from '../components/grid/rowDeleteState'
@@ -33,8 +34,7 @@ function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): R
   const { idField, snapshotValue } = LINKED_ACCOUNT_SOURCES[account.source]
   const linkedAccount = accounts.find((a) => a.id === account[idField])
   if (!linkedAccount) return <MissingValue label="None" />
-  const display = `${linkedAccount.name} ${snapshotValue}`
-  return linkedAccount.isActive ? display : `${display} (inactive)`
+  return inactiveMarked({ name: `${linkedAccount.name} ${snapshotValue}`, isActive: linkedAccount.isActive })
 }
 
 export default function InvestmentAccountsPage() {
