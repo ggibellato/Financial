@@ -151,7 +151,7 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
             transferOut.StatusCode.Should().Be(HttpStatusCode.OK);
             chaseSave.Balance.Should().Be(680m);
             (await DetailAsync(BarclaysId)).Balance.Should().Be(820m);
-            chaseSave.AllowedActions.Should().Contain(["AddIncome", "TransferTo", "TransferFrom", "Reconcile"]).And.NotContain(["AddExpense", "PayRecurringBill"]);
+            chaseSave.AllowedActions.Should().Contain(["AddIncome", "AddInterest", "TransferTo", "TransferFrom", "Reconcile"]).And.NotContain(["AddExpense", "PayRecurringBill"]);
         }
     }
 
@@ -234,6 +234,25 @@ public class SavingsAccountAcceptanceTests : ApiEndpointTests
             suggestion.SuggestedValue.Should().Be(800m);
             suggestion.SourceDescription.Should().Be("Chase Save balance — as of Oct 2026");
         }
+    }
+
+    [Fact]
+    [Trait("AC", "P64-CF-cross-feature-01")]
+    public async Task Suggestions_SavingsSourcedAccount_IncludeTheInterestFromTheFollowingMonth()
+    {
+        await PostIncomeAsync(InterestId, 2.10m);
+        await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Chase savings",
+            IsActive = true,
+            IsLiability = false,
+            Source = "SavingsAccountBalance",
+            SavingsAccountId = Guid.Parse(ChaseSaveId)
+        });
+
+        var suggestions = await Client.GetFromJsonAsync<InvestmentSnapshotSuggestionsDTO>($"{Api}/investment-snapshots/2026/11/suggestions");
+
+        suggestions!.Suggestions.Should().ContainSingle().Which.SuggestedValue.Should().Be(502.10m);
     }
 
     [Fact]

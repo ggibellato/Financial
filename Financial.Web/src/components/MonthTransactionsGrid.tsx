@@ -39,7 +39,7 @@ import SettlementEntryDescription from './SettlementEntryDescription'
 import {
   deleteConfirmation,
   deletedMessage,
-  kindLabel,
+  rowKindLabel,
   monthRowEdit,
   operationDeleteConfirmation,
   operationDeletedMessage,
@@ -70,7 +70,7 @@ interface Column {
 const NO_BANK = 'No bank'
 
 const accountName = (row: MonthTransactionDto) => row.accountName ?? NO_BANK
-const typeLabel = (row: MonthTransactionDto) => kindLabel(row.transaction.kind)
+const typeLabel = (row: MonthTransactionDto) => rowKindLabel(row.transaction)
 const categoryName = (row: MonthTransactionDto) => row.transaction.categoryName
 
 const CATEGORY_HEADER = 'Category'

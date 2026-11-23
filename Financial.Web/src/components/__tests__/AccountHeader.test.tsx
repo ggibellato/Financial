@@ -381,4 +381,47 @@ describe('AccountHeader', () => {
 
     expect(onMonthChange).toHaveBeenCalledWith('2026-09')
   })
+
+  describe('Savings terms', () => {
+    const saver = (savings: AccountDetailDto['savings']) =>
+      accountDetail({ id: 'save', name: 'Chase Save', templateName: 'Savings', balance: 800, savings })
+
+    it('[AC P64-F04-savings-web-04] shows the current and upcoming rates, the monthly schedule and a Tax-free badge', () => {
+      renderHeader(
+        saver({
+          interestFrequency: 'Monthly',
+          paymentDay: 5,
+          isTaxFree: true,
+          currentRate: { annualPercent: 4.5, effectiveFrom: '2026-09-01' },
+          upcomingRate: { annualPercent: 3.75, effectiveFrom: '2027-01-01' },
+        }),
+      )
+
+      expect(screen.getByText('4.50% a year since 1 Sept 2026 · 3.75% a year from 1 Jan 2027')).toBeInTheDocument()
+      expect(screen.getByText('Interest paid monthly on day 5')).toBeInTheDocument()
+      expect(screen.getByText('Tax-free')).toBeInTheDocument()
+    })
+
+    it('[AC P64-F04-savings-web-04] shows daily interest, no Tax-free badge on a taxed account, and says when no rate is in force yet', () => {
+      renderHeader(
+        saver({
+          interestFrequency: 'Daily',
+          paymentDay: null,
+          isTaxFree: false,
+          currentRate: null,
+          upcomingRate: { annualPercent: 3, effectiveFrom: '2026-12-01' },
+        }),
+      )
+
+      expect(screen.getByText('No rate in force yet · 3.00% a year from 1 Dec 2026')).toBeInTheDocument()
+      expect(screen.getByText('Interest paid daily')).toBeInTheDocument()
+      expect(screen.queryByText('Tax-free')).not.toBeInTheDocument()
+    })
+
+    it('shows no savings terms for other accounts', () => {
+      renderHeader()
+
+      expect(screen.queryByText(/Interest paid/)).not.toBeInTheDocument()
+    })
+  })
 })

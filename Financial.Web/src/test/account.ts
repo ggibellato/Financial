@@ -57,6 +57,30 @@ export function potsAccount(fields: RequiredAccountFields & Partial<AccountDto>)
   })
 }
 
+export const SAVINGS_CAPABILITIES = [
+  'HasOpeningBalance',
+  'ReceivesIncome',
+  'CanSendTransfers',
+  'CanReceiveTransfers',
+  'CanReconcile',
+  'EarnsInterest',
+]
+
+export function savingsAccount(fields: RequiredAccountFields & Partial<AccountDto>): AccountDto {
+  return account({
+    templateName: 'Savings',
+    roundUpEnabled: null,
+    savings: {
+      interestFrequency: 'Monthly',
+      paymentDay: 5,
+      isTaxFree: false,
+      rates: [{ annualPercent: 4.5, effectiveFrom: '2026-09-01' }],
+    },
+    capabilities: SAVINGS_CAPABILITIES,
+    ...fields,
+  })
+}
+
 export function settlementAccount(fields: RequiredAccountFields & Partial<AccountDto>): AccountDto {
   return account({
     templateName: 'Settlement',

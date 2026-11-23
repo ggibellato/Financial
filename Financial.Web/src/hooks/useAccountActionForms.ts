@@ -48,6 +48,12 @@ const OPERATION_ROW_KEY_PREFIX = 'operation:'
 const operationRowKey = (operationId: string) => `${OPERATION_ROW_KEY_PREFIX}${operationId}`
 const isOperationRowKey = (key: string) => key.startsWith(OPERATION_ROW_KEY_PREFIX)
 
+function incomeToast(isEdit: boolean, potsAccountName: string | null, isInterest: boolean, hasPots: boolean): string {
+  if (isInterest) return isEdit ? 'Interest updated' : 'Interest added'
+  if (isEdit) return 'Income updated'
+  return hasPots && potsAccountName ? 'Deposit saved' : incomeSavedMessage(potsAccountName)
+}
+
 export function useAccountActionForms(
   routeAccountId: string,
   account: AccountDetailDto | null,
@@ -94,7 +100,7 @@ export function useAccountActionForms(
   const incomeForm = useIncomeForm(
     options.incomeSources,
     options.banks,
-    (_, isEdit, potsAccountName) => saved(isEdit ? 'Income updated' : hasPots && potsAccountName ? 'Deposit saved' : incomeSavedMessage(potsAccountName)),
+    (_, isEdit, potsAccountName, isInterest) => saved(incomeToast(isEdit, potsAccountName, isInterest, hasPots)),
     { ...settings, keepOpenAfterSave: !hasPots },
   )
   const adjustmentForm = useBalanceAdjustmentForm(
@@ -132,6 +138,7 @@ export function useAccountActionForms(
     RefundCreditToBank: () => creditRefundForm.open(),
     ReceiveCardCredit: () => creditRefundForm.open(),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
+    AddInterest: () => incomeForm.showInterestForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
     PayRecurringBill: () => payBillForm.open(),
@@ -147,6 +154,7 @@ export function useAccountActionForms(
 
   const createAction = (): AccountFormAction | null => {
     if (expenseForm.isOpen && !expenseForm.isEditing) return expenseForm.isRefund ? 'AddRefund' : isCard ? 'AddCharge' : 'AddExpense'
+    if (incomeForm.isInterestForm && !incomeForm.isIncomeEditing) return 'AddInterest'
     if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return hasPots ? 'Deposit' : 'AddIncome'
     if (depositForm.isOpen && !depositForm.isEditing) return 'Deposit'
     if (withdrawalForm.isOpen && !withdrawalForm.isEditing) return withdrawalForm.isPaymentLocked ? 'WithdrawFromPots' : 'Withdraw'
@@ -271,7 +279,7 @@ export function useAccountActionForms(
       openerRef.current = button
       setEditedRowKey(rowKey(row))
       if (row.expense) expenseForm.showEditForm(row.expense)
-      else if (row.income) incomeForm.showEditIncomeForm(row.income)
+      else if (row.income) incomeForm.showEditIncomeForm(row.income, row.isInterest)
       else if (row.transfer) transferForm.openEditForm(row.transfer)
       else if (row.adjustment) adjustmentForm.openEditForm(row.adjustment)
       else if (row.movement) potTransactionForm.open(row.movement)

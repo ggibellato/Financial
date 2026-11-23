@@ -8,6 +8,7 @@ export type AccountFormAction =
   | 'RefundCreditToBank'
   | 'ReceiveCardCredit'
   | 'AddIncome'
+  | 'AddInterest'
   | 'TransferTo'
   | 'TransferFrom'
   | 'PayRecurringBill'
@@ -27,6 +28,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   RefundCreditToBank: 'Refund credit to bank',
   ReceiveCardCredit: 'Receive card credit',
   AddIncome: 'New income',
+  AddInterest: 'Add interest',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
   PayRecurringBill: 'Pay recurring bill',
@@ -53,6 +55,7 @@ const KIND_LABELS: Record<string, string> = {
   Adjustment: 'Balance adjustment',
   PotTransaction: 'Pot transaction',
   SettlementEntry: 'Settlement entry',
+  Interest: 'Interest',
 }
 
 const RECORD_NOUNS: Record<string, string> = {
@@ -67,6 +70,7 @@ const RECORD_NOUNS: Record<string, string> = {
   Adjustment: 'balance adjustment',
   PotTransaction: 'pot transaction',
   SettlementEntry: 'entry',
+  Interest: 'interest',
 }
 
 export function isFormAction(action: string): action is AccountFormAction {
@@ -97,6 +101,14 @@ export function kindLabel(kind: string): string {
   return Object.hasOwn(KIND_LABELS, kind) ? KIND_LABELS[kind] : kind
 }
 
+type TransactionKindSource = Pick<AccountTransactionDto, 'kind' | 'isInterest'>
+
+const rowKind = (row: TransactionKindSource): string => (row.isInterest ? 'Interest' : row.kind)
+
+export function rowKindLabel(row: TransactionKindSource): string {
+  return kindLabel(rowKind(row))
+}
+
 export function recordNoun(kind: string): string {
   return Object.hasOwn(RECORD_NOUNS, kind) ? RECORD_NOUNS[kind] : 'record'
 }
@@ -115,7 +127,7 @@ export function isCreditRefund(row: AccountTransactionDto): boolean {
 }
 
 export function deleteConfirmation(row: AccountTransactionDto): string {
-  const question = `Delete this ${recordNoun(row.kind)}?`
+  const question = `Delete this ${recordNoun(rowKind(row))}?`
   if (isCreditRefund(row)) return `${question} The card's credit returns.`
   const lines = linesDeletedWith(row)
   return lines > 1
@@ -125,7 +137,8 @@ export function deleteConfirmation(row: AccountTransactionDto): string {
 
 export function deletedMessage(row: AccountTransactionDto): string {
   const lines = linesDeletedWith(row)
-  return lines > 1 ? `${lines} ${recordNoun(row.kind)} lines deleted` : `${recordTitle(row.kind)} deleted`
+  const kind = rowKind(row)
+  return lines > 1 ? `${lines} ${recordNoun(kind)} lines deleted` : `${recordTitle(kind)} deleted`
 }
 
 export function isOlderIncomeLine(row: AccountTransactionDto): boolean {
@@ -194,7 +207,7 @@ export function shownDescription(row: AccountTransactionDto): string | null {
 }
 
 export function transactionRowName(row: AccountTransactionDto): string {
-  const kind = row.operation ? operationNoun(row.operation) : recordNoun(row.kind)
+  const kind = row.operation ? operationNoun(row.operation) : recordNoun(rowKind(row))
   const description = shownDescription(row)
   const pot = row.kind === 'PotTransaction' ? row.counterpart : null
   return [description ? `${kind} ${description}` : kind, pot, formatShortDateUtc(row.date)].filter(Boolean).join(', ')

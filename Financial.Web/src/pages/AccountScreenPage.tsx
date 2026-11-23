@@ -316,7 +316,8 @@ export default function AccountScreenPage() {
             onRetryPotsAccounts={incomeForm.retryPotsAccounts}
             funding={incomeForm.incomeFunding}
             banks={formOptions.options.banks}
-            incomeSources={formOptions.options.incomeSources}
+            incomeSources={incomeForm.incomeSourceChoices}
+            isInterest={incomeForm.isInterestForm}
             isSaving={incomeForm.isSavingIncome}
             lockedBank={incomeForm.incomeLockedBank}
             saveError={incomeForm.saveIncomeError}

@@ -247,14 +247,14 @@ graph TD
 - [x] **P64-F03-savings-snapshot-03** Credit card and Pots suggestions are unchanged
 
 ### F04. Savings Accounts in the Web App
-- [ ] **P64-F04-savings-web-01** Admin → Accounts shows Interest paid, Payment day, Tax-free and Rates for the Savings template only; Payment day is hidden for Daily
-- [ ] **P64-F04-savings-web-02** The Rates editor adds and removes rows, Remove is disabled on the last row, and invalid rates show inline errors with focus on the first invalid field
-- [ ] **P64-F04-savings-web-03** The Accounts tab shows a "Savings" group
-- [ ] **P64-F04-savings-web-04** The account screen header shows the current rate with its date, any upcoming rate, the schedule, and a "Tax-free" badge with visible text only on tax-free accounts
-- [ ] **P64-F04-savings-web-05** "Add interest" opens the income form with the account locked and only Dividendo/Juros sources offered, and a saved entry shows as "Interest" in the account's transactions
-- [ ] **P64-F04-savings-web-06** Admin → Investment accounts offers "Savings account balance" with a Savings account picker
-- [ ] **P64-F04-savings-web-07** Every touched view passes `docs/ui/review-checklist.md`
+- [x] **P64-F04-savings-web-01** Admin → Accounts shows Interest paid, Payment day, Tax-free and Rates for the Savings template only; Payment day is hidden for Daily
+- [x] **P64-F04-savings-web-02** The Rates editor adds and removes rows, Remove is disabled on the last row, and invalid rates show inline errors with focus on the first invalid field
+- [x] **P64-F04-savings-web-03** The Accounts tab shows a "Savings" group
+- [x] **P64-F04-savings-web-04** The account screen header shows the current rate with its date, any upcoming rate, the schedule, and a "Tax-free" badge with visible text only on tax-free accounts
+- [x] **P64-F04-savings-web-05** "Add interest" opens the income form with the account locked and only Dividendo/Juros sources offered, and a saved entry shows as "Interest" in the account's transactions
+- [x] **P64-F04-savings-web-06** Admin → Investment accounts offers "Savings account balance" with a Savings account picker
+- [x] **P64-F04-savings-web-07** Every touched view passes `docs/ui/review-checklist.md`
 
 ### Cross-Feature Integration
-- [ ] **P64-CF-cross-feature-01** A Savings account created in the web app (F04, F01) receives interest through Add interest (F02), and the snapshot linked to it (F03) suggests the balance including that interest from the following month
-- [ ] **P64-CF-cross-feature-02** A rate added in the web app with a future date shows as upcoming in the header and as current from its date (F01, F04)
+- [x] **P64-CF-cross-feature-01** A Savings account created in the web app (F04, F01) receives interest through Add interest (F02), and the snapshot linked to it (F03) suggests the balance including that interest from the following month
+- [x] **P64-CF-cross-feature-02** A rate added in the web app with a future date shows as upcoming in the header and as current from its date (F01, F04)

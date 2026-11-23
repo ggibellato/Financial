@@ -27,7 +27,7 @@ import SettlementEntryDescription from './SettlementEntryDescription'
 import { paidByLabel } from '../utils/paidBy'
 import {
   canMoveToStatement,
-  kindLabel,
+  rowKindLabel,
   operationNoun,
   rowDeleteBlockedReason,
   rowEdit,
@@ -81,8 +81,8 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
   {
     key: 'kind',
     header: 'Type',
-    accessor: (row) => kindLabel(row.kind),
-    render: (row) => kindLabel(row.kind),
+    accessor: rowKindLabel,
+    render: rowKindLabel,
     filter: 'values',
   },
   {

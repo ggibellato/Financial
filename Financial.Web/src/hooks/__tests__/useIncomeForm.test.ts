@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BankOption, IncomeDto, IncomeSourceDto } from '../../api/types'
-import { setStoredDefault } from '../../utils/createFormDefaults'
+import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
 import { comparableLines } from '../../utils/fundingLines'
 import { potsAccount } from '../../test/account'
-import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
+import { SPLIT_CONFIRMATION_DELAY_MS, interestIncomeSources, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 import { pinDate } from '../../test-utils/pinDate'
 import { deferred } from '../../test-utils/deferred'
 
@@ -411,7 +411,7 @@ describe('useIncomeForm', () => {
     })
 
     expect(result.current.splitConfirmationMessage).toBe('Income saved and split to Holidays')
-    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: 'p2' }), false, 'Holidays')
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: 'p2' }), false, 'Holidays', false)
   })
 
   it('leaves splitConfirmationMessage null when the create response comes back unsplit', async () => {
@@ -1281,5 +1281,71 @@ describe('useIncomeForm account settings', () => {
 
     act(() => result.current.setIncomeField('netValue', '10'))
     expect(result.current.isIncomeDirty).toBe(true)
+  })
+
+  describe('interest', () => {
+    const CHASE_SAVE = { id: 's1', name: 'Chase Save' }
+
+    it('offers only the active Dividendo/Juros sources', () => {
+      const sources: IncomeSourceDto[] = [
+        ...INCOME_SOURCES,
+        { id: '6', name: 'Old interest', isActive: false, group: 'DividendoJuros', potsAccountId: null, hasReferences: false },
+      ]
+
+      expect(interestIncomeSources(sources).map((source) => source.id)).toEqual(['4'])
+    })
+
+    it('[AC P64-F04-savings-web-05] opens on the locked account with the only Dividendo/Juros source filled in', () => {
+      const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: CHASE_SAVE }))
+
+      act(() => result.current.showInterestForm())
+
+      expect(result.current.isInterestForm).toBe(true)
+      expect(result.current.incomeSource).toBe('4')
+      expect(result.current.incomeLockedBank).toEqual(CHASE_SAVE)
+    })
+
+    it('edits an interest row in interest mode, offering only the interest sources', () => {
+      const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: CHASE_SAVE }))
+
+      act(() =>
+        result.current.showEditIncomeForm(
+          { id: 'i9', date: '2026-10-05', incomeSourceId: '4', netValue: 2.1, grossValue: null, bankId: 's1', description: null, potsAccountId: null, fundingLines: [] } as unknown as IncomeDto,
+          true,
+        ),
+      )
+
+      expect(result.current.isInterestForm).toBe(true)
+      expect(result.current.isIncomeEditing).toBe(true)
+      expect(result.current.incomeSourceChoices.map((source) => source.id)).toEqual(['4'])
+    })
+
+    it('leaves the source to choose when several Dividendo/Juros sources are active', () => {
+      const sources: IncomeSourceDto[] = [
+        ...INCOME_SOURCES,
+        { id: '7', name: 'ISA interest', isActive: true, group: 'DividendoJuros', potsAccountId: null, hasReferences: false },
+      ]
+      const { result } = renderHook(() => useIncomeForm(sources, BANKS, onSaved, { lockedBank: CHASE_SAVE }))
+
+      act(() => result.current.showInterestForm())
+
+      expect(result.current.incomeSource).toBe('')
+    })
+
+    it('[AC P64-F04-savings-web-05] tells onSaved it was interest and keeps the remembered income source', async () => {
+      setStoredDefault('income.incomeSource', '1')
+      createIncomeMock.mockResolvedValue({ id: 'i9', potsAccountId: null } as IncomeDto)
+      const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: CHASE_SAVE }))
+      act(() => result.current.showInterestForm())
+      act(() => result.current.setIncomeField('date', '2026-10-05'))
+      act(() => result.current.setIncomeField('netValue', '2.10'))
+
+      act(() => result.current.submitIncome())
+
+      await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ id: 'i9' }), false, null, true))
+      expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ incomeSourceId: '4', bankId: 's1' }))
+      expect(getStoredDefault('income.incomeSource')).toBe('1')
+      expect(result.current.isInterestForm).toBe(false)
+    })
   })
 })

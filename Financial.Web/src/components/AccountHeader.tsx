@@ -5,6 +5,7 @@ import { accountTemplateLabel, accountTemplateOrder } from '../utils/accountTemp
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
+import SavingsTermsSummary from './SavingsTermsSummary'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
@@ -87,10 +88,16 @@ export default function AccountHeader({
                 Inactive
               </Badge>
             )}
+            {account.savings?.isTaxFree && (
+              <Badge appearance="outline" color="informative">
+                Tax-free
+              </Badge>
+            )}
           </div>
           <Text>
             {accountTemplateLabel(account.templateName)} · {currencies}
           </Text>
+          {account.savings && <SavingsTermsSummary savings={account.savings} />}
         </div>
 
         <div className={`account-screen__balance${account.hasStatements ? ' account-screen__balance--top-aligned' : ''}`}>

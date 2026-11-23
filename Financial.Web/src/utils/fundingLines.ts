@@ -1,4 +1,5 @@
 import { formatCurrency, parseValidatedNumber, positiveAmount, sumPence, toPence } from './formatters'
+import { nextRowKey, withChangedRow } from './rowKeys'
 
 export const MAX_FUNDING_LINES = 5
 
@@ -14,15 +15,12 @@ export interface FundingLineValues {
 
 export type FundingLineChange = Partial<Pick<FundingLineValues, 'bankId' | 'amount'>>
 
-let fundingLineCount = 0
-
 export function newFundingLine(bankId = '', amount = ''): FundingLineValues {
-  fundingLineCount += 1
-  return { key: `line-${fundingLineCount}`, bankId, amount }
+  return { key: nextRowKey('line'), bankId, amount }
 }
 
 export function withChangedLine(lines: readonly FundingLineValues[], key: string, change: FundingLineChange): FundingLineValues[] {
-  return lines.map((line) => (line.key === key ? { ...line, ...change } : line))
+  return withChangedRow<FundingLineValues>(lines, key, change)
 }
 
 export function withAddedLine(lines: readonly FundingLineValues[], depositAmount: number | null): FundingLineValues[] {
