@@ -40,6 +40,7 @@ import {
 } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
+import { orMissing } from '../utils/orMissing'
 
 interface TransactionColumn {
   key: string
@@ -99,7 +100,7 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
     header: 'Round-up',
     numeric: true,
     accessor: (row) => row.roundUp,
-    render: (row) => (row.roundUp == null ? '' : formatSignedN2(row.roundUp)),
+    render: (row) => orMissing(row.roundUp, formatSignedN2, 'None'),
   },
 ]
 
@@ -108,10 +109,10 @@ const CASHBACK_COLUMN: TransactionColumn = {
   header: 'Cashback',
   numeric: true,
   accessor: (row) => row.cashback,
-  render: (row) => (row.cashback == null ? '' : formatN2(row.cashback)),
+  render: (row) => orMissing(row.cashback, formatN2, 'None'),
 }
 
-const BANK_COLUMNS: TransactionColumn[] = [...ACCOUNT_COLUMNS, CASHBACK_COLUMN]
+const CASHBACK_COLUMNS: TransactionColumn[] = [...ACCOUNT_COLUMNS, CASHBACK_COLUMN]
 
 const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
@@ -147,11 +148,11 @@ function settlementColumns(otherParticipant: string, showsConverted: boolean): T
   ]
 }
 
-type ColumnSelection = { columns?: 'account' | 'bank' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
+type ColumnSelection = { columns?: 'account' | 'cashback' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
 
 function columnsOf(selection: ColumnSelection): TransactionColumn[] {
   if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant, selection.showsConverted)
-  if (selection.columns === 'bank') return BANK_COLUMNS
+  if (selection.columns === 'cashback') return CASHBACK_COLUMNS
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 

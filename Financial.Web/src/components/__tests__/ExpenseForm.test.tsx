@@ -17,8 +17,6 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true, hasReferences: false },
 ]
 
-const CHASE_CASHBACK: BankOption = { id: 'bank-chase-cashback', name: 'Chase', roundUpEnabled: false, isActive: true, cashbackEnabled: true, cashbackRatePercent: 2 }
-
 const INACTIVE_BANK: BankOption = { ...BANKS[0], id: 'bank-chase', name: 'Chase', isActive: false }
 
 const baseProps = {
@@ -34,6 +32,8 @@ const baseProps = {
   invoiceMonthMovedFrom: null,
   roundUpAmount: '',
   cashbackAmount: '',
+  cashbackRate: null,
+  showsCashbackField: false,
   countsAsTithe: true,
   paymentMode: 'bank' as const,
   banks: BANKS,
@@ -495,9 +495,9 @@ describe('ExpenseForm with a locked card', () => {
   })
 
   describe('Cashback', () => {
-    const cashbackProps = { ...baseProps, banks: [...BANKS, CHASE_CASHBACK], paymentSource: CHASE_CASHBACK.id }
+    const cashbackProps = { ...baseProps, cashbackRate: 2, showsCashbackField: true }
 
-    it('[AC P65-F03-cashback-web-02] shows Cashback with the bank rate for a bank with cashback on', () => {
+    it('[AC P65-F03-cashback-web-02] shows Cashback with the bank rate', () => {
       render(<ExpenseForm {...cashbackProps} cashbackAmount="0.25" />)
 
       const cashback = screen.getByLabelText('Cashback')
@@ -505,15 +505,16 @@ describe('ExpenseForm with a locked card', () => {
       expect(cashback).toHaveAccessibleDescription("2.00% of the value. Clear it if this purchase doesn't earn cashback.")
     })
 
-    it('[AC P65-F03-cashback-web-02] hides Cashback for a bank without cashback, a card payment and a settled expense', () => {
-      const { rerender } = render(<ExpenseForm {...cashbackProps} paymentSource="bank-barclays" />)
-      expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+    it('[AC P65-F03-cashback-web-02] hides Cashback when the hook says it does not apply', () => {
+      render(<ExpenseForm {...baseProps} />)
 
-      rerender(<ExpenseForm {...cashbackProps} paymentMode="card" creditCardId="card-baamex" />)
       expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+    })
 
-      rerender(<ExpenseForm {...cashbackProps} isEditing isSettled />)
-      expect(screen.queryByLabelText('Cashback')).not.toBeInTheDocument()
+    it('explains a saved amount kept on a bank whose cashback is now off', () => {
+      render(<ExpenseForm {...cashbackProps} isEditing cashbackRate={null} cashbackAmount="0.25" />)
+
+      expect(screen.getByLabelText('Cashback')).toHaveAccessibleDescription('Cashback is off for this bank. Keep or clear the saved amount.')
     })
 
     it('reports cashback changes and shows its validation message', () => {

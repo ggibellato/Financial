@@ -41,13 +41,12 @@ import { settlementCounterparty } from '../utils/settlementBalance'
 import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
-const BANK_TEMPLATE = 'Bank'
 const EDITED_ROW_UNAVAILABLE = 'This transaction is no longer in this month or can no longer be edited.'
 
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const navigate = useNavigate()
-  const { account, hasPots, hasParticipants } = screen
+  const { account, hasPots, hasParticipants, supportsCashback } = screen
   const allowedActions = account?.allowedActions ?? []
   const usesFormOptions = screen.operationId !== null || formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
@@ -139,7 +138,7 @@ export default function AccountScreenPage() {
   const gridColumns =
     hasParticipants && account
       ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account), showsConverted: account.currentBalances.length > 1 } as const)
-      : ({ columns: hasPots ? 'pots' : account?.templateName === BANK_TEMPLATE ? 'bank' : 'account' } as const)
+      : ({ columns: hasPots ? 'pots' : supportsCashback ? 'cashback' : 'account' } as const)
 
   useEffect(() => {
     if (!isRefreshAfterSavePending.current) return
@@ -267,6 +266,8 @@ export default function AccountScreenPage() {
             invoiceMonthMovedFrom={expenseForm.invoiceMonthMovedFrom}
             roundUpAmount={expenseForm.roundUpAmount}
             cashbackAmount={expenseForm.cashbackAmount}
+            cashbackRate={expenseForm.cashbackRate}
+            showsCashbackField={expenseForm.showsCashbackField}
             countsAsTithe={expenseForm.countsAsTithe === 'true'}
             paymentMode={expenseForm.paymentMode}
             banks={formOptions.options.banks}

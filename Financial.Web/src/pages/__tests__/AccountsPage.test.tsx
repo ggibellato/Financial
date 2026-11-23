@@ -230,7 +230,7 @@ describe('AccountsPage', () => {
     expect(within(bodyRows(banks)[0]).getByText('2,800.25')).toBeInTheDocument()
     expect(within(bodyRows(banks)[2]).getByText('BRL')).toBeInTheDocument()
     expect(within(bodyRows(banks)[0]).queryByText('Inactive')).not.toBeInTheDocument()
-    expect(footer(banks)).toBe('Bank total GBP: 3,310.25 · Bank total BRL: 1,000.00 · Cashback total GBP: 0.34 · Cashback total BRL: 0.00')
+    expect(footer(banks)).toBe('Bank total GBP: 3,310.25 · Bank total BRL: 1,000.00 · Cashback total GBP: 0.34')
 
     const pots = screen.getByRole('table', { name: 'Pots' })
     expect(headers(pots)).toEqual(['Account', 'Currency', 'Balance'])
@@ -478,6 +478,8 @@ describe('AccountsPage', () => {
     expect(chaseCashback?.textContent).toContain('0.34')
     expect(chaseCashback).toHaveClass('data-table__col--numeric')
     expect(footer(banks)).toContain('Cashback total GBP: 0.34')
+    expect(footer(banks)).not.toContain('Cashback total BRL')
+    expect(within(bodyRows(banks)[2]).getAllByRole('cell').at(-1)?.textContent).toContain('—')
     expect(headers(screen.getByRole('table', { name: 'Pots' }))).not.toContain('Cashback')
   })
 

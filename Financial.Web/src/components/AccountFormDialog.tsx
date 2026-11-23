@@ -26,8 +26,8 @@ const OTHER_PARTICIPANT_MAX_LENGTH = 60
 const LOCKED_HINT = "Can't change once the account has transactions."
 const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
-const MAX_CASHBACK_RATE_PERCENT = 100
 const CATEGORY_INFO = "When money moves between a bank and this account, the bank's entry is recorded in this category."
+const MAX_CASHBACK_RATE_PERCENT = 100
 
 type FieldName =
   | 'template'

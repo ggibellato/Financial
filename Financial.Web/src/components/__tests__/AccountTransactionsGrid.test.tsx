@@ -265,7 +265,7 @@ describe('AccountTransactionsGrid', () => {
 
   it('[AC P65-F03-cashback-web-04] adds a right-aligned Cashback column for a bank', () => {
     const rows = ROWS.map((row, index) => (index === 0 ? { ...row, cashback: 0.84 } : row))
-    render(<AccountTransactionsGrid accountId="bank-1" columns="bank" transactions={rows} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+    render(<AccountTransactionsGrid accountId="bank-1" columns="cashback" transactions={rows} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     expect(screen.getByRole('columnheader', { name: 'Cashback' })).toHaveClass('data-table__col--numeric')
     expect(within(bodyRows()[0]).getByText('0.84').closest('td')).toHaveClass('data-table__col--numeric')
@@ -277,11 +277,11 @@ describe('AccountTransactionsGrid', () => {
     expect(screen.queryByRole('columnheader', { name: 'Cashback' })).not.toBeInTheDocument()
   })
 
-  it('leaves the round-up cell blank on a row with no round-up', () => {
-    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+  it('marks the missing round-up and cashback of a row with neither', () => {
+    render(<AccountTransactionsGrid accountId="bank-1" columns="cashback" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     const incomeCells = within(bodyRows()[1]).getAllByRole('cell')
-    expect(incomeCells[6].textContent).toBe('Round-up:')
+    expect([incomeCells[6].textContent, incomeCells[7].textContent]).toEqual(['Round-up:—', 'Cashback:—'])
   })
 
   it('lets the table take focus without adding it to the tab order', () => {

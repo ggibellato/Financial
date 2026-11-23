@@ -41,8 +41,6 @@ function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
   }
 }
 
-const BANK_TEMPLATE = 'Bank'
-
 const currencyColumn = {
   key: 'currency',
   header: 'Currency',
@@ -68,20 +66,19 @@ const roundUpColumn = {
   sortAccessor: roundUpOf,
 }
 
-const cashbackOf = (row: AccountGroupMemberDto) => row.cashbackTotal ?? 0
-
 const cashbackColumn = {
   key: 'cashback',
   header: 'Cashback',
   numeric: true,
-  render: (row: AccountGroupMemberDto) => formatN2(cashbackOf(row)),
-  sortAccessor: cashbackOf,
+  render: (row: AccountGroupMemberDto) => orMissing(row.cashbackTotal, formatN2, 'None'),
+  sortAccessor: (row: AccountGroupMemberDto) => row.cashbackTotal,
 }
 
-function cashbackFooterItems(members: readonly AccountGroupMemberDto[], currencies: readonly string[]) {
-  return currencies.map((currency) => ({
+function cashbackFooterItems(members: readonly AccountGroupMemberDto[]) {
+  const earning = members.filter((member) => member.cashbackTotal != null)
+  return [...new Set(earning.map((member) => member.currency))].map((currency) => ({
     label: `Cashback total ${currency}`,
-    value: formatN2(sumPence(members.filter((member) => member.currency === currency), cashbackOf) / 100),
+    value: formatN2(sumPence(earning.filter((member) => member.currency === currency), (member) => member.cashbackTotal ?? 0) / 100),
   }))
 }
 
@@ -114,11 +111,11 @@ const settlementBalanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
-function gridColumns(templateName: string, columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
+function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
   if (columns === 'settlement') return [nameColumn(renderName), settlementBalanceColumn]
   const leading = [nameColumn(renderName), currencyColumn]
   if (columns === 'card') return [...leading, nextStatementColumn, totalOwedColumn]
-  return templateName === BANK_TEMPLATE ? [...leading, balanceColumn, roundUpColumn, cashbackColumn] : [...leading, balanceColumn]
+  return columns === 'bank' ? [...leading, balanceColumn, roundUpColumn, cashbackColumn] : [...leading, balanceColumn]
 }
 
 function AccountsTab({ year, month }: { year: number; month: number }) {
@@ -150,7 +147,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
                 </Text>
                 <TotalsGrid
                   label={grid.heading}
-                  columns={gridColumns(group.templateName, grid.columns, renderName)}
+                  columns={gridColumns(grid.columns, renderName)}
                   rows={group.members}
                   rowKey={(row) => row.accountId}
                   emptyMessage="No accounts this month."
@@ -158,7 +155,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
                     ...(grid.footerLabel
                       ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) }))
                       : []),
-                    ...(group.templateName === BANK_TEMPLATE ? cashbackFooterItems(group.members, group.totals.map((total) => total.currency)) : []),
+                    ...(grid.columns === 'bank' ? cashbackFooterItems(group.members) : []),
                   ]}
                 />
               </div>

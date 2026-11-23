@@ -4,7 +4,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   Pots: 'Pots',
 }
 
-export type AccountGridColumns = 'balance' | 'card' | 'settlement'
+export type AccountGridColumns = 'balance' | 'bank' | 'card' | 'settlement'
 
 export interface AccountTemplateGrid {
   heading: string
@@ -15,7 +15,7 @@ export interface AccountTemplateGrid {
 }
 
 const TEMPLATE_GRIDS: Record<string, AccountTemplateGrid> = {
-  Bank: { heading: 'Banks', footerLabel: 'Bank total', columns: 'balance', linksRows: true },
+  Bank: { heading: 'Banks', footerLabel: 'Bank total', columns: 'bank', linksRows: true },
   CreditCard: { heading: 'Credit cards', footerLabel: 'Net owed', columns: 'card', linksRows: true },
   Pots: { heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: true, rowLinkTab: 'pots' },
   Settlement: { heading: 'Settlement', columns: 'settlement', linksRows: true },

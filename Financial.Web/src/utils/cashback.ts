@@ -1,5 +1,5 @@
 import type { BankOption } from '../api/types'
-import { hasAtMostTwoDecimals, parseValidatedNumber } from './formatters'
+import { hasAtMostTwoDecimals, parseValidatedNumber, positiveAmount } from './formatters'
 
 export const CASHBACK_RANGE_MESSAGE = 'Cashback must be between 0 and the expense value, with at most 2 decimal places.'
 
@@ -13,8 +13,8 @@ export function cashbackRateOf(banks: readonly BankOption[], bankId: string): nu
 
 export function suggestCashbackAmount(banks: readonly BankOption[], bankId: string, value: string): string | null {
   const rate = cashbackRateOf(banks, bankId)
-  const parsedValue = Number(value)
-  if (rate === null || !value.trim() || !isFinite(parsedValue) || parsedValue <= 0) return null
+  const parsedValue = positiveAmount(value)
+  if (rate === null || parsedValue === null) return null
   const pennies = Math.floor(Number((parsedValue * rate).toFixed(FLOATING_POINT_DIGITS)))
   return (pennies / PENNIES_IN_A_POUND).toFixed(2)
 }

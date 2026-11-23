@@ -210,6 +210,37 @@ describe('useExpenseForm', () => {
       expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ cashbackAmount: null }))
     })
 
+    it('suggests again for a new bank even after the amount was typed', () => {
+      const { result } = startCashbackExpense()
+
+      act(() => result.current.setField('cashbackAmount', '0.10'))
+      act(() => result.current.setField('paymentSource', 'bank-monzo'))
+
+      expect(result.current.cashbackAmount).toBe('0.25')
+    })
+
+    it('leaves a cleared cashback empty when an edit changes the value', () => {
+      const { result } = renderHook(() => useExpenseForm(CASHBACK_BANKS, CATEGORIES, onSaved))
+
+      act(() => result.current.showEditForm({ ...EXPENSE, paymentSourceBankId: 'bank-monzo', cashbackAmount: null }))
+      act(() => result.current.setField('value', '80'))
+
+      expect(result.current.cashbackAmount).toBe('')
+      expect(result.current.showsCashbackField).toBe(true)
+      expect(result.current.cashbackRate).toBe(2)
+    })
+
+    it('shows a saved cashback on a bank whose cashback is now off, and hides it once the bank changes', () => {
+      const { result } = renderHook(() => useExpenseForm(CASHBACK_BANKS, CATEGORIES, onSaved))
+
+      act(() => result.current.showEditForm({ ...EXPENSE, cashbackAmount: 0.85 }))
+      expect(result.current.showsCashbackField).toBe(true)
+      expect(result.current.cashbackRate).toBeNull()
+
+      act(() => result.current.setField('paymentSource', 'bank-chase'))
+      expect(result.current.showsCashbackField).toBe(false)
+    })
+
     it('clears the suggestion when the bank changes to one without cashback', () => {
       const { result } = startCashbackExpense()
 

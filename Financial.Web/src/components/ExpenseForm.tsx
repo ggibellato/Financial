@@ -7,7 +7,6 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { formatPercentN2, formatStatementMonthLabel, todayIsoDate } from '../utils/formatters'
-import { cashbackRateOf } from '../utils/cashback'
 import { roundsUp } from '../utils/roundUp'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionErrorAlert from './ActionErrorAlert'
@@ -43,6 +42,8 @@ interface ExpenseFormProps {
   invoiceMonthMovedFrom: string | null
   roundUpAmount: string
   cashbackAmount: string
+  cashbackRate: number | null
+  showsCashbackField: boolean
   countsAsTithe: boolean
   paymentMode: PaymentMode
   banks: BankOption[]
@@ -72,6 +73,8 @@ export default function ExpenseForm({
   invoiceMonthMovedFrom,
   roundUpAmount,
   cashbackAmount,
+  cashbackRate,
+  showsCashbackField,
   countsAsTithe,
   paymentMode,
   banks,
@@ -95,7 +98,6 @@ export default function ExpenseForm({
   const formRef = useFormErrorFocus(saveErrorFields)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && roundsUp(banks, paymentSource)
-  const cashbackRate = paymentMode === 'bank' ? cashbackRateOf(banks, paymentSource) : null
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
   const cardName = lockedCard?.name || creditCardName || creditCardId
@@ -230,10 +232,14 @@ export default function ExpenseForm({
             </Field>
           )}
 
-          {!isSettled && cashbackRate !== null && (
+          {showsCashbackField && (
             <Field
               label="Cashback"
-              hint={`${formatPercentN2(cashbackRate)} of the value. Clear it if this purchase doesn't earn cashback.`}
+              hint={
+                cashbackRate === null
+                  ? 'Cashback is off for this bank. Keep or clear the saved amount.'
+                  : `${formatPercentN2(cashbackRate)} of the value. Clear it if this purchase doesn't earn cashback.`
+              }
               validationState={fieldError('cashbackAmount') ? 'error' : 'none'}
               validationMessage={fieldError('cashbackAmount')}
             >
