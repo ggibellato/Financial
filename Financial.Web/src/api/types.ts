@@ -144,6 +144,7 @@ export type AccountTemplateDto = Schema<'AccountTemplateDTO'>
 export type AccountCreateDto = Schema<'AccountCreateDTO'>
 export type AccountUpdateDto = Schema<'AccountUpdateDTO'>
 export type AccountDetailDto = Schema<'AccountDetailDTO'>
+export type SavingsTermsDto = Schema<'SavingsTermsDTO'>
 export type AccountTransactionDto = Schema<'AccountTransactionDTO'>
 export type SettlementEntryDto = Schema<'SettlementEntryDTO'>
 export type SettlementEntryCreateDto = Schema<'SettlementEntryCreateDTO'>

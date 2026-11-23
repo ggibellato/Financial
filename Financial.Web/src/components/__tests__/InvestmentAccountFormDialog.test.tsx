@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
-import { account, cardAccount, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount, savingsAccount } from '../../test/account'
 import { optionNames } from '../../test-utils/optionNames'
 
 const activeCard = cardAccount({ id: 'cc1', name: 'Platinum Visa 8003' })
@@ -10,7 +10,8 @@ const inactiveCard = cardAccount({ id: 'cc2', name: 'Retired Card', isActive: fa
 const RESERVA = potsAccount({ id: 'p1', name: 'Reserva' })
 const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })
 const OLD_POTS = potsAccount({ id: 'p3', name: 'Old pots', isActive: false })
-const ACCOUNTS = [RESERVA, HOLIDAYS, OLD_POTS, account({ id: 'b1', name: 'Barclays' })]
+const CHASE_SAVE = savingsAccount({ id: 's1', name: 'Chase Save' })
+const ACCOUNTS = [RESERVA, HOLIDAYS, OLD_POTS, CHASE_SAVE, account({ id: 'b1', name: 'Barclays' })]
 
 describe('InvestmentAccountFormDialog', () => {
   it('renders in create mode with an empty name, active on, liability off, source none', () => {
@@ -57,7 +58,7 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.click(screen.getByLabelText('Liability'))
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, true, 'None', null, null))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: true, source: 'None', creditCardId: null, potsAccountId: null, savingsAccountId: null }))
   })
 
   it('shows no extra field when source is none', () => {
@@ -111,7 +112,7 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).not.toHaveAttribute('aria-invalid', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Holiday savings', true, false, 'PotsAccountTotal', null, 'p2'))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'Holiday savings', isActive: true, isLiability: false, source: 'PotsAccountTotal', creditCardId: null, potsAccountId: 'p2', savingsAccountId: null }))
   })
 
   it('says when there is no active Pots account to choose, and Save asks for another source', async () => {
@@ -194,7 +195,7 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByRole('option', { name: 'Old pots (inactive)' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Old savings', true, false, 'PotsAccountTotal', null, 'p3'))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'Old savings', isActive: true, isLiability: false, source: 'PotsAccountTotal', creditCardId: null, potsAccountId: 'p3', savingsAccountId: null }))
   })
 
   it('asks for a credit card after Save when credit card source has no card selected', async () => {
@@ -218,7 +219,7 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Credit card/), { target: { value: 'cc1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, false, 'CreditCard', 'cc1', null))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: false, source: 'CreditCard', creditCardId: 'cc1', potsAccountId: null, savingsAccountId: null }))
   })
 
   it('editing an account with an inactive linked card still shows it selected, and no other inactive card', () => {
@@ -269,7 +270,49 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByLabelText('Active')).not.toBeChecked()
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', false, false, 'None', null, null))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: false, isLiability: false, source: 'None', creditCardId: null, potsAccountId: null, savingsAccountId: null }))
+  })
+
+  it('[AC P64-F04-savings-web-06] offers Savings account balance with a picker of the Savings accounts, and submits the chosen one', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Chase Save' } })
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'SavingsAccountBalance' } })
+    const picker = screen.getByRole('combobox', { name: /^Savings account/ })
+    expect(optionNames(picker)).toEqual(['Select Savings account…', 'Chase Save'])
+    expect(
+      screen.getByText("Investment snapshots will suggest the Savings account's balance at the end of the previous month."),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
+    expect(await screen.findByText('Select a Savings account.')).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    fireEvent.change(picker, { target: { value: 's1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        name: 'Chase Save',
+        isActive: true,
+        isLiability: false,
+        source: 'SavingsAccountBalance',
+        creditCardId: null,
+        potsAccountId: null,
+        savingsAccountId: 's1',
+      }),
+    )
+  })
+
+  it('does not carry a chosen Pots account over to the Savings account picker', () => {
+    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'PotsAccountTotal' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p1' } })
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'SavingsAccountBalance' } })
+
+    expect(screen.getByRole('combobox', { name: /^Savings account/ })).toHaveValue('')
   })
 
   it('says the account could not be saved when the save fails without a reason', async () => {

@@ -1,0 +1,35 @@
+.savings-terms__day {
+  width: 6rem;
+}
+
+.savings-terms__rates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalS);
+}
+
+.savings-terms__rate {
+  display: grid;
+  grid-template-columns: 9rem 11rem 2rem;
+  gap: var(--spacingHorizontalM);
+  align-items: start;
+}
+
+.savings-terms__percent input {
+  min-width: 0;
+  text-align: right;
+}
+
+.savings-terms__remove {
+  align-self: end;
+}
+
+@media (max-width: 599px) {
+  .savings-terms__rate {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .savings-terms__remove {
+    justify-self: start;
+  }
+}

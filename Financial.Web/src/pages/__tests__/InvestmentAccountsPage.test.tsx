@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentAccountDto } from '../../api/types'
-import { account, cardAccount, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount, savingsAccount } from '../../test/account'
 import { never } from '../../test-utils/deferred'
 import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
@@ -119,6 +119,17 @@ describe('InvestmentAccountsPage', () => {
     expect(chaseSaveRow?.textContent).toContain('—')
     expect(platinumRow?.textContent).toContain('Platinum Visa 8003')
     expect(reservasRow?.textContent).toContain('Reserva total')
+  })
+
+  it('[AC P64-F04-savings-web-06] shows the linked Savings account balance as the source', async () => {
+    getInvestmentAccountsMock.mockResolvedValue([
+      { id: 'a5', name: 'Chase savings', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'SavingsAccountBalance', creditCardId: null, potsAccountId: null, savingsAccountId: 's1' },
+    ])
+    getAccountsMock.mockResolvedValue([savingsAccount({ id: 's1', name: 'Chase Save' })])
+    render(<InvestmentAccountsPage />)
+
+    const row = (await screen.findByText('Chase savings')).closest('tr')
+    expect(row).toHaveTextContent('Chase Save balance')
   })
 
   it('creates an investment account through the New investment account dialog', async () => {

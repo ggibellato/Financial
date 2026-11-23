@@ -12,27 +12,30 @@ import {
 } from '@fluentui/react-components'
 import AdminEntityPage from '../components/AdminEntityPage'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
-import InvestmentAccountFormDialog, { type InvestmentAccountSourceOption } from '../components/InvestmentAccountFormDialog'
+import InvestmentAccountFormDialog from '../components/InvestmentAccountFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useAccounts } from '../hooks/useAccounts'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import { usePendingDelete } from '../hooks/usePendingDelete'
-import type { AccountDto, InvestmentAccountDto } from '../api/types'
+import type { AccountDto, InvestmentAccountDto, InvestmentAccountUpdateDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import MissingValue from '../components/MissingValue'
+
+function linkedAccountDisplay(accounts: AccountDto[], accountId: string | null | undefined, value: string): ReactNode {
+  const linkedAccount = accounts.find((a) => a.id === accountId)
+  if (!linkedAccount) return <MissingValue label="None" />
+  return linkedAccount.isActive ? `${linkedAccount.name} ${value}` : `${linkedAccount.name} ${value} (inactive)`
+}
 
 function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): ReactNode {
   if (account.source === 'CreditCard') {
     return accounts.find((a) => a.id === account.creditCardId)?.name ?? <MissingValue label="None" />
   }
-  if (account.source === 'PotsAccountTotal') {
-    const potsAccount = accounts.find((a) => a.id === account.potsAccountId)
-    if (!potsAccount) return <MissingValue label="None" />
-    return potsAccount.isActive ? `${potsAccount.name} total` : `${potsAccount.name} total (inactive)`
-  }
+  if (account.source === 'PotsAccountTotal') return linkedAccountDisplay(accounts, account.potsAccountId, 'total')
+  if (account.source === 'SavingsAccountBalance') return linkedAccountDisplay(accounts, account.savingsAccountId, 'balance')
   return <MissingValue label="None" />
 }
 
@@ -55,40 +58,15 @@ export default function InvestmentAccountsPage() {
   const deletion = usePendingDelete((row: InvestmentAccountDto) => deleteInvestmentAccount(row.id))
   const pendingDelete = deletion.pendingRow
 
-  const handleSubmit = (
-    name: string,
-    isActive: boolean,
-    isLiability: boolean,
-    source: InvestmentAccountSourceOption,
-    creditCardId: string | null,
-    potsAccountId: string | null,
-  ) =>
-    editingAccount
-      ? updateInvestmentAccount(editingAccount.id, {
-          name,
-          isActive,
-          isLiability,
-          source,
-          creditCardId,
-          potsAccountId,
-          savingsAccountId: editingAccount.savingsAccountId,
-        })
-      : createInvestmentAccount({ name, isActive, isLiability, source, creditCardId, potsAccountId, savingsAccountId: null })
-
   const closeFormDialog = () => {
     setEditingAccount(null)
     setIsCreating(false)
   }
 
-  const handleFormSubmit = async (
-    name: string,
-    isActive: boolean,
-    isLiability: boolean,
-    source: InvestmentAccountSourceOption,
-    creditCardId: string | null,
-    potsAccountId: string | null,
-  ) => {
-    const result = await handleSubmit(name, isActive, isLiability, source, creditCardId, potsAccountId)
+  const handleFormSubmit = async (values: InvestmentAccountUpdateDto) => {
+    const result = editingAccount
+      ? await updateInvestmentAccount(editingAccount.id, values)
+      : await createInvestmentAccount(values)
     closeFormDialog()
     return result
   }
@@ -103,7 +81,7 @@ export default function InvestmentAccountsPage() {
         accountsError && (
           <MessageBar intent="warning">
             <MessageBarBody>
-              Couldn&rsquo;t load accounts, so the credit card and Pots account pickers are empty and the Source column
+              Couldn&rsquo;t load accounts, so the credit card, Pots account and Savings account pickers are empty and the Source column
               shows — for linked accounts.
             </MessageBarBody>
             <MessageBarActions>

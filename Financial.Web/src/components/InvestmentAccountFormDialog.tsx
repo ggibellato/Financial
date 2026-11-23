@@ -1,27 +1,31 @@
 import { useState } from 'react'
 import { Field, Input, Select, Switch } from '@fluentui/react-components'
-import type { AccountDto, InvestmentAccountDto } from '../api/types'
+import type { AccountDto, InvestmentAccountDto, InvestmentAccountUpdateDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountsWith } from '../utils/accountCapabilities'
 
-export type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccountTotal'
+export type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccountTotal' | 'SavingsAccountBalance'
+
+type LinkedAccountSource = 'PotsAccountTotal' | 'SavingsAccountBalance'
+
+const LINKED_ACCOUNT_SOURCES: Record<LinkedAccountSource, { capability: string; label: string; snapshotValue: string }> = {
+  PotsAccountTotal: { capability: 'HasPots', label: 'Pots account', snapshotValue: 'total' },
+  SavingsAccountBalance: { capability: 'EarnsInterest', label: 'Savings account', snapshotValue: 'balance' },
+}
+
+function isLinkedAccountSource(source: InvestmentAccountSourceOption): source is LinkedAccountSource {
+  return source in LINKED_ACCOUNT_SOURCES
+}
 
 interface InvestmentAccountFormDialogProps {
   investmentAccount: InvestmentAccountDto | null
   creditCards: AccountDto[]
   accounts: AccountDto[]
   onCancel: () => void
-  onSubmit: (
-    name: string,
-    isActive: boolean,
-    isLiability: boolean,
-    source: InvestmentAccountSourceOption,
-    creditCardId: string | null,
-    potsAccountId: string | null,
-  ) => Promise<unknown>
+  onSubmit: (values: InvestmentAccountUpdateDto) => Promise<unknown>
 }
 
 export default function InvestmentAccountFormDialog({
@@ -39,28 +43,31 @@ export default function InvestmentAccountFormDialog({
     (investmentAccount?.source as InvestmentAccountSourceOption | undefined) ?? 'None',
   )
   const [creditCardId, setCreditCardId] = useState(investmentAccount?.creditCardId ?? '')
-  const [potsAccountId, setPotsAccountId] = useState(investmentAccount?.potsAccountId ?? '')
+  const initialLinkedAccountId = investmentAccount?.potsAccountId ?? investmentAccount?.savingsAccountId ?? undefined
+  const [linkedAccountId, setLinkedAccountId] = useState(initialLinkedAccountId ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The investment account could not be saved.')
-  const form = useEntityForm({ name, isActive, isLiability, source, creditCardId, potsAccountId })
+  const form = useEntityForm({ name, isActive, isLiability, source, creditCardId, linkedAccountId })
 
   const trimmedName = name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
   const nameMessage = form.shown(validationMessage) || nameError
   const creditCardValidationMessage = source === 'CreditCard' && creditCardId === '' ? 'Select a credit card.' : ''
-  const potsAccountOptions = accountsWith(accounts, 'HasPots', investmentAccount?.potsAccountId ?? undefined)
-  const hasPotsAccountChoices = potsAccountOptions.length > 0
-  const shownPotsAccountId = potsAccountOptions.some((account) => account.id === potsAccountId) ? potsAccountId : ''
-  const isPotsAccountMissing = source === 'PotsAccountTotal' && shownPotsAccountId === ''
-  const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account.' : ''
+  const linked = isLinkedAccountSource(source) ? LINKED_ACCOUNT_SOURCES[source] : null
+  const linkedAccountOptions = linked ? accountsWith(accounts, linked.capability, initialLinkedAccountId) : []
+  const hasLinkedAccountChoices = linkedAccountOptions.length > 0
+  const shownLinkedAccountId = linkedAccountOptions.some((account) => account.id === linkedAccountId) ? linkedAccountId : ''
+  const isLinkedAccountMissing = linked !== null && shownLinkedAccountId === ''
+  const linkedAccountValidationMessage =
+    isLinkedAccountMissing && hasLinkedAccountChoices ? `Select a ${linked.label}.` : ''
   const sourceValidationMessage =
-    isPotsAccountMissing && !hasPotsAccountChoices
-      ? 'No active Pots accounts. Add one in Admin → CashFlow → Accounts, or choose another source.'
+    isLinkedAccountMissing && !hasLinkedAccountChoices
+      ? `No active ${linked.label}s. Add one in Admin → CashFlow → Accounts, or choose another source.`
       : ''
   const canSubmit =
     validationMessage.length === 0 &&
     creditCardValidationMessage.length === 0 &&
-    !isPotsAccountMissing
+    !isLinkedAccountMissing
 
   // The picker always offers every active card, plus the account's currently-linked card even if
   // it has since become inactive - otherwise reopening Edit would silently show no selection for a
@@ -73,14 +80,15 @@ export default function InvestmentAccountFormDialog({
     form.revealValidation()
     if (!canSubmit) return
     void submit(() =>
-      onSubmit(
-        trimmedName,
+      onSubmit({
+        name: trimmedName,
         isActive,
         isLiability,
         source,
-        source === 'CreditCard' ? creditCardId : null,
-        source === 'PotsAccountTotal' ? shownPotsAccountId : null,
-      ),
+        creditCardId: source === 'CreditCard' ? creditCardId : null,
+        potsAccountId: source === 'PotsAccountTotal' ? shownLinkedAccountId : null,
+        savingsAccountId: source === 'SavingsAccountBalance' ? shownLinkedAccountId : null,
+      }),
     )
   }
 
@@ -119,6 +127,7 @@ export default function InvestmentAccountFormDialog({
           <option value="None">None</option>
           <option value="CreditCard">Credit card</option>
           <option value="PotsAccountTotal">Pots account total</option>
+          <option value="SavingsAccountBalance">Savings account balance</option>
         </Select>
       </Field>
 
@@ -139,24 +148,24 @@ export default function InvestmentAccountFormDialog({
         </Field>
       )}
 
-      {source === 'PotsAccountTotal' && (
+      {linked && (
         <Field
-          label="Pots account"
+          label={linked.label}
           required
           hint={
-            hasPotsAccountChoices
-              ? "Investment snapshots will suggest the Pots account's total at the end of the previous month."
-              : 'Add a Pots account in Admin → CashFlow → Accounts first.'
+            hasLinkedAccountChoices
+              ? `Investment snapshots will suggest the ${linked.label}'s ${linked.snapshotValue} at the end of the previous month.`
+              : `Add a ${linked.label} in Admin → CashFlow → Accounts first.`
           }
-          {...form.fieldValidation(potsAccountValidationMessage)}
+          {...form.fieldValidation(linkedAccountValidationMessage)}
         >
           <Select
-            value={shownPotsAccountId}
-            onChange={(e) => setPotsAccountId(e.target.value)}
-            disabled={!hasPotsAccountChoices}
+            value={shownLinkedAccountId}
+            onChange={(e) => setLinkedAccountId(e.target.value)}
+            disabled={!hasLinkedAccountChoices}
           >
-            <option value="">{hasPotsAccountChoices ? 'Select Pots account…' : 'No active Pots accounts'}</option>
-            {potsAccountOptions.map((account) => (
+            <option value="">{hasLinkedAccountChoices ? `Select ${linked.label}…` : `No active ${linked.label}s`}</option>
+            {linkedAccountOptions.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.isActive ? account.name : `${account.name} (inactive)`}
               </option>

@@ -4,6 +4,14 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
+import SavingsTermsFields from './SavingsTermsFields'
+import {
+  hasSavingsErrors,
+  initialSavingsValues,
+  toSavingsTermsDto,
+  validateSavings,
+  type SavingsFormValues,
+} from './savingsTermsForm'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
@@ -46,6 +54,7 @@ interface FormValues {
   openingBalance: string
   balanceStartDate: string
   roundUpEnabled: boolean
+  savings: SavingsFormValues
   isActive: boolean
 }
 
@@ -82,6 +91,7 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
       openingBalance: '0.00',
       balanceStartDate: todayIsoDate(),
       roundUpEnabled: false,
+      savings: initialSavingsValues(null),
       isActive: true,
     }
   }
@@ -95,6 +105,7 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
     openingBalance: account.openingBalance?.toFixed(2) ?? '0.00',
     balanceStartDate: !account.balanceStartDate || account.balanceStartDate === UNSET_START_DATE ? '' : account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled ?? false,
+    savings: initialSavingsValues(account.savings),
     isActive: account.isActive,
   }
 }
@@ -155,7 +166,10 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const categoryRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
-  const isDirty = hasChangedFields(values, initial, FORM_FIELDS) || values.currencies.join() !== initial.currencies.join()
+  const isDirty =
+    hasChangedFields(values, initial, FORM_FIELDS) ||
+    values.currencies.join() !== initial.currencies.join() ||
+    JSON.stringify(values.savings) !== JSON.stringify(initial.savings)
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
   const capabilities = template?.capabilities ?? []
@@ -164,6 +178,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const hasPots = capabilities.includes('HasPots')
   const isMultiCurrency = capabilities.includes('MultiCurrency')
   const hasParticipants = capabilities.includes('HasParticipants')
+  const earnsInterest = capabilities.includes('EarnsInterest')
   const selectableCategories = categoryOptions(categories, initial.categoryId)
   const currencies = template?.currencies ?? [values.currency]
   const isCurrencyFixed = isLocked || currencies.length <= 1
@@ -171,6 +186,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const trimmedName = values.name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField<FieldControl>(failure, error, trimmedName)
   const errors = validateAccountForm(values, template, keepsUnsetStartDate)
+  const savingsErrors = earnsInterest ? validateSavings(values.savings) : null
 
   const fieldMessage = (field: FieldName) => {
     if (field === 'name' && nameError) return nameError
@@ -211,7 +227,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
     balanceStartDate: hasOpeningBalance ? values.balanceStartDate || UNSET_START_DATE : null,
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
-    savings: account?.savings ?? null,
+    savings: earnsInterest ? toSavingsTermsDto(values.savings) : null,
     isActive: values.isActive,
   })
 
@@ -232,6 +248,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       fieldRefs[firstInvalid].current?.focus()
       return
     }
+    if (savingsErrors && hasSavingsErrors(savingsErrors)) return
     void submit(() => onSubmit(toRequest()))
   }
 
@@ -415,6 +432,14 @@ export default function AccountFormDialog({ account, templates, categories, onCa
             />
           </Field>
         </>
+      )}
+
+      {earnsInterest && (
+        <SavingsTermsFields
+          values={values.savings}
+          errors={showValidation ? savingsErrors : null}
+          onChange={(savings) => setField('savings', savings)}
+        />
       )}
 
       {supportsRoundUp && (
