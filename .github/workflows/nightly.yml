@@ -22,9 +22,9 @@ jobs:
       matrix:
         include:
           - name: CashFlow.Domain
-            break: 72
+            break: 88
           - name: Investment.Domain
-            break: 72
+            break: 82
           - name: CashFlow.Application
             mutate: '!**/DependencyInjection/**'
             break: 71
