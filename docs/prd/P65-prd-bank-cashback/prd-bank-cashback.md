@@ -83,13 +83,13 @@ This PRD is the second of three planned together. Savings accounts (P64) came fi
 **Capabilities:**
 - **Capability:** the Bank template gains `SupportsCashback`. No other template has it.
 - **Setting:** a Bank account carries a cashback setting: on or off and, when on, a rate in percent (more than 0, at most 100, at most 2 decimal places). When cashback is off, no rate is stored.
-- **Required, like round-up:** creating or updating a Bank account must say whether cashback is on, just as it must say whether round-up is on. An account saved before this feature loads with cashback off.
+- **Optional on the request:** a new Bank account without a cashback setting starts with cashback off, and an update without one keeps the current setting, so clients that don't know about cashback keep working. An account saved before this feature loads with cashback off.
 - **One current rate:** there is no rate history. Changing the rate affects only the suggestions for expenses entered later. Expenses already saved keep their stored cashback.
 - Switching cashback on or off, or changing the rate, is allowed at any time, also on an account with transactions. Switching it off keeps the cashback already stored on past expenses.
 - **Data:** the setting is a new optional field on the account in `data-cashflow.json`. Accounts without it load with cashback off. The spec decides whether the data file version changes. The API shape changes, so the OpenAPI snapshot and the generated web types are regenerated.
 
 **Error Handling:**
-- A Bank account without the cashback on/off flag, cashback on without a rate, or a rate outside the range or with more than 2 decimal places: 400 with a message naming the field; nothing is saved.
+- Cashback on without a rate, a rate outside the range or with more than 2 decimal places, or a rate sent with cashback off: 400 with a message naming the field; nothing is saved.
 - A cashback setting sent for an account whose template isn't Bank: 400; nothing is saved.
 
 ### F02. Cashback on Expenses
@@ -105,7 +105,7 @@ This PRD is the second of three planned together. Savings accounts (P64) came fi
 - **Not income:** cashback is not counted in the Income tab, Summary income, the Result or the tithe base. Category totals still count the full expense value.
 - **Account transactions:** each expense row on the bank's transactions returns its cashback amount (positive), next to the existing round-up.
 - **Accounts tab:** each Bank account with `SupportsCashback` returns its cashback total for the month: the sum of the cashback on its expenses dated in that month. Each currency's footer total gains a cashback total, as it already has a round-up total.
-- **Locked expenses:** the cashback amount follows the same lock as the round-up amount (`Expense.ChangesLockedFields`).
+- **Changing the paying bank:** moving an expense to another bank or to a card drops its stored cashback, so any amount sent with it is checked against the new payment.
 - Expenses paid by credit card, pot withdrawals by card (P62) and bill payments don't take cashback in this PRD.
 
 **Error Handling:**
@@ -180,7 +180,7 @@ graph TD
 
 ### F01. Cashback Setting on Bank Accounts
 - [ ] **P65-F01-cashback-setting-01** Creating a Bank account with cashback on and a rate returns 201, and the account detail returns the flag and rate; with cashback off, no rate is returned
-- [ ] **P65-F01-cashback-setting-02** A Bank account without the cashback flag, with cashback on but no rate, or with a rate outside the range or with more than 2 decimal places is refused with 400 naming the field
+- [ ] **P65-F01-cashback-setting-02** A Bank account with cashback on but no rate, a rate outside the range or with more than 2 decimal places, or a rate with cashback off is refused with 400 naming the field; an update without cashback fields keeps the setting
 - [ ] **P65-F01-cashback-setting-03** A cashback setting on an account whose template isn't Bank is refused with 400
 - [ ] **P65-F01-cashback-setting-04** The rate can be changed and cashback switched off on an account with transactions, and the stored cashback on its expenses is kept
 - [ ] **P65-F01-cashback-setting-05** A data file with no cashback settings loads with cashback off on every Bank account and saves unchanged otherwise; a cashback setting survives a save-load round trip
