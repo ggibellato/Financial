@@ -20,7 +20,6 @@ public sealed class AccountTransactionDTO
     public bool IsInterest { get; init; }
     public AccountTransferDTO? Transfer { get; init; }
     public BalanceAdjustmentDTO? Adjustment { get; init; }
-    public ExternalPaymentDTO? ExternalPayment { get; init; }
     public ReserveMovementDTO? Movement { get; init; }
     public SettlementEntryDTO? Settlement { get; init; }
 }

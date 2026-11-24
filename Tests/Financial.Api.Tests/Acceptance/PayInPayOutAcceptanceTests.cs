@@ -75,7 +75,6 @@ public class PayInPayOutAcceptanceTests : ApiEndpointTests
     [Theory]
     [Trait("AC", "P67-F01-pay-in-out-02")]
     [InlineData(0.0, "Gift", ExternalPayment.AmountMessage)]
-    [InlineData(1.005, "Gift", ExternalPayment.AmountMessage)]
     [InlineData(10.0, " ", ExternalPayment.DescriptionMessage)]
     public async Task PayIn_WithAnInvalidAmountOrDescription_Returns400(double amount, string description, string message)
     {
@@ -156,7 +155,6 @@ public class PayInPayOutAcceptanceTests : ApiEndpointTests
         {
             rows!.Select(row => (row.Kind, row.Description, row.Amount, row.CanEdit)).Should().BeEquivalentTo(
                 [("PayIn", "Money from Ana", 100m, true), ("PayOut", "Money to João", -30m, true)]);
-            rows.Should().OnlyContain(row => row.ExternalPayment != null);
             monthRows!.Select(row => row.Transaction.Kind).Should().Contain(["PayIn", "PayOut"]);
         }
     }

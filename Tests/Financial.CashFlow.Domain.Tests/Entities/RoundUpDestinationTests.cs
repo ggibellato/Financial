@@ -72,6 +72,7 @@ public class RoundUpDestinationTests
 
     [Fact]
     [Trait("AC", "P66-F01-roundup-only-04")]
+    [Trait("AC", "P67-F01-pay-in-out-06")]
     public void AllowedFor_ARoundUpOnlyAccount_OffersNoTransferFromOrAddIncome()
     {
         AccountActions.AllowedFor(RoundUpSaver()).Should().Equal(

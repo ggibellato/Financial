@@ -20,7 +20,7 @@ internal static class MoneyDestinationMapper
             return null;
         }
 
-        if (!EnumParser.TryParseEnum<MoneyDestinationKind>(dto.Kind, out var kind) || !Enum.IsDefined(kind) || int.TryParse(dto.Kind, out _))
+        if (!EnumParser.TryParseDefinedName<MoneyDestinationKind>(dto.Kind, out var kind))
         {
             throw new ArgumentException(UnknownKindMessage);
         }

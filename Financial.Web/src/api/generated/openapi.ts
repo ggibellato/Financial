@@ -7549,7 +7549,6 @@ export interface components {
             date: string;
             description?: null | string;
             expense?: null | components["schemas"]["ExpenseDTO"];
-            externalPayment?: null | components["schemas"]["ExternalPaymentDTO"];
             /** Format: uuid */
             id: string;
             income?: null | components["schemas"]["IncomeDTO"];

@@ -50,6 +50,8 @@ public class ExternalPayment : IAccountTransaction
         Description = description.Trim();
     }
 
+    public bool PaysInto(Account account) => Direction == PaymentDirection.In && Account.Id == account.Id;
+
     public decimal ContributionTo(Account account) =>
         Account.Id != account.Id ? 0m
         : Direction == PaymentDirection.In ? Amount
@@ -62,7 +64,7 @@ public class ExternalPayment : IAccountTransaction
             throw new ArgumentException($"{account.Name} can't take a pay-in or pay-out.");
         }
 
-        if (direction == PaymentDirection.In && account.ReceivesOnlyRoundUps)
+        if (!account.AcceptsPayment(direction))
         {
             throw new ArgumentException($"{account.Name} only receives round-ups.");
         }

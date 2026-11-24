@@ -110,7 +110,7 @@ public sealed class ExternalPaymentService : IExternalPaymentService
     }
 
     private static PaymentDirection ParseDirection(string direction) =>
-        EnumParser.TryParseEnum<PaymentDirection>(direction, out var parsed) && Enum.IsDefined(parsed) && !int.TryParse(direction, out _)
+        EnumParser.TryParseDefinedName<PaymentDirection>(direction, out var parsed)
             ? parsed
             : throw new ArgumentException("Choose whether money is paid in or out.");
 

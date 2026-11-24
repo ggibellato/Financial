@@ -1,7 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -81,19 +80,6 @@ public class ExternalPaymentTests
         var act = () => ExternalPayment.Create(PaymentDirection.In, Date, TestAccounts.CreditCard("Amex"), 5m, "Gift");
 
         act.Should().Throw<ArgumentException>().WithMessage("Amex can't take a pay-in or pay-out.");
-    }
-
-    [Fact]
-    [Trait("AC", "P67-F01-pay-in-out-06")]
-    public void AllowedFor_ARoundUpOnlyAccount_OffersPayOutOnly()
-    {
-        var actions = AccountActions.AllowedFor(RoundUpSaver());
-
-        using (new AssertionScope())
-        {
-            actions.Should().Contain(AccountAction.PayOut).And.NotContain(AccountAction.PayIn);
-            AccountActions.AllowedFor(TestAccounts.Bank("Barclays")).Should().Contain([AccountAction.PayIn, AccountAction.PayOut]);
-        }
     }
 
     [Fact]

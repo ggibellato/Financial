@@ -78,6 +78,9 @@ public class Account
 
     public bool AcceptsIncomeFrom(IncomeGroup group) => !ReceivesOnlyRoundUps || group == IncomeGroup.DividendoJuros;
 
+    public bool AcceptsPayment(PaymentDirection direction) =>
+        Has(Capability.HasExternalPayments) && (direction == PaymentDirection.Out || !ReceivesOnlyRoundUps);
+
     public bool IsSetUpAs(AccountTemplate template, IEnumerable<Currency> currencies) =>
         Template == template && currencies.SequenceEqual(Currencies);
 
@@ -223,7 +226,7 @@ public class Account
 
         if (transfers.Any(transfer => transfer.DestinationAccount.Id == Id)
             || incomes.Any(income => income.Account?.Id == Id && !income.IsInterest)
-            || payments.Any(payment => payment.Account.Id == Id && payment.Direction == PaymentDirection.In))
+            || payments.Any(payment => payment.PaysInto(this)))
         {
             throw new ArgumentException($"{Name} already has money in that isn't a round-up or interest.");
         }
