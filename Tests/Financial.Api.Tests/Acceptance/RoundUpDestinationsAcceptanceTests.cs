@@ -177,6 +177,36 @@ public class RoundUpDestinationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P66-F02-destinations-04")]
+    public async Task RoutedRows_StayOffTheMonthWideListAndBeforeTheDestinationsStartDate()
+    {
+        await PutChaseAsync(Destination("Account", SaverId), null);
+        await PostExpenseAsync(new DateOnly(2026, 9, 28), 4.80m, roundUp: 0.20m, cashback: null);
+        await PostExpenseAsync(new DateOnly(2026, 10, 3), 12.40m, roundUp: 0.60m, cashback: null);
+
+        var monthRows = await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/10");
+        var septemberRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{SaverId}/transactions/2026/9");
+
+        using (new AssertionScope())
+        {
+            monthRows!.Select(row => row.Transaction.Kind).Should().NotContain(["RoundUp", "Cashback"]);
+            septemberRows.Should().BeEmpty();
+        }
+    }
+
+    [Theory]
+    [Trait("AC", "P66-F02-destinations-02")]
+    [InlineData("9")]
+    [InlineData("1")]
+    [InlineData("Somewhere")]
+    public async Task Destinations_WithAnUndefinedKind_Return400(string kind)
+    {
+        var response = await PutChaseAsync(new MoneyDestinationDTO { Kind = kind, AccountId = Guid.Parse(SaverId) }, null);
+
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, "Choose where the money goes.");
+    }
+
+    [Fact]
     [Trait("AC", "P66-F02-destinations-05")]
     public async Task SettingTheDestinationToNone_RemovesTheRoutedAmounts()
     {

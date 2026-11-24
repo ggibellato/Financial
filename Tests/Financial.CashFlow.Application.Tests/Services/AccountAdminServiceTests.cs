@@ -303,6 +303,106 @@ public class AccountAdminServiceTests
         }
     }
 
+    private static readonly SavingsTerms RoundUpOnlyTerms =
+        SavingsTerms.Create(InterestFrequency.Monthly, 1, isTaxFree: false, [InterestRate.Create(5m, new DateOnly(2026, 1, 1))], roundUpOnly: true);
+
+    private static AccountUpdateDTO EditSavings(Account account, bool roundUpOnly, bool isActive = true) => new()
+    {
+        TemplateName = "Savings",
+        Name = account.Name,
+        Currency = "GBP",
+        OpeningBalance = 0m,
+        BalanceStartDate = Today,
+        IsActive = isActive,
+        Savings = new SavingsTermsDTO
+        {
+            InterestFrequency = "Monthly",
+            PaymentDay = 1,
+            IsTaxFree = false,
+            Rates = [new InterestRateDTO { AnnualPercent = 5m, EffectiveFrom = new DateOnly(2026, 1, 1) }],
+            RoundUpOnly = roundUpOnly
+        }
+    };
+
+    private Account AddRoundUpSaverChaseRoutesTo()
+    {
+        var saver = TestAccounts.Savings("Round-up saver", RoundUpOnlyTerms);
+        _repository.Accounts.Add(saver);
+        _chase.SetRoundUpDestination(MoneyDestination.ToAccount(saver.Id), saver);
+        return saver;
+    }
+
+    [Fact]
+    public async Task UpdateAsync_RoundUpDestinationThatIsNotRoundUpOnly_ThrowsAndRecordsAFailedSpan()
+    {
+        var chaseSave = TestAccounts.Savings("Chase Save");
+        _repository.Accounts.Add(chaseSave);
+        var withDestination = new AccountUpdateDTO
+        {
+            TemplateName = "Bank", Name = "Chase", Currency = "GBP", OpeningBalance = 0m, BalanceStartDate = Today,
+            RoundUpEnabled = true, IsActive = true,
+            RoundUpDestination = new MoneyDestinationDTO { Kind = "Account", AccountId = chaseSave.Id }
+        };
+
+        var act = () => _sut.UpdateAsync(_chase.Id, withDestination);
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage(Account.RoundUpDestinationMessage);
+            _chase.RoundUpDestination.Should().Be(MoneyDestination.None);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SwitchingRoundUpOnlyOnWithATransferIn_ThrowsAndRecordsAFailedSpan()
+    {
+        var chaseSave = TestAccounts.Savings("Chase Save");
+        _repository.Accounts.Add(chaseSave);
+        _repository.Transfers.Add(Transfer.Create(Today, _barclays, chaseSave, 50m, null, null, Today));
+
+        var act = () => _sut.UpdateAsync(chaseSave.Id, EditSavings(chaseSave, roundUpOnly: true));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Chase Save already has money in that isn't a round-up or interest.");
+            chaseSave.ReceivesOnlyRoundUps.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DeactivatingARoundUpDestination_ThrowsAndRecordsAFailedSpan()
+    {
+        var saver = AddRoundUpSaverChaseRoutesTo();
+
+        var act = () => _sut.UpdateAsync(saver.Id, EditSavings(saver, roundUpOnly: true, isActive: false));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Round-up saver receives Chase's round-ups.");
+            saver.IsActive.Should().BeTrue();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ARoundUpDestination_ThrowsAndKeepsIt()
+    {
+        var saver = AddRoundUpSaverChaseRoutesTo();
+
+        var act = () => _sut.DeleteAsync(saver.Id);
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Round-up saver receives Chase's round-ups.");
+            _repository.Accounts.Should().Contain(saver);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.DeleteAccount");
+        }
+    }
+
     [Fact]
     public async Task UpdateAsync_CapabilityFieldTheTemplateLacks_Throws()
     {

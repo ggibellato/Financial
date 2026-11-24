@@ -20,7 +20,7 @@ internal static class MoneyDestinationMapper
             return null;
         }
 
-        if (!EnumParser.TryParseEnum<MoneyDestinationKind>(dto.Kind, out var kind))
+        if (!EnumParser.TryParseEnum<MoneyDestinationKind>(dto.Kind, out var kind) || !Enum.IsDefined(kind) || int.TryParse(dto.Kind, out _))
         {
             throw new ArgumentException(UnknownKindMessage);
         }
@@ -29,7 +29,8 @@ internal static class MoneyDestinationMapper
         {
             MoneyDestinationKind.None => new(MoneyDestination.None, null),
             MoneyDestinationKind.InvestedAutomatically => new(MoneyDestination.InvestedAutomatically, null),
-            _ when dto.AccountId is { } accountId => new(MoneyDestination.ToAccount(accountId), CashFlowReferenceResolver.ResolveAccount(accounts, accountId)),
+            MoneyDestinationKind.Account when dto.AccountId is { } accountId =>
+                new(MoneyDestination.ToAccount(accountId), CashFlowReferenceResolver.ResolveAccount(accounts, accountId)),
             _ => throw new ArgumentException(UnknownKindMessage)
         };
     }

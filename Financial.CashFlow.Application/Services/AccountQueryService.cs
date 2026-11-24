@@ -167,7 +167,7 @@ public sealed class AccountQueryService : IAccountQueryService
 
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
-                .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
+                .SelectMany(account => RowsOf(account, records).Where(row => !IsRoutedRow(row)).Select(row => ToMonthRow(account, row)))
                 .Concat(BanklessRowsOf(records))
                 .OrderByDescending(row => row.Transaction.Date)
                 .ToList();
@@ -444,8 +444,14 @@ public sealed class AccountQueryService : IAccountQueryService
         Movement = ReserveService.ToDto(transaction, _repository.GetPotTransactions())
     };
 
+    private static bool IsRoutedRow(AccountTransactionDTO row) =>
+        row.Kind is nameof(TransactionKind.RoundUp) or nameof(TransactionKind.Cashback);
+
     private static IEnumerable<AccountTransactionDTO> RoutedRows(Expense expense, Account account)
     {
+        if (expense.Date < (account.OpeningBalance?.StartDate ?? DateOnly.MinValue))
+            yield break;
+
         if (expense.RoundUpRoutedTo(account) is > 0m and var roundUp)
             yield return RoutedRow(expense, account, TransactionKind.RoundUp, roundUp);
 

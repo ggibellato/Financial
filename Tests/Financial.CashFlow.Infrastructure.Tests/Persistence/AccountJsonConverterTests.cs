@@ -357,7 +357,9 @@ public class AccountJsonConverterTests
 
         var act = () => _context.ApplyPendingDestinations();
 
-        act.Should().Throw<ArgumentException>().WithMessage(Account.RoundUpDestinationMessage);
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000001 has a round-up destination that can't receive it.")
+            .WithInnerException<ArgumentException>().WithMessage(Account.RoundUpDestinationMessage);
     }
 
     [Fact]
