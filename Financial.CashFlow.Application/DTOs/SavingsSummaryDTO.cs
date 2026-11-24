@@ -6,6 +6,7 @@ public sealed class SavingsSummaryDTO
     public required string InterestFrequency { get; init; }
     public int? PaymentDay { get; init; }
     public required bool IsTaxFree { get; init; }
+    public required bool RoundUpOnly { get; init; }
     /// <summary>The latest rate in effect today; null when every rate is in the future.</summary>
     public InterestRateDTO? CurrentRate { get; init; }
     /// <summary>The next rate taking effect after today, if any.</summary>

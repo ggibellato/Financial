@@ -28,6 +28,8 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
     roundUpEnabled: false,
     cashbackEnabled: false,
     cashbackRatePercent: null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     categoryId: null,
     savings: null,
     dueDate: null,
@@ -45,6 +47,8 @@ export function cardAccount(fields: RequiredAccountFields & Partial<AccountDto>)
     roundUpEnabled: null,
     cashbackEnabled: null,
     cashbackRatePercent: null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     capabilities: ['HasCategories', 'HasStatements', 'ReceivesPayments'],
     ...fields,
   })
@@ -58,6 +62,8 @@ export function potsAccount(fields: RequiredAccountFields & Partial<AccountDto>)
     roundUpEnabled: null,
     cashbackEnabled: null,
     cashbackRatePercent: null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'],
     ...fields,
   })
@@ -78,10 +84,13 @@ export function savingsAccount(fields: RequiredAccountFields & Partial<AccountDt
     roundUpEnabled: null,
     cashbackEnabled: null,
     cashbackRatePercent: null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     savings: {
       interestFrequency: 'Monthly',
       paymentDay: 5,
       isTaxFree: false,
+      roundUpOnly: false,
       rates: [{ annualPercent: 4.5, effectiveFrom: '2026-09-01' }],
     },
     capabilities: SAVINGS_CAPABILITIES,
@@ -100,6 +109,8 @@ export function settlementAccount(fields: RequiredAccountFields & Partial<Accoun
     roundUpEnabled: null,
     cashbackEnabled: null,
     cashbackRatePercent: null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
     ...fields,
   })
@@ -123,6 +134,8 @@ export function accountDetail(fields: RequiredAccountDetailFields & Partial<Acco
     hasPlannedEntries: false,
     otherParticipant: null,
     savings: null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     ...fields,
   }
 }

@@ -1,6 +1,7 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
+using Financial.CashFlow.Domain.ValueObjects;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
@@ -292,7 +293,21 @@ public class Expense : IAccountTransaction
     public decimal ContributionTo(Account account) =>
         PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0))
         : IsUnpaidChargeOn(account) ? -Value
-        : 0m;
+        : RoundUpRoutedTo(account) + CashbackRoutedTo(account);
+
+    public decimal RoundUpRoutedTo(Account account) =>
+        RoutedTo(account, RoundUpAmount, bank => bank.RoundUpDestination);
+
+    public decimal CashbackRoutedTo(Account account) =>
+        RoutedTo(account, CashbackAmount, bank => bank.CashbackDestination);
+
+    private decimal RoutedTo(Account account, decimal? amount, Func<Account, MoneyDestination?> destinationOf) =>
+        amount is > 0m and var routed
+        && account.Savings is not null
+        && PaymentStatus == ExpensePaymentStatus.ImmediatePayment
+        && destinationOf(PaymentSourceAccount!)?.IsAccount(account.Id) == true
+            ? routed
+            : 0m;
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 

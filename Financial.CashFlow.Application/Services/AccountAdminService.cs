@@ -71,11 +71,13 @@ public sealed class AccountAdminService : IAccountAdminService
             EnsureOtherParticipantFits(account.Has, account.Name, request.OtherParticipant);
             EnsureCapabilityFieldsArePresent(account.Has, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var cashback = RequestedCashback(account.Has, account.Name, request.CashbackEnabled, request.CashbackRatePercent);
+            var destinations = RequestedDestinations(account.Has, account.Name, request.RoundUpDestination, request.CashbackDestination);
             var category = ResolveCategory(account.Has, account.Name, request.CategoryId, currentCategory: null);
             account.ApplyCurrencies(currencies);
             ApplyOtherParticipant(account, request.OtherParticipant);
             ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             ApplyCashback(account, cashback);
+            ApplyDestinations(account, destinations);
             ApplyCategory(account, category);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -89,7 +91,7 @@ public sealed class AccountAdminService : IAccountAdminService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, account.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "CreateAccount");
-            return AccountQueryService.ToAccountDto(account, hasRecords: false);
+            return AccountQueryService.ToAccountDto(account, hasRecords: false, _repository.GetAccounts());
         }
         catch (Exception ex)
         {
@@ -124,6 +126,10 @@ public sealed class AccountAdminService : IAccountAdminService
             EnsureTemplateFieldsAreValid(trimmedName, template, currencies, request.OtherParticipant, savings);
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var cashback = RequestedCashback(targetHas, trimmedName, request.CashbackEnabled, request.CashbackRatePercent);
+            var destinations = RequestedDestinations(targetHas, trimmedName, request.RoundUpDestination, request.CashbackDestination);
+            account.EnsureCanSwitchToRoundUpOnly(savings, _repository.GetTransfers(), _repository.GetIncomes());
+            account.EnsureStillReceivesRoutedMoney(
+                _repository.GetAccounts(), request.IsActive, templateHas(Capability.EarnsInterest), savings?.RoundUpOnly == true);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -133,6 +139,7 @@ public sealed class AccountAdminService : IAccountAdminService
                 ApplyOtherParticipant(account, request.OtherParticipant);
                 ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
                 ApplyCashback(account, cashback);
+                ApplyDestinations(account, destinations);
                 ApplyCategory(account, category);
                 account.SetActive(request.IsActive);
                 return true;
@@ -142,7 +149,7 @@ public sealed class AccountAdminService : IAccountAdminService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateAccount");
-            return AccountQueryService.ToAccountDto(account, hasRecords);
+            return AccountQueryService.ToAccountDto(account, hasRecords, _repository.GetAccounts());
         }
         catch (Exception ex)
         {
@@ -158,6 +165,7 @@ public sealed class AccountAdminService : IAccountAdminService
         try
         {
             var account = FindAccountOrThrow(id);
+            account.EnsureStillReceivesRoutedMoney(_repository.GetAccounts(), staysActive: false, staysSavings: false, staysRoundUpOnly: false);
 
             if (AccountReferenceReader.IsReferenced(_repository, id))
             {
@@ -271,6 +279,41 @@ public sealed class AccountAdminService : IAccountAdminService
 
         Account.EnsureSupportsCashback(has, accountName);
         return CashbackSetting.From(enabled ?? false, ratePercent);
+    }
+
+    private (RequestedDestination? RoundUp, RequestedDestination? Cashback) RequestedDestinations(
+        Func<Capability, bool> has, string accountName, MoneyDestinationDTO? roundUp, MoneyDestinationDTO? cashback)
+    {
+        var accounts = _repository.GetAccounts().ToList();
+        var requestedRoundUp = MoneyDestinationMapper.ToRequested(roundUp, accounts);
+        var requestedCashback = MoneyDestinationMapper.ToRequested(cashback, accounts);
+
+        if (requestedRoundUp is not null)
+        {
+            Account.EnsureSupportsRoundUp(has, accountName);
+            Account.EnsureRoundUpDestinationFits(requestedRoundUp.Destination, requestedRoundUp.Target);
+        }
+
+        if (requestedCashback is not null)
+        {
+            Account.EnsureSupportsCashback(has, accountName);
+            Account.EnsureCashbackDestinationFits(requestedCashback.Destination, requestedCashback.Target);
+        }
+
+        return (requestedRoundUp, requestedCashback);
+    }
+
+    private static void ApplyDestinations(Account account, (RequestedDestination? RoundUp, RequestedDestination? Cashback) destinations)
+    {
+        if (destinations.RoundUp is { } roundUp)
+        {
+            account.SetRoundUpDestination(roundUp.Destination, roundUp.Target);
+        }
+
+        if (destinations.Cashback is { } cashback)
+        {
+            account.SetCashbackDestination(cashback.Destination, cashback.Target);
+        }
     }
 
     private static void ApplyCashback(Account account, CashbackSetting? cashback)

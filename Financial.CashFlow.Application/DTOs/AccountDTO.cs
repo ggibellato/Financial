@@ -15,6 +15,8 @@ public sealed class AccountDTO
     public bool? RoundUpEnabled { get; init; }
     public bool? CashbackEnabled { get; init; }
     public decimal? CashbackRatePercent { get; init; }
+    public MoneyDestinationDTO? RoundUpDestination { get; init; }
+    public MoneyDestinationDTO? CashbackDestination { get; init; }
     public Guid? CategoryId { get; init; }
     public SavingsTermsDTO? Savings { get; init; }
     public DateOnly? DueDate { get; init; }

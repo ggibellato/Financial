@@ -70,7 +70,7 @@ describe('useAdminAccounts', () => {
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     getAccountsMock.mockResolvedValue([BARCLAYS, monzo])
-    const request = { templateName: 'Bank', name: 'Monzo', currency: 'GBP', openingBalance: 0, balanceStartDate: '2026-10-24', roundUpEnabled: false, cashbackEnabled: null, cashbackRatePercent: null, categoryId: null, savings: null, currencies: null, otherParticipant: null }
+    const request = { templateName: 'Bank', name: 'Monzo', currency: 'GBP', openingBalance: 0, balanceStartDate: '2026-10-24', roundUpEnabled: false, cashbackEnabled: null, cashbackRatePercent: null, roundUpDestination: null, cashbackDestination: null, categoryId: null, savings: null, currencies: null, otherParticipant: null }
 
     await act(() => result.current.createAccount(request))
 
@@ -82,7 +82,7 @@ describe('useAdminAccounts', () => {
     updateAccountMock.mockResolvedValue(BARCLAYS)
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    const request = { templateName: 'Bank', name: 'Barclays UK', currency: 'GBP', openingBalance: 10, balanceStartDate: '2026-01-01', roundUpEnabled: true, cashbackEnabled: null, cashbackRatePercent: null, categoryId: null, savings: null, currencies: null, otherParticipant: null, isActive: true }
+    const request = { templateName: 'Bank', name: 'Barclays UK', currency: 'GBP', openingBalance: 10, balanceStartDate: '2026-01-01', roundUpEnabled: true, cashbackEnabled: null, cashbackRatePercent: null, roundUpDestination: null, cashbackDestination: null, categoryId: null, savings: null, currencies: null, otherParticipant: null, isActive: true }
 
     await act(() => result.current.updateAccount('a1', request))
 
@@ -108,6 +108,8 @@ describe('useAdminAccounts', () => {
       roundUpEnabled: true,
       cashbackEnabled: false,
       cashbackRatePercent: null,
+      roundUpDestination: null,
+      cashbackDestination: null,
       categoryId: null,
       savings: null,
       isActive: false,

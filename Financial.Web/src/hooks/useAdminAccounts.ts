@@ -48,6 +48,8 @@ function toUpdateRequest(account: AccountDto): AccountUpdateDto {
     roundUpEnabled: account.roundUpEnabled,
     cashbackEnabled: account.cashbackEnabled,
     cashbackRatePercent: account.cashbackRatePercent,
+    roundUpDestination: account.roundUpDestination,
+    cashbackDestination: account.cashbackDestination,
     categoryId: account.categoryId,
     savings: account.savings,
     isActive: account.isActive,

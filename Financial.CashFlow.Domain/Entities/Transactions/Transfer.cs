@@ -125,6 +125,11 @@ public class Transfer : IAccountTransaction
             throw new ArgumentException("Source and destination must be different accounts.");
         }
 
+        if (destinationAccount.ReceivesOnlyRoundUps)
+        {
+            throw new ArgumentException($"{destinationAccount.Name} only receives round-ups.");
+        }
+
         if (!pairRules.Allows(sourceAccount, destinationAccount))
         {
             throw new ArgumentException($"Transfers from {sourceAccount.Name} to {destinationAccount.Name} are not allowed.");

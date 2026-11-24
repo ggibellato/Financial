@@ -31,10 +31,12 @@ public class AccountJsonConverterTests
         """{"Id":"5db5c88d-0000-0000-0000-000000000009","Name":"Chase Save","Template":"Savings","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":500,"StartDate":"2026-09-01"},"RoundUp":null,"Pots":null,"CategoryId":null""" + SavingsKey + "}";
 
     private readonly JsonSerializerOptions _options;
+    private readonly ReferenceResolutionContext _context;
 
     public AccountJsonConverterTests()
     {
         var context = new ReferenceResolutionContext();
+        _context = context;
         var category = JsonSerializer.Deserialize<Category>(
             $$"""{"Id":"{{ReservaCategoryId}}","Name":"Reserva","Active":true,"IsInvestment":false,"IsTithe":false}""", CashFlowElementOptions.Create())!;
         context.Categories[category.Id] = category;
@@ -291,6 +293,73 @@ public class AccountJsonConverterTests
             account.Cashback.Should().Be(CashbackSetting.On(1.5m));
             JsonSerializer.Serialize(account, _options).Should().Be(json);
         }
+    }
+
+    [Fact]
+    [Trait("AC", "P66-F01-roundup-only-01")]
+    public void ReadThenWrite_RoundUpOnlySavings_KeepsTheSettingAndProducesIdenticalBytes()
+    {
+        var json = ChaseSave.Replace("\"EffectiveFrom\":\"2027-01-01\"}]}", "\"EffectiveFrom\":\"2027-01-01\"}],\"RoundUpOnly\":true}");
+
+        var account = JsonSerializer.Deserialize<Account>(json, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.ReceivesOnlyRoundUps.Should().BeTrue();
+            JsonSerializer.Serialize(account, _options).Should().Be(json);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P66-F01-roundup-only-01")]
+    public void ReadThenWrite_SavingsWithoutRoundUpOnly_ReadsItOffAndWritesNoKey()
+    {
+        var account = JsonSerializer.Deserialize<Account>(ChaseSave, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.ReceivesOnlyRoundUps.Should().BeFalse();
+            JsonSerializer.Serialize(account, _options).Should().Be(ChaseSave);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P66-F02-destinations-01")]
+    public void ReadThenWrite_BankWithDestinations_AppliesThemOnceTheAccountsAreLoadedAndProducesIdenticalBytes()
+    {
+        var saverJson = ChaseSave.Replace("\"EffectiveFrom\":\"2027-01-01\"}]}", "\"EffectiveFrom\":\"2027-01-01\"}],\"RoundUpOnly\":true}");
+        var bankJson = V4Bank.Replace(
+            "\"CategoryId\":null}",
+            "\"CategoryId\":null,\"RoundUpDestination\":{\"Kind\":\"Account\",\"AccountId\":\"5db5c88d-0000-0000-0000-000000000009\"},\"CashbackDestination\":{\"Kind\":\"InvestedAutomatically\"}}");
+
+        var saver = JsonSerializer.Deserialize<Account>(saverJson, _options)!;
+        var bank = JsonSerializer.Deserialize<Account>(bankJson, _options)!;
+        _context.Accounts[saver.Id] = saver;
+        _context.Accounts[bank.Id] = bank;
+        _context.ApplyPendingDestinations();
+
+        using (new AssertionScope())
+        {
+            bank.RoundUpDestination.Should().Be(MoneyDestination.ToAccount(saver.Id));
+            bank.CashbackDestination.Should().Be(MoneyDestination.InvestedAutomatically);
+            JsonSerializer.Serialize(bank, _options).Should().Be(bankJson);
+        }
+    }
+
+    [Fact]
+    public void ApplyPendingDestinations_ToASavingsAccountThatIsNotRoundUpOnly_Throws()
+    {
+        var saver = JsonSerializer.Deserialize<Account>(ChaseSave, _options)!;
+        JsonSerializer.Deserialize<Account>(
+            V4Bank.Replace("\"CategoryId\":null}", "\"CategoryId\":null,\"RoundUpDestination\":{\"Kind\":\"Account\",\"AccountId\":\"5db5c88d-0000-0000-0000-000000000009\"}}"),
+            _options);
+        _context.Accounts[saver.Id] = saver;
+
+        var act = () => _context.ApplyPendingDestinations();
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000001 has a round-up destination that can't receive it.")
+            .WithInnerException<ArgumentException>().WithMessage(Account.RoundUpDestinationMessage);
     }
 
     [Fact]

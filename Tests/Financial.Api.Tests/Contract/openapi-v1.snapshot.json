@@ -10,6 +10,16 @@
               "string"
             ]
           },
+          "cashbackDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
+            ]
+          },
           "cashbackEnabled": {
             "type": [
               "null",
@@ -58,6 +68,16 @@
               "string"
             ]
           },
+          "roundUpDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
+            ]
+          },
           "roundUpEnabled": {
             "type": [
               "null",
@@ -99,6 +119,16 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "cashbackDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
+            ]
           },
           "cashbackEnabled": {
             "type": [
@@ -168,6 +198,16 @@
               "string"
             ]
           },
+          "roundUpDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
+            ]
+          },
           "roundUpEnabled": {
             "type": [
               "null",
@@ -215,6 +255,16 @@
           "balanceIsOwed": {
             "type": "boolean"
           },
+          "cashbackDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
+            ]
+          },
           "currency": {
             "type": "string"
           },
@@ -254,6 +304,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "roundUpDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
             ]
           },
           "savings": {
@@ -1010,6 +1070,16 @@
               "string"
             ]
           },
+          "cashbackDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
+            ]
+          },
           "cashbackEnabled": {
             "type": [
               "null",
@@ -1059,6 +1129,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "roundUpDestination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MoneyDestinationDTO"
+              }
             ]
           },
           "roundUpEnabled": {
@@ -4645,6 +4725,30 @@
           "Unavailable"
         ]
       },
+      "MoneyDestinationDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "accountName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "type": "object"
+      },
       "MonthTransactionDTO": {
         "properties": {
           "accountCurrency": {
@@ -6074,6 +6178,9 @@
               "integer"
             ]
           },
+          "roundUpOnly": {
+            "type": "boolean"
+          },
           "upcomingRate": {
             "oneOf": [
               {
@@ -6087,7 +6194,8 @@
         },
         "required": [
           "interestFrequency",
-          "isTaxFree"
+          "isTaxFree",
+          "roundUpOnly"
         ],
         "type": "object"
       },
@@ -6111,6 +6219,9 @@
               "$ref": "#/components/schemas/InterestRateDTO"
             },
             "type": "array"
+          },
+          "roundUpOnly": {
+            "type": "boolean"
           }
         },
         "required": [

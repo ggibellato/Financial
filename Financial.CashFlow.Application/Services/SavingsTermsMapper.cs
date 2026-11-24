@@ -23,7 +23,8 @@ internal static class SavingsTermsMapper
             frequency,
             dto.PaymentDay,
             dto.IsTaxFree,
-            (dto.Rates ?? []).Select(rate => InterestRate.Create(rate.AnnualPercent, rate.EffectiveFrom)));
+            (dto.Rates ?? []).Select(rate => InterestRate.Create(rate.AnnualPercent, rate.EffectiveFrom)),
+            dto.RoundUpOnly);
     }
 
     internal static SavingsTermsDTO? ToDto(SavingsTerms? terms) => terms is null
@@ -33,7 +34,8 @@ internal static class SavingsTermsMapper
             InterestFrequency = terms.Frequency.ToString(),
             PaymentDay = terms.PaymentDay,
             IsTaxFree = terms.IsTaxFree,
-            Rates = terms.Rates.Select(ToDto).ToList()
+            Rates = terms.Rates.Select(ToDto).ToList(),
+            RoundUpOnly = terms.RoundUpOnly
         };
 
     internal static SavingsSummaryDTO? ToSummary(SavingsTerms? terms, DateOnly today) => terms is null
@@ -43,6 +45,7 @@ internal static class SavingsTermsMapper
             InterestFrequency = terms.Frequency.ToString(),
             PaymentDay = terms.PaymentDay,
             IsTaxFree = terms.IsTaxFree,
+            RoundUpOnly = terms.RoundUpOnly,
             CurrentRate = terms.CurrentRate(today) is { } current ? ToDto(current) : null,
             UpcomingRate = terms.UpcomingRate(today) is { } upcoming ? ToDto(upcoming) : null
         };
