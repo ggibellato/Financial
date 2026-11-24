@@ -1,10 +1,9 @@
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Checkbox, Field, Input, Select, Text } from '@fluentui/react-components'
 import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
-import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { useFieldErrorSummary } from '../hooks/useFieldErrorSummary'
 import FieldErrorSummary from './FieldErrorSummary'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -97,7 +96,7 @@ export default function ExpenseForm({
   const [openedPaymentSource] = useState(paymentSource)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0
-  const formRef = useFormErrorFocus(saveErrorFields)
+  const formRef = useRef<HTMLFormElement | null>(null)
   const { summaryRef, summarizedErrors, submitWithSummary } = useFieldErrorSummary(formRef)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && roundsUp(banks, paymentSource)

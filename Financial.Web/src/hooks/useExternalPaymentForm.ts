@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExternalPaymentDto } from '../api/types'
+import { recordNoun, recordTitle } from '../components/accountActions'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { getSaveErrorMessage, hasAtMostTwoDecimals, positiveAmount } from '../utils/formatters'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
@@ -12,7 +13,7 @@ const VALUE_FIELDS = ['date', 'description', 'amount'] as const
 
 export type ExternalPaymentField = (typeof VALUE_FIELDS)[number]
 
-export type PaymentDirection = 'In' | 'Out'
+type PaymentDirection = 'In' | 'Out'
 
 type ExternalPaymentValues = Record<ExternalPaymentField, string>
 
@@ -44,8 +45,6 @@ const CLOSED_STATE: ExternalPaymentFormState = {
   fieldErrors: {},
 }
 
-const NOUNS: Record<PaymentDirection, string> = { In: 'pay-in', Out: 'pay-out' }
-
 function amountError(amount: string): string | undefined {
   return positiveAmount(amount) === null || !hasAtMostTwoDecimals(amount) ? 'Enter an amount above 0 with at most 2 decimal places.' : undefined
 }
@@ -58,15 +57,12 @@ function validate(values: ExternalPaymentValues): FieldErrors<ExternalPaymentFie
   }
 }
 
-function capitalized(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1)
-}
-
 export function useExternalPaymentForm(account: PaymentAccount | undefined, viewedMonth: YearMonth, onSaved: (message: string) => void) {
   const [state, setState] = useState<ExternalPaymentFormState>(CLOSED_STATE)
   const { direction, editingId, values, isSaving } = state
   const isEditing = editingId !== null
-  const noun = NOUNS[direction]
+  const kind: 'PayIn' | 'PayOut' = direction === 'In' ? 'PayIn' : 'PayOut'
+  const noun = recordNoun(kind)
 
   const openCreate = (opened: PaymentDirection) => {
     const fresh = { ...BLANK_VALUES, date: getCreateFormDate(DATE_KEY, viewedMonth) }
@@ -114,7 +110,7 @@ export function useExternalPaymentForm(account: PaymentAccount | undefined, view
           const next = { ...previous.values, description: '', amount: '' }
           return { ...previous, isSaving: false, values: next, openedValues: next }
         })
-        onSaved(`${capitalized(noun)} ${isEditing ? 'updated' : 'added'}`)
+        onSaved(`${recordTitle(kind)} ${isEditing ? 'updated' : 'added'}`)
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, `Failed to save the ${noun}.`)
@@ -127,6 +123,7 @@ export function useExternalPaymentForm(account: PaymentAccount | undefined, view
     isOpen: state.openedValues !== null,
     isEditing,
     direction,
+    kind,
     noun,
     accountName: account?.name ?? '',
     currency: account?.currency ?? '',

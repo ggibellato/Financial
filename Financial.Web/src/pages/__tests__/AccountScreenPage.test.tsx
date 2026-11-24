@@ -365,6 +365,10 @@ async function enabledButton(name: string | RegExp, container: HTMLElement = doc
   return button
 }
 
+function rowOf(text: string): HTMLElement {
+  return screen.getByText(text).closest('tr') as HTMLElement
+}
+
 async function dialogButton(dialogTitle: string, buttonName: string) {
   return within(await findDialog(dialogTitle)).getByText(buttonName, { selector: 'button' })
 }
@@ -2268,10 +2272,6 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Transfer to' })).toBeEnabled())
   }
 
-  function rowOf(text: string): HTMLElement {
-    return screen.getByText(text).closest('tr') as HTMLElement
-  }
-
   it('opens the row named by the edit address in its edit form and drops the address', async () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=transactions&edit=TransferOut-t1`)
 
@@ -3478,10 +3478,6 @@ describe('AccountScreenPage pay in and pay out', () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     await screen.findByText('Money from Ana')
     await waitFor(() => expect(screen.getByRole('button', { name: 'Pay in' })).toBeEnabled())
-  }
-
-  function rowOf(text: string): HTMLElement {
-    return screen.getByText(text).closest('tr') as HTMLElement
   }
 
   async function openForm(user: ReturnType<typeof userEvent.setup>, action: string) {
