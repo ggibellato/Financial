@@ -46,7 +46,7 @@ const SUMMARY: AccountGroupSummaryDto = {
 }
 
 function result() {
-  return screen.getByRole('group', { name: 'Totals for income' })
+  return screen.getByRole('group', { name: 'Totals for categories' })
 }
 
 describe('AccountsSummaryTab', () => {
@@ -56,7 +56,7 @@ describe('AccountsSummaryTab', () => {
     getTitheSummaryByMonthMock.mockReset()
   })
 
-  it(`${AC_03} shows Category totals, Income by source with Total incoming, then the Result as a Surplus`, async () => {
+  it(`${AC_03} shows Category totals with the Result as a Surplus beside the Total, then Income by source with Total incoming`, async () => {
     render(<AccountsSummaryTab year={2026} month={10} />)
 
     const categories = await screen.findByRole('table', { name: 'Category totals' })
@@ -67,7 +67,7 @@ describe('AccountsSummaryTab', () => {
     expect(within(income).getByText('Dividendo/Juros')).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Totals for income' })).toHaveTextContent('Total incoming: 4,185.20')
     expect(result()).toHaveTextContent('Result: +1,345.10 Surplus')
-    expect(income.compareDocumentPosition(result()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(categories.compareDocumentPosition(result()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 10)
   })
 
