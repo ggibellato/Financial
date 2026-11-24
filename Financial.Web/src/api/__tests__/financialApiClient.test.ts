@@ -1615,7 +1615,7 @@ describe('financialApiClient', () => {
         members: [
           { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 704.08, currencyBalances: [{ currency: 'GBP', balance: 704.08 }], otherParticipant: null, roundUpTotal: null, cashbackTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
         ],
-        totals: [{ currency: 'GBP', total: 704.08, openStatementTotal: null }],
+        totals: [{ currency: 'GBP', total: 704.08, cashbackTotal: null, openStatementTotal: null }],
       },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

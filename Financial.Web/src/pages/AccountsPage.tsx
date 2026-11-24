@@ -15,7 +15,7 @@ import { useMonthTransactions } from '../hooks/useMonthTransactions'
 import { useOverviewAddress } from '../hooks/useOverviewAddress'
 import { useTabPanel } from '../hooks/useTabPanel'
 import { type AccountGridColumns, type AccountTemplateGrid, accountTemplateGrid } from '../utils/accountTemplateLabel'
-import { formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, sumPence } from '../utils/formatters'
+import { formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2 } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
@@ -85,25 +85,17 @@ function statementColumn(year: number, month: number) {
   }
 }
 
-function cashbackTotal(members: readonly AccountGroupMemberDto[]) {
-  const earning = members.filter((member) => member.cashbackTotal != null)
-  return earning.length > 0 ? formatN2(sumPence(earning, (member) => member.cashbackTotal ?? 0) / 100) : undefined
-}
-
 function columnTotalsRows(grid: AccountTemplateGrid, group: AccountTemplateGroupDto): ColumnTotalsRow[] {
   if (!grid.footerLabel) return []
-  return group.totals.map(({ currency, total, openStatementTotal }) => {
-    const members = group.members.filter((member) => member.currency === currency)
-    return {
-      label: `${grid.footerLabel} ${currency}`,
-      values: {
-        balance: formatN2(total),
-        cashback: cashbackTotal(members),
-        statement: orMissing(openStatementTotal, formatN2),
-        totalOwed: formatOwedOrCredit(total),
-      },
-    }
-  })
+  return group.totals.map(({ currency, total, cashbackTotal, openStatementTotal }) => ({
+    label: `${grid.footerLabel} ${currency}`,
+    values: {
+      balance: formatN2(total),
+      cashback: cashbackTotal == null ? undefined : formatN2(cashbackTotal),
+      statement: orMissing(openStatementTotal, formatN2),
+      totalOwed: formatOwedOrCredit(total),
+    },
+  }))
 }
 
 function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | null {

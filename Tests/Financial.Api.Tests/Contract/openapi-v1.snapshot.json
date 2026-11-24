@@ -696,6 +696,13 @@
       },
       "AccountTemplateGroupTotalDTO": {
         "properties": {
+          "cashbackTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "currency": {
             "type": "string"
           },

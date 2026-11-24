@@ -408,6 +408,20 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
+    public void GetTemplateGroups_Totals_SumCashbackPerCurrencyOnlyWhereAMemberEarnsIt()
+    {
+        var monzo = TestAccounts.Bank("Monzo", cashbackRatePercent: 2m);
+        _repository.Accounts.Add(monzo);
+        var expense = Expense.Create(new DateOnly(2026, 9, 10), "Shop", 50m, _groceries, monzo, creditCard: null);
+        expense.SetCashbackAmount(1.5m);
+        _repository.Expenses.Add(expense);
+
+        var banks = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "Bank");
+
+        banks.Totals.Select(total => (total.Currency, total.CashbackTotal)).Should().Equal(("GBP", (decimal?)1.5m), ("BRL", null));
+    }
+
+    [Fact]
     public void GetTemplateGroups_Totals_LeaveAPaidStatementOutOfTheMonthsOpenStatementTotal()
     {
         _repository.Accounts.Add(_amex);
