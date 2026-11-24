@@ -20,7 +20,9 @@ const useStyles = makeStyles({
     columnGap: tokens.spacingHorizontalM,
   },
   historyScroll: {
-    overflowX: 'auto',
+    flex: 1,
+    minHeight: 0,
+    overflow: 'auto',
   },
 })
 
@@ -176,7 +178,7 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
   const monthLabel = formatLongMonthYear(year, month)
 
   return (
-    <div className="monthly-page__summary-groups">
+    <div className="monthly-page__summary-groups monthly-page__summary-groups--fill">
       <Text as="h2" weight="semibold" size={400}>
         Tithe for {monthLabel}
       </Text>
@@ -195,7 +197,7 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
           />
         )}
       </div>
-      <div className="accounts-page__section">
+      <div className="accounts-page__section monthly-page__section--fill">
         <Text as="h2" weight="semibold" size={400}>
           History
         </Text>

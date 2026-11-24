@@ -184,9 +184,9 @@ function AllTransactionsTab({ year, month }: { year: number; month: number }) {
 
 const OVERVIEW_TABS = [
   { id: 'accounts', label: 'Accounts', isGrid: false },
-  { id: 'summary', label: 'Summary', isGrid: false },
+  { id: 'summary', label: 'Summary', isGrid: true },
   { id: 'income', label: 'Income', isGrid: true },
-  { id: 'tithe', label: 'Tithe', isGrid: false },
+  { id: 'tithe', label: 'Tithe', isGrid: true },
   { id: 'transactions', label: 'All transactions', isGrid: true },
 ] as const
 
