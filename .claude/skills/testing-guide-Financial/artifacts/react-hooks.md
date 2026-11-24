@@ -26,6 +26,14 @@ error-to-field mappers (`mapAccountTransferErrorToField.ts`, `mapBalanceAdjustme
   `vi.useFakeTimers({ shouldAdvanceTime: true })` + `vi.advanceTimersByTimeAsync`.
 - Negative: rejected fetch, `ApiError` with a status the mapper does not know (falls back to a
   general error), empty arrays.
+- **Load-cancel flags:** render the hook with a `StrictMode` wrapper so the double effect runs;
+  without it a cancelled-load flag can be deleted and every test still passes.
+- **Before asserting after a load,** await the mocked promise inside `act()`: a test that asserts
+  state already true before the load resolves cannot fail.
+- **Transient states** (an `initialLoading` true for one render) are caught by recording each
+  render's value into an array, not by one assertion after `waitFor`.
+- **A new hook gets its own test in `src/hooks/__tests__`**: the nightly Web.Logic mutation run only
+  executes those tests (`references/mutation-testing.md`).
 
 ## Layer assignment
 

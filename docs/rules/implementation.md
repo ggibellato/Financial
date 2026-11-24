@@ -177,6 +177,7 @@ A change is **not** complete unless:
 - [ ] No layer violations.
 - [ ] No business logic in Presentation, no infrastructure concerns in Domain.
 - [ ] Unit tests added; integration tests added where appropriate.
+- [ ] A new web component or page with its own logic is listed in `Financial.Web/stryker.components.config.json`, and a new hook has its own test in `src/hooks/__tests__` (`.claude/skills/testing-guide-Financial/references/mutation-testing.md`).
 - [ ] Existing tests still pass.
 - [ ] New code documented where necessary (see §Comments).
 - [ ] The change is a complete working vertical increment — implementation, configuration, tests and docs.

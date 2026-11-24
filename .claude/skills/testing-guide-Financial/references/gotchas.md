@@ -97,22 +97,6 @@
   file is CRLF; a raw byte comparison would fail for the wrong reason. Keep that normalisation.
 - **`vitest run` does not type-check** — run `npm run build` (`tsc -b`) after each change; a
   field rename passes vitest and fails the Docker build (`feedback_typescript_build_validation`).
-- **`queryByRole('dialog')` can be null while a Fluent dialog is still open**.
-  Assert the dialog title is gone instead.
-- **A Fluent `Field` with `validationState="error"` keeps its message visible on its own** — assert
-  `aria-invalid` on the input too, or a mutant that drops the input's invalid state survives.
-- **Error alerts are not always `role="alert"`**: `ActionErrorAlert` is a Fluent `MessageBar`
-  (`role="group"`, find it with `getErrorAlert` from `src/test-utils/errorAlert.ts`); `ErrorState` is
-  `role="alert"` unless it takes focus, then `role="group"`.
-- **A Fluent toast's default intent is info** — assert the success icon, not only the toast text.
-- **A test that asserts state already true before the async load resolves cannot fail.** Await the
-  mocked promise inside `act()` first, then assert.
-- **Load-cancel flags need StrictMode**: render the hook with a `StrictMode` wrapper so the double
-  effect runs; without it a cancelled-load flag can be deleted and every test still passes.
-- **Transient states** (an `initialLoading` that is true for one render) are caught by recording each
-  render's value into an array, not by a single assertion after `waitFor`.
-- **Sort tests need data that each column orders differently** from the API order and from every
-  other column; assert `aria-sort` on the header too.
 - **A total regex like `/30[.,]00/` also matches `-30.00`** — assert the exact `formatN2` text.
 - **Vitest 4.1's `-t` matches the full name** (`describe > it` joined with ` > `) — escape the
   `[` in `-t "\[AC P42-F02"`.

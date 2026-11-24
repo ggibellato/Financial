@@ -144,7 +144,7 @@ the assemblies `Financial.TestUtilities`,
 `Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport`,
 `Financial.Investment.SpreadsheetImport`, `Financial.Investment.DataQualityReport`,
 `Financial.Integrations.GoogleSheets`, plus `GoogleFinanceVerifier`. Mutation testing (Stryker.NET on
-both Domain projects, StrykerJS on the web) runs nightly and is the better signal of whether the
+every reviewed project, StrykerJS on the web) runs nightly and is the better signal of whether the
 assertions would notice a change.
 
 Concrete rules that follow:
