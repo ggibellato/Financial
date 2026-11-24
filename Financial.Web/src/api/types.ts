@@ -147,6 +147,7 @@ export type AccountUpdateDto = Schema<'AccountUpdateDTO'>
 export type AccountDetailDto = Schema<'AccountDetailDTO'>
 export type SavingsTermsDto = Schema<'SavingsTermsDTO'>
 export type SavingsSummaryDto = Schema<'SavingsSummaryDTO'>
+export type MoneyDestinationDto = Schema<'MoneyDestinationDTO'>
 export type InterestRateDto = Schema<'InterestRateDTO'>
 export type AccountTransactionDto = Schema<'AccountTransactionDTO'>
 export type SettlementEntryDto = Schema<'SettlementEntryDTO'>

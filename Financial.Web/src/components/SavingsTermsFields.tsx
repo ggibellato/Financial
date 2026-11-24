@@ -75,6 +75,10 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
         <Switch checked={values.isTaxFree} onChange={(_, data) => change({ isTaxFree: data.checked })} />
       </Field>
 
+      <Field label="Round-up only" hint="Only round-ups and its own interest can go in.">
+        <Switch checked={values.roundUpOnly} onChange={(_, data) => change({ roundUpOnly: data.checked })} />
+      </Field>
+
       <div
         ref={containerRef}
         className="savings-terms__rates"

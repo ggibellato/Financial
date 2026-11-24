@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, rowKindLabel, monthRowEdit, rowDeleteBlockedReason, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
+import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, rowKindLabel, monthRowEdit, rowDeleteBlockedReason, rowEdit, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -106,6 +106,8 @@ describe('a settlement entry row', () => {
   it('[AC P64-F04-savings-web-05] labels Add interest, and an interest row as Interest', () => {
     expect(ACTION_LABELS.AddInterest).toBe('Add interest')
     expect(rowKindLabel({ kind: 'Income', isInterest: true })).toBe('Interest')
+    expect(rowKindLabel({ kind: 'RoundUp', isInterest: false })).toBe('Round-up')
+    expect(rowKindLabel({ kind: 'Cashback', isInterest: false })).toBe('Cashback')
     expect(rowKindLabel({ kind: 'Income', isInterest: false })).toBe('Income')
   })
 
@@ -250,5 +252,13 @@ describe('All transactions row actions', () => {
     const blank = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: 90, operation: { ...deposit, kind: 'Withdrawal' } })
     expect(transactionRowName(blank)).toBe('withdrawal Deposit from an income, 10/10/2026')
     expect(transactionRowName({ ...blank, amount: -90, operation: deposit })).toBe('deposit Deposit from an income, 10/10/2026')
+  })
+
+  it('[AC P66-F03-destinations-web-03] keeps routed rows read-only and points to the expense', () => {
+    const routed = accountTransactionRow({ id: 'e1', kind: 'RoundUp', date: '2026-10-03', amount: 0.6, counterpart: 'Chase', canEdit: false })
+    const reason = "Change it on the expense in Chase's transactions."
+
+    expect(rowEdit(routed, 'saver', true)).toEqual({ kind: 'blocked', reason })
+    expect(rowDeleteBlockedReason(routed, 'saver', true)).toBe(reason)
   })
 })

@@ -116,7 +116,7 @@ describe('AccountFormDialog', () => {
         roundUpEnabled: true,
         cashbackEnabled: null,
         cashbackRatePercent: null,
-        roundUpDestination: null,
+        roundUpDestination: { kind: 'None', accountId: null, accountName: null },
         cashbackDestination: null,
         categoryId: null,
         savings: null,
@@ -407,7 +407,7 @@ describe('AccountFormDialog', () => {
         roundUpEnabled: true,
         cashbackEnabled: null,
         cashbackRatePercent: null,
-        roundUpDestination: null,
+        roundUpDestination: { kind: 'None', accountId: null, accountName: null },
         cashbackDestination: null,
         categoryId: null,
         savings: null,
@@ -764,6 +764,70 @@ describe('AccountFormDialog', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(onCancel).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Destinations', () => {
+    const DESTINATION_BANK: AccountTemplateDto = { ...BANK, capabilities: [...BANK.capabilities, 'SupportsCashback'] }
+    const terms = savingsAccount({ id: 'x', name: 'x' }).savings!
+    const roundUpSaver = savingsAccount({ id: 'saver', name: 'Round-up saver', savings: { ...terms, roundUpOnly: true } })
+    const chaseSave = savingsAccount({ id: 'save', name: 'Chase Save' })
+    const optionsOf = (label: RegExp) => within(screen.getByLabelText(label)).getAllByRole('option').map((option) => option.textContent)
+
+    it('[AC P66-F03-destinations-web-01] shows each picker while its switch is on, offering only valid destinations', async () => {
+      const chase = account({ id: 'a1', name: 'Chase', roundUpEnabled: true, cashbackEnabled: true, cashbackRatePercent: 2 })
+      const { onSubmit } = renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase, roundUpSaver, chaseSave] })
+
+      expect(optionsOf(/Round-ups go to/)).toEqual(['Not tracked', 'Invested automatically', 'Round-up saver'])
+      expect(optionsOf(/Cashback goes to/)).toEqual(['Not tracked', 'Invested automatically', 'Chase Save'])
+      fireEvent.change(screen.getByLabelText(/Round-ups go to/), { target: { value: 'saver' } })
+      fireEvent.change(screen.getByLabelText(/Cashback goes to/), { target: { value: 'InvestedAutomatically' } })
+      save('Save')
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            roundUpDestination: { kind: 'Account', accountId: 'saver', accountName: null },
+            cashbackDestination: { kind: 'InvestedAutomatically', accountId: null, accountName: null },
+          }),
+        ),
+      )
+    })
+
+    it('hides the round-up picker while round-up is off and explains when no saver can receive round-ups', () => {
+      const chase = account({ id: 'a1', name: 'Chase', roundUpEnabled: false })
+      renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase, chaseSave] })
+
+      expect(screen.queryByLabelText(/Round-ups go to/)).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('switch', { name: 'Round-up' }))
+      expect(screen.getByLabelText(/Round-ups go to/)).toHaveAccessibleDescription(
+        'Add a savings account set to Round-up only to send round-ups there.',
+      )
+    })
+
+    it('opens with the saved destinations selected', () => {
+      const chase = account({
+        id: 'a1',
+        name: 'Chase',
+        roundUpEnabled: true,
+        roundUpDestination: { kind: 'Account', accountId: 'saver', accountName: 'Round-up saver' },
+      })
+      renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase, roundUpSaver] })
+
+      expect(screen.getByLabelText(/Round-ups go to/)).toHaveValue('saver')
+    })
+
+    it('[AC P66-F03-destinations-web-01] sends Round-up only for a Savings account', async () => {
+      const saver = savingsAccount({ id: 's1', name: 'Chase Save' })
+      const { onSubmit } = renderDialog({ account: saver, templates: [BANK, SAVINGS] })
+
+      expect(screen.getByRole('switch', { name: 'Round-up only' })).toHaveAccessibleDescription('Only round-ups and its own interest can go in.')
+      fireEvent.click(screen.getByRole('switch', { name: 'Round-up only' }))
+      save('Save')
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ savings: expect.objectContaining({ roundUpOnly: true }) })),
+      )
     })
   })
 

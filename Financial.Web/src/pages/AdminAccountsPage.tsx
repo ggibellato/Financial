@@ -139,6 +139,7 @@ export default function AdminAccountsPage() {
               account={formTarget.mode === 'edit' ? formTarget.account : null}
               templates={templates}
               categories={categories}
+              accounts={accounts}
               onCancel={() => setFormTarget(null)}
               onSubmit={handleFormSubmit}
             />
