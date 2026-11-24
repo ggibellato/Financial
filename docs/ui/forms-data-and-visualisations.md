@@ -478,7 +478,9 @@ a single month with no row-level date (Investment Snapshots), a fixed
 calendar of one row per month of one year that selects a month rather than
 listing records (the Accounts page's Tithe history, January to December), or a field
 that's a plain integer rather than a date (Recurring Bills'/Mensais'
-day-of-month `dueDay`).
+day-of-month `dueDay`). A grid with no default sort still loads in a meaningful
+order set by the server — Mensais and Recurring Bills by due day, then
+description — and no column header shows a sort direction until the user picks one.
 
 ### Chart filter/mode toggle ("chip") pattern
 
@@ -544,7 +546,19 @@ Totals must:
   footer row (stacked mobile cards keep their own borders). A footer row's
   first cell carries the card label "Total", not the column's name. Row
   borders go on the cells: the shared `border-collapse: separate` never draws
-  a `<tr>` border.
+  a `<tr>` border. When a grid totals several of its columns, give
+  `TotalsGrid` `columnTotals` instead of `footerItems`: one `<tfoot>` row per
+  currency, each total under its own column and the row's label in the first
+  cell (the Accounts tab's "Bank total GBP", "Card total GBP"). A column with no
+  total stays empty on desktop and is hidden in the stacked mobile card.
+- Show a figure that is worked out from other figures on the page as a sum
+  the user can follow, not as one sentence: `components/CalculationCard`
+  (the Summary tab's "Month result", the Tithe tab's "Tithe for <month>")
+  lays the parts out as a small table named by the card's heading, each line's
+  label its row header and its value right-aligned and signed as it is applied
+  (a figure taken off is negative), with the result in a bold `<tfoot>` row.
+  The result's label says what it means in words ("Surplus", "Balance owed");
+  its green or red tone only repeats that.
 - Use consistent calculation and formatting rules.
 - Update after relevant changes.
 - Avoid appearing editable unless they genuinely are editable.
