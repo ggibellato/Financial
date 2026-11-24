@@ -6,6 +6,7 @@ import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 import SavingsTermsSummary from './SavingsTermsSummary'
+import { destinationsSummary } from '../utils/moneyDestination'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
@@ -73,6 +74,7 @@ export default function AccountHeader({
   const selectedName =
     accounts.find((candidate) => candidate.id.toLowerCase() === selectedAccountId.toLowerCase())?.name ?? account.name
   const figure = firstFigure(account, hasParticipants)
+  const destinations = destinationsSummary(account.roundUpDestination, account.cashbackDestination)
   const currencies = hasParticipants ? account.currentBalances.map(({ currency }) => currency).join(', ') : account.currency
 
   return (
@@ -93,11 +95,17 @@ export default function AccountHeader({
                 Tax-free
               </Badge>
             )}
+            {account.savings?.roundUpOnly && (
+              <Badge appearance="outline" color="informative">
+                Round-up only
+              </Badge>
+            )}
           </div>
           <Text>
             {accountTemplateLabel(account.templateName)} · {currencies}
           </Text>
           {account.savings && <SavingsTermsSummary savings={account.savings} />}
+          {destinations && <Text>{destinations}</Text>}
         </div>
 
         <div className={`account-screen__balance${account.hasStatements ? ' account-screen__balance--top-aligned' : ''}`}>

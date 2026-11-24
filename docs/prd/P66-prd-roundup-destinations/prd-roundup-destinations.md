@@ -143,10 +143,10 @@ This is the last of the three PRDs planned together, after Savings accounts (P64
 **Capabilities:**
 - **Admin → Accounts, Savings template:** a **Round-up only** switch next to Tax-free.
 - **Admin → Accounts, Bank template:**
-  - A **Round-ups go to** picker below the Round-up switch, with the options None, Invested automatically, and the active round-up-only Savings accounts.
+  - A **Round-ups go to** picker below the Round-up switch, with the options Not tracked (None), Invested automatically, and the active round-up-only Savings accounts.
   - A **Cashback goes to** picker below the cashback rate, with the options None, Invested automatically, and the active Savings accounts that aren't round-up only.
-  - Each picker is shown while its switch is on.
-- **Bank header:** a line such as "Round-ups go to Chase round-up saver · Cashback is invested automatically". It is shown only for destinations other than None.
+  - Each picker is shown while its switch is on. Switching it off saves the destination as None.
+- **Bank header:** a line such as "Round-ups go to Chase round-up saver · Cashback is invested automatically". It is shown only for destinations other than None whose switch is on.
 - **Destination account:**
   - Its transactions show the routed rows as "Round-up" or "Cashback", with the bank in Counterpart.
   - They have no Edit or Delete button. Instead, a hint says to change them on the expense.
@@ -213,12 +213,12 @@ graph TD
 - [x] **P66-F02-destinations-07** An Investment Snapshot linked to a destination Savings account suggests its balance including the routed amounts
 
 ### F03. Destinations in the Web App
-- [ ] **P66-F03-destinations-web-01** Admin → Accounts shows Round-up only for Savings accounts, and the Round-ups go to / Cashback goes to pickers for Bank accounts while their switches are on, offering only valid destinations
-- [ ] **P66-F03-destinations-web-02** The bank header names its destinations other than None
-- [ ] **P66-F03-destinations-web-03** A destination account lists the routed rows as Round-up or Cashback, without Edit or Delete
-- [ ] **P66-F03-destinations-web-04** A round-up-only account doesn't offer Transfer from or Add income and says "Round-up only" in its header
-- [ ] **P66-F03-destinations-web-05** Every touched view passes `docs/ui/review-checklist.md`
+- [x] **P66-F03-destinations-web-01** Admin → Accounts shows Round-up only for Savings accounts, and the Round-ups go to / Cashback goes to pickers for Bank accounts while their switches are on, offering only valid destinations
+- [x] **P66-F03-destinations-web-02** The bank header names its destinations other than None
+- [x] **P66-F03-destinations-web-03** A destination account lists the routed rows as Round-up or Cashback, without Edit or Delete
+- [x] **P66-F03-destinations-web-04** A round-up-only account doesn't offer Transfer from or Add income and says "Round-up only" in its header
+- [x] **P66-F03-destinations-web-05** Every touched view passes `docs/ui/review-checklist.md`
 
 ### Cross-Feature Integration
-- [ ] **P66-CF-cross-feature-01** A round-up-only Savings account set up in the web app as Chase's round-up destination (F03, F01, F02) shows a balance that grows with each Chase expense's round-up, takes its interest, refuses a transfer in, and sends its balance to Chase Save by transfer
-- [ ] **P66-CF-cross-feature-02** A bank whose cashback goes to a Savings account and whose round-ups are invested automatically shows the cashback in that account's balance and leaves the round-ups out of every balance (F02, P65)
+- [x] **P66-CF-cross-feature-01** A round-up-only Savings account set up in the web app as Chase's round-up destination (F03, F01, F02) shows a balance that grows with each Chase expense's round-up, takes its interest, refuses a transfer in, and sends its balance to Chase Save by transfer
+- [x] **P66-CF-cross-feature-02** A bank whose cashback goes to a Savings account and whose round-ups are invested automatically shows the cashback in that account's balance and leaves the round-ups out of every balance (F02, P65)

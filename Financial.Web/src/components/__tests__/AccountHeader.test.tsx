@@ -382,6 +382,44 @@ describe('AccountHeader', () => {
     expect(onMonthChange).toHaveBeenCalledWith('2026-09')
   })
 
+  describe('Round-up destinations', () => {
+    it('[AC P66-F03-destinations-web-02] names where a bank sends its round-ups and cashback', () => {
+      renderHeader({
+        ...BARCLAYS,
+        roundUpDestination: { kind: 'Account', accountId: 'saver', accountName: 'Chase round-up saver' },
+        cashbackDestination: { kind: 'InvestedAutomatically', accountId: null, accountName: null },
+      })
+
+      expect(screen.getByText('Round-ups go to Chase round-up saver · Cashback is invested automatically')).toBeInTheDocument()
+    })
+
+    it('shows no destination line for a bank whose destinations are None', () => {
+      renderHeader({ ...BARCLAYS, roundUpDestination: { kind: 'None', accountId: null, accountName: null } })
+
+      expect(screen.queryByText(/go to|invested automatically/)).not.toBeInTheDocument()
+    })
+
+    it('[AC P66-F03-destinations-web-04] shows a Round-up only badge with visible text', () => {
+      renderHeader(
+        accountDetail({
+          id: 'saver',
+          name: 'Chase round-up saver',
+          templateName: 'Savings',
+          savings: {
+            interestFrequency: 'Monthly',
+            paymentDay: 1,
+            isTaxFree: false,
+            roundUpOnly: true,
+            currentRate: { annualPercent: 5, effectiveFrom: '2026-01-01' },
+            upcomingRate: null,
+          },
+        }),
+      )
+
+      expect(screen.getByText('Round-up only')).toBeInTheDocument()
+    })
+  })
+
   describe('Savings terms', () => {
     const saver = (savings: AccountDetailDto['savings']) =>
       accountDetail({ id: 'save', name: 'Chase Save', templateName: 'Savings', balance: 800, savings })

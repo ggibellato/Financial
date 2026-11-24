@@ -17,6 +17,18 @@ import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
+import { inactiveMarked } from '../utils/selectableBanks'
+import {
+  cashbackDestinationAccounts,
+  cashbackSwitchOffHint,
+  destinationChoice,
+  INVESTED_AUTOMATICALLY,
+  NO_DESTINATION,
+  roundUpDestinationAccounts,
+  roundUpSourceNames,
+  roundUpSwitchOffHint,
+  toMoneyDestination,
+} from '../utils/moneyDestination'
 import { hasAtMostTwoDecimals, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { PAID_BY_YOU } from '../utils/paidBy'
 
@@ -56,6 +68,8 @@ interface FormValues {
   roundUpEnabled: boolean
   cashbackEnabled: boolean
   cashbackRatePercent: string
+  roundUpDestination: string
+  cashbackDestination: string
   savings: SavingsFormValues
   isActive: boolean
 }
@@ -71,6 +85,8 @@ const FORM_FIELDS: readonly (keyof FormValues)[] = [
   'roundUpEnabled',
   'cashbackEnabled',
   'cashbackRatePercent',
+  'roundUpDestination',
+  'cashbackDestination',
   'isActive',
 ]
 
@@ -78,6 +94,7 @@ interface AccountFormDialogProps {
   account: AccountDto | null
   templates: AccountTemplateDto[]
   categories: CategoryDto[]
+  accounts: AccountDto[]
   onCancel: () => void
   onSubmit: (values: AccountUpdateDto) => Promise<unknown>
 }
@@ -97,6 +114,8 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
       roundUpEnabled: false,
       cashbackEnabled: false,
       cashbackRatePercent: '',
+      roundUpDestination: NO_DESTINATION,
+      cashbackDestination: NO_DESTINATION,
       savings: initialSavingsValues(null),
       isActive: true,
     }
@@ -113,6 +132,8 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
     roundUpEnabled: account.roundUpEnabled ?? false,
     cashbackEnabled: account.cashbackEnabled ?? false,
     cashbackRatePercent: account.cashbackRatePercent?.toFixed(2) ?? '',
+    roundUpDestination: destinationChoice(account.roundUpDestination),
+    cashbackDestination: destinationChoice(account.cashbackDestination),
     savings: initialSavingsValues(account.savings),
     isActive: account.isActive,
   }
@@ -170,7 +191,7 @@ function categoryOptions(categories: CategoryDto[], keptId: string): CategoryDto
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export default function AccountFormDialog({ account, templates, categories, onCancel, onSubmit }: AccountFormDialogProps) {
+export default function AccountFormDialog({ account, templates, categories, accounts, onCancel, onSubmit }: AccountFormDialogProps) {
   const isEditing = account !== null
   const isLocked = account?.hasRecords === true
   const [initial] = useState(() => initialValues(account, templates))
@@ -190,6 +211,9 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const isMultiCurrency = capabilities.includes('MultiCurrency')
   const hasParticipants = capabilities.includes('HasParticipants')
   const earnsInterest = capabilities.includes('EarnsInterest')
+  const otherAccounts = accounts.filter((candidate) => candidate.id !== account?.id)
+  const roundUpTargets = roundUpDestinationAccounts(otherAccounts, values.roundUpDestination)
+  const cashbackTargets = cashbackDestinationAccounts(otherAccounts, values.cashbackDestination)
   const isDirty =
     hasChangedFields(values, initial, FORM_FIELDS) ||
     values.currencies.join() !== initial.currencies.join() ||
@@ -248,8 +272,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
     cashbackEnabled: supportsCashback ? values.cashbackEnabled : null,
     cashbackRatePercent: supportsCashback && values.cashbackEnabled ? Number(values.cashbackRatePercent) : null,
-    roundUpDestination: null,
-    cashbackDestination: null,
+    roundUpDestination: supportsRoundUp ? toMoneyDestination(values.roundUpEnabled ? values.roundUpDestination : NO_DESTINATION) : null,
+    cashbackDestination: supportsCashback ? toMoneyDestination(values.cashbackEnabled ? values.cashbackDestination : NO_DESTINATION) : null,
     savings: earnsInterest ? toSavingsTermsDto(values.savings) : null,
     isActive: values.isActive,
   })
@@ -441,18 +465,29 @@ export default function AccountFormDialog({ account, templates, categories, onCa
         <SavingsTermsFields
           values={values.savings}
           errors={showValidation ? savingsErrors : null}
+          roundUpSources={roundUpSourceNames(accounts, account?.id)}
           onChange={(savings) => setField('savings', savings)}
         />
       )}
 
       {supportsRoundUp && (
-        <Field label="Round-up">
+        <Field label="Round-up" hint={values.roundUpEnabled ? undefined : roundUpSwitchOffHint(values.roundUpDestination, accounts)}>
           <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
         </Field>
       )}
 
+      {supportsRoundUp && values.roundUpEnabled && (
+        <DestinationField
+          label="Round-ups go to"
+          emptyHint="Add a savings account set to Round-up only to send round-ups there."
+          value={values.roundUpDestination}
+          targets={roundUpTargets}
+          onChange={(value) => setField('roundUpDestination', value)}
+        />
+      )}
+
       {supportsCashback && (
-        <Field label="Cashback">
+        <Field label="Cashback" hint={values.cashbackEnabled ? undefined : cashbackSwitchOffHint(values.cashbackDestination, accounts)}>
           <Switch checked={values.cashbackEnabled} onChange={(_, data) => changeCashbackEnabled(data.checked)} />
         </Field>
       )}
@@ -477,11 +512,45 @@ export default function AccountFormDialog({ account, templates, categories, onCa
         </Field>
       )}
 
+      {supportsCashback && values.cashbackEnabled && (
+        <DestinationField
+          label="Cashback goes to"
+          emptyHint="Add a savings account that isn't Round-up only to send cashback there."
+          value={values.cashbackDestination}
+          targets={cashbackTargets}
+          onChange={(value) => setField('cashbackDestination', value)}
+        />
+      )}
+
       {isEditing && (
         <Field label="Active">
           <Switch checked={values.isActive} onChange={(_, data) => setField('isActive', data.checked)} />
         </Field>
       )}
     </EntityFormDialog>
+  )
+}
+
+interface DestinationFieldProps {
+  label: string
+  emptyHint: string
+  value: string
+  targets: readonly AccountDto[]
+  onChange: (value: string) => void
+}
+
+function DestinationField({ label, emptyHint, value, targets, onChange }: DestinationFieldProps) {
+  return (
+    <Field label={label} hint={targets.length === 0 ? emptyHint : undefined}>
+      <Select value={value} onChange={(_, data) => onChange(data.value)}>
+        <option value={NO_DESTINATION}>Not tracked</option>
+        <option value={INVESTED_AUTOMATICALLY}>Invested automatically</option>
+        {targets.map((target) => (
+          <option key={target.id} value={target.id}>
+            {inactiveMarked(target)}
+          </option>
+        ))}
+      </Select>
+    </Field>
   )
 }

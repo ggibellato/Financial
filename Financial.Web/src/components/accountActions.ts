@@ -56,6 +56,8 @@ const KIND_LABELS: Record<string, string> = {
   PotTransaction: 'Pot transaction',
   SettlementEntry: 'Settlement entry',
   Interest: 'Interest',
+  RoundUp: 'Round-up',
+  Cashback: 'Cashback',
 }
 
 const RECORD_NOUNS: Record<string, string> = {
@@ -71,6 +73,8 @@ const RECORD_NOUNS: Record<string, string> = {
   PotTransaction: 'pot transaction',
   SettlementEntry: 'entry',
   Interest: 'interest',
+  RoundUp: 'round-up',
+  Cashback: 'cashback',
 }
 
 export function isFormAction(action: string): action is AccountFormAction {
@@ -229,7 +233,16 @@ export function rowEdit(row: AccountTransactionDto, accountId: string | null, ac
   return { kind: 'blocked', reason: readOnlyReason(row, accountId) }
 }
 
+const ROUTED_KINDS: readonly string[] = ['RoundUp', 'Cashback']
+
+const isRoutedRow = (row: AccountTransactionDto) => ROUTED_KINDS.includes(row.kind)
+
+function routedRowReason({ counterpart }: AccountTransactionDto): string {
+  return counterpart ? `Change it on the expense in ${counterpart}'s transactions.` : 'Change it on the expense.'
+}
+
 function readOnlyReason(row: AccountTransactionDto, accountId: string | null): string {
+  if (isRoutedRow(row)) return routedRowReason(row)
   const { expense } = row
   if (!canMoveToStatement(row) || !expense) return READ_ONLY_REASON
   if (expense.creditCardId && accountId && expense.creditCardId.toLowerCase() !== accountId.toLowerCase()) {
