@@ -187,7 +187,7 @@ function PortfolioNode({ node, brokerName, filterClass, drag }: PortfolioNodePro
       aria-selected={isSelected}
     >
       <TreeItemLayout
-        className={`investment-tree__node${isSelected ? ' investment-tree__node--selected' : ''}${
+        className={`investment-tree__node investment-tree__node--portfolio${isSelected ? ' investment-tree__node--selected' : ''}${
           isDropTarget ? ' investment-tree__row--drop-target' : ''
         }`}
         onClick={handleClick}
@@ -263,6 +263,7 @@ function BrokerNode({ node, filterClass, drag }: BrokerNodeProps) {
 
   return (
     <TreeItem
+      className="investment-tree__broker"
       itemType={hasVisibleChildren ? 'branch' : 'leaf'}
       value={`broker:${brokerName}`}
       aria-selected={isSelected}

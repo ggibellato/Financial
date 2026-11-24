@@ -73,8 +73,20 @@
   color: var(--colorStatusDangerForeground3);
 }
 
+.investment-tree__broker + .investment-tree__broker {
+  margin-top: var(--spacingVerticalXS);
+  padding-top: var(--spacingVerticalXS);
+  border-top: 1px solid var(--colorNeutralStroke2);
+}
+
 .investment-tree__node--broker {
-  font-weight: 500;
+  font-size: var(--fontSizeBase300);
+  font-weight: var(--fontWeightBold);
+  color: var(--colorNeutralForeground1);
+}
+
+.investment-tree__node--portfolio {
+  font-weight: var(--fontWeightSemibold);
 }
 
 .investment-tree__row--drop-target {
