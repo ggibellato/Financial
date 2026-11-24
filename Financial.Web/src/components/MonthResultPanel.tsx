@@ -1,6 +1,6 @@
 import { formatN2, formatSignedN2 } from '../utils/formatters'
 import type { MonthResult } from '../utils/monthResult'
-import CalculationCard from './CalculationCard'
+import CalculationCard, { type CalculationResult } from './CalculationCard'
 
 interface MonthResultPanelProps {
   totalIncoming: number
@@ -8,7 +8,11 @@ interface MonthResultPanelProps {
   result: MonthResult
 }
 
-const RESULT_TONES = { Surplus: 'positive', Deficit: 'negative', Balanced: undefined } as const
+function resultTone(value: number): CalculationResult['tone'] {
+  if (value > 0) return 'positive'
+  if (value < 0) return 'negative'
+  return undefined
+}
 
 export default function MonthResultPanel({ totalIncoming, categoryTotalsSum, result }: MonthResultPanelProps) {
   return (
@@ -19,7 +23,7 @@ export default function MonthResultPanel({ totalIncoming, categoryTotalsSum, res
         { label: 'Total incoming', value: formatN2(totalIncoming) },
         { label: 'Category total', value: formatSignedN2(-categoryTotalsSum) },
       ]}
-      result={{ label: result.label, value: formatSignedN2(result.value), tone: RESULT_TONES[result.label] }}
+      result={{ label: result.label, value: formatSignedN2(result.value), tone: resultTone(result.value) }}
     />
   )
 }

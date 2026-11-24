@@ -3,11 +3,13 @@ import { type ReactNode, useId } from 'react'
 import type { TitheMonthDto, TitheSummaryDto } from '../api/types'
 import { TITHE_DETAIL_LOAD_ERROR, TITHE_HISTORY_LOAD_ERROR, useTithe } from '../hooks/useTithe'
 import { formatLongMonthYear, formatMonthInputValue, formatN2, formatSignedN2, SAVING_LABEL, sumPence } from '../utils/formatters'
+import type { SectionTotalItem } from '../utils/currencyFooterItems'
 import ActionErrorAlert from './ActionErrorAlert'
-import CalculationCard, { type CalculationLine, type CalculationResult } from './CalculationCard'
+import CalculationCard, { type CalculationResult } from './CalculationCard'
 import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import SummarySection from './SummarySection'
 import MissingValue from './MissingValue'
 
 type TitheCarryForwardDto = NonNullable<TitheSummaryDto['carryForward']>
@@ -37,23 +39,31 @@ interface TitheTabProps {
   onSelectMonth: (monthInputValue: string) => void
 }
 
-function titheBalanceText(balance: number): string {
-  if (balance > 0) return `${formatN2(balance)} owed`
-  if (balance < 0) return `${formatN2(-balance)} in credit`
-  return formatN2(0)
+function balanceSuffix(balance: number): 'owed' | 'in credit' | null {
+  if (balance > 0) return 'owed'
+  if (balance < 0) return 'in credit'
+  return null
 }
 
-function carryInLine(carryForward: TitheCarryForwardDto): CalculationLine {
+function titheBalanceText(balance: number): string {
+  const suffix = balanceSuffix(balance)
+  return suffix ? `${formatN2(Math.abs(balance))} ${suffix}` : formatN2(0)
+}
+
+function carryInLine(carryForward: TitheCarryForwardDto): SectionTotalItem {
   return {
     label: `Carry-in from ${formatLongMonthYear(carryForward.fromYear, carryForward.fromMonth)}`,
     value: carryForward.included ? formatSignedN2(carryForward.amount) : 'Not included',
   }
 }
 
+const BALANCE_TONES = { owed: 'negative', 'in credit': 'positive' } as const
+
 function balanceResult(balance: number): CalculationResult {
-  if (balance > 0) return { label: 'Balance owed', value: formatN2(balance), tone: 'negative' }
-  if (balance < 0) return { label: 'Balance in credit', value: formatN2(-balance), tone: 'positive' }
-  return { label: 'Balance', value: formatN2(0) }
+  const suffix = balanceSuffix(balance)
+  return suffix
+    ? { label: `Balance ${suffix}`, value: formatN2(Math.abs(balance)), tone: BALANCE_TONES[suffix] }
+    : { label: 'Balance', value: formatN2(0) }
 }
 
 function includedCell(carryForward: TitheCarryForwardDto | null | undefined): ReactNode {
@@ -213,10 +223,7 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
             />
           )}
         </div>
-        <div className="accounts-page__section monthly-page__section--grid">
-          <Text as="h2" id={historyHeadingId} weight="semibold" size={400}>
-            Tithe by month, {year}
-          </Text>
+        <SummarySection heading={`Tithe by month, ${year}`} headingId={historyHeadingId}>
           {history.isLoading ? (
             <LoadingState message="Loading the tithe history…" />
           ) : history.error || !history.data ? (
@@ -224,7 +231,7 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
           ) : (
             <TitheHistory year={year} month={month} rows={history.data} labelId={historyHeadingId} onSelectMonth={onSelectMonth} />
           )}
-        </div>
+        </SummarySection>
       </div>
     </div>
   )

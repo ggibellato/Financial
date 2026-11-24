@@ -56,10 +56,6 @@
   min-width: 260px;
 }
 
-.monthly-page__section--grid > .monthly-page__section--grid {
-  flex: 1;
-}
-
 .monthly-page__section--grid .monthly-page__table {
   max-width: none;
 }
@@ -71,10 +67,6 @@
 }
 
 .monthly-page__grids-row .monthly-page__table-scroll {
-  flex: 0 1 auto;
-}
-
-.monthly-page__section--grid > .monthly-page__section--grid:has(+ .month-result) {
   flex: 0 1 auto;
 }
 

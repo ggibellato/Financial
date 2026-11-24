@@ -1,18 +1,14 @@
 import { Text } from '@fluentui/react-components'
 import { type ReactNode, useId } from 'react'
+import type { SectionTotalItem } from '../utils/currencyFooterItems'
 
-export interface CalculationLine {
-  label: string
-  value: ReactNode
-}
-
-export interface CalculationResult extends CalculationLine {
+export interface CalculationResult extends SectionTotalItem {
   tone?: 'positive' | 'negative'
 }
 
 interface CalculationCardProps {
   heading: string
-  lines: CalculationLine[]
+  lines: SectionTotalItem[]
   result: CalculationResult
   className?: string
   children?: ReactNode

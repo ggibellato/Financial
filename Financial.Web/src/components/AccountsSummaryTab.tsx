@@ -1,22 +1,10 @@
-import { Text } from '@fluentui/react-components'
-import type { ReactNode } from 'react'
 import { SUMMARY_LOAD_ERROR, useAccountsSummary } from '../hooks/useAccountsSummary'
 import CategoryTotalsGrid from './CategoryTotalsGrid'
 import ErrorState from './ErrorState'
 import IncomingGrid from './IncomingGrid'
 import LoadingState from './LoadingState'
 import MonthResultPanel from './MonthResultPanel'
-
-function SummarySection({ heading, children }: { heading: string; children: ReactNode }) {
-  return (
-    <div className="accounts-page__section monthly-page__section--grid">
-      <Text as="h2" weight="semibold" size={400}>
-        {heading}
-      </Text>
-      {children}
-    </div>
-  )
-}
+import SummarySection from './SummarySection'
 
 export default function AccountsSummaryTab({ year, month }: { year: number; month: number }) {
   const summary = useAccountsSummary(year, month)
