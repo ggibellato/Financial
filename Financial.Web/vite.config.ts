@@ -5,6 +5,7 @@ import { configDefaults, coverageConfigDefaults } from 'vitest/config'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'API_')
   const apiBaseUrl = env.API_BASE_URL ?? '/api/v1/financial'
+  const apiProxyTarget = env.API_PROXY_TARGET ?? 'http://localhost:5190'
   return {
     plugins: [react()],
     define: {
@@ -12,7 +13,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/api': { target: 'http://localhost:5190', changeOrigin: true },
+        '/api': { target: apiProxyTarget, changeOrigin: true },
       },
     },
     test: {
