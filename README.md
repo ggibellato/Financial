@@ -135,6 +135,17 @@ docker run -p 8080:8080 \
 
 Open `http://localhost:8080` in your browser.
 
+### Build caching
+
+Rebuilds reuse as much as possible:
+
+- The base images are pinned to exact versions (`node:24.13.0-slim`, `dotnet/sdk:10.0.404`, `dotnet/aspnet:10.0.15`), so they download once and are not pulled again when Microsoft publishes a new `10.0` patch. Bump these tags deliberately to take a .NET or Node update.
+- `package*.json` and the `.csproj` files are copied before the source, so a code-only change skips `npm ci` and `dotnet restore` entirely.
+- NuGet and npm packages live in BuildKit cache mounts, so a dependency change downloads only the new packages.
+- `.dockerignore` keeps `data/`, `docs/`, `Tests/` and the other non-image folders out of the build context.
+
+Docker evicts build cache above its `builder.gc.defaultKeepStorage` limit (20 GB by default in Docker Desktop), oldest first, which can force the base images to download again. `docker system df` shows the build-cache size; `docker builder prune` clears stale entries, or raise the limit in Docker Desktop's Docker Engine settings.
+
 ### Run with Docker Compose (recommended)
 
 ```bash

@@ -20,3 +20,18 @@ docker-compose*.yml
 Dockerfile*
 nginx.conf
 .dockerignore
+
+# Not part of the image
+data/
+docs/
+specs/
+Tests/
+Tools/
+TestResults/
+.github/
+.claude/
+.config/
+.specify/
+Financial.Web/coverage/
+Financial.Web/playwright-report/
+Financial.Web/test-results/

@@ -2,13 +2,13 @@
 FROM node:24.13.0-slim AS web-build
 WORKDIR /app
 COPY Financial.Web/package*.json .
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
 COPY Financial.Web/ .
 RUN echo "API_BASE_URL=/api/v1/financial" > .env
 RUN npm run build
 
 # Stage 2: Build .NET API
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS api-build
 WORKDIR /src
 
 COPY Financial.slnx .
@@ -28,7 +28,7 @@ COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
 COPY Integrations/Observability/Observability.csproj Integrations/Observability/
 COPY Integrations/Frankfurter/Frankfurter.csproj Integrations/Frankfurter/
 
-RUN dotnet restore Financial.Api/Financial.Api.csproj
+RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore Financial.Api/Financial.Api.csproj
 
 COPY Financial.Api/ Financial.Api/
 COPY Financial.Investment.Application/ Financial.Investment.Application/
@@ -46,10 +46,10 @@ COPY Integrations/WebPageParser/ Integrations/WebPageParser/
 COPY Integrations/Observability/ Integrations/Observability/
 COPY Integrations/Frankfurter/ Integrations/Frankfurter/
 
-RUN dotnet publish Financial.Api/Financial.Api.csproj -c Release -o /app/publish
+RUN --mount=type=cache,target=/root/.nuget/packages dotnet publish Financial.Api/Financial.Api.csproj -c Release -o /app/publish --no-restore
 
 # Stage 3: Runtime — API serves both the REST endpoints and the React SPA
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.15 AS final
 WORKDIR /app
 COPY --from=api-build /app/publish .
 COPY --from=web-build /app/dist ./wwwroot/
