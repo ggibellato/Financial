@@ -92,7 +92,7 @@ Every folder uses a `__tests__/` subfolder. Vitest config lives in `vite.config.
 (`test: { environment: 'jsdom', exclude: [..., 'tests/e2e/**'], setupFiles: './src/setupTests.ts', coverage: { provider: 'v8', all: true, reporter: ['text','json-summary','lcov'], exclude: [... 'src/api/generated/**', 'src/main.tsx', 'src/setupTests.ts', 'src/test/**', 'src/test-utils/**'] } }`).
 Playwright: `playwright.config.ts` (`testDir: './tests/e2e'`, `globalSetup`, `baseURL` from
 `SMOKE_APP_URL`, `en-GB` / `Europe/London`, CI retries 2). Mutation: `stryker.config.json` +
-`vitest.mutation.config.ts` (nightly).
+`vitest.mutation.config.ts` and `stryker.components.config.json` (nightly; see `mutation-testing.md`).
 
 ### Naming
 

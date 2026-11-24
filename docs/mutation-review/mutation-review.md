@@ -1,5 +1,9 @@
 # Mutation Review — Plan and Progress
 
+**Complete 2026-11-23.** Every slice is done and every reviewed project and component is in the
+nightly with its own break threshold. The lessons for writing new tests moved to
+`.claude/skills/testing-guide-Financial/references/mutation-testing.md`.
+
 A slice-by-slice review of the test suite with Stryker.NET and StrykerJS. Each slice answers
 three questions:
 
