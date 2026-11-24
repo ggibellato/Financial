@@ -16,7 +16,6 @@ import { useOverviewAddress } from '../hooks/useOverviewAddress'
 import { useTabPanel } from '../hooks/useTabPanel'
 import { type AccountGridColumns, type AccountTemplateGrid, accountTemplateGrid } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, sumPence } from '../utils/formatters'
-import { byName } from '../utils/byName'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
@@ -95,14 +94,17 @@ function columnTotalsRows(grid: AccountTemplateGrid, group: AccountTemplateGroup
   if (!grid.footerLabel) return []
   return group.totals.map(({ currency, total, openStatementTotal }) => {
     const members = group.members.filter((member) => member.currency === currency)
-    const values =
-      grid.columns === 'card'
-        ? { statement: orMissing(openStatementTotal, formatN2), totalOwed: formatOwedOrCredit(total) }
-        : { balance: formatN2(total), ...(grid.columns === 'bank' ? { cashback: cashbackTotal(members) } : {}) }
-    return { label: `${grid.footerLabel} ${currency}`, values }
+    return {
+      label: `${grid.footerLabel} ${currency}`,
+      values: {
+        balance: formatN2(total),
+        cashback: cashbackTotal(members),
+        statement: orMissing(openStatementTotal, formatN2),
+        totalOwed: formatOwedOrCredit(total),
+      },
+    }
   })
 }
-
 
 function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | null {
   return nextStatement ? new Date(nextStatement.year, nextStatement.month - 1, 1) : null
@@ -146,37 +148,35 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
 
   return (
     <div className="accounts-page__groups">
-        {isLoading ? (
-          <LoadingState />
-        ) : error || !groups ? (
-          <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
-        ) : groups.length === 0 ? (
-          <Text>No accounts this month.</Text>
-        ) : (
-          [...groups]
-            .map((group) => ({ group, grid: accountTemplateGrid(group.templateName) }))
-            .sort((a, b) => a.grid.heading.localeCompare(b.grid.heading))
-            .map(({ group, grid }) => {
-              const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
-              const renderName = grid.linksRows
-                ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
-                : (row: AccountGroupMemberDto) => row.name
-              return (
-                <div key={group.templateName} className="accounts-page__section">
-                  <Text as="h2" weight="semibold" size={400}>
-                    {grid.heading}
-                  </Text>
-                  <TotalsGrid
-                    label={grid.heading}
-                    columns={gridColumns(grid.columns, renderName, year, month)}
-                    rows={[...group.members].sort(byName)}
-                    rowKey={(row) => row.accountId}
-                    emptyMessage="No accounts this month."
-                    columnTotals={columnTotalsRows(grid, group)}
-                  />
-                </div>
-              )
-            })
+      {isLoading ? (
+        <LoadingState />
+      ) : error || !groups ? (
+        <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
+      ) : groups.length === 0 ? (
+        <Text>No accounts this month.</Text>
+      ) : (
+        groups.map((group) => {
+          const grid = accountTemplateGrid(group.templateName)
+          const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
+          const renderName = grid.linksRows
+            ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
+            : (row: AccountGroupMemberDto) => row.name
+          return (
+            <div key={group.templateName} className="accounts-page__section">
+              <Text as="h2" weight="semibold" size={400}>
+                {grid.heading}
+              </Text>
+              <TotalsGrid
+                label={grid.heading}
+                columns={gridColumns(grid.columns, renderName, year, month)}
+                rows={group.members}
+                rowKey={(row) => row.accountId}
+                emptyMessage="No accounts this month."
+                columnTotals={columnTotalsRows(grid, group)}
+              />
+            </div>
+          )
+        })
       )}
     </div>
   )

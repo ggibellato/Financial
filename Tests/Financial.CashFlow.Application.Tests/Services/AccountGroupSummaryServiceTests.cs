@@ -324,17 +324,19 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
-    public void GetTemplateGroups_Month_GroupsAccountsInTemplateOrderWithMembersByName()
+    public void GetTemplateGroups_Month_GroupsAccountsAlphabeticallyByTemplateWithMembersByName()
     {
         var reserva = TestAccounts.Pots("Reserva");
         var holidays = TestAccounts.Pots("holidays");
-        _repository.Accounts.AddRange([reserva, _amex, holidays]);
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL], "Mãe");
+        var chaseSave = TestAccounts.Savings("Chase Save");
+        _repository.Accounts.AddRange([mae, reserva, _amex, chaseSave, holidays]);
 
         var groups = _sut.GetTemplateGroups(2026, 9);
 
         using (new AssertionScope())
         {
-            groups.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard", "Pots");
+            groups.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard", "Pots", "Savings", "Settlement");
             groups[0].Members.Select(member => member.Name).Should().Equal("Barclays", "Chase", "Itaú");
             groups[1].Members.Select(member => member.Name).Should().Equal("Amex");
             groups[2].Members.Select(member => member.Name).Should().Equal("holidays", "Reserva");

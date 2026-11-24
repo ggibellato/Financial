@@ -67,8 +67,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             var toMember = GroupMemberBuilder(year, month, records, records.OfType<Expense>().ToList());
 
             var result = DefaultAccountGroup.ListedIn(_repository.GetAccounts(), year, month, records)
-                .GroupBy(account => account.TemplateOrder)
-                .OrderBy(group => group.Key)
+                .GroupBy(account => account.TemplateName)
+                .OrderBy(group => group.Key, StringComparer.Ordinal)
                 .Select(group => ToTemplateGroupDto(group.Select(toMember).ToList(), group.First().Has(Capability.HasParticipants)))
                 .ToList();
 

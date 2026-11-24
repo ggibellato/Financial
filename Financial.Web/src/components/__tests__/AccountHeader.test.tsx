@@ -223,7 +223,7 @@ describe('AccountHeader', () => {
     expect(screen.queryByRole('option', { name: 'Old Savings' })).not.toBeInTheDocument()
   })
 
-  it('orders the picker groups by account type and each group by name, whatever order the accounts arrive in', async () => {
+  it('orders the picker groups alphabetically by account type, whatever order the accounts arrive in', async () => {
     const user = userEvent.setup()
     renderHeader()
 

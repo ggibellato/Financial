@@ -245,21 +245,6 @@ describe('AccountsPage', () => {
     expect(footerRows(pots)).toEqual([['Pots total GBP', '', '716.58']])
   })
 
-  it("lists the grids by account type and each grid's accounts by name, whatever order they arrive in", async () => {
-    getAccountTemplateGroupsMock.mockResolvedValue([
-      POTS,
-      { ...CARDS, members: [...CARDS.members].reverse() },
-      { ...BANKS, members: [...BANKS.members].reverse() },
-    ])
-
-    renderPage()
-
-    const banks = await screen.findByRole('table', { name: 'Banks' })
-    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots'])
-    expect(accountNames(banks)).toEqual(['Barclays', 'Chase', 'Itau', 'Old SavingsInactive'])
-    expect(accountNames(screen.getByRole('table', { name: 'Credit cards' }))).toEqual(['BA Amex', 'Old VisaInactive'])
-  })
-
   it("shows a card's paid statement for the month as Paid, with the month's open total from the server under the column", async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
       {

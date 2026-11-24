@@ -80,16 +80,6 @@ public class AccountTests
         }
     }
 
-    [Theory]
-    [InlineData(AccountTemplate.Bank, 0)]
-    [InlineData(AccountTemplate.CreditCard, 1)]
-    [InlineData(AccountTemplate.Pots, 2)]
-    [InlineData(AccountTemplate.Settlement, 3)]
-    public void TemplateOrder_IsTheTemplatesPositionInTheAvailableTemplates(AccountTemplate template, int expected)
-    {
-        Account.Create("Account", template, Currency.GBP).TemplateOrder.Should().Be(expected);
-    }
-
     [Fact]
     public void IsSetUpAs_WithTheOwnTemplateAndCurrencies_IsTrue()
     {
@@ -1174,7 +1164,6 @@ public class AccountTests
             account.OpeningBalance.Should().NotBeNull();
             account.RoundUp.Should().BeNull();
             account.CanPay.Should().BeFalse();
-            account.TemplateOrder.Should().Be(4);
         }
     }
 

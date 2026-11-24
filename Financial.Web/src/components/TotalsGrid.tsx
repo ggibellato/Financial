@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import { mergeClasses, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -92,7 +92,7 @@ export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label
                     <DataTableCell
                       key={col.key}
                       label={index === 0 ? 'Total' : col.header}
-                      className={[col.numeric && 'data-table__col--numeric', index > 0 && totals.values[col.key] === undefined && 'data-table__cell--no-total'].filter(Boolean).join(' ') || undefined}
+                      className={mergeClasses(col.numeric && 'data-table__col--numeric', index > 0 && totals.values[col.key] === undefined && 'data-table__cell--no-total')}
                     >
                       {index === 0 ? totals.label : totals.values[col.key]}
                     </DataTableCell>

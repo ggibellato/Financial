@@ -75,7 +75,7 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F14-accounts-page-by-template-and-card-totals-01")]
-    public async Task TemplateGroups_Month_ReturnsGroupsInTemplateOrderWithoutEmptyOnes()
+    public async Task TemplateGroups_Month_ReturnsGroupsAlphabeticallyByTemplateWithoutEmptyOnes()
     {
         var september = await TemplateGroupsAsync(9);
         var october = await TemplateGroupsAsync(10);
