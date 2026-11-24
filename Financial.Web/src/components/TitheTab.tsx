@@ -178,7 +178,7 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
   const monthLabel = formatLongMonthYear(year, month)
 
   return (
-    <div className="monthly-page__summary-groups monthly-page__summary-groups--fill">
+    <div className="monthly-page__summary-groups">
       <Text as="h2" weight="semibold" size={400}>
         Tithe for {monthLabel}
       </Text>

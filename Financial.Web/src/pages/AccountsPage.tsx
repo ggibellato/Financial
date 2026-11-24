@@ -183,11 +183,11 @@ function AllTransactionsTab({ year, month }: { year: number; month: number }) {
 }
 
 const OVERVIEW_TABS = [
-  { id: 'accounts', label: 'Accounts', isGrid: false },
-  { id: 'summary', label: 'Summary', isGrid: true },
-  { id: 'income', label: 'Income', isGrid: true },
-  { id: 'tithe', label: 'Tithe', isGrid: true },
-  { id: 'transactions', label: 'All transactions', isGrid: true },
+  { id: 'accounts', label: 'Accounts' },
+  { id: 'summary', label: 'Summary' },
+  { id: 'income', label: 'Income' },
+  { id: 'tithe', label: 'Tithe' },
+  { id: 'transactions', label: 'All transactions' },
 ] as const
 
 type OverviewTabId = (typeof OVERVIEW_TABS)[number]['id']
@@ -200,7 +200,6 @@ export default function AccountsPage() {
   const { state } = useLocation()
   const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
   const monthKey = `${year}-${month}`
-  const isGridTab = OVERVIEW_TABS.some(({ id, isGrid }) => id === tab && isGrid)
 
   return (
     <div className="accounts-page">
@@ -226,7 +225,7 @@ export default function AccountsPage() {
         ))}
       </PageTabList>
 
-      <div className={isGridTab ? 'monthly-page__panel' : 'accounts-page__groups'} {...tabPanel.panelProps}>
+      <div className={tab === 'accounts' ? 'accounts-page__groups' : 'monthly-page__panel'} {...tabPanel.panelProps}>
         {tab === 'accounts' && <AccountsTab key={monthKey} year={year} month={month} />}
         {tab === 'summary' && <AccountsSummaryTab key={monthKey} year={year} month={month} />}
         {tab === 'income' && (

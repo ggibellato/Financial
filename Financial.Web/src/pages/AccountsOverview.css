@@ -29,14 +29,20 @@
 }
 
 .monthly-page__summary-groups {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+.monthly-page__grids-row,
+.monthly-page__section--fill {
+  flex: 1;
+  min-height: 160px;
+}
+
 .monthly-page__grids-row {
-  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
@@ -49,17 +55,6 @@
   min-height: 0;
 }
 
-.monthly-page__summary-groups--fill {
-  flex: 1;
-  min-height: 0;
-}
-
-.monthly-page__summary-groups--fill > .monthly-page__grids-row,
-.monthly-page__section--fill {
-  flex: 1;
-  min-height: 240px;
-}
-
 .monthly-page__grids-row > .monthly-page__section--grid {
   flex: 1 1 260px;
   min-width: 260px;
@@ -67,10 +62,6 @@
 
 .monthly-page__section--grid > .monthly-page__section--grid {
   flex: 1;
-}
-
-.monthly-page__summary-groups--fill .monthly-page__table-scroll {
-  flex: 0 1 auto;
 }
 
 .monthly-page__section--grid .monthly-page__table {
@@ -83,15 +74,30 @@
   overflow: auto;
 }
 
+.monthly-page__grids-row .monthly-page__table-scroll {
+  flex: 0 1 auto;
+}
+
 .monthly-page__section-total {
   flex-shrink: 0;
   margin-top: 12px;
 }
 
-@media (max-height: 599px) {
+@media (min-width: 900px) {
+  .monthly-page__grids-row {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 899px), (max-height: 599px) {
+  .monthly-page__grids-row {
+    flex: none;
+  }
+}
+
+@media (max-width: 599px), (max-height: 599px) {
   .monthly-page__panel,
-  .monthly-page__summary-groups--fill,
-  .monthly-page__summary-groups--fill > .monthly-page__grids-row,
+  .monthly-page__summary-groups,
   .monthly-page__section--fill {
     flex: none;
   }
@@ -102,39 +108,7 @@
 }
 
 @media (max-width: 599px) {
-  .monthly-page__content {
-    overflow: visible;
-  }
-
-  .monthly-page__panel,
-  .monthly-page__summary-groups--fill,
-  .monthly-page__summary-groups--fill > .monthly-page__grids-row,
-  .monthly-page__section--fill {
-    flex: none;
-  }
-
-  .monthly-page__summary-groups--fill > .monthly-page__grids-row {
-    flex-wrap: wrap;
-  }
-
-  .monthly-page__grids-row > .monthly-page__section--grid {
-    max-height: none;
-  }
-
   .monthly-page__table-scroll {
     overflow: visible;
-  }
-}
-
-@media (min-width: 900px) {
-  .monthly-page__summary-groups--fill > .monthly-page__grids-row {
-    flex-wrap: nowrap;
-  }
-}
-
-@media (max-width: 899px) {
-  .monthly-page__summary-groups--fill,
-  .monthly-page__summary-groups--fill > .monthly-page__grids-row {
-    flex: none;
   }
 }

@@ -26,7 +26,7 @@ export default function AccountsSummaryTab({ year, month }: { year: number; mont
   if (summary.error) return <ErrorState message={SUMMARY_LOAD_ERROR} onRetry={summary.retry} />
 
   return (
-    <div className="monthly-page__summary-groups monthly-page__summary-groups--fill">
+    <div className="monthly-page__summary-groups">
       <div className="monthly-page__grids-row">
         <SummarySection heading="Category totals">
           <CategoryTotalsGrid categoryTotals={summary.categoryTotals} categoryTotalsSum={summary.categoryTotalsSum} />
