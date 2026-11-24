@@ -42,6 +42,7 @@
 
 .accounts-page__group h2 {
   margin: 0;
+  padding-top: 15px;
 }
 
 .accounts-page__name {
@@ -59,5 +60,9 @@
   .accounts-page__group {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 8px;
+  }
+
+  .accounts-page__group h2 {
+    padding-top: 0;
   }
 }
