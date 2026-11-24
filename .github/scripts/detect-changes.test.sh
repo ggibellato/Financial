@@ -25,6 +25,7 @@ check "docs/prd/x/prd.md"                                      "false false fals
 check "README.md"                                              "false false false"
 check "CLAUDE.md"                                              "false false false"
 check ".claude/skills/testing-guide-Financial/SKILL.md"        "false false false"
+check ".worktreeinclude"                                       "false false false"
 check ".github/pull_request_template.md"                       "false false false"
 check "deploy/README.md"                                       "false false false"
 check "scripts/README.md"                                      "false false false"

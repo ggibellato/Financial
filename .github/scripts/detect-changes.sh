@@ -25,7 +25,7 @@ classify() {
   local path="$1"
   case "$path" in
     # Documentation and agent tooling: nothing to build.
-    docs/*|specs/*|dev-util/*|.claude/*|.specify/*|LICENSE|.gitignore|.editorconfig|.dockerignore)
+    docs/*|specs/*|dev-util/*|.claude/*|.specify/*|LICENSE|.gitignore|.editorconfig|.dockerignore|.worktreeinclude)
       reasons+=("docs: $path") ;;
 
     # API surface the web SPA is compiled against (controllers, OpenAPI snapshot).
