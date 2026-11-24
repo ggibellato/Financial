@@ -34,7 +34,9 @@ public sealed class AccountQueryService : IAccountQueryService
         PotTransaction,
         SettlementEntry,
         RoundUp,
-        Cashback
+        Cashback,
+        PayIn,
+        PayOut
     }
 
     private readonly ICashFlowRepository _repository;
@@ -378,6 +380,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account, statements),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
+            ExternalPayment payment when payment.Account.Id == account.Id => [ToRow(payment, account)],
             PotTransaction transaction when account.OwnsPot(transaction.Pot.Id) => [ToRow(transaction, account)],
             SettlementTransaction entry when entry.Account.Id == account.Id => [ToRow(entry, account)],
             _ => []
@@ -542,6 +545,17 @@ public sealed class AccountQueryService : IAccountQueryService
         Currency = account.Currency.ToString(),
         CanEdit = account.IsActive,
         Adjustment = BalanceAdjustmentService.ToDto(adjustment)
+    };
+
+    private static AccountTransactionDTO ToRow(ExternalPayment payment, Account account) => new()
+    {
+        Id = payment.Id,
+        Kind = (payment.Direction == PaymentDirection.In ? TransactionKind.PayIn : TransactionKind.PayOut).ToString(),
+        Date = payment.Date,
+        Description = payment.Description,
+        Amount = payment.ContributionTo(account),
+        Currency = account.Currency.ToString(),
+        CanEdit = account.IsActive
     };
 
     private static AccountTransactionDTO ToRow(SettlementTransaction entry, Account account) => new()

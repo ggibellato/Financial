@@ -124,7 +124,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
                 var account = await Client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{member.AccountId}/2026/{month}");
                 var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{member.AccountId}/transactions/2026/{month}");
                 member.Balance.Should().Be(account!.Balance, member.Name);
-                member.RoundUpTotal.Should().Be(-rows!.Sum(row => row.RoundUp ?? 0m), member.Name);
+                (member.RoundUpTotal ?? 0m).Should().Be(-rows!.Sum(row => row.RoundUp ?? 0m), member.Name);
             }
         }
     }
@@ -136,9 +136,9 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
         var summary = await SummaryAsync(9);
 
         BankMembers(summary).Select(member => (member.Name, member.Balance, member.RoundUpTotal)).Should().Equal(
-            ("Barclays", 2962.34m, 0m),
+            ("Barclays", 2962.34m, (decimal?)null),
             ("Chase", 292.00m, 0.90m),
-            ("Closed Savings", 120m, 0m),
+            ("Closed Savings", 120m, null),
             ("Itaú", 490.00m, 0.25m));
     }
 

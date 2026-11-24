@@ -80,7 +80,7 @@ public class AccountGroupSummaryServiceTests
         using (new AssertionScope())
         {
             summary.Members.Single(member => member.Name == "Chase").RoundUpTotal.Should().Be(0.90m);
-            summary.Members.Single(member => member.Name == "Barclays").RoundUpTotal.Should().Be(0m);
+            summary.Members.Single(member => member.Name == "Barclays").RoundUpTotal.Should().BeNull();
         }
     }
 

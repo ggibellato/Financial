@@ -99,7 +99,7 @@ public class AccountAdminServiceTests
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
                 "HasOpeningBalance", "ReceivesIncome", "HasCategories", "CanSendTransfers",
-                "CanReceiveTransfers", "CanReconcile", "CanPayBills", "SupportsRoundUp", "SupportsCashback");
+                "CanReceiveTransfers", "CanReconcile", "CanPayBills", "SupportsRoundUp", "SupportsCashback", "HasExternalPayments");
             var card = templates[1];
             card.Currencies.Should().Equal("GBP");
             card.Capabilities.Should().Equal("HasCategories", "HasStatements", "ReceivesPayments");
@@ -112,7 +112,7 @@ public class AccountAdminServiceTests
             var savings = templates[4];
             savings.Currencies.Should().Equal("GBP");
             savings.Capabilities.Should().Equal(
-                "HasOpeningBalance", "ReceivesIncome", "CanSendTransfers", "CanReceiveTransfers", "CanReconcile", "EarnsInterest");
+                "HasOpeningBalance", "ReceivesIncome", "CanSendTransfers", "CanReceiveTransfers", "CanReconcile", "EarnsInterest", "HasExternalPayments");
             _tracer.ShouldHaveSucceededSpan("CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }

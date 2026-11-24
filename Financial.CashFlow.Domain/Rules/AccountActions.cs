@@ -28,7 +28,9 @@ public static class AccountActions
         (AccountAction.ManagePots, (account, _) => account.Has(Capability.HasPots)),
         (AccountAction.WithdrawFromPots, (account, _) => account.Has(Capability.CanPayBills) || account.Has(Capability.HasStatements)),
         (AccountAction.AddEntry, (account, _) => account.Has(Capability.HasParticipants)),
-        (AccountAction.Settle, (account, _) => account.Has(Capability.CanSettle))
+        (AccountAction.Settle, (account, _) => account.Has(Capability.CanSettle)),
+        (AccountAction.PayIn, (account, _) => account.AcceptsPayment(PaymentDirection.In)),
+        (AccountAction.PayOut, (account, _) => account.AcceptsPayment(PaymentDirection.Out))
     ];
 
     private const string NothingToSettle = "Nothing to settle.";

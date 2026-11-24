@@ -27,7 +27,8 @@ public static class AccountTemplates
                 Capability.CanReconcile,
                 Capability.CanPayBills,
                 Capability.SupportsRoundUp,
-                Capability.SupportsCashback
+                Capability.SupportsCashback,
+                Capability.HasExternalPayments
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.GBP]),
             JoinsDefaultGroup: true),
@@ -70,7 +71,8 @@ public static class AccountTemplates
                 Capability.CanSendTransfers,
                 Capability.CanReceiveTransfers,
                 Capability.CanReconcile,
-                Capability.EarnsInterest
+                Capability.EarnsInterest,
+                Capability.HasExternalPayments
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.GBP]),
             JoinsDefaultGroup: false)

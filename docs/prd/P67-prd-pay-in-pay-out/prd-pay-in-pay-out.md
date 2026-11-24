@@ -187,14 +187,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Pay In and Pay Out
-- [ ] **P67-F01-pay-in-out-01** A pay-in and a pay-out can be created, edited and deleted on a Bank and on a Savings account, and the account's balance follows from each one's date
-- [ ] **P67-F01-pay-in-out-02** An amount of 0 or less or with more than 2 decimal places, or a missing description, is refused with 400
-- [ ] **P67-F01-pay-in-out-03** A pay-in to a Round-up only account is refused with 400 "{account} only receives round-ups.", and a pay-out from it is allowed
-- [ ] **P67-F01-pay-in-out-04** A pay-in or pay-out on a Credit card, Pots or Settlement account, or on an inactive account, is refused with 400
-- [ ] **P67-F01-pay-in-out-05** Pay-ins and pay-outs leave the Income tab, Summary income, the Result, the tithe base and category totals unchanged
-- [ ] **P67-F01-pay-in-out-06** Bank and Savings accounts allow PayIn and PayOut; a Round-up only account allows PayOut only
-- [ ] **P67-F01-pay-in-out-07** The account's transactions and the All transactions list return each entry as a PayIn or PayOut row with its date, description and signed amount
-- [ ] **P67-F01-pay-in-out-08** A data file without pay-ins loads and saves unchanged; a pay-in survives a save-load round trip; the OpenAPI snapshot and generated web types include the new endpoints and their freshness tests pass
+- [x] **P67-F01-pay-in-out-01** A pay-in and a pay-out can be created, edited and deleted on a Bank and on a Savings account, and the account's balance follows from each one's date
+- [x] **P67-F01-pay-in-out-02** An amount of 0 or less or with more than 2 decimal places, or a missing description, is refused with 400
+- [x] **P67-F01-pay-in-out-03** A pay-in to a Round-up only account is refused with 400 "{account} only receives round-ups.", and a pay-out from it is allowed
+- [x] **P67-F01-pay-in-out-04** A pay-in or pay-out on a Credit card, Pots or Settlement account, or on an inactive account, is refused with 400
+- [x] **P67-F01-pay-in-out-05** Pay-ins and pay-outs leave the Income tab, Summary income, the Result, the tithe base and category totals unchanged
+- [x] **P67-F01-pay-in-out-06** Bank and Savings accounts allow PayIn and PayOut; a Round-up only account allows PayOut only
+- [x] **P67-F01-pay-in-out-07** The account's transactions and the All transactions list return each entry as a PayIn or PayOut row with its date, description and signed amount
+- [x] **P67-F01-pay-in-out-08** A data file without pay-ins loads and saves unchanged; a pay-in survives a save-load round trip; the OpenAPI snapshot and generated web types include the new endpoints and their freshness tests pass
 
 ### F02. Pay In and Pay Out in the Web App
 - [ ] **P67-F02-pay-in-out-web-01** Bank and Savings account screens show Pay in and Pay out as the server allows, and a Round-up only account shows Pay out only
@@ -203,7 +203,7 @@ graph TD
 - [ ] **P67-F02-pay-in-out-web-04** Every touched view passes `docs/ui/review-checklist.md`
 
 ### F03. UI Clean-ups
-- [ ] **P67-F03-ui-cleanups-01** On the Accounts tab, a bank with round-up off and no round-ups that month shows the missing-value mark in the Round-up column, and a round-up bank shows its total
+- [x] **P67-F03-ui-cleanups-01** On the Accounts tab, a bank with round-up off and no round-ups that month shows the missing-value mark in the Round-up column, and a round-up bank shows its total
 - [ ] **P67-F03-ui-cleanups-02** When an expense can't be saved because of field errors, focus moves to the first invalid field, or to the error summary when several fields are invalid
 
 ### Cross-Feature Integration

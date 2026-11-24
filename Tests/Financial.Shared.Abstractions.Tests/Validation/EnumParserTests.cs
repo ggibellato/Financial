@@ -23,4 +23,15 @@ public class EnumParserTests
     {
         EnumParser.TryParseEnum<Currency>("XYZ", out _).Should().BeFalse();
     }
+
+    [Theory]
+    [InlineData("gbp", true)]
+    [InlineData("1", false)]
+    [InlineData("99", false)]
+    [InlineData("XYZ", false)]
+    [InlineData(null, false)]
+    public void TryParseDefinedName_AcceptsOnlyADefinedMemberName(string? value, bool expected)
+    {
+        EnumParser.TryParseDefinedName<Currency>(value, out _).Should().Be(expected);
+    }
 }

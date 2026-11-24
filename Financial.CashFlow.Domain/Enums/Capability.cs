@@ -19,5 +19,6 @@ public enum Capability
     MultiCurrency,
     CanSettle,
     EarnsInterest,
-    SupportsCashback
+    SupportsCashback,
+    HasExternalPayments
 }

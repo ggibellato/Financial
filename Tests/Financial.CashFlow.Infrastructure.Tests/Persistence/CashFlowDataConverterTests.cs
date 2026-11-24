@@ -85,6 +85,44 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
+    [Trait("AC", "P67-F01-pay-in-out-08")]
+    public void LoadAndSave_FileWithoutPayments_WritesNoPaymentsKey()
+    {
+        _serializer.Serialize(_serializer.Deserialize(V5File)).Should().NotContain("ExternalPayments");
+    }
+
+    [Fact]
+    [Trait("AC", "P67-F01-pay-in-out-08")]
+    public void LoadAndSave_FileWithAPayIn_KeepsItAndIsByteIdentical()
+    {
+        var withPayIn = V5File.Replace(
+            "\"BalanceAdjustments\":[],",
+            "\"BalanceAdjustments\":[],\"ExternalPayments\":[{\"Id\":\"" + PaymentId + "\",\"Direction\":\"In\",\"Date\":\"2026-11-12\",\"AccountId\":\"" + BarclaysId + "\",\"Amount\":12.5,\"Description\":\"Chase cashback\"}],");
+
+        var data = _serializer.Deserialize(withPayIn);
+
+        using (new AssertionScope())
+        {
+            data.ExternalPayments.Should().ContainSingle().Which.Amount.Should().Be(12.5m);
+            _serializer.Serialize(data).Should().Be(withPayIn);
+        }
+    }
+
+    [Theory]
+    [InlineData("2")]
+    [InlineData("\"Sideways\"")]
+    public void Load_PaymentWithAnUnknownDirection_Throws(string direction)
+    {
+        var withBadPayment = V5File.Replace(
+            "\"BalanceAdjustments\":[],",
+            "\"BalanceAdjustments\":[],\"ExternalPayments\":[{\"Id\":\"" + PaymentId + "\",\"Direction\":" + direction + ",\"Date\":\"2026-11-12\",\"AccountId\":\"" + BarclaysId + "\",\"Amount\":12.5,\"Description\":\"Chase cashback\"}],");
+
+        var act = () => _serializer.Deserialize(withBadPayment);
+
+        act.Should().Throw<JsonException>();
+    }
+
+    [Fact]
     public void LoadAndSave_StatementPaidByTransfer_IsByteIdentical()
     {
         var saved = _serializer.Serialize(_serializer.Deserialize(V5FileWithPayment));

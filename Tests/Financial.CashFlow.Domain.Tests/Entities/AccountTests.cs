@@ -19,13 +19,13 @@ public class AccountTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     [Fact]
-    public void Create_WithBankTemplate_HasAllNineCapabilitiesAndIsActive()
+    public void Create_WithBankTemplate_HasAllTenCapabilitiesAndIsActive()
     {
         var account = CreateBank();
 
         using (new AssertionScope())
         {
-            Enum.GetValues<Capability>().Count(account.Has).Should().Be(9);
+            Enum.GetValues<Capability>().Count(account.Has).Should().Be(10);
             account.Has(Capability.HasStatements).Should().BeFalse();
             account.IsActive.Should().BeTrue();
             account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, new DateOnly(1, 1, 1)));
@@ -386,7 +386,7 @@ public class AccountTests
         using (new AssertionScope())
         {
             account.Template.Should().Be(AccountTemplate.Bank);
-            Enum.GetValues<Capability>().Count(account.Has).Should().Be(9);
+            Enum.GetValues<Capability>().Count(account.Has).Should().Be(10);
             account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, default));
             account.RoundUp.Should().Be(new RoundUpSetting(false));
         }

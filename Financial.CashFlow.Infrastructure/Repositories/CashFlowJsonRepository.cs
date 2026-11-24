@@ -95,6 +95,10 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddBalanceAdjustment(BalanceAdjustment adjustment) => _data.AddBalanceAdjustment(adjustment);
     public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => _data.UpdateBalanceAdjustment(adjustment);
     public void DeleteBalanceAdjustment(Guid id) => _data.RemoveBalanceAdjustment(id);
+    public IEnumerable<ExternalPayment> GetExternalPayments() => _data.ExternalPayments;
+    public void AddExternalPayment(ExternalPayment payment) => _data.AddExternalPayment(payment);
+    public void UpdateExternalPayment(ExternalPayment payment) => _data.UpdateExternalPayment(payment);
+    public void DeleteExternalPayment(Guid id) => _data.RemoveExternalPayment(id);
 
     public async Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
     {
