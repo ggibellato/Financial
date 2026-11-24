@@ -152,8 +152,8 @@ each artifact created or modified, check the required layers — and the failure
 | New project or cross-project reference | Architecture rule test that fails on the forbidden reference | `artifacts/architecture-rule-tests.md` |
 | `data/*.example.json`, `TestData/*.test.json` | Integration: real loader still parses | `artifacts/example-and-seed-data.md` |
 | Import / migration / report tool | Unit: resolvers, formatters; Integration: temp JSON + in-memory workbook | `artifacts/console-tools.md` |
-| React hook | Unit: loading, success, error, retry, mutation failure | `artifacts/react-hooks.md` |
-| React component | Unit: roles, names, keyboard, each visual state it owns | `artifacts/react-components.md` |
+| React hook | Unit in `src/hooks/__tests__`: loading, success, error, retry, mutation failure | `artifacts/react-hooks.md` |
+| React component | Unit: roles, names, keyboard, each visual state it owns; with logic, add to the mutation list | `artifacts/react-components.md` |
 | React page | Page test: full state matrix with `apiClient` faked | `artifacts/react-pages.md` |
 | `financialApiClient` method | Unit: verb, URL, body, `ApiError` on non-2xx | `artifacts/web-api-client.md` |
 | Web util / context / navigation entry | Unit; sidebar ↔ route agreement | `artifacts/web-utils-context-navigation.md` |
@@ -210,6 +210,7 @@ When creating or modifying an artifact, read the corresponding guide for the com
 - ❌ **Mock `fetch` per call in a hook test, or add a second Fluent/ResizeObserver shim** — mock `financialApiClient`; `setupTests.ts` already shims (`references/gotchas.md`)
 - ❌ **Change a DTO without regenerating the snapshot and `openapi.ts`** (`artifacts/api-contract-snapshot.md`)
 - ❌ **Point a test, tool or smoke run at `data/*.json` or port 8080** (`references/e2e-environment.md`)
+- ❌ **Call a surviving mutant equivalent without checking Back/forward, open forms and StrictMode** (`references/mutation-testing.md`)
 
 ## 6. Layer Terminology Note
 
@@ -233,6 +234,7 @@ Integration, not a layer of their own.
 | Failure-case patterns per layer | `references/negative-path-testing.md` |
 | The Playwright E2E environment and local recipe | `references/e2e-environment.md` |
 | Test-count baseline per project, to compare against later | `references/test-baseline.md` |
+| Nightly mutation testing: what it measures, local runs, reading survivors | `references/mutation-testing.md` |
 
 ## 8. How to Use This Guide
 
@@ -240,7 +242,7 @@ This guide is organized as a multi-file skill:
 - **This file (SKILL.md)** — always loaded. Core rules, quick reference, anti-patterns.
 - **`artifacts/`** — one file per artifact type. Read the relevant file when creating or modifying that type.
 - **`references/`** — supporting content. Read when you need mock strategies, conventions, gotchas,
-  AC tracing, negative paths or the E2E environment.
+  AC tracing, negative paths, the E2E environment or mutation testing.
 
 When working on a feature:
 1. Check §3 (Feature Implementation Checklist) to identify which artifacts need tests

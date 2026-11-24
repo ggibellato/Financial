@@ -28,6 +28,18 @@ pieces (`Sidebar`, `Breadcrumb`, `SplitPanel`, `SyncStatusBanner`, `PaymentDueBa
 - **Financial formatting**: right-aligned numbers, `formatN2`, signs, totals distinct from rows.
 - Negative: invalid input shows a specific message; a rejected `onSave` promise keeps the
   entered values; an unknown status renders the neutral fallback.
+- **Dialog closed:** `queryByRole('dialog')` can be null while a Fluent dialog is still open;
+  assert its title is gone.
+- **Field errors:** a Fluent `Field` with `validationState="error"` shows its message on its own;
+  assert `aria-invalid` on the input too.
+- **Error alerts:** `ActionErrorAlert` is a Fluent `MessageBar` (`role="group"`, find it with
+  `getErrorAlert` from `src/test-utils/errorAlert.ts`); `ErrorState` is `role="alert"` unless it
+  takes focus, then `role="group"`.
+- **Toasts:** the default intent is info, so assert the success icon, not only the text.
+- **Sorting:** use data that each column orders differently from the API order and from every
+  other column, and assert `aria-sort` on the header.
+- **A component with its own logic** joins `stryker.components.config.json` in the PR that creates
+  it (`references/mutation-testing.md`).
 
 ## Layer assignment
 

@@ -49,6 +49,8 @@
   branching, capture the `HttpRequestMessage` in the responder and assert it.
 - **`UnsupportedAssetClassException` first-chance noise** in the debugger for two unpriceable
   holdings is known and handled (maps to 422); not a test failure.
+- **`Currency` defaults to BRL**: a test that writes or expects BRL passes even when the currency is
+  never written or read. Use GBP or USD in currency assertions.
 - **`rg` is not on PATH on this machine** (the `rtk` hook reports "Binary 'rg' not found") —
   audit commands in this guide use `grep -rnE`.
 
@@ -95,6 +97,7 @@
   file is CRLF; a raw byte comparison would fail for the wrong reason. Keep that normalisation.
 - **`vitest run` does not type-check** — run `npm run build` (`tsc -b`) after each change; a
   field rename passes vitest and fails the Docker build (`feedback_typescript_build_validation`).
+- **A total regex like `/30[.,]00/` also matches `-30.00`** — assert the exact `formatN2` text.
 - **Vitest 4.1's `-t` matches the full name** (`describe > it` joined with ` > `) — escape the
   `[` in `-t "\[AC P42-F02"`.
 
