@@ -196,21 +196,21 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Round-up Only Savings Accounts
-- [ ] **P66-F01-roundup-only-01** A Savings account can be created and updated with Round-up only on or off, and the account detail returns it; accounts saved before this feature load with it off
-- [ ] **P66-F01-roundup-only-02** A transfer into a round-up-only account is refused with 400 "{account} only receives round-ups."
-- [ ] **P66-F01-roundup-only-03** A non-interest income into it is refused with 400, while interest from a Dividendo/Juros source, transfers out and balance adjustments are allowed
-- [ ] **P66-F01-roundup-only-04** Its allowed actions exclude Transfer from and Add income and include Add interest, Transfer to and Reconcile
-- [ ] **P66-F01-roundup-only-05** Switching Round-up only on is refused while the account has transfers in or non-interest income; switching it off is always allowed
-- [ ] **P66-F01-roundup-only-06** The OpenAPI snapshot and the generated web types include the setting, and their freshness tests pass
+- [x] **P66-F01-roundup-only-01** A Savings account can be created and updated with Round-up only on or off, and the account detail returns it; accounts saved before this feature load with it off
+- [x] **P66-F01-roundup-only-02** A transfer into a round-up-only account is refused with 400 "{account} only receives round-ups."
+- [x] **P66-F01-roundup-only-03** A non-interest income into it is refused with 400, while interest from a Dividendo/Juros source, transfers out and balance adjustments are allowed
+- [x] **P66-F01-roundup-only-04** Its allowed actions exclude Transfer from and Add income and include Add interest, Transfer to and Reconcile
+- [x] **P66-F01-roundup-only-05** Switching Round-up only on is refused while the account has transfers in or non-interest income; switching it off is always allowed
+- [x] **P66-F01-roundup-only-06** The OpenAPI snapshot and the generated web types include the setting, and their freshness tests pass
 
 ### F02. Round-up and Cashback Destinations
-- [ ] **P66-F02-destinations-01** A Bank account's round-up and cashback destinations can each be set to None, a Savings account or Invested automatically, and an update without them keeps them; existing banks load with None
-- [ ] **P66-F02-destinations-02** A round-up destination that isn't an active round-up-only Savings account, or a cashback destination that is round-up only, inactive or not Savings, is refused with 400
-- [ ] **P66-F02-destinations-03** A destination's balance includes the round-ups (or cashback) of expenses paid from the pointing banks, from each expense's date, ignoring amounts dated before its balance start date; the paying bank's balance is unchanged
-- [ ] **P66-F02-destinations-04** The destination's transactions list each routed amount as a read-only RoundUp or Cashback row with the expense's date and description and the bank as counterpart
-- [ ] **P66-F02-destinations-05** Changing a bank's destination moves its routed amounts to the new destination; setting None removes them from every balance
-- [ ] **P66-F02-destinations-06** Deactivating or deleting a destination a bank points at is refused with 400 naming the bank
-- [ ] **P66-F02-destinations-07** An Investment Snapshot linked to a destination Savings account suggests its balance including the routed amounts
+- [x] **P66-F02-destinations-01** A Bank account's round-up and cashback destinations can each be set to None, a Savings account or Invested automatically, and an update without them keeps them; existing banks load with None
+- [x] **P66-F02-destinations-02** A round-up destination that isn't an active round-up-only Savings account, or a cashback destination that is round-up only, inactive or not Savings, is refused with 400
+- [x] **P66-F02-destinations-03** A destination's balance includes the round-ups (or cashback) of expenses paid from the pointing banks, from each expense's date, ignoring amounts dated before its balance start date; the paying bank's balance is unchanged
+- [x] **P66-F02-destinations-04** The destination's transactions list each routed amount as a read-only RoundUp or Cashback row with the expense's date and description and the bank as counterpart
+- [x] **P66-F02-destinations-05** Changing a bank's destination moves its routed amounts to the new destination; setting None removes them from every balance
+- [x] **P66-F02-destinations-06** Deactivating or deleting a destination a bank points at is refused with 400 naming the bank
+- [x] **P66-F02-destinations-07** An Investment Snapshot linked to a destination Savings account suggests its balance including the routed amounts
 
 ### F03. Destinations in the Web App
 - [ ] **P66-F03-destinations-web-01** Admin → Accounts shows Round-up only for Savings accounts, and the Round-ups go to / Cashback goes to pickers for Bank accounts while their switches are on, offering only valid destinations
