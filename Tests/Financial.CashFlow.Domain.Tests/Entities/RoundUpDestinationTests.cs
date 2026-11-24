@@ -15,10 +15,10 @@ public class RoundUpDestinationTests
     private static readonly DateOnly Today = new(2026, 11, 24);
     private static readonly Category Mercado = Category.Create("Mercado");
 
-    private static Account RoundUpSaver(string name = "Chase round-up saver") =>
-        TestAccounts.Savings(
-            name,
-            SavingsTerms.Create(InterestFrequency.Monthly, 1, isTaxFree: false, [InterestRate.Create(5m, new DateOnly(2026, 1, 1))], roundUpOnly: true));
+    private static readonly SavingsTerms RoundUpOnlyTerms =
+        SavingsTerms.Create(InterestFrequency.Monthly, 1, isTaxFree: false, [InterestRate.Create(5m, new DateOnly(2026, 1, 1))], roundUpOnly: true);
+
+    private static Account RoundUpSaver(string name = "Chase round-up saver") => TestAccounts.Savings(name, RoundUpOnlyTerms);
 
     private static Account ChaseWithRoundUpsTo(Account saver)
     {
@@ -80,23 +80,34 @@ public class RoundUpDestinationTests
 
     [Fact]
     [Trait("AC", "P66-F01-roundup-only-05")]
-    public void EnsureOnlyRoundUpsReceived_WithATransferIn_Throws()
+    public void EnsureCanSwitchToRoundUpOnly_WithATransferIn_Throws()
     {
         var saver = TestAccounts.Savings("Chase round-up saver");
         var transferIn = Transfer.Create(Today, TestAccounts.Bank("Barclays"), saver, 50m, null, null, Today);
 
-        var act = () => saver.EnsureOnlyRoundUpsReceived([transferIn], []);
+        var act = () => saver.EnsureCanSwitchToRoundUpOnly(RoundUpOnlyTerms, [transferIn], []);
 
         act.Should().Throw<ArgumentException>().WithMessage("Chase round-up saver already has money in that isn't a round-up or interest.");
     }
 
     [Fact]
-    public void EnsureOnlyRoundUpsReceived_WithOnlyInterest_Passes()
+    public void EnsureCanSwitchToRoundUpOnly_WhenNotSwitchingOn_IgnoresTransfersIn()
+    {
+        var saver = TestAccounts.Savings("Chase Save");
+        var transferIn = Transfer.Create(Today, TestAccounts.Bank("Barclays"), saver, 50m, null, null, Today);
+
+        var act = () => saver.EnsureCanSwitchToRoundUpOnly(saver.Savings, [transferIn], []);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureCanSwitchToRoundUpOnly_WithOnlyInterest_Passes()
     {
         var saver = TestAccounts.Savings("Chase round-up saver");
         var interest = Income.Create(Today, IncomeSource.Create("Interest", IncomeGroup.DividendoJuros), null, 1.20m, saver);
 
-        var act = () => saver.EnsureOnlyRoundUpsReceived([], [interest]);
+        var act = () => saver.EnsureCanSwitchToRoundUpOnly(RoundUpOnlyTerms, [], [interest]);
 
         act.Should().NotThrow();
     }

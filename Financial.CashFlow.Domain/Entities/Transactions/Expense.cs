@@ -303,6 +303,7 @@ public class Expense : IAccountTransaction
 
     private decimal RoutedTo(Account account, decimal? amount, Func<Account, MoneyDestination?> destinationOf) =>
         amount is > 0m and var routed
+        && account.Savings is not null
         && PaymentStatus == ExpensePaymentStatus.ImmediatePayment
         && destinationOf(PaymentSourceAccount!)?.IsAccount(account.Id) == true
             ? routed

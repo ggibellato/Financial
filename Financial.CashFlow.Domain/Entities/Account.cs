@@ -45,8 +45,8 @@ public class Account
     public MoneyDestination? RoundUpDestination => Has(Capability.SupportsRoundUp) ? _roundUpDestination ?? MoneyDestination.None : null;
     public MoneyDestination? CashbackDestination => Has(Capability.SupportsCashback) ? _cashbackDestination ?? MoneyDestination.None : null;
     public bool ReceivesOnlyRoundUps => Savings?.RoundUpOnly == true;
-    public bool CanReceiveRoundUps => ReceivesRoutedMoney(IsActive, Has(Capability.EarnsInterest), ReceivesOnlyRoundUps).RoundUps;
-    public bool CanReceiveCashback => ReceivesRoutedMoney(IsActive, Has(Capability.EarnsInterest), ReceivesOnlyRoundUps).Cashback;
+    public bool CanReceiveRoundUps => IsActive && Has(Capability.EarnsInterest) && ReceivesOnlyRoundUps;
+    public bool CanReceiveCashback => IsActive && Has(Capability.EarnsInterest) && !ReceivesOnlyRoundUps;
     public string TemplateName => Template.ToString();
     public int TemplateOrder => AccountTemplates.Available.ToList().IndexOf(Template);
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -197,7 +197,6 @@ public class Account
     {
         ArgumentNullException.ThrowIfNull(destination);
         EnsureSupportsRoundUp(Has, Name);
-
         EnsureRoundUpDestinationFits(destination, target);
         _roundUpDestination = destination;
     }
@@ -210,13 +209,18 @@ public class Account
         _cashbackDestination = destination;
     }
 
-    public void EnsureOnlyRoundUpsReceived(IEnumerable<Transfer> transfers, IEnumerable<Income> incomes)
+    public void EnsureCanSwitchToRoundUpOnly(SavingsTerms? requested, IEnumerable<Transfer> transfers, IEnumerable<Income> incomes)
     {
         ArgumentNullException.ThrowIfNull(transfers);
         ArgumentNullException.ThrowIfNull(incomes);
 
+        if (requested?.RoundUpOnly != true || ReceivesOnlyRoundUps)
+        {
+            return;
+        }
+
         if (transfers.Any(transfer => transfer.DestinationAccount.Id == Id)
-            || incomes.Any(income => income.Account?.Id == Id && income.IncomeSource.Group != IncomeGroup.DividendoJuros))
+            || incomes.Any(income => income.Account?.Id == Id && !income.IsInterest))
         {
             throw new ArgumentException($"{Name} already has money in that isn't a round-up or interest.");
         }
@@ -340,11 +344,11 @@ public class Account
         }
     }
 
-    public void EnsureStillReceivesRoutedMoney(IEnumerable<Account> banks, bool staysActive, bool staysSavings, bool staysRoundUpOnly)
+    public void EnsureStillReceivesRoutedMoney(IEnumerable<Account> accounts, bool staysActive, bool staysSavings, bool staysRoundUpOnly)
     {
-        ArgumentNullException.ThrowIfNull(banks);
+        ArgumentNullException.ThrowIfNull(accounts);
         var (roundUps, cashback) = ReceivesRoutedMoney(staysActive, staysSavings, staysRoundUpOnly);
-        foreach (var bank in banks)
+        foreach (var bank in accounts)
         {
             if (!roundUps && bank.RoundUpDestination?.IsAccount(Id) == true)
             {

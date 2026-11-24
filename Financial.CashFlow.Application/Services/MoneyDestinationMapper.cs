@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.ValueObjects;
@@ -28,7 +29,7 @@ internal static class MoneyDestinationMapper
         {
             MoneyDestinationKind.None => new(MoneyDestination.None, null),
             MoneyDestinationKind.InvestedAutomatically => new(MoneyDestination.InvestedAutomatically, null),
-            _ when dto.AccountId is { } accountId => new(MoneyDestination.ToAccount(accountId), accounts.FirstOrDefault(account => account.Id == accountId)),
+            _ when dto.AccountId is { } accountId => new(MoneyDestination.ToAccount(accountId), CashFlowReferenceResolver.ResolveAccount(accounts, accountId)),
             _ => throw new ArgumentException(UnknownKindMessage)
         };
     }

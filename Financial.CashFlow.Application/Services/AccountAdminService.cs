@@ -127,7 +127,7 @@ public sealed class AccountAdminService : IAccountAdminService
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var cashback = RequestedCashback(targetHas, trimmedName, request.CashbackEnabled, request.CashbackRatePercent);
             var destinations = RequestedDestinations(targetHas, trimmedName, request.RoundUpDestination, request.CashbackDestination);
-            EnsureOnlyRoundUpsWhenSwitchedOn(account, savings);
+            account.EnsureCanSwitchToRoundUpOnly(savings, _repository.GetTransfers(), _repository.GetIncomes());
             account.EnsureStillReceivesRoutedMoney(
                 _repository.GetAccounts(), request.IsActive, templateHas(Capability.EarnsInterest), savings?.RoundUpOnly == true);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
@@ -313,14 +313,6 @@ public sealed class AccountAdminService : IAccountAdminService
         if (destinations.Cashback is { } cashback)
         {
             account.SetCashbackDestination(cashback.Destination, cashback.Target);
-        }
-    }
-
-    private void EnsureOnlyRoundUpsWhenSwitchedOn(Account account, SavingsTerms? savings)
-    {
-        if (savings?.RoundUpOnly == true && !account.ReceivesOnlyRoundUps)
-        {
-            account.EnsureOnlyRoundUpsReceived(_repository.GetTransfers(), _repository.GetIncomes());
         }
     }
 
