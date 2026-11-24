@@ -135,17 +135,19 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Balance = balances.First(balance => balance.Currency == account.Currency).Balance,
             CurrencyBalances = CurrencyBalanceMapper.ToDtos(balances),
             OtherParticipant = account.OtherParticipant,
-            RoundUpTotal = account.RoundsUp || paidFromAccount.Any(e => e.RoundUpAmount is not null)
-                ? paidFromAccount.Sum(e => e.RoundUpAmount ?? 0m)
-                : null,
-            CashbackTotal = account.EarnsCashback || paidFromAccount.Any(e => e.CashbackAmount is not null)
-                ? paidFromAccount.Sum(e => e.CashbackAmount ?? 0m)
-                : null,
+            RoundUpTotal = TotalOrNull(account.RoundsUp, paidFromAccount.Select(e => e.RoundUpAmount)),
+            CashbackTotal = TotalOrNull(account.EarnsCashback, paidFromAccount.Select(e => e.CashbackAmount)),
             Statement = statement,
             BalanceIsOwed = account.BalanceIsOwed,
             TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
             NextStatement = nextStatement
         };
+    }
+
+    private static decimal? TotalOrNull(bool isOn, IEnumerable<decimal?> amounts)
+    {
+        var recorded = amounts.OfType<decimal>().ToList();
+        return isOn || recorded.Count > 0 ? recorded.Sum() : null;
     }
 
     private static AccountNextStatementDTO? NextStatementFor(

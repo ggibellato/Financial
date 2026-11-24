@@ -212,25 +212,28 @@ public class Account
         _cashbackDestination = destination;
     }
 
-    public void EnsureCanSwitchToRoundUpOnly(
-        SavingsTerms? requested, IEnumerable<Transfer> transfers, IEnumerable<Income> incomes, IEnumerable<ExternalPayment> payments)
+    public void EnsureCanSwitchToRoundUpOnly(SavingsTerms? requested, IEnumerable<IAccountTransaction> records)
     {
-        ArgumentNullException.ThrowIfNull(transfers);
-        ArgumentNullException.ThrowIfNull(incomes);
-        ArgumentNullException.ThrowIfNull(payments);
+        ArgumentNullException.ThrowIfNull(records);
 
         if (requested?.RoundUpOnly != true || ReceivesOnlyRoundUps)
         {
             return;
         }
 
-        if (transfers.Any(transfer => transfer.DestinationAccount.Id == Id)
-            || incomes.Any(income => income.Account?.Id == Id && !income.IsInterest)
-            || payments.Any(payment => payment.PaysInto(this)))
+        if (records.Any(IsMoneyInOtherThanRoundUpsOrInterest))
         {
             throw new ArgumentException($"{Name} already has money in that isn't a round-up or interest.");
         }
     }
+
+    private bool IsMoneyInOtherThanRoundUpsOrInterest(IAccountTransaction record) => record switch
+    {
+        Transfer transfer => transfer.DestinationAccount.Id == Id,
+        Income income => income.Account?.Id == Id && !income.IsInterest,
+        ExternalPayment payment => payment.PaysInto(this),
+        _ => false
+    };
 
     public static void EnsureRoundUpDestinationFits(MoneyDestination destination, Account? target) =>
         EnsureDestinationFits(destination, target, candidate => candidate.CanReceiveRoundUps, RoundUpDestinationMessage);

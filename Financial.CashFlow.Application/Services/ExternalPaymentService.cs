@@ -32,6 +32,7 @@ public sealed class ExternalPaymentService : IExternalPaymentService
         try
         {
             ArgumentNullException.ThrowIfNull(request);
+            DescriptionValidator.EnsureWithinLimit(request.Description);
 
             var payment = ExternalPayment.Create(
                 ParseDirection(request.Direction), request.Date, FindAccountOrThrow(accountId), request.Amount, request.Description);
@@ -59,6 +60,7 @@ public sealed class ExternalPaymentService : IExternalPaymentService
         try
         {
             ArgumentNullException.ThrowIfNull(request);
+            DescriptionValidator.EnsureWithinLimit(request.Description);
 
             var payment = FindPaymentOrThrow(FindAccountOrThrow(accountId), id);
             await _repository.ApplyAndSaveAsync(() =>
@@ -112,7 +114,7 @@ public sealed class ExternalPaymentService : IExternalPaymentService
     private static PaymentDirection ParseDirection(string direction) =>
         EnumParser.TryParseDefinedName<PaymentDirection>(direction, out var parsed)
             ? parsed
-            : throw new ArgumentException("Choose whether money is paid in or out.");
+            : throw new ArgumentException(ExternalPayment.DirectionMessage);
 
     private Account FindAccountOrThrow(Guid accountId) =>
         _repository.GetAccounts().FirstOrThrow(account => account.Id == accountId, "Account", accountId);
@@ -120,7 +122,7 @@ public sealed class ExternalPaymentService : IExternalPaymentService
     private ExternalPayment FindPaymentOrThrow(Account account, Guid id) =>
         _repository.GetExternalPayments().FirstOrThrow(payment => payment.Id == id && payment.Account.Id == account.Id, "Payment", id);
 
-    internal static ExternalPaymentDTO ToDto(ExternalPayment payment) => new()
+    private static ExternalPaymentDTO ToDto(ExternalPayment payment) => new()
     {
         Id = payment.Id,
         Direction = payment.Direction.ToString(),

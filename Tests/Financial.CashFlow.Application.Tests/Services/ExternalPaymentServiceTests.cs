@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -39,7 +40,22 @@ public class ExternalPaymentServiceTests
 
         using (new AssertionScope())
         {
-            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Choose whether money is paid in or out.");
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage(ExternalPayment.DirectionMessage);
+            _repository.ExternalPayments.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExternalPaymentService.AddPayment");
+        }
+    }
+
+    [Fact]
+    public async Task AddPaymentAsync_DescriptionOverTheLimit_ThrowsAndSavesNothing()
+    {
+        var tooLong = new ExternalPaymentCreateDTO { Direction = "In", Date = new DateOnly(2026, 11, 12), Amount = 20m, Description = new string('x', 201) };
+
+        var actTooLong = () => _sut.AddPaymentAsync(_barclays.Id, tooLong);
+
+        using (new AssertionScope())
+        {
+            (await actTooLong.Should().ThrowAsync<ArgumentException>()).WithMessage("Description must not exceed 200 characters.");
             _repository.ExternalPayments.Should().BeEmpty();
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExternalPaymentService.AddPayment");
         }

@@ -127,7 +127,7 @@ public sealed class AccountAdminService : IAccountAdminService
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var cashback = RequestedCashback(targetHas, trimmedName, request.CashbackEnabled, request.CashbackRatePercent);
             var destinations = RequestedDestinations(targetHas, trimmedName, request.RoundUpDestination, request.CashbackDestination);
-            account.EnsureCanSwitchToRoundUpOnly(savings, _repository.GetTransfers(), _repository.GetIncomes(), _repository.GetExternalPayments());
+            account.EnsureCanSwitchToRoundUpOnly(savings, AccountTransactionReader.Read(_repository));
             account.EnsureStillReceivesRoutedMoney(
                 _repository.GetAccounts(), request.IsActive, templateHas(Capability.EarnsInterest), savings?.RoundUpOnly == true);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);

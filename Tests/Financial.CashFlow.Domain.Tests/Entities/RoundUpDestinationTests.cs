@@ -86,7 +86,7 @@ public class RoundUpDestinationTests
         var saver = TestAccounts.Savings("Chase round-up saver");
         var transferIn = Transfer.Create(Today, TestAccounts.Bank("Barclays"), saver, 50m, null, null, Today);
 
-        var act = () => saver.EnsureCanSwitchToRoundUpOnly(RoundUpOnlyTerms, [transferIn], [], []);
+        var act = () => saver.EnsureCanSwitchToRoundUpOnly(RoundUpOnlyTerms, [transferIn]);
 
         act.Should().Throw<ArgumentException>().WithMessage("Chase round-up saver already has money in that isn't a round-up or interest.");
     }
@@ -97,7 +97,7 @@ public class RoundUpDestinationTests
         var saver = TestAccounts.Savings("Chase Save");
         var transferIn = Transfer.Create(Today, TestAccounts.Bank("Barclays"), saver, 50m, null, null, Today);
 
-        var act = () => saver.EnsureCanSwitchToRoundUpOnly(saver.Savings, [transferIn], [], []);
+        var act = () => saver.EnsureCanSwitchToRoundUpOnly(saver.Savings, [transferIn]);
 
         act.Should().NotThrow();
     }
@@ -108,7 +108,7 @@ public class RoundUpDestinationTests
         var saver = TestAccounts.Savings("Chase round-up saver");
         var interest = Income.Create(Today, IncomeSource.Create("Interest", IncomeGroup.DividendoJuros), null, 1.20m, saver);
 
-        var act = () => saver.EnsureCanSwitchToRoundUpOnly(RoundUpOnlyTerms, [], [interest], []);
+        var act = () => saver.EnsureCanSwitchToRoundUpOnly(RoundUpOnlyTerms, [interest]);
 
         act.Should().NotThrow();
     }

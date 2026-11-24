@@ -89,7 +89,7 @@ public class ExternalPaymentTests
         var payIn = ExternalPayment.Create(PaymentDirection.In, Date, chaseSave, 5m, "Cashback");
         var roundUpOnly = SavingsTerms.Create(InterestFrequency.Daily, null, isTaxFree: false, [InterestRate.Create(1m, new DateOnly(2026, 1, 1))], roundUpOnly: true);
 
-        var act = () => chaseSave.EnsureCanSwitchToRoundUpOnly(roundUpOnly, [], [], [payIn]);
+        var act = () => chaseSave.EnsureCanSwitchToRoundUpOnly(roundUpOnly, [payIn]);
 
         act.Should().Throw<ArgumentException>().WithMessage("Chase Save already has money in that isn't a round-up or interest.");
     }

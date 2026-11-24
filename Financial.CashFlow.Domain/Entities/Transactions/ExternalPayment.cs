@@ -8,6 +8,7 @@ public class ExternalPayment : IAccountTransaction
 {
     public const string AmountMessage = "Enter an amount above 0 with at most 2 decimal places.";
     public const string DescriptionMessage = "Enter a description.";
+    public const string DirectionMessage = "Choose whether money is paid in or out.";
 
     public Guid Id { get; private set; }
     public PaymentDirection Direction { get; private set; }
@@ -23,7 +24,7 @@ public class ExternalPayment : IAccountTransaction
         ArgumentNullException.ThrowIfNull(account);
         if (!Enum.IsDefined(direction))
         {
-            throw new ArgumentException("Choose whether money is paid in or out.");
+            throw new ArgumentException(DirectionMessage);
         }
 
         EnsureAccountTakes(direction, account);
@@ -64,7 +65,7 @@ public class ExternalPayment : IAccountTransaction
             throw new ArgumentException($"{account.Name} can't take a pay-in or pay-out.");
         }
 
-        if (!account.AcceptsPayment(direction))
+        if (direction == PaymentDirection.In && account.ReceivesOnlyRoundUps)
         {
             throw new ArgumentException($"{account.Name} only receives round-ups.");
         }
