@@ -128,7 +128,8 @@ public sealed class AccountAdminService : IAccountAdminService
             var cashback = RequestedCashback(targetHas, trimmedName, request.CashbackEnabled, request.CashbackRatePercent);
             var destinations = RequestedDestinations(targetHas, trimmedName, request.RoundUpDestination, request.CashbackDestination);
             EnsureOnlyRoundUpsWhenSwitchedOn(account, savings);
-            EnsureStillReceivesRoutedMoney(account, request.IsActive && template == AccountTemplate.Savings, savings);
+            account.EnsureStillReceivesRoutedMoney(
+                _repository.GetAccounts(), request.IsActive, templateHas(Capability.EarnsInterest), savings?.RoundUpOnly == true);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -164,7 +165,7 @@ public sealed class AccountAdminService : IAccountAdminService
         try
         {
             var account = FindAccountOrThrow(id);
-            EnsureStillReceivesRoutedMoney(account, staysSavings: false, savings: null);
+            account.EnsureStillReceivesRoutedMoney(_repository.GetAccounts(), staysActive: false, staysSavings: false, staysRoundUpOnly: false);
 
             if (AccountReferenceReader.IsReferenced(_repository, id))
             {
@@ -289,11 +290,7 @@ public sealed class AccountAdminService : IAccountAdminService
 
         if (requestedRoundUp is not null)
         {
-            if (!has(Capability.SupportsRoundUp))
-            {
-                throw new ArgumentException($"{accountName} does not support round-up.");
-            }
-
+            Account.EnsureSupportsRoundUp(has, accountName);
             Account.EnsureRoundUpDestinationFits(requestedRoundUp.Destination, requestedRoundUp.Target);
         }
 
@@ -324,23 +321,6 @@ public sealed class AccountAdminService : IAccountAdminService
         if (savings?.RoundUpOnly == true && !account.ReceivesOnlyRoundUps)
         {
             account.EnsureOnlyRoundUpsReceived(_repository.GetTransfers(), _repository.GetIncomes());
-        }
-    }
-
-    private void EnsureStillReceivesRoutedMoney(Account account, bool staysSavings, SavingsTerms? savings)
-    {
-        var staysRoundUpOnly = staysSavings && savings?.RoundUpOnly == true;
-        foreach (var bank in _repository.GetAccounts())
-        {
-            if (bank.RoundUpDestination?.IsAccount(account.Id) == true && !staysRoundUpOnly)
-            {
-                throw new ArgumentException($"{account.Name} receives {bank.Name}'s round-ups.");
-            }
-
-            if (bank.CashbackDestination?.IsAccount(account.Id) == true && !(staysSavings && !staysRoundUpOnly))
-            {
-                throw new ArgumentException($"{account.Name} receives {bank.Name}'s cashback.");
-            }
         }
     }
 

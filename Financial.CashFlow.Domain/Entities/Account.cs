@@ -45,8 +45,8 @@ public class Account
     public MoneyDestination? RoundUpDestination => Has(Capability.SupportsRoundUp) ? _roundUpDestination ?? MoneyDestination.None : null;
     public MoneyDestination? CashbackDestination => Has(Capability.SupportsCashback) ? _cashbackDestination ?? MoneyDestination.None : null;
     public bool ReceivesOnlyRoundUps => Savings?.RoundUpOnly == true;
-    public bool CanReceiveRoundUps => IsActive && ReceivesOnlyRoundUps;
-    public bool CanReceiveCashback => IsActive && Has(Capability.EarnsInterest) && !ReceivesOnlyRoundUps;
+    public bool CanReceiveRoundUps => ReceivesRoutedMoney(IsActive, Has(Capability.EarnsInterest), ReceivesOnlyRoundUps).RoundUps;
+    public bool CanReceiveCashback => ReceivesRoutedMoney(IsActive, Has(Capability.EarnsInterest), ReceivesOnlyRoundUps).Cashback;
     public string TemplateName => Template.ToString();
     public int TemplateOrder => AccountTemplates.Available.ToList().IndexOf(Template);
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -181,10 +181,7 @@ public class Account
 
     public void SetRoundUp(bool enabled)
     {
-        if (!Has(Capability.SupportsRoundUp))
-        {
-            throw new ArgumentException($"{Name} does not support round-up.");
-        }
+        EnsureSupportsRoundUp(Has, Name);
 
         RoundUp = new RoundUpSetting(enabled);
     }
@@ -199,10 +196,7 @@ public class Account
     public void SetRoundUpDestination(MoneyDestination destination, Account? target = null)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        if (!Has(Capability.SupportsRoundUp))
-        {
-            throw new ArgumentException($"{Name} does not support round-up.");
-        }
+        EnsureSupportsRoundUp(Has, Name);
 
         EnsureRoundUpDestinationFits(destination, target);
         _roundUpDestination = destination;
@@ -337,6 +331,35 @@ public class Account
             throw new ArgumentException($"{accountName} has no participants.");
         }
     }
+
+    public static void EnsureSupportsRoundUp(Func<Capability, bool> has, string accountName)
+    {
+        if (!has(Capability.SupportsRoundUp))
+        {
+            throw new ArgumentException($"{accountName} does not support round-up.");
+        }
+    }
+
+    public void EnsureStillReceivesRoutedMoney(IEnumerable<Account> banks, bool staysActive, bool staysSavings, bool staysRoundUpOnly)
+    {
+        ArgumentNullException.ThrowIfNull(banks);
+        var (roundUps, cashback) = ReceivesRoutedMoney(staysActive, staysSavings, staysRoundUpOnly);
+        foreach (var bank in banks)
+        {
+            if (!roundUps && bank.RoundUpDestination?.IsAccount(Id) == true)
+            {
+                throw new ArgumentException($"{Name} receives {bank.Name}'s round-ups.");
+            }
+
+            if (!cashback && bank.CashbackDestination?.IsAccount(Id) == true)
+            {
+                throw new ArgumentException($"{Name} receives {bank.Name}'s cashback.");
+            }
+        }
+    }
+
+    private static (bool RoundUps, bool Cashback) ReceivesRoutedMoney(bool isActive, bool earnsInterest, bool roundUpOnly) =>
+        (isActive && earnsInterest && roundUpOnly, isActive && earnsInterest && !roundUpOnly);
 
     public static void EnsureSupportsCashback(Func<Capability, bool> has, string accountName)
     {

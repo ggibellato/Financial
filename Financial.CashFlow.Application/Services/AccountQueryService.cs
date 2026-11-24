@@ -102,6 +102,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 ? AccountBalanceRule.CurrentBalances(account, records)
                 : [];
 
+            var accounts = _repository.GetAccounts().ToList();
             var result = new AccountDetailDTO
             {
                 Id = account.Id,
@@ -122,8 +123,8 @@ public sealed class AccountQueryService : IAccountQueryService
                 HasPlannedEntries = account.Has(Capability.HasParticipants) && HasPlannedEntries(account, records),
                 OtherParticipant = account.OtherParticipant,
                 Savings = SavingsTermsMapper.ToSummary(account.Savings, _timeProvider.GetLocalToday()),
-                RoundUpDestination = MoneyDestinationMapper.ToDto(account.RoundUpDestination, _repository.GetAccounts()),
-                CashbackDestination = MoneyDestinationMapper.ToDto(account.CashbackDestination, _repository.GetAccounts())
+                RoundUpDestination = MoneyDestinationMapper.ToDto(account.RoundUpDestination, accounts),
+                CashbackDestination = MoneyDestinationMapper.ToDto(account.CashbackDestination, accounts)
             };
 
             span.MarkSuccess();
