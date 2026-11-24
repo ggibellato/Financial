@@ -154,6 +154,8 @@ docker-compose up
 ```
 Builds the React SPA and the API into a single image (`Dockerfile`), API serves both from port 8080. Volumes mount `./data` for the JSON files, so it serves the live `data/data-cashflow.json`: it is the user's local install, not a test environment. For local testing and browsing use `dotnet run --project Financial.Api` (Development, `data/dev/`) plus `npm run dev`.
 
+The `Dockerfile`'s base images are pinned to exact patch tags (`dotnet/sdk`, `dotnet/aspnet`, `node`) so rebuilds reuse them; see README §Build caching. CI builds with a floating `10.0.x` SDK and never builds the image, so bump those tags in the same change that needs a newer .NET or Node version.
+
 ## CI
 
 `.github/workflows/build.yml` runs only the jobs a change can affect: a `changes` job classifies the
