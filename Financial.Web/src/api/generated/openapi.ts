@@ -7533,6 +7533,8 @@ export interface components {
         AccountTemplateGroupTotalDTO: {
             currency: string;
             /** Format: double */
+            openStatementTotal?: null | number;
+            /** Format: double */
             total: number;
         };
         AccountTransactionDTO: {

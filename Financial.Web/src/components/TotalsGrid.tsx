@@ -29,13 +29,13 @@ interface TotalsGridProps<T> {
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
-  footerItems: SectionTotalItem[]
+  footerItems?: SectionTotalItem[]
   columnTotals?: ColumnTotalsRow[]
   filter?: FilterSummary & { itemsNoun: string }
   emptyMessage: string
 }
 
-export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label}`, columns, rows, rowKey, footerItems, columnTotals = [], filter, emptyMessage }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label}`, columns, rows, rowKey, footerItems = [], columnTotals = [], filter, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
   const tableRef = useRef<HTMLTableElement>(null)
@@ -89,7 +89,11 @@ export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label
               {columnTotals.map((totals) => (
                 <TableRow key={totals.label}>
                   {columns.map((col, index) => (
-                    <DataTableCell key={col.key} label={col.header} className={col.numeric ? 'data-table__col--numeric' : undefined}>
+                    <DataTableCell
+                      key={col.key}
+                      label={index === 0 ? 'Total' : col.header}
+                      className={[col.numeric && 'data-table__col--numeric', index > 0 && totals.values[col.key] === undefined && 'data-table__cell--no-total'].filter(Boolean).join(' ') || undefined}
+                    >
                       {index === 0 ? totals.label : totals.values[col.key]}
                     </DataTableCell>
                   ))}

@@ -108,10 +108,14 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             .Select(group => new AccountTemplateGroupTotalDTO
             {
                 Currency = group.Key,
-                Total = group.Sum(member => member.TotalOwed ?? member.Balance)
+                Total = group.Sum(member => member.TotalOwed ?? member.Balance),
+                OpenStatementTotal = members[0].Statement is null ? null : group.Sum(OpenStatementAmount)
             })
             .ToList()
     };
+
+    private static decimal OpenStatementAmount(AccountGroupMemberDTO member) =>
+        member.Statement is { IsPaid: false } statement ? statement.OutstandingTotal : 0m;
 
     private static AccountGroupMemberDTO ToGroupMemberDto(
         Account account,

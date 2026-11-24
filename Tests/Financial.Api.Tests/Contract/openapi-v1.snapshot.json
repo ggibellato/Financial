@@ -699,6 +699,13 @@
           "currency": {
             "type": "string"
           },
+          "openStatementTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "total": {
             "format": "double",
             "type": "number"

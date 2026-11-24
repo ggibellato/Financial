@@ -81,8 +81,8 @@ const BANKS: AccountTemplateGroupDto = {
     member('old', 'Old Savings', 'Bank', { balance: 10, isActive: false }),
   ],
   totals: [
-    { currency: 'GBP', total: 3310.25 },
-    { currency: 'BRL', total: 1000 },
+    { currency: 'GBP', total: 3310.25, openStatementTotal: null },
+    { currency: 'BRL', total: 1000, openStatementTotal: null },
   ],
 }
 
@@ -98,7 +98,7 @@ const CARDS: AccountTemplateGroupDto = {
     }),
     member('visa', 'Old Visa', 'CreditCard', { balanceIsOwed: true, isActive: false, totalOwed: 0 }),
   ],
-  totals: [{ currency: 'GBP', total: 740.12 }],
+  totals: [{ currency: 'GBP', total: 740.12, openStatementTotal: 228 }],
 }
 
 const POTS: AccountTemplateGroupDto = {
@@ -107,7 +107,7 @@ const POTS: AccountTemplateGroupDto = {
     member('old-pots', 'Old pots', 'Pots', { balance: 12.5, isActive: false }),
     member('reserva', 'Reserva', 'Pots', { balance: 704.08 }),
   ],
-  totals: [{ currency: 'GBP', total: 716.58 }],
+  totals: [{ currency: 'GBP', total: 716.58, openStatementTotal: null }],
 }
 
 const SETTLEMENT: AccountTemplateGroupDto = {
@@ -236,6 +236,7 @@ describe('AccountsPage', () => {
       ['Bank total GBP', '', '3,310.25', '', '0.34'],
       ['Bank total BRL', '', '1,000.00', '', ''],
     ])
+    expect(banks.querySelector('tfoot td')?.textContent).toBe('Total:Bank total GBP')
 
     const pots = screen.getByRole('table', { name: 'Pots' })
     expect(headers(pots)).toEqual(['Account', 'Currency', 'Balance'])
@@ -259,7 +260,7 @@ describe('AccountsPage', () => {
     expect(accountNames(screen.getByRole('table', { name: 'Credit cards' }))).toEqual(['BA Amex', 'Old VisaInactive'])
   })
 
-  it("shows a card's paid statement for the month as Paid and leaves it out of the month's open total", async () => {
+  it("shows a card's paid statement for the month as Paid, with the month's open total from the server under the column", async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
       {
         ...CARDS,
@@ -307,7 +308,7 @@ describe('AccountsPage', () => {
       {
         templateName: 'CreditCard',
         members: [member('amex', 'BA Amex', 'CreditCard', { balance: 35, balanceIsOwed: true, totalOwed: -35, nextStatement: null })],
-        totals: [{ currency: 'GBP', total: -35 }],
+        totals: [{ currency: 'GBP', total: -35, openStatementTotal: 0 }],
       },
     ])
 
@@ -321,7 +322,7 @@ describe('AccountsPage', () => {
   })
 
   it('keeps a negative balance total as a plain figure on a bank grid', async () => {
-    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20 }] }])
+    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20, openStatementTotal: null }] }])
 
     renderPage()
 
@@ -393,7 +394,7 @@ describe('AccountsPage', () => {
 
   it('shows an unknown template under its own name with a "Total" footer and plain-text rows', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
-      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50 }] },
+      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50, openStatementTotal: null }] },
     ])
 
     renderPage()

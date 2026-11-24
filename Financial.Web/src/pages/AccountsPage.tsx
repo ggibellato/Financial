@@ -16,6 +16,7 @@ import { useOverviewAddress } from '../hooks/useOverviewAddress'
 import { useTabPanel } from '../hooks/useTabPanel'
 import { type AccountGridColumns, type AccountTemplateGrid, accountTemplateGrid } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, sumPence } from '../utils/formatters'
+import { byName } from '../utils/byName'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
@@ -72,10 +73,6 @@ const cashbackColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.cashbackTotal,
 }
 
-function openStatementAmount({ statement }: AccountGroupMemberDto): number {
-  return statement && !statement.isPaid ? statement.outstandingTotal : 0
-}
-
 function statementColumn(year: number, month: number) {
   return {
     key: 'statement',
@@ -85,32 +82,27 @@ function statementColumn(year: number, month: number) {
       if (!row.statement) return <MissingValue label="None" />
       return row.statement.isPaid ? 'Paid' : formatN2(row.statement.outstandingTotal)
     },
-    sortAccessor: openStatementAmount,
+    sortAccessor: (row: AccountGroupMemberDto) => (row.statement?.isPaid ? null : row.statement?.outstandingTotal),
   }
-}
-
-function sumOf(members: readonly AccountGroupMemberDto[], amount: (member: AccountGroupMemberDto) => number): string {
-  return formatN2(sumPence(members, amount) / 100)
 }
 
 function cashbackTotal(members: readonly AccountGroupMemberDto[]) {
   const earning = members.filter((member) => member.cashbackTotal != null)
-  return earning.length > 0 ? sumOf(earning, (member) => member.cashbackTotal ?? 0) : undefined
+  return earning.length > 0 ? formatN2(sumPence(earning, (member) => member.cashbackTotal ?? 0) / 100) : undefined
 }
 
 function columnTotalsRows(grid: AccountTemplateGrid, group: AccountTemplateGroupDto): ColumnTotalsRow[] {
   if (!grid.footerLabel) return []
-  return group.totals.map(({ currency, total }) => {
+  return group.totals.map(({ currency, total, openStatementTotal }) => {
     const members = group.members.filter((member) => member.currency === currency)
     const values =
       grid.columns === 'card'
-        ? { statement: sumOf(members, openStatementAmount), totalOwed: formatOwedOrCredit(total) }
+        ? { statement: orMissing(openStatementTotal, formatN2), totalOwed: formatOwedOrCredit(total) }
         : { balance: formatN2(total), ...(grid.columns === 'bank' ? { cashback: cashbackTotal(members) } : {}) }
     return { label: `${grid.footerLabel} ${currency}`, values }
   })
 }
 
-const byName = (a: AccountGroupMemberDto, b: AccountGroupMemberDto) => a.name.localeCompare(b.name)
 
 function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | null {
   return nextStatement ? new Date(nextStatement.year, nextStatement.month - 1, 1) : null
@@ -180,7 +172,6 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
                     rows={[...group.members].sort(byName)}
                     rowKey={(row) => row.accountId}
                     emptyMessage="No accounts this month."
-                    footerItems={[]}
                     columnTotals={columnTotalsRows(grid, group)}
                   />
                 </div>

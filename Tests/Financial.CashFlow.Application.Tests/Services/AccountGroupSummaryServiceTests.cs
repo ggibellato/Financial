@@ -400,7 +400,23 @@ public class AccountGroupSummaryServiceTests
         {
             groups[0].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 1200m), ("BRL", 500m));
             groups[1].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 80m));
+            groups[0].Totals.Should().OnlyContain(total => total.OpenStatementTotal == null);
+            groups[1].Totals.Single().OpenStatementTotal.Should().Be(30m);
         }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_Totals_LeaveAPaidStatementOutOfTheMonthsOpenStatementTotal()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        var statement = CardStatement.Create(_amex, 2026, 9);
+        statement.MarkLegacyPaid();
+        _repository.CardStatements.Add(statement);
+
+        var cards = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "CreditCard");
+
+        cards.Totals.Single().OpenStatementTotal.Should().Be(0m);
     }
 
     [Fact]
