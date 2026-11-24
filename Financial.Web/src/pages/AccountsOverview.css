@@ -36,13 +36,9 @@
   gap: 24px;
 }
 
-.monthly-page__grids-row,
-.monthly-page__section--fill {
+.monthly-page__grids-row {
   flex: 1;
   min-height: 160px;
-}
-
-.monthly-page__grids-row {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
@@ -83,47 +79,51 @@
 }
 
 .month-result {
+  margin-top: 24px;
+}
+
+.calculation-card {
   flex-shrink: 0;
   align-self: flex-start;
   min-width: 240px;
-  margin-top: 24px;
+  max-width: 22rem;
   padding: 12px 16px;
   border: 1px solid var(--colorNeutralStroke2);
   border-radius: var(--borderRadiusMedium);
   background: var(--colorNeutralBackground2);
 }
 
-.month-result__sum {
+.calculation-card__sum {
   width: 100%;
   margin-top: 8px;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
 
-.month-result__sum th {
+.calculation-card__sum th {
   text-align: left;
   font-weight: normal;
   padding: 4px 24px 4px 0;
 }
 
-.month-result__sum td {
+.calculation-card__sum td {
   text-align: right;
   white-space: nowrap;
   padding: 4px 0;
 }
 
-.month-result__sum tfoot th,
-.month-result__sum tfoot td {
+.calculation-card__sum tfoot th,
+.calculation-card__sum tfoot td {
   border-top: 1px solid var(--colorNeutralForeground3);
   padding-top: 8px;
   font-weight: 600;
 }
 
-.month-result__value--surplus {
+.calculation-card__value--positive {
   color: var(--colorStatusSuccessForeground1);
 }
 
-.month-result__value--deficit {
+.calculation-card__value--negative {
   color: var(--colorStatusDangerForeground3);
 }
 
@@ -146,8 +146,7 @@
 
 @media (max-width: 599px), (max-height: 599px) {
   .monthly-page__panel,
-  .monthly-page__summary-groups,
-  .monthly-page__section--fill {
+  .monthly-page__summary-groups {
     flex: none;
   }
 
