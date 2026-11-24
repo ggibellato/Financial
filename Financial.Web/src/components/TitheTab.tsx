@@ -128,13 +128,11 @@ function sumInPounds(rows: TitheMonthDto[], value: (summary: TitheSummaryDto) =>
   return sumPence(rows, (row) => value(row.summary)) / 100
 }
 
-function TitheHistory({ year, month, rows, onSelectMonth }: { year: number; month: number; rows: TitheMonthDto[]; onSelectMonth: (monthInputValue: string) => void }) {
+function TitheHistory({ year, month, rows, labelId, onSelectMonth }: { year: number; month: number; rows: TitheMonthDto[]; labelId: string; onSelectMonth: (monthInputValue: string) => void }) {
   const styles = useStyles()
-  const captionId = useId()
   return (
     <div className={styles.historyScroll}>
-      <Table className="data-table" aria-labelledby={captionId}>
-        <caption id={captionId}>Tithe by month, {year}</caption>
+      <Table className="data-table" aria-labelledby={labelId}>
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Month</TableHeaderCell>
@@ -190,22 +188,11 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
   const styles = useStyles()
   const { detail, history, carryForwardUpdating, carryForwardError, updateCarryForwardInclusion } = useTithe(year, month)
   const monthLabel = formatLongMonthYear(year, month)
+  const historyHeadingId = useId()
 
   return (
     <div className="monthly-page__summary-groups">
       <div className="monthly-page__grids-row">
-        <div className="accounts-page__section monthly-page__section--grid">
-          <Text as="h2" weight="semibold" size={400}>
-            History
-          </Text>
-          {history.isLoading ? (
-            <LoadingState message="Loading the tithe history…" />
-          ) : history.error || !history.data ? (
-            <ErrorState message={TITHE_HISTORY_LOAD_ERROR} onRetry={history.retry} />
-          ) : (
-            <TitheHistory year={year} month={month} rows={history.data} onSelectMonth={onSelectMonth} />
-          )}
-        </div>
         <div className={styles.detail}>
           {(detail.isLoading || detail.error || !detail.data) && (
             <Text as="h2" weight="semibold" size={400}>
@@ -224,6 +211,18 @@ export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) 
               carryForwardError={carryForwardError}
               onToggleCarryForward={updateCarryForwardInclusion}
             />
+          )}
+        </div>
+        <div className="accounts-page__section monthly-page__section--grid">
+          <Text as="h2" id={historyHeadingId} weight="semibold" size={400}>
+            Tithe by month, {year}
+          </Text>
+          {history.isLoading ? (
+            <LoadingState message="Loading the tithe history…" />
+          ) : history.error || !history.data ? (
+            <ErrorState message={TITHE_HISTORY_LOAD_ERROR} onRetry={history.retry} />
+          ) : (
+            <TitheHistory year={year} month={month} rows={history.data} labelId={historyHeadingId} onSelectMonth={onSelectMonth} />
           )}
         </div>
       </div>
