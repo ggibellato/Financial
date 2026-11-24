@@ -1,0 +1,7 @@
+/.env
+/Financial.Web/.env
+/.claude/settings.local.json
+/data/data-investment.json
+/data/data-fx-rates.json
+/data/google-calendar-credentials.json
+/data/dev/*.json

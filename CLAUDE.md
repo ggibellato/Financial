@@ -137,11 +137,15 @@ the repo folder):
 
 ```powershell
 ./scripts/new-worktree.ps1 -Topic <topic> -Branch <branch>   # ../financial-wt-<topic> on <branch> off origin/main
+./scripts/new-worktree.ps1 -Topic pr<n> -Branch review/pr<n> -StartPoint origin/<pr-branch>   # a runnable copy of an open PR
 ./scripts/delete-branches.ps1                                # after the PR merges: removes merged branches and their worktrees
 ```
 
-`new-worktree.ps1` copies the gitignored local files listed in its `$localFiles` from the repo folder and runs `npm ci`
-(`-SkipNpmInstall` only for backend- or docs-only work). The data files are copies, so nothing the worktree's app saves
+`new-worktree.ps1` copies the gitignored local files listed in `.worktreeinclude` from the repo folder and runs `npm ci`
+(`-SkipNpmInstall` only for backend- or docs-only work). Worktrees Claude Code creates itself (`claude -w`, a subagent's
+`isolation: "worktree"`, desktop parallel sessions) copy the same `.worktreeinclude` files but do not run `npm ci`, so
+run it there before any web check. Add a new gitignored file the app needs to `.worktreeinclude` (gitignore syntax) so
+both routes pick it up. The data files are copies, so nothing the worktree's app saves
 reaches the repo folder's data. To browse or smoke-test from the worktree, run its own API and SPA with the two commands
 the script prints: they use ports that do not clash with the repo folder's 5190/5173 (defaults API 5191, SPA 5176;
 `-ApiPort`/`-WebPort` to change), and the script sets `API_PROXY_TARGET` in the worktree's `Financial.Web/.env` so its
