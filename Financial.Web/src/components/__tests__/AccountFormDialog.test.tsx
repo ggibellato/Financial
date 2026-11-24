@@ -46,7 +46,7 @@ function renderDialog(props: Partial<Parameters<typeof AccountFormDialog>[0]> = 
   const onSubmit = vi.fn<(values: unknown) => Promise<unknown>>().mockResolvedValue(undefined)
   const onCancel = vi.fn()
   render(
-    <AccountFormDialog account={null} templates={[BANK]} categories={CATEGORIES} onCancel={onCancel} onSubmit={onSubmit} {...props} />,
+    <AccountFormDialog account={null} templates={[BANK]} categories={CATEGORIES} accounts={[]} onCancel={onCancel} onSubmit={onSubmit} {...props} />,
   )
   return { onSubmit: props.onSubmit ?? onSubmit, onCancel: props.onCancel ?? onCancel }
 }
@@ -805,6 +805,34 @@ describe('AccountFormDialog', () => {
       )
     })
 
+    it('saves the destination as Not tracked once its switch is turned off', async () => {
+      const chase = account({
+        id: 'a1',
+        name: 'Chase',
+        roundUpEnabled: true,
+        roundUpDestination: { kind: 'Account', accountId: 'saver', accountName: 'Round-up saver' },
+      })
+      const { onSubmit } = renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase, roundUpSaver] })
+
+      fireEvent.click(screen.getByRole('switch', { name: 'Round-up' }))
+      save('Save')
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ roundUpDestination: { kind: 'None', accountId: null, accountName: null } }),
+        ),
+      )
+    })
+
+    it('explains when no savings account can receive cashback', () => {
+      const chase = account({ id: 'a1', name: 'Chase', cashbackEnabled: true, cashbackRatePercent: 2 })
+      renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase, roundUpSaver] })
+
+      expect(screen.getByLabelText(/Cashback goes to/)).toHaveAccessibleDescription(
+        "Add a savings account that isn't Round-up only to send cashback there.",
+      )
+    })
+
     it('opens with the saved destinations selected', () => {
       const chase = account({
         id: 'a1',
@@ -821,7 +849,7 @@ describe('AccountFormDialog', () => {
       const saver = savingsAccount({ id: 's1', name: 'Chase Save' })
       const { onSubmit } = renderDialog({ account: saver, templates: [BANK, SAVINGS] })
 
-      expect(screen.getByRole('switch', { name: 'Round-up only' })).toHaveAccessibleDescription('Only round-ups and its own interest can go in.')
+      expect(screen.getByRole('switch', { name: 'Round-up only' })).toHaveAccessibleDescription("Only round-ups and this account's interest can go in.")
       fireEvent.click(screen.getByRole('switch', { name: 'Round-up only' }))
       save('Save')
 

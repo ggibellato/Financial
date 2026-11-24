@@ -261,4 +261,10 @@ describe('All transactions row actions', () => {
     expect(rowEdit(routed, 'saver', true)).toEqual({ kind: 'blocked', reason })
     expect(rowDeleteBlockedReason(routed, 'saver', true)).toBe(reason)
   })
+
+  it('falls back to a plain reason when a routed row has no bank name', () => {
+    const routed = accountTransactionRow({ id: 'e1', kind: 'Cashback', date: '2026-10-03', amount: 0.2, counterpart: null, canEdit: false })
+
+    expect(rowEdit(routed, 'saver', true)).toEqual({ kind: 'blocked', reason: 'Change it on the expense.' })
+  })
 })

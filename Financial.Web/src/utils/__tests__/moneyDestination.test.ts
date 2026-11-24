@@ -25,8 +25,15 @@ describe('moneyDestination', () => {
   it('[AC P66-F03-destinations-web-01] offers only active round-up-only savings for round-ups and other active savings for cashback', () => {
     const accounts = [roundUpSaver, chaseSave, closedSaver]
 
-    expect(roundUpDestinationAccounts(accounts).map((account) => account.name)).toEqual(['Round-up saver'])
-    expect(cashbackDestinationAccounts(accounts).map((account) => account.name)).toEqual(['Chase Save'])
+    expect(roundUpDestinationAccounts(accounts, 'None').map((account) => account.name)).toEqual(['Round-up saver'])
+    expect(cashbackDestinationAccounts(accounts, 'None').map((account) => account.name)).toEqual(['Chase Save'])
+  })
+
+  it('keeps the saved destination selectable even when it is no longer eligible', () => {
+    expect(roundUpDestinationAccounts([roundUpSaver, closedSaver], 'closed').map((account) => account.name)).toEqual([
+      'Closed saver',
+      'Round-up saver',
+    ])
   })
 
   it('[AC P66-F03-destinations-web-02] names the destinations other than None', () => {

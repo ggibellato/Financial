@@ -1,4 +1,5 @@
 import type { AccountDto, MoneyDestinationDto } from '../api/types'
+import { accountsWith } from './accountCapabilities'
 
 export const NO_DESTINATION = 'None'
 export const INVESTED_AUTOMATICALLY = 'InvestedAutomatically'
@@ -15,12 +16,14 @@ export function toMoneyDestination(choice: string): MoneyDestinationDto {
     : { kind: ACCOUNT_DESTINATION, accountId: choice, accountName: null }
 }
 
-export function roundUpDestinationAccounts(accounts: readonly AccountDto[]): AccountDto[] {
-  return accounts.filter((account) => account.isActive && account.savings?.roundUpOnly === true)
+const EARNS_INTEREST = 'EarnsInterest'
+
+export function roundUpDestinationAccounts(accounts: AccountDto[], keptId: string): AccountDto[] {
+  return accountsWith(accounts, EARNS_INTEREST, keptId).filter((account) => account.savings?.roundUpOnly === true || account.id === keptId)
 }
 
-export function cashbackDestinationAccounts(accounts: readonly AccountDto[]): AccountDto[] {
-  return accounts.filter((account) => account.isActive && account.savings != null && !account.savings.roundUpOnly)
+export function cashbackDestinationAccounts(accounts: AccountDto[], keptId: string): AccountDto[] {
+  return accountsWith(accounts, EARNS_INTEREST, keptId).filter((account) => account.savings?.roundUpOnly !== true || account.id === keptId)
 }
 
 interface MoneyWording {
@@ -41,8 +44,5 @@ export function destinationsSummary(
   roundUp: MoneyDestinationDto | null | undefined,
   cashback: MoneyDestinationDto | null | undefined,
 ): string | null {
-  const phrases = [destinationPhrase(ROUND_UPS, roundUp), destinationPhrase(CASHBACK, cashback)].filter(
-    (phrase): phrase is string => phrase !== null,
-  )
-  return phrases.length > 0 ? phrases.join(' · ') : null
+  return [destinationPhrase(ROUND_UPS, roundUp), destinationPhrase(CASHBACK, cashback)].filter(Boolean).join(' · ') || null
 }

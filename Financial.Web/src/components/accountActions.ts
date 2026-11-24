@@ -235,8 +235,14 @@ export function rowEdit(row: AccountTransactionDto, accountId: string | null, ac
 
 const ROUTED_KINDS: readonly string[] = ['RoundUp', 'Cashback']
 
+const isRoutedRow = (row: AccountTransactionDto) => ROUTED_KINDS.includes(row.kind)
+
+function routedRowReason({ counterpart }: AccountTransactionDto): string {
+  return counterpart ? `Change it on the expense in ${counterpart}'s transactions.` : 'Change it on the expense.'
+}
+
 function readOnlyReason(row: AccountTransactionDto, accountId: string | null): string {
-  if (ROUTED_KINDS.includes(row.kind)) return `Change it on the expense in ${row.counterpart}'s transactions.`
+  if (isRoutedRow(row)) return routedRowReason(row)
   const { expense } = row
   if (!canMoveToStatement(row) || !expense) return READ_ONLY_REASON
   if (expense.creditCardId && accountId && expense.creditCardId.toLowerCase() !== accountId.toLowerCase()) {

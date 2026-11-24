@@ -137,6 +137,29 @@ public class RoundUpDestinationsAcceptanceTests : ApiEndpointTests
         }
     }
 
+    [Fact]
+    [Trait("AC", "P66-F03-destinations-web-02")]
+    public async Task AccountDetail_LeavesOutTheDestinationOfASwitchedOffRoundUp()
+    {
+        await Client.PutAsJsonAsync($"{Api}/accounts/{BarclaysId}", new AccountUpdateDTO
+        {
+            TemplateName = "Bank",
+            Name = "Barclays",
+            Currency = "GBP",
+            OpeningBalance = 1000m,
+            BalanceStartDate = new DateOnly(2026, 1, 1),
+            RoundUpEnabled = false,
+            IsActive = true,
+            RoundUpDestination = Destination("InvestedAutomatically")
+        });
+
+        using (new AssertionScope())
+        {
+            (await AccountAsync(BarclaysId)).RoundUpDestination!.Kind.Should().Be("InvestedAutomatically");
+            (await DetailAsync(BarclaysId)).RoundUpDestination.Should().BeNull();
+        }
+    }
+
     [Theory]
     [Trait("AC", "P66-F02-destinations-02")]
     [InlineData(ChaseSaveId, null)]
