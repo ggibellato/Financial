@@ -14,6 +14,7 @@
 .sidebar-flyout__title {
   display: block;
   padding: 4px 8px 8px;
-  font-weight: 600;
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightSemibold);
   color: var(--colorNeutralForeground1);
 }
