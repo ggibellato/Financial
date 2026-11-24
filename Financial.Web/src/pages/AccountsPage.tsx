@@ -139,7 +139,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
   const monthInputValue = formatMonthInputValue(year, month)
 
   return (
-    <div className="accounts-page__groups">
+    <div className="accounts-page__groups accounts-page__groups--ruled">
       {isLoading ? (
         <LoadingState />
       ) : error || !groups ? (
@@ -154,7 +154,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
             ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
             : (row: AccountGroupMemberDto) => row.name
           return (
-            <div key={group.templateName} className="accounts-page__section">
+            <div key={group.templateName} className="accounts-page__group">
               <Text as="h2" weight="semibold" size={400}>
                 {grid.heading}
               </Text>
