@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory)][string]$Topic,
     [Parameter(Mandatory)][string]$Branch,
+    [string]$StartPoint = 'origin/main',
     [int]$ApiPort = 5191,
     [int]$WebPort = 5176,
     [switch]$SkipNpmInstall
@@ -9,15 +10,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$localFiles = @(
-    '.env',
-    'Financial.Web/.env',
-    '.claude/settings.local.json',
-    'data/data-investment.json',
-    'data/data-fx-rates.json',
-    'data/google-calendar-credentials.json',
-    'data/dev'
-)
+$includeFile = Join-Path (Split-Path -Parent $PSScriptRoot) '.worktreeinclude'
 
 $mainRoot = (git -C $PSScriptRoot worktree list --porcelain | Select-Object -First 1) -replace '^worktree ', ''
 $worktree = Join-Path (Split-Path -Parent $mainRoot) "financial-wt-$Topic"
@@ -30,20 +23,15 @@ foreach ($port in $ApiPort, $WebPort) {
     }
 }
 
-git -C $mainRoot fetch origin main
+git -C $mainRoot fetch origin
 if ($LASTEXITCODE) { throw 'git fetch failed.' }
-git -C $mainRoot worktree add --no-track $worktree -b $Branch origin/main
+git -C $mainRoot worktree add --no-track $worktree -b $Branch $StartPoint
 if ($LASTEXITCODE) { throw 'git worktree add failed.' }
 
-foreach ($relativePath in $localFiles) {
-    $source = Join-Path $mainRoot $relativePath
-    if (-not (Test-Path $source)) {
-        Write-Warning "Skipped $relativePath (not in $mainRoot)."
-        continue
-    }
-    $destinationFolder = Split-Path -Parent (Join-Path $worktree $relativePath)
-    New-Item -ItemType Directory -Force -Path $destinationFolder | Out-Null
-    Copy-Item -Path $source -Destination $destinationFolder -Recurse -Force
+foreach ($relativePath in git -C $mainRoot ls-files --others --ignored --exclude-from=$includeFile) {
+    $destination = Join-Path $worktree $relativePath
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+    Copy-Item -LiteralPath (Join-Path $mainRoot $relativePath) -Destination $destination -Force
     Write-Host "Copied $relativePath"
 }
 

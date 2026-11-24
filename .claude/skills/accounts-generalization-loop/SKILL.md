@@ -93,7 +93,7 @@ Remind the user:
 
 ## Step 6 — Verify the implementation
 
-When the user brings the report and the PR number back, verify the **open PR** independently, before the user merges it. Never trust a "complete" claim. Check out the PR branch in a worktree outside the repo (`git worktree add ../financial-wt-pr<n> <branch>`), so the main working tree is not disturbed.
+When the user brings the report and the PR number back, verify the **open PR** independently, before the user merges it. Never trust a "complete" claim. Check out the PR branch in a worktree outside the repo (the "runnable copy of an open PR" command in CLAUDE.md "Worktrees"; remove it afterwards with `git worktree remove ../financial-wt-pr<n>` and `git branch -D review/pr<n>`), so the main working tree is not disturbed.
 
 1. **Branch and scope:**
    - `git log origin/main..origin/<branch>` shows only this stage's commits;
