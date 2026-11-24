@@ -209,10 +209,12 @@ public class Account
         _cashbackDestination = destination;
     }
 
-    public void EnsureCanSwitchToRoundUpOnly(SavingsTerms? requested, IEnumerable<Transfer> transfers, IEnumerable<Income> incomes)
+    public void EnsureCanSwitchToRoundUpOnly(
+        SavingsTerms? requested, IEnumerable<Transfer> transfers, IEnumerable<Income> incomes, IEnumerable<ExternalPayment> payments)
     {
         ArgumentNullException.ThrowIfNull(transfers);
         ArgumentNullException.ThrowIfNull(incomes);
+        ArgumentNullException.ThrowIfNull(payments);
 
         if (requested?.RoundUpOnly != true || ReceivesOnlyRoundUps)
         {
@@ -220,7 +222,8 @@ public class Account
         }
 
         if (transfers.Any(transfer => transfer.DestinationAccount.Id == Id)
-            || incomes.Any(income => income.Account?.Id == Id && !income.IsInterest))
+            || incomes.Any(income => income.Account?.Id == Id && !income.IsInterest)
+            || payments.Any(payment => payment.Account.Id == Id && payment.Direction == PaymentDirection.In))
         {
             throw new ArgumentException($"{Name} already has money in that isn't a round-up or interest.");
         }

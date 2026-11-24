@@ -29,6 +29,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
+    public List<ExternalPayment> ExternalPayments { get; } = new();
     public List<TitheCarryForward> TitheCarryForwards { get; } = new();
     public DateOnly? TitheCarryForwardEffectiveFrom { get; set; }
 
@@ -261,6 +262,10 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
         }
     }
     public void DeleteBalanceAdjustment(Guid id) => BalanceAdjustments.RemoveAll(a => a.Id == id);
+    public IEnumerable<ExternalPayment> GetExternalPayments() => CheckThrow(ExternalPayments);
+    public void AddExternalPayment(ExternalPayment payment) => ExternalPayments.Add(payment);
+    public void UpdateExternalPayment(ExternalPayment payment) { }
+    public void DeleteExternalPayment(Guid id) => ExternalPayments.RemoveAll(p => p.Id == id);
 
     public IEnumerable<TitheCarryForward> GetTitheCarryForwards() => TitheCarryForwards;
     public void AddTitheCarryForward(TitheCarryForward decision) => TitheCarryForwards.Add(decision);

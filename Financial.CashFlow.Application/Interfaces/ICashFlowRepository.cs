@@ -62,6 +62,11 @@ public interface ICashFlowRepository
     void UpdateBalanceAdjustment(BalanceAdjustment adjustment);
     void DeleteBalanceAdjustment(Guid id);
 
+    IEnumerable<ExternalPayment> GetExternalPayments();
+    void AddExternalPayment(ExternalPayment payment);
+    void UpdateExternalPayment(ExternalPayment payment);
+    void DeleteExternalPayment(Guid id);
+
     /// <summary>
     /// Runs <paramref name="applyChanges"/> with exclusive access to the in-memory data, then
     /// persists the whole document when it reports a change.

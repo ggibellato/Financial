@@ -42,6 +42,8 @@ public class CashFlowData
 
     private readonly IdCollection<BalanceAdjustment> _balanceAdjustments = new(i => i.Id);
     public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments;
+    private readonly IdCollection<ExternalPayment> _externalPayments = new(p => p.Id);
+    public IReadOnlyCollection<ExternalPayment> ExternalPayments => _externalPayments;
 
     private readonly IdCollection<Category> _categories = new(i => i.Id);
     public IReadOnlyCollection<Category> Categories => _categories;
@@ -110,4 +112,10 @@ public class CashFlowData
     public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => _balanceAdjustments.Update(adjustment);
 
     public void RemoveBalanceAdjustment(Guid id) => _balanceAdjustments.RemoveById(id);
+
+    public void AddExternalPayment(ExternalPayment payment) => _externalPayments.Add(payment);
+
+    public void UpdateExternalPayment(ExternalPayment payment) => _externalPayments.Update(payment);
+
+    public void RemoveExternalPayment(Guid id) => _externalPayments.RemoveById(id);
 }

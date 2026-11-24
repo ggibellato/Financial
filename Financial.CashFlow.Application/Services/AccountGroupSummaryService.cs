@@ -135,7 +135,9 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Balance = balances.First(balance => balance.Currency == account.Currency).Balance,
             CurrencyBalances = CurrencyBalanceMapper.ToDtos(balances),
             OtherParticipant = account.OtherParticipant,
-            RoundUpTotal = account.Has(Capability.SupportsRoundUp) ? paidFromAccount.Sum(e => e.RoundUpAmount ?? 0m) : null,
+            RoundUpTotal = account.RoundsUp || paidFromAccount.Any(e => e.RoundUpAmount is not null)
+                ? paidFromAccount.Sum(e => e.RoundUpAmount ?? 0m)
+                : null,
             CashbackTotal = account.EarnsCashback || paidFromAccount.Any(e => e.CashbackAmount is not null)
                 ? paidFromAccount.Sum(e => e.CashbackAmount ?? 0m)
                 : null,

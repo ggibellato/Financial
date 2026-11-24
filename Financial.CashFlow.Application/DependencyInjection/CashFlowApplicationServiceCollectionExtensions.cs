@@ -32,6 +32,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<IAccountQueryService, AccountQueryService>();
         services.AddSingleton<IAccountAdminService, AccountAdminService>();
         services.AddSingleton<IBalanceAdjustmentService, BalanceAdjustmentService>();
+        services.AddSingleton<IExternalPaymentService, ExternalPaymentService>();
         services.AddSingleton<IPaymentsDueService, PaymentsDueService>();
         services.AddSingleton<ICalendarIntegrationService, CalendarIntegrationService>();
         services.AddSingleton<ICreditCardCalendarSyncStatusStore, CreditCardCalendarSyncStatusStore>();

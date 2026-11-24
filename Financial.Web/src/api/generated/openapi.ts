@@ -823,6 +823,166 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{accountId}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Records money paid into, or out of, the account from outside the app's accounts. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Records money paid into, or out of, the account from outside the app's accounts. */
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["ExternalPaymentCreateDTO"];
+                    "application/json": null | components["schemas"]["ExternalPaymentCreateDTO"];
+                    "text/json": null | components["schemas"]["ExternalPaymentCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExternalPaymentDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{accountId}/payments/{paymentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Changes a pay-in or pay-out's date, amount or description. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Changes a pay-in or pay-out's date, amount or description. */
+                    accountId: string;
+                    /** @description Changes a pay-in or pay-out's date, amount or description. */
+                    paymentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["ExternalPaymentUpdateDTO"];
+                    "application/json": null | components["schemas"]["ExternalPaymentUpdateDTO"];
+                    "text/json": null | components["schemas"]["ExternalPaymentUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExternalPaymentDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Deletes a pay-in or pay-out. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deletes a pay-in or pay-out. */
+                    accountId: string;
+                    /** @description Deletes a pay-in or pay-out. */
+                    paymentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{accountId}/settlement-entries": {
         parameters: {
             query?: never;
@@ -7389,6 +7549,7 @@ export interface components {
             date: string;
             description?: null | string;
             expense?: null | components["schemas"]["ExpenseDTO"];
+            externalPayment?: null | components["schemas"]["ExternalPaymentDTO"];
             /** Format: uuid */
             id: string;
             income?: null | components["schemas"]["IncomeDTO"];
@@ -8249,6 +8410,34 @@ export interface components {
             roundUpAmount?: null | number;
             /** Format: double */
             value: number;
+        };
+        ExternalPaymentCreateDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            description: string;
+            direction: string;
+        };
+        ExternalPaymentDTO: {
+            /** Format: uuid */
+            accountId: string;
+            accountName: string;
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            description: string;
+            direction: string;
+            /** Format: uuid */
+            id: string;
+        };
+        ExternalPaymentUpdateDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            description: string;
         };
         FundingLineDTO: {
             /** Format: double */

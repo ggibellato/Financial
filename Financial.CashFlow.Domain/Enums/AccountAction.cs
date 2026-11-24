@@ -19,5 +19,7 @@ public enum AccountAction
     ManagePots,
     WithdrawFromPots,
     AddEntry,
-    Settle
+    Settle,
+    PayIn,
+    PayOut
 }

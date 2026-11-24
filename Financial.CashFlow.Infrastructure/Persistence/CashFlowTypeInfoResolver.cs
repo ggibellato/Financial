@@ -26,6 +26,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Income),
         typeof(Transfer),
         typeof(BalanceAdjustment),
+        typeof(ExternalPayment),
         typeof(TitheCarryForward)
     };
 
@@ -43,6 +44,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(Transfer), nameof(Transfer.SourceAccount))] = ("SourceAccountId", true),
         [(typeof(Transfer), nameof(Transfer.DestinationAccount))] = ("DestinationAccountId", true),
         [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Account))] = ("AccountId", true),
+        [(typeof(ExternalPayment), nameof(ExternalPayment.Account))] = ("AccountId", true),
         [(typeof(SettlementTransaction), nameof(SettlementTransaction.Account))] = ("AccountId", true),
         [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = ("InvestmentAccountId", true),
         [(typeof(PotTransaction), nameof(PotTransaction.Pot))] = ("BucketId", true),

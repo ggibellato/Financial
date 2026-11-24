@@ -156,7 +156,7 @@ public class AccountQueryServiceTests
             detail.BalanceIsOwed.Should().BeFalse();
             detail.HasStatements.Should().BeFalse();
             detail.TotalOwed.Should().BeNull();
-            detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "ReceiveCardCredit", "Reconcile", "WithdrawFromPots");
+            detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "ReceiveCardCredit", "Reconcile", "WithdrawFromPots", "PayIn", "PayOut");
             detail.DisabledActions.Should().BeEmpty();
             detail.CurrentBalances.Should().BeEmpty();
             detail.OtherParticipant.Should().BeNull();

@@ -27,7 +27,9 @@ public class AccountActionsTests
             AccountAction.PayCardStatement,
             AccountAction.ReceiveCardCredit,
             AccountAction.Reconcile,
-            AccountAction.WithdrawFromPots);
+            AccountAction.WithdrawFromPots,
+            AccountAction.PayIn,
+            AccountAction.PayOut);
     }
 
     [Theory]
@@ -162,7 +164,9 @@ public class AccountActionsTests
             AccountAction.TransferTo,
             AccountAction.TransferFrom,
             AccountAction.ReceiveCardCredit,
-            AccountAction.Reconcile);
+            AccountAction.Reconcile,
+            AccountAction.PayIn,
+            AccountAction.PayOut);
     }
 
     [Fact]

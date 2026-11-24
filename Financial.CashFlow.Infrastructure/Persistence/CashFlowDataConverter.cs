@@ -7,6 +7,8 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
+    private const string ExternalPaymentsProperty = "ExternalPayments";
+
     private static readonly JsonSerializerOptions UnresolvedOptions = CashFlowElementOptions.Create(context: null);
 
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -60,6 +62,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var snapshot in DeserializeCollection<InvestmentSnapshot>(root, "InvestmentSnapshots", resolvedOptions)) data.AddInvestmentSnapshot(snapshot);
         foreach (var transfer in DeserializeCollection<Transfer>(root, "Transfers", resolvedOptions)) data.AddTransfer(transfer);
         foreach (var adjustment in DeserializeCollection<BalanceAdjustment>(root, "BalanceAdjustments", resolvedOptions)) data.AddBalanceAdjustment(adjustment);
+        foreach (var payment in DeserializeCollection<ExternalPayment>(root, ExternalPaymentsProperty, resolvedOptions)) data.AddExternalPayment(payment);
         foreach (var decision in DeserializeCollection<TitheCarryForward>(root, "TitheCarryForwards", resolvedOptions)) data.AddTitheCarryForward(decision);
 
         if (root.TryGetProperty("TitheCarryForwardEffectiveFrom", out var effectiveFromElement)
@@ -89,6 +92,11 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "Categories", value.Categories, elementOptions);
         WriteCollection(writer, "Transfers", value.Transfers, elementOptions);
         WriteCollection(writer, "BalanceAdjustments", value.BalanceAdjustments, elementOptions);
+        if (value.ExternalPayments.Count > 0)
+        {
+            WriteCollection(writer, ExternalPaymentsProperty, value.ExternalPayments, elementOptions);
+        }
+
         WriteCollection(writer, "TitheCarryForwards", value.TitheCarryForwards, elementOptions);
 
         writer.WritePropertyName("TitheCarryForwardEffectiveFrom");

@@ -15,6 +15,10 @@ internal static class AccountReferenceReader
         {
             yield return adjustment.Account.Id;
         }
+        foreach (var payment in repository.GetExternalPayments())
+        {
+            yield return payment.Account.Id;
+        }
         foreach (var income in repository.GetIncomes())
         {
             if (income.Account is not null)
