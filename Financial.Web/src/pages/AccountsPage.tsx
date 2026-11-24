@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Badge, Field, Input, MessageBar, MessageBarBody, Tab, Text } from '@fluentui/react-components'
 import { Link, useLocation } from 'react-router-dom'
-import type { AccountGroupMemberDto, MonthTransactionDto } from '../api/types'
+import type { AccountGroupMemberDto, AccountTemplateGroupDto, MonthTransactionDto } from '../api/types'
 import AccountsSummaryTab from '../components/AccountsSummaryTab'
 import ErrorState from '../components/ErrorState'
 import IncomeTab from '../components/IncomeTab'
@@ -9,12 +9,12 @@ import LoadingState from '../components/LoadingState'
 import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
 import PageTabList from '../components/PageTabList'
 import TitheTab from '../components/TitheTab'
-import TotalsGrid from '../components/TotalsGrid'
+import TotalsGrid, { type ColumnTotalsRow } from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
 import { useMonthTransactions } from '../hooks/useMonthTransactions'
 import { useOverviewAddress } from '../hooks/useOverviewAddress'
 import { useTabPanel } from '../hooks/useTabPanel'
-import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
+import { type AccountGridColumns, type AccountTemplateGrid, accountTemplateGrid } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, sumPence } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
@@ -72,13 +72,45 @@ const cashbackColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.cashbackTotal,
 }
 
-function cashbackFooterItems(members: readonly AccountGroupMemberDto[]) {
-  const earning = members.filter((member) => member.cashbackTotal != null)
-  return [...new Set(earning.map((member) => member.currency))].map((currency) => ({
-    label: `Cashback total ${currency}`,
-    value: formatN2(sumPence(earning.filter((member) => member.currency === currency), (member) => member.cashbackTotal ?? 0) / 100),
-  }))
+function openStatementAmount({ statement }: AccountGroupMemberDto): number {
+  return statement && !statement.isPaid ? statement.outstandingTotal : 0
 }
+
+function statementColumn(year: number, month: number) {
+  return {
+    key: 'statement',
+    header: `${formatMonthYear(new Date(year, month - 1, 1))} statement`,
+    numeric: true,
+    render: (row: AccountGroupMemberDto) => {
+      if (!row.statement) return <MissingValue label="None" />
+      return row.statement.isPaid ? 'Paid' : formatN2(row.statement.outstandingTotal)
+    },
+    sortAccessor: openStatementAmount,
+  }
+}
+
+function sumOf(members: readonly AccountGroupMemberDto[], amount: (member: AccountGroupMemberDto) => number): string {
+  return formatN2(sumPence(members, amount) / 100)
+}
+
+function cashbackTotal(members: readonly AccountGroupMemberDto[]) {
+  const earning = members.filter((member) => member.cashbackTotal != null)
+  return earning.length > 0 ? sumOf(earning, (member) => member.cashbackTotal ?? 0) : undefined
+}
+
+function columnTotalsRows(grid: AccountTemplateGrid, group: AccountTemplateGroupDto): ColumnTotalsRow[] {
+  if (!grid.footerLabel) return []
+  return group.totals.map(({ currency, total }) => {
+    const members = group.members.filter((member) => member.currency === currency)
+    const values =
+      grid.columns === 'card'
+        ? { statement: sumOf(members, openStatementAmount), totalOwed: formatOwedOrCredit(total) }
+        : { balance: formatN2(total), ...(grid.columns === 'bank' ? { cashback: cashbackTotal(members) } : {}) }
+    return { label: `${grid.footerLabel} ${currency}`, values }
+  })
+}
+
+const byName = (a: AccountGroupMemberDto, b: AccountGroupMemberDto) => a.name.localeCompare(b.name)
 
 function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | null {
   return nextStatement ? new Date(nextStatement.year, nextStatement.month - 1, 1) : null
@@ -109,10 +141,10 @@ const settlementBalanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
-function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
+function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode, year: number, month: number) {
   if (columns === 'settlement') return [nameColumn(renderName), settlementBalanceColumn]
   const leading = [nameColumn(renderName), currencyColumn]
-  if (columns === 'card') return [...leading, nextStatementColumn, totalOwedColumn]
+  if (columns === 'card') return [...leading, statementColumn(year, month), nextStatementColumn, totalOwedColumn]
   return columns === 'bank' ? [...leading, balanceColumn, roundUpColumn, cashbackColumn] : [...leading, balanceColumn]
 }
 
@@ -121,9 +153,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
   const monthInputValue = formatMonthInputValue(year, month)
 
   return (
-    <>
-      <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
-      <div className="accounts-page__groups">
+    <div className="accounts-page__groups">
         {isLoading ? (
           <LoadingState />
         ) : error || !groups ? (
@@ -131,37 +161,33 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
         ) : groups.length === 0 ? (
           <Text>No accounts this month.</Text>
         ) : (
-          groups.map((group) => {
-            const grid = accountTemplateGrid(group.templateName)
-            const formatFooterTotal = grid.columns === 'card' ? formatOwedOrCredit : formatN2
-            const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
-            const renderName = grid.linksRows
-              ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
-              : (row: AccountGroupMemberDto) => row.name
-            return (
-              <div key={group.templateName} className="accounts-page__section">
-                <Text as="h2" weight="semibold" size={400}>
-                  {grid.heading}
-                </Text>
-                <TotalsGrid
-                  label={grid.heading}
-                  columns={gridColumns(grid.columns, renderName)}
-                  rows={group.members}
-                  rowKey={(row) => row.accountId}
-                  emptyMessage="No accounts this month."
-                  footerItems={[
-                    ...(grid.footerLabel
-                      ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) }))
-                      : []),
-                    ...(grid.columns === 'bank' ? cashbackFooterItems(group.members) : []),
-                  ]}
-                />
-              </div>
-            )
-          })
-        )}
-      </div>
-    </>
+          [...groups]
+            .map((group) => ({ group, grid: accountTemplateGrid(group.templateName) }))
+            .sort((a, b) => a.grid.heading.localeCompare(b.grid.heading))
+            .map(({ group, grid }) => {
+              const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
+              const renderName = grid.linksRows
+                ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
+                : (row: AccountGroupMemberDto) => row.name
+              return (
+                <div key={group.templateName} className="accounts-page__section">
+                  <Text as="h2" weight="semibold" size={400}>
+                    {grid.heading}
+                  </Text>
+                  <TotalsGrid
+                    label={grid.heading}
+                    columns={gridColumns(grid.columns, renderName, year, month)}
+                    rows={[...group.members].sort(byName)}
+                    rowKey={(row) => row.accountId}
+                    emptyMessage="No accounts this month."
+                    footerItems={[]}
+                    columnTotals={columnTotalsRows(grid, group)}
+                  />
+                </div>
+              )
+            })
+      )}
+    </div>
   )
 }
 
@@ -216,6 +242,7 @@ export default function AccountsPage() {
         <Field label="Month">
           <Input type="month" value={monthInputValue} onChange={(_event, data) => setMonthInputValue(data.value)} />
         </Field>
+        {tab === 'accounts' && <Text className="monthly-page__header-note">Balances at end of {formatLongMonthYear(year, month)}</Text>}
       </div>
 
       <PageTabList aria-label="Accounts views" selectedValue={tab} onTabSelect={(_event, data) => setTab(data.value as OverviewTabId)}>
