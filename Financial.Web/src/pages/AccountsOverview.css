@@ -69,10 +69,6 @@
   flex: 1;
 }
 
-.monthly-page__summary-groups--fill > .monthly-page__grids-row {
-  flex-wrap: nowrap;
-}
-
 .monthly-page__summary-groups--fill .monthly-page__table-scroll {
   flex: 0 1 auto;
 }
@@ -98,10 +94,6 @@
   .monthly-page__summary-groups--fill > .monthly-page__grids-row,
   .monthly-page__section--fill {
     flex: none;
-  }
-
-  .monthly-page__summary-groups--fill > .monthly-page__grids-row {
-    flex-wrap: wrap;
   }
 
   .monthly-page__content {
@@ -131,5 +123,18 @@
 
   .monthly-page__table-scroll {
     overflow: visible;
+  }
+}
+
+@media (min-width: 900px) {
+  .monthly-page__summary-groups--fill > .monthly-page__grids-row {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 899px) {
+  .monthly-page__summary-groups--fill,
+  .monthly-page__summary-groups--fill > .monthly-page__grids-row {
+    flex: none;
   }
 }
