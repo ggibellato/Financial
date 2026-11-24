@@ -1,23 +1,10 @@
-import { Text } from '@fluentui/react-components'
-import type { ReactNode } from 'react'
 import { SUMMARY_LOAD_ERROR, useAccountsSummary } from '../hooks/useAccountsSummary'
-import { formatSignedN2 } from '../utils/formatters'
 import CategoryTotalsGrid from './CategoryTotalsGrid'
 import ErrorState from './ErrorState'
 import IncomingGrid from './IncomingGrid'
 import LoadingState from './LoadingState'
-import SectionTotals from './SectionTotals'
-
-function SummarySection({ heading, children }: { heading: string; children: ReactNode }) {
-  return (
-    <div className="accounts-page__section monthly-page__section--grid">
-      <Text as="h2" weight="semibold" size={400}>
-        {heading}
-      </Text>
-      {children}
-    </div>
-  )
-}
+import MonthResultPanel from './MonthResultPanel'
+import SummarySection from './SummarySection'
 
 export default function AccountsSummaryTab({ year, month }: { year: number; month: number }) {
   const summary = useAccountsSummary(year, month)
@@ -33,9 +20,9 @@ export default function AccountsSummaryTab({ year, month }: { year: number; mont
         </SummarySection>
         <SummarySection heading="Income by source">
           <IncomingGrid incomeTotals={summary.incomeTotals} totalIncoming={summary.totalIncoming} />
+          <MonthResultPanel totalIncoming={summary.totalIncoming} categoryTotalsSum={summary.categoryTotalsSum} result={summary.result} />
         </SummarySection>
       </div>
-      <SectionTotals label="Month result" items={[{ label: 'Result', value: `${formatSignedN2(summary.result.value)} ${summary.result.label}` }]} />
     </div>
   )
 }

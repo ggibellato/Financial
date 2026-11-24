@@ -590,7 +590,7 @@ describe('AccountsPage', () => {
   it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-03] shows the Summary with its Result and no bank or card grid', async () => {
     renderPage('/cashflow/accounts?tab=summary')
 
-    expect(await screen.findByRole('group', { name: 'Month result' })).toHaveTextContent('Result: +57.50 Surplus')
+    expect(await screen.findByRole('table', { name: 'Month result' })).toHaveTextContent(/Surplus\+57\.50$/)
     expect(screen.queryByRole('table', { name: 'Banks' })).not.toBeInTheDocument()
     expect(screen.queryByRole('table', { name: 'Credit cards' })).not.toBeInTheDocument()
   })

@@ -42,7 +42,11 @@ function renderTab(onSelectMonth = vi.fn()) {
 }
 
 function detail() {
-  return screen.findByRole('group', { name: 'Tithe for October 2026' })
+  return screen.findByRole('table', { name: 'Tithe for October 2026' })
+}
+
+async function detailRows() {
+  return within(await detail()).getAllByRole('row').map((row) => row.textContent)
 }
 
 function historyTable() {
@@ -59,12 +63,13 @@ describe('TitheTab', () => {
   it('[AC P61-F03-tithe-tab-and-history-01] shows the income base, tithe, tithe paid, carry-in with its month and the balance owed', async () => {
     renderTab()
 
-    const figures = await detail()
-    expect(figures).toHaveTextContent('Income base: 4,227.30')
-    expect(figures).toHaveTextContent('Tithe: 422.73')
-    expect(figures).toHaveTextContent('Tithe paid: 400.00')
-    expect(figures).toHaveTextContent('Carry-in: 120.00 from September 2026')
-    expect(figures).toHaveTextContent('Balance: 142.73 owed')
+    expect(await detailRows()).toEqual([
+      'Income base4,227.30',
+      'Tithe422.73',
+      'Tithe paid-400.00',
+      'Carry-in from September 2026+120.00',
+      'Balance owed142.73',
+    ])
     expect(getTitheSummaryByMonthMock).toHaveBeenCalledWith(2026, 10)
   })
 
@@ -72,18 +77,14 @@ describe('TitheTab', () => {
     getTitheSummaryByMonthMock.mockResolvedValue(OTHER_MONTH)
     renderTab()
 
-    expect(await detail()).toHaveTextContent('Balance: 19.99 in credit')
+    expect((await detailRows()).at(-1)).toBe('Balance in credit19.99')
   })
 
   it('[AC P61-F03-tithe-tab-and-history-06] shows an empty month with zero figures, no checkbox and a no-income message', async () => {
     getTitheSummaryByMonthMock.mockResolvedValue(EMPTY)
     renderTab()
 
-    const figures = await detail()
-    expect(figures).toHaveTextContent('Income base: 0.00')
-    expect(figures).toHaveTextContent('Carry-in: 0.00')
-    expect(figures).toHaveTextContent('Balance: 0.00')
-    expect(figures).not.toHaveTextContent(/owed|in credit/)
+    expect(await detailRows()).toEqual(['Income base0.00', 'Tithe0.00', 'Tithe paid0.00', 'Balance0.00'])
     expect(screen.getByText('No income this month.')).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
@@ -117,7 +118,13 @@ describe('TitheTab', () => {
     pendingUpdate.resolve(excluded)
 
     await waitFor(() => expect(checkbox).not.toBeChecked())
-    expect(await detail()).toHaveTextContent('Balance: 22.73 owed')
+    expect(await detailRows()).toEqual([
+      'Income base4,227.30',
+      'Tithe422.73',
+      'Tithe paid-400.00',
+      'Carry-in from September 2026Not included',
+      'Balance owed22.73',
+    ])
     expect(screen.queryByText('Saving…')).not.toBeInTheDocument()
     expect(getTitheYearMock).toHaveBeenCalledTimes(2)
   })
@@ -182,6 +189,7 @@ describe('TitheTab', () => {
     getTitheYearMock.mockReturnValue(never())
     renderTab()
 
+    expect(screen.getByRole('heading', { name: 'Tithe for October 2026' })).toBeInTheDocument()
     expect(screen.getByText('Loading the tithe…')).toBeInTheDocument()
     expect(screen.getByText('Loading the tithe history…')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
@@ -192,7 +200,7 @@ describe('TitheTab', () => {
     renderTab()
 
     expect(await screen.findByText('Unable to load the tithe history.')).toBeInTheDocument()
-    expect(await detail()).toHaveTextContent('Income base: 4,227.30')
+    expect((await detailRows())[0]).toBe('Income base4,227.30')
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 

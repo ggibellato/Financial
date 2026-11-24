@@ -34,14 +34,16 @@
 }
 
 .monthly-page__summary-groups {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
 .monthly-page__grids-row {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 160px;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
@@ -57,7 +59,6 @@
 .monthly-page__grids-row > .monthly-page__section--grid {
   flex: 1 1 260px;
   min-width: 260px;
-  max-height: 320px;
 }
 
 .monthly-page__section--grid .monthly-page__table {
@@ -70,13 +71,79 @@
   overflow: auto;
 }
 
+.monthly-page__grids-row .monthly-page__table-scroll {
+  flex: 0 1 auto;
+}
+
+.month-result {
+  margin-top: 24px;
+}
+
+.calculation-card {
+  flex-shrink: 0;
+  align-self: flex-start;
+  min-width: 240px;
+  max-width: 22rem;
+  padding: 12px 16px;
+  border: 1px solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground2);
+}
+
+.calculation-card__sum {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.calculation-card__sum th {
+  text-align: left;
+  font-weight: normal;
+  padding: 4px 24px 4px 0;
+}
+
+.calculation-card__sum td {
+  text-align: right;
+  white-space: nowrap;
+  padding: 4px 0;
+}
+
+.calculation-card__sum tfoot th,
+.calculation-card__sum tfoot td {
+  border-top: 1px solid var(--colorNeutralForeground3);
+  padding-top: 8px;
+  font-weight: 600;
+}
+
+.calculation-card__value--positive {
+  color: var(--colorStatusSuccessForeground1);
+}
+
+.calculation-card__value--negative {
+  color: var(--colorStatusDangerForeground3);
+}
+
 .monthly-page__section-total {
   flex-shrink: 0;
   margin-top: 12px;
 }
 
-@media (max-height: 599px) {
-  .monthly-page__panel {
+@media (min-width: 900px) {
+  .monthly-page__grids-row {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 899px), (max-height: 599px) {
+  .monthly-page__grids-row {
+    flex: none;
+  }
+}
+
+@media (max-width: 599px), (max-height: 599px) {
+  .monthly-page__panel,
+  .monthly-page__summary-groups {
     flex: none;
   }
 
@@ -86,14 +153,6 @@
 }
 
 @media (max-width: 599px) {
-  .monthly-page__content {
-    overflow: visible;
-  }
-
-  .monthly-page__grids-row > .monthly-page__section--grid {
-    max-height: none;
-  }
-
   .monthly-page__table-scroll {
     overflow: visible;
   }

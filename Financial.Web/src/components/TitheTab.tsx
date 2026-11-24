@@ -2,13 +2,15 @@ import { Button, Checkbox, makeStyles, Spinner, Table, TableBody, TableHeader, T
 import { type ReactNode, useId } from 'react'
 import type { TitheMonthDto, TitheSummaryDto } from '../api/types'
 import { TITHE_DETAIL_LOAD_ERROR, TITHE_HISTORY_LOAD_ERROR, useTithe } from '../hooks/useTithe'
-import { formatLongMonthYear, formatMonthInputValue, formatN2, SAVING_LABEL, sumPence } from '../utils/formatters'
+import { formatLongMonthYear, formatMonthInputValue, formatN2, formatSignedN2, SAVING_LABEL, sumPence } from '../utils/formatters'
+import type { SectionTotalItem } from '../utils/currencyFooterItems'
 import ActionErrorAlert from './ActionErrorAlert'
+import CalculationCard, { type CalculationResult } from './CalculationCard'
 import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import SummarySection from './SummarySection'
 import MissingValue from './MissingValue'
-import SectionTotals from './SectionTotals'
 
 type TitheCarryForwardDto = NonNullable<TitheSummaryDto['carryForward']>
 
@@ -18,9 +20,16 @@ const useStyles = makeStyles({
     flexWrap: 'wrap',
     alignItems: 'center',
     columnGap: tokens.spacingHorizontalM,
+    marginTop: tokens.spacingVerticalS,
+  },
+  detail: {
+    flexShrink: 0,
+    alignSelf: 'flex-start',
   },
   historyScroll: {
-    overflowX: 'auto',
+    flex: 1,
+    minHeight: 0,
+    overflow: 'auto',
   },
 })
 
@@ -30,14 +39,31 @@ interface TitheTabProps {
   onSelectMonth: (monthInputValue: string) => void
 }
 
-function titheBalanceText(balance: number): string {
-  if (balance > 0) return `${formatN2(balance)} owed`
-  if (balance < 0) return `${formatN2(-balance)} in credit`
-  return formatN2(0)
+function balanceSuffix(balance: number): 'owed' | 'in credit' | null {
+  if (balance > 0) return 'owed'
+  if (balance < 0) return 'in credit'
+  return null
 }
 
-function carryInText(carryForward: TitheCarryForwardDto | null | undefined): string {
-  return carryForward ? `${formatN2(carryForward.amount)} from ${formatLongMonthYear(carryForward.fromYear, carryForward.fromMonth)}` : formatN2(0)
+function titheBalanceText(balance: number): string {
+  const suffix = balanceSuffix(balance)
+  return suffix ? `${formatN2(Math.abs(balance))} ${suffix}` : formatN2(0)
+}
+
+function carryInLine(carryForward: TitheCarryForwardDto): SectionTotalItem {
+  return {
+    label: `Carry-in from ${formatLongMonthYear(carryForward.fromYear, carryForward.fromMonth)}`,
+    value: carryForward.included ? formatSignedN2(carryForward.amount) : 'Not included',
+  }
+}
+
+const BALANCE_TONES = { owed: 'negative', 'in credit': 'positive' } as const
+
+function balanceResult(balance: number): CalculationResult {
+  const suffix = balanceSuffix(balance)
+  return suffix
+    ? { label: `Balance ${suffix}`, value: formatN2(Math.abs(balance)), tone: BALANCE_TONES[suffix] }
+    : { label: 'Balance', value: formatN2(0) }
 }
 
 function includedCell(carryForward: TitheCarryForwardDto | null | undefined): ReactNode {
@@ -55,17 +81,16 @@ function TitheDetail({ summary, monthLabel, carryForwardUpdating, carryForwardEr
   const styles = useStyles()
   const carryForward = summary.carryForward
   return (
-    <div className="accounts-page__section">
-      <SectionTotals
-        label={`Tithe for ${monthLabel}`}
-        items={[
-          { label: 'Income base', value: formatN2(summary.incomeBase) },
-          { label: 'Tithe', value: formatN2(summary.calculatedTithe) },
-          { label: 'Tithe paid', value: formatN2(summary.tithePaid) },
-          { label: 'Carry-in', value: carryInText(carryForward) },
-          { label: 'Balance', value: titheBalanceText(summary.titheBalance) },
-        ]}
-      />
+    <CalculationCard
+      heading={`Tithe for ${monthLabel}`}
+      lines={[
+        { label: 'Income base', value: formatN2(summary.incomeBase) },
+        { label: 'Tithe', value: formatN2(summary.calculatedTithe) },
+        { label: 'Tithe paid', value: formatSignedN2(-summary.tithePaid) },
+        ...(carryForward ? [carryInLine(carryForward)] : []),
+      ]}
+      result={balanceResult(summary.titheBalance)}
+    >
       {summary.incomeBase === 0 && <Text>No income this month.</Text>}
       <ActionErrorAlert message={carryForwardError} />
       {carryForward && (
@@ -81,7 +106,7 @@ function TitheDetail({ summary, monthLabel, carryForwardUpdating, carryForwardEr
           {carryForwardUpdating && <Spinner size="tiny" label={SAVING_LABEL} labelPosition="after" />}
         </div>
       )}
-    </div>
+    </CalculationCard>
   )
 }
 
@@ -113,13 +138,11 @@ function sumInPounds(rows: TitheMonthDto[], value: (summary: TitheSummaryDto) =>
   return sumPence(rows, (row) => value(row.summary)) / 100
 }
 
-function TitheHistory({ year, month, rows, onSelectMonth }: { year: number; month: number; rows: TitheMonthDto[]; onSelectMonth: (monthInputValue: string) => void }) {
+function TitheHistory({ year, month, rows, labelId, onSelectMonth }: { year: number; month: number; rows: TitheMonthDto[]; labelId: string; onSelectMonth: (monthInputValue: string) => void }) {
   const styles = useStyles()
-  const captionId = useId()
   return (
     <div className={styles.historyScroll}>
-      <Table className="data-table" aria-labelledby={captionId}>
-        <caption id={captionId}>Tithe by month, {year}</caption>
+      <Table className="data-table" aria-labelledby={labelId}>
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Month</TableHeaderCell>
@@ -172,40 +195,43 @@ function TitheHistory({ year, month, rows, onSelectMonth }: { year: number; mont
 }
 
 export default function TitheTab({ year, month, onSelectMonth }: TitheTabProps) {
+  const styles = useStyles()
   const { detail, history, carryForwardUpdating, carryForwardError, updateCarryForwardInclusion } = useTithe(year, month)
   const monthLabel = formatLongMonthYear(year, month)
+  const historyHeadingId = useId()
 
   return (
     <div className="monthly-page__summary-groups">
-      <Text as="h2" weight="semibold" size={400}>
-        Tithe for {monthLabel}
-      </Text>
-      <div>
-        {detail.isLoading ? (
-          <LoadingState message="Loading the tithe…" />
-        ) : detail.error || !detail.data ? (
-          <ErrorState message={TITHE_DETAIL_LOAD_ERROR} onRetry={detail.retry} />
-        ) : (
-          <TitheDetail
-            summary={detail.data}
-            monthLabel={monthLabel}
-            carryForwardUpdating={carryForwardUpdating}
-            carryForwardError={carryForwardError}
-            onToggleCarryForward={updateCarryForwardInclusion}
-          />
-        )}
-      </div>
-      <div className="accounts-page__section">
-        <Text as="h2" weight="semibold" size={400}>
-          History
-        </Text>
-        {history.isLoading ? (
-          <LoadingState message="Loading the tithe history…" />
-        ) : history.error || !history.data ? (
-          <ErrorState message={TITHE_HISTORY_LOAD_ERROR} onRetry={history.retry} />
-        ) : (
-          <TitheHistory year={year} month={month} rows={history.data} onSelectMonth={onSelectMonth} />
-        )}
+      <div className="monthly-page__grids-row">
+        <div className={styles.detail}>
+          {(detail.isLoading || detail.error || !detail.data) && (
+            <Text as="h2" weight="semibold" size={400}>
+              Tithe for {monthLabel}
+            </Text>
+          )}
+          {detail.isLoading ? (
+            <LoadingState message="Loading the tithe…" />
+          ) : detail.error || !detail.data ? (
+            <ErrorState message={TITHE_DETAIL_LOAD_ERROR} onRetry={detail.retry} />
+          ) : (
+            <TitheDetail
+              summary={detail.data}
+              monthLabel={monthLabel}
+              carryForwardUpdating={carryForwardUpdating}
+              carryForwardError={carryForwardError}
+              onToggleCarryForward={updateCarryForwardInclusion}
+            />
+          )}
+        </div>
+        <SummarySection heading={`Tithe by month, ${year}`} headingId={historyHeadingId}>
+          {history.isLoading ? (
+            <LoadingState message="Loading the tithe history…" />
+          ) : history.error || !history.data ? (
+            <ErrorState message={TITHE_HISTORY_LOAD_ERROR} onRetry={history.retry} />
+          ) : (
+            <TitheHistory year={year} month={month} rows={history.data} labelId={historyHeadingId} onSelectMonth={onSelectMonth} />
+          )}
+        </SummarySection>
       </div>
     </div>
   )

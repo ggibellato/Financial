@@ -5,14 +5,18 @@ const NET_VALUE = 100
 const TITHE_RATE = 0.1
 
 async function titheFigure(page: Page, label: string): Promise<number> {
-  const text = await page.getByRole('group', { name: 'Tithe for October 2026' }).textContent()
-  const match = new RegExp(`${label}: (-?[\\d,]+\\.\\d{2})`).exec(text ?? '')
-  return match ? Number(match[1].replace(/,/g, '')) : Number.NaN
+  const text = await page
+    .getByRole('table', { name: 'Tithe for October 2026' })
+    .getByRole('row')
+    .filter({ has: page.getByRole('rowheader', { name: label, exact: true }) })
+    .getByRole('cell')
+    .textContent()
+  return text ? Number(text.replace(/,/g, '')) : Number.NaN
 }
 
 test('@smoke [AC P61-F03-tithe-tab-and-history-07] a bankless income raises the Tithe tab income base and tithe', async ({ page, runId }) => {
   await page.goto('/cashflow/accounts?month=2026-10&tab=tithe')
-  await expect(page.getByRole('group', { name: 'Tithe for October 2026' })).toBeVisible()
+  await expect(page.getByRole('table', { name: 'Tithe for October 2026' })).toBeVisible()
   const baseBefore = await titheFigure(page, 'Income base')
   const titheBefore = await titheFigure(page, 'Tithe')
 
