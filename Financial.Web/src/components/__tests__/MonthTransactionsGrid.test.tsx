@@ -1,7 +1,7 @@
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
+import type { AccountTransactionDto, ExpenseDto, ExternalPaymentDto, MonthTransactionDto } from '../../api/types'
 import { WithAppToaster } from '../../test/withAppToaster'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
@@ -11,13 +11,14 @@ import { never } from '../../test-utils/deferred'
 import { pinDate } from '../../test-utils/pinDate'
 import MonthTransactionsGrid from '../MonthTransactionsGrid'
 
-const { deleteExpenseMock, deletePotOperationMock } = vi.hoisted(() => ({
+const { deleteExpenseMock, deletePotOperationMock, deleteExternalPaymentMock } = vi.hoisted(() => ({
   deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
   deletePotOperationMock: vi.fn<FinancialApiClient['deletePotOperation']>(),
+  deleteExternalPaymentMock: vi.fn<FinancialApiClient['deleteExternalPayment']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
-  apiClient: { deleteExpense: deleteExpenseMock, deletePotOperation: deletePotOperationMock } as Partial<FinancialApiClient>,
+  apiClient: { deleteExpense: deleteExpenseMock, deletePotOperation: deletePotOperationMock, deleteExternalPayment: deleteExternalPaymentMock } as Partial<FinancialApiClient>,
 }))
 
 type AccountFields = Omit<MonthTransactionDto, 'transaction'>
@@ -80,6 +81,7 @@ function renderGrid({ rows = ROWS, isLoading = false, error = null, onRetry = vi
 beforeEach(() => {
   deleteExpenseMock.mockReset()
   deletePotOperationMock.mockReset()
+  deleteExternalPaymentMock.mockReset()
 })
 
 function bodyRows() {
@@ -481,6 +483,28 @@ describe('MonthTransactionsGrid', () => {
 
       expect(await screen.findAllByText('Expense deleted')).not.toHaveLength(0)
       expect(deleteExpenseMock).toHaveBeenCalledExactlyOnceWith('e1')
+      expect(onDeleted).toHaveBeenCalledTimes(1)
+    })
+
+    it('[AC P67-F02-pay-in-out-web-03] labels pay-ins and pay-outs, opens them on their account screen and deletes them in place', async () => {
+      const payment = (id: string, direction: string, description: string, amount: number): MonthTransactionDto => {
+        const externalPayment: ExternalPaymentDto = { id, direction, date: '2026-10-12', accountId: 'bank-1', accountName: 'Barclays', amount: Math.abs(amount), description }
+        return monthRow(BARCLAYS, accountTransactionRow({ id, kind: `Pay${direction}`, date: '2026-10-12', description, amount, externalPayment }))
+      }
+      deleteExternalPaymentMock.mockResolvedValue()
+      const onDeleted = vi.fn()
+      renderGrid({ rows: [payment('x1', 'In', 'Money from Ana', 100), payment('x2', 'Out', 'Money to João', -30)], onDeleted })
+
+      expect(bodyRows().map((row) => within(row).queryByText(/Pay (in|out)$/)?.textContent)).toEqual(['Type:Pay in', 'Type:Pay out'])
+      fireEvent.click(screen.getByRole('button', { name: 'Edit pay-in Money from Ana, 12/10/2026, Barclays' }))
+      expect(await screen.findByText('at:/cashflow/accounts/bank-1?month=2026-10&tab=transactions&edit=PayIn-x1')).toBeInTheDocument()
+
+      const dialog = await requestDelete('pay-out Money to João, 12/10/2026, Barclays', 'pay-out')
+      expect(dialog).toHaveTextContent('Delete this pay-out? This cannot be undone.')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+      expect(await screen.findAllByText('Pay-out deleted')).not.toHaveLength(0)
+      expect(deleteExternalPaymentMock).toHaveBeenCalledExactlyOnceWith('bank-1', 'x2')
       expect(onDeleted).toHaveBeenCalledTimes(1)
     })
 

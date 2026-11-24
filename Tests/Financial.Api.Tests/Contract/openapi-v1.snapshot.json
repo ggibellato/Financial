@@ -774,6 +774,16 @@
               }
             ]
           },
+          "externalPayment": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExternalPaymentDTO"
+              }
+            ]
+          },
           "id": {
             "format": "uuid",
             "type": "string"

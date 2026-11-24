@@ -5,6 +5,8 @@ import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
+import { useFieldErrorSummary } from '../hooks/useFieldErrorSummary'
+import FieldErrorSummary from './FieldErrorSummary'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { formatPercentN2, formatStatementMonthLabel, todayIsoDate } from '../utils/formatters'
 import { roundsUp } from '../utils/roundUp'
@@ -96,6 +98,7 @@ export default function ExpenseForm({
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0
   const formRef = useFormErrorFocus(saveErrorFields)
+  const { summaryRef, summarizedErrors, submitWithSummary } = useFieldErrorSummary(formRef)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && roundsUp(banks, paymentSource)
   const selectedCategory = categories.find((c) => c.id === categoryId)
@@ -117,13 +120,14 @@ export default function ExpenseForm({
       noValidate
       onSubmit={(event) => {
         event.preventDefault()
-        onSave()
+        submitWithSummary(onSave)
       }}
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
+        {summarizedErrors.length > 0 && <FieldErrorSummary ref={summaryRef} errors={summarizedErrors} />}
         <ActionErrorAlert message={hasFieldErrors ? null : saveError} />
 
         <div className={styles.grid}>

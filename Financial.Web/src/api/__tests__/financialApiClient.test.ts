@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../apiError'
 import { API_BASE_URL } from '../config'
-import { createFinancialApiClient } from '../financialApiClient'
+import { createFinancialApiClient, type FinancialApiClient } from '../financialApiClient'
 import type {
   AccountCreateDto,
   AccountDto,
@@ -1983,6 +1983,32 @@ describe('financialApiClient', () => {
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlement-entries/e7`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it.each([
+    ['creates', 'POST', '/accounts/b1/payments', (client: FinancialApiClient) => client.createExternalPayment('b1', { direction: 'In', date: '2026-11-12', description: 'Gift', amount: 20 })],
+    ['updates', 'PUT', '/accounts/b1/payments/x1', (client: FinancialApiClient) => client.updateExternalPayment('b1', 'x1', { date: '2026-11-12', description: 'Gift', amount: 20 })],
+  ])('%s a pay-in or pay-out through its account route', async (_, method, path, call) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'x1' }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(call(client)).resolves.toEqual({ id: 'x1' })
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}${path}`)
+    expect(init?.method).toBe(method)
+    expect(JSON.parse(init?.body as string)).toMatchObject({ description: 'Gift', amount: 20 })
+  })
+
+  it('deletes a pay-in or pay-out through its account route, accepting the empty 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.deleteExternalPayment('b1', 'x1')).resolves.toBeUndefined()
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/b1/payments/x1`)
     expect(init?.method).toBe('DELETE')
   })
 

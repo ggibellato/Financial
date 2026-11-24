@@ -459,14 +459,14 @@ describe('AccountsPage', () => {
     expect(screen.getByText('Account screen')).toBeInTheDocument()
   })
 
-  it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-02] shows each bank's round-up for the chosen month, and no Round-up column on other balance grids`, async () => {
+  it(`[AC P61-F01-accounts-overview-tabs-and-monthly-fold-02] [AC P67-F03-ui-cleanups-01] shows each bank's round-up, the missing-value mark when round-up is off for the chosen month, and no Round-up column on other balance grids`, async () => {
     renderPage('/cashflow/accounts?month=2026-09')
 
     const banks = await screen.findByRole('table', { name: 'Banks' })
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 9)
     const [barclays, chase] = bodyRows(banks)
     expect(within(barclays).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]*:/, ''))).toEqual(['Barclays', 'GBP', '2,800.25', '1.20', '0.00'])
-    expect(within(chase).getAllByRole('cell').at(-2)?.textContent).toContain('0.00')
+    expect(within(chase).getAllByRole('cell').at(-2)?.textContent).toContain('—')
     expect(headers(screen.getByRole('table', { name: 'Pots' }))).toEqual(['Account', 'Currency', 'Balance'])
   })
 

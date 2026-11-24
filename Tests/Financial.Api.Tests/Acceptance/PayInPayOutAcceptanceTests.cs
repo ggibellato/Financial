@@ -155,6 +155,7 @@ public class PayInPayOutAcceptanceTests : ApiEndpointTests
         {
             rows!.Select(row => (row.Kind, row.Description, row.Amount, row.CanEdit)).Should().BeEquivalentTo(
                 [("PayIn", "Money from Ana", 100m, true), ("PayOut", "Money to João", -30m, true)]);
+            rows!.Select(row => (row.ExternalPayment!.Direction, row.ExternalPayment.Amount)).Should().BeEquivalentTo([("In", 100m), ("Out", 30m)]);
             monthRows!.Select(row => row.Transaction.Kind).Should().Contain(["PayIn", "PayOut"]);
         }
     }

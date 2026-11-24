@@ -22,4 +22,5 @@ public sealed class AccountTransactionDTO
     public BalanceAdjustmentDTO? Adjustment { get; init; }
     public ReserveMovementDTO? Movement { get; init; }
     public SettlementEntryDTO? Settlement { get; init; }
+    public ExternalPaymentDTO? ExternalPayment { get; init; }
 }

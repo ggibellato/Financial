@@ -9,6 +9,7 @@ import { useCardCreditRefundForm } from './useCardCreditRefundForm'
 import { useConfirmedDelete } from './useConfirmedDelete'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
+import { useExternalPaymentForm } from './useExternalPaymentForm'
 import { incomeSavedMessage, useIncomeForm } from './useIncomeForm'
 import { useMoveChargeForm } from './useMoveChargeForm'
 import { usePayCardStatementForm } from './usePayCardStatementForm'
@@ -129,6 +130,7 @@ export function useAccountActionForms(
   const depositForm = usePotDepositForm(hasPots ? currentAccountOption : undefined, viewedMonth, () => saved('Deposit saved'))
   const withdrawalForm = usePotWithdrawalForm(accounts, options.categories, viewedMonth, () => saved('Withdrawal saved'))
   const settlementEntryForm = useSettlementEntryForm(currentAccount, viewedMonth, saved)
+  const paymentForm = useExternalPaymentForm(currentAccountOption, viewedMonth, saved)
   const [isManagePotsOpen, setIsManagePotsOpen] = useState(false)
 
   const openers: Record<AccountFormAction, () => void> = {
@@ -150,6 +152,8 @@ export function useAccountActionForms(
     WithdrawFromPots: () => (isCard ? withdrawalForm.openFromCard(routeAccountId) : withdrawalForm.openFromBank(routeAccountId)),
     AddEntry: () => settlementEntryForm.openAdd(),
     Settle: () => settlementEntryForm.openSettle(),
+    PayIn: () => paymentForm.openCreate('In'),
+    PayOut: () => paymentForm.openCreate('Out'),
   }
 
   const createAction = (): AccountFormAction | null => {
@@ -164,6 +168,7 @@ export function useAccountActionForms(
     if (payStatementForm.isOpen) return 'PayCardStatement'
     if (creditRefundForm.isOpen) return creditRefundForm.mode === 'card' ? 'RefundCreditToBank' : 'ReceiveCardCredit'
     if (settlementEntryForm.isOpen && !settlementEntryForm.isEditing) return settlementEntryForm.isSettling ? 'Settle' : 'AddEntry'
+    if (paymentForm.isOpen && !paymentForm.isEditing) return paymentForm.direction === 'In' ? 'PayIn' : 'PayOut'
     if (isManagePotsOpen) return 'ManagePots'
     return null
   }
@@ -177,7 +182,8 @@ export function useAccountActionForms(
     potTransactionForm.isOpen ||
     depositForm.isOpen ||
     withdrawalForm.isOpen ||
-    settlementEntryForm.isOpen
+    settlementEntryForm.isOpen ||
+    paymentForm.isOpen
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
   const activeFormKey = activeAction
@@ -197,6 +203,7 @@ export function useAccountActionForms(
     depositForm.isDirty ||
     withdrawalForm.isDirty ||
     settlementEntryForm.isDirty ||
+    paymentForm.isDirty ||
     screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLElement | null>(null)
@@ -215,6 +222,7 @@ export function useAccountActionForms(
     if (depositForm.isOpen) depositForm.cancel()
     if (withdrawalForm.isOpen) withdrawalForm.cancel()
     if (settlementEntryForm.isOpen) settlementEntryForm.cancel()
+    if (paymentForm.isOpen) paymentForm.cancel()
     setIsManagePotsOpen(false)
     screenForm.close()
   }
@@ -284,6 +292,7 @@ export function useAccountActionForms(
       else if (row.adjustment) adjustmentForm.openEditForm(row.adjustment)
       else if (row.movement) potTransactionForm.open(row.movement)
       else if (row.settlement) settlementEntryForm.openEdit(row.settlement)
+      else if (row.externalPayment) paymentForm.openEdit(row.externalPayment)
     })
   }
 
@@ -353,6 +362,7 @@ export function useAccountActionForms(
     depositForm,
     withdrawalForm,
     settlementEntryForm,
+    paymentForm,
     operationDelete,
     isOperationFormOpen,
     isManagePotsOpen,

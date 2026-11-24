@@ -122,7 +122,7 @@ public sealed class ExternalPaymentService : IExternalPaymentService
     private ExternalPayment FindPaymentOrThrow(Account account, Guid id) =>
         _repository.GetExternalPayments().FirstOrThrow(payment => payment.Id == id && payment.Account.Id == account.Id, "Payment", id);
 
-    private static ExternalPaymentDTO ToDto(ExternalPayment payment) => new()
+    internal static ExternalPaymentDTO ToDto(ExternalPayment payment) => new()
     {
         Id = payment.Id,
         Direction = payment.Direction.ToString(),
