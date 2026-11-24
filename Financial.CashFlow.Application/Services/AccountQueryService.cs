@@ -32,7 +32,9 @@ public sealed class AccountQueryService : IAccountQueryService
         TransferOut,
         Adjustment,
         PotTransaction,
-        SettlementEntry
+        SettlementEntry,
+        RoundUp,
+        Cashback
     }
 
     private readonly ICashFlowRepository _repository;
@@ -63,6 +65,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 .Select(account => ToAccountDto(
                     account,
                     referencedIds.Contains(account.Id),
+                    accounts,
                     account.Has(Capability.HasStatements) ? CardDueDate.For(account, statements) : null,
                     ReplacedPage(account.Id, reservaId, maeId)))
                 .ToList();
@@ -118,7 +121,9 @@ public sealed class AccountQueryService : IAccountQueryService
                 CurrentBalances = CurrencyBalanceMapper.ToDtos(currentBalances),
                 HasPlannedEntries = account.Has(Capability.HasParticipants) && HasPlannedEntries(account, records),
                 OtherParticipant = account.OtherParticipant,
-                Savings = SavingsTermsMapper.ToSummary(account.Savings, _timeProvider.GetLocalToday())
+                Savings = SavingsTermsMapper.ToSummary(account.Savings, _timeProvider.GetLocalToday()),
+                RoundUpDestination = MoneyDestinationMapper.ToDto(account.RoundUpDestination, _repository.GetAccounts()),
+                CashbackDestination = MoneyDestinationMapper.ToDto(account.CashbackDestination, _repository.GetAccounts())
             };
 
             span.MarkSuccess();
@@ -368,6 +373,7 @@ public sealed class AccountQueryService : IAccountQueryService
         record switch
         {
             Expense expense when expense.PaymentSourceAccount?.Id == account.Id => [ToRow(expense, account, statements)],
+            Expense expense => RoutedRows(expense, account),
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account, statements),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
@@ -435,6 +441,27 @@ public sealed class AccountQueryService : IAccountQueryService
         CanEdit = account.IsActive && transaction.OperationId is null && transaction.Income is null,
         Operation = OperationLink(transaction.OperationId),
         Movement = ReserveService.ToDto(transaction, _repository.GetPotTransactions())
+    };
+
+    private static IEnumerable<AccountTransactionDTO> RoutedRows(Expense expense, Account account)
+    {
+        if (expense.RoundUpRoutedTo(account) is > 0m and var roundUp)
+            yield return RoutedRow(expense, account, TransactionKind.RoundUp, roundUp);
+
+        if (expense.CashbackRoutedTo(account) is > 0m and var cashback)
+            yield return RoutedRow(expense, account, TransactionKind.Cashback, cashback);
+    }
+
+    private static AccountTransactionDTO RoutedRow(Expense expense, Account account, TransactionKind kind, decimal amount) => new()
+    {
+        Id = expense.Id,
+        Kind = kind.ToString(),
+        Date = expense.Date,
+        Description = expense.Description,
+        Counterpart = expense.PaymentSourceAccount!.Name,
+        Amount = amount,
+        Currency = account.Currency.ToString(),
+        CanEdit = false
     };
 
     private AccountTransactionDTO ToRow(Income income, Account? account) => new()
@@ -530,7 +557,8 @@ public sealed class AccountQueryService : IAccountQueryService
         return accountId == maeId ? ControleMaePage : null;
     }
 
-    internal static AccountDTO ToAccountDto(Account account, bool hasRecords, DateOnly? dueDate = null, string? replacesPage = null) => new()
+    internal static AccountDTO ToAccountDto(
+        Account account, bool hasRecords, IEnumerable<Account> accounts, DateOnly? dueDate = null, string? replacesPage = null) => new()
     {
         Id = account.Id,
         Name = account.Name,
@@ -545,6 +573,8 @@ public sealed class AccountQueryService : IAccountQueryService
         RoundUpEnabled = account.RoundUp?.Enabled,
         CashbackEnabled = account.Cashback?.Enabled,
         CashbackRatePercent = account.Cashback?.RatePercent,
+        RoundUpDestination = MoneyDestinationMapper.ToDto(account.RoundUpDestination, accounts),
+        CashbackDestination = MoneyDestinationMapper.ToDto(account.CashbackDestination, accounts),
         CategoryId = account.Category?.Id,
         Savings = SavingsTermsMapper.ToDto(account.Savings),
         DueDate = dueDate,

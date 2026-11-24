@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
@@ -15,12 +16,16 @@ public class Account
     public const string SelfParticipantName = "You";
     public const decimal RequiredActiveSplitTotal = 100m;
     public const string MissingSavingsTermsMessage = "Enter how this savings account pays interest and its rate.";
+    public const string RoundUpDestinationMessage = "Round-ups can only go to an active round-up-only savings account.";
+    public const string CashbackDestinationMessage = "Cashback can only go to an active savings account that isn't round-up only.";
     private const string SetupLockedMessage = "Template and currency can't change once the account has transactions.";
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
     private IReadOnlyList<Pot> _pots = [];
     private IReadOnlyList<Currency> _currencies = [];
     private CashbackSetting? _cashback;
+    private MoneyDestination? _roundUpDestination;
+    private MoneyDestination? _cashbackDestination;
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -37,6 +42,11 @@ public class Account
     public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
     public bool EarnsCashback => Cashback?.Enabled == true;
+    public MoneyDestination? RoundUpDestination => Has(Capability.SupportsRoundUp) ? _roundUpDestination ?? MoneyDestination.None : null;
+    public MoneyDestination? CashbackDestination => Has(Capability.SupportsCashback) ? _cashbackDestination ?? MoneyDestination.None : null;
+    public bool ReceivesOnlyRoundUps => Savings?.RoundUpOnly == true;
+    public bool CanReceiveRoundUps => IsActive && ReceivesOnlyRoundUps;
+    public bool CanReceiveCashback => IsActive && Has(Capability.EarnsInterest) && !ReceivesOnlyRoundUps;
     public string TemplateName => Template.ToString();
     public int TemplateOrder => AccountTemplates.Available.ToList().IndexOf(Template);
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -63,7 +73,10 @@ public class Account
     }
 
     public bool Has(Capability capability) =>
-        (_capabilitiesOverride ?? AccountTemplates.CapabilitiesOf(Template)).Contains(capability);
+        (_capabilitiesOverride ?? AccountTemplates.CapabilitiesOf(Template)).Contains(capability)
+        && !(capability == Capability.CanReceiveTransfers && ReceivesOnlyRoundUps);
+
+    public bool AcceptsIncomeFrom(IncomeGroup group) => !ReceivesOnlyRoundUps || group == IncomeGroup.DividendoJuros;
 
     public bool IsSetUpAs(AccountTemplate template, IEnumerable<Currency> currencies) =>
         Template == template && currencies.SequenceEqual(Currencies);
@@ -181,6 +194,54 @@ public class Account
         ArgumentNullException.ThrowIfNull(cashback);
         EnsureSupportsCashback(Has, Name);
         _cashback = cashback;
+    }
+
+    public void SetRoundUpDestination(MoneyDestination destination, Account? target = null)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        if (!Has(Capability.SupportsRoundUp))
+        {
+            throw new ArgumentException($"{Name} does not support round-up.");
+        }
+
+        EnsureRoundUpDestinationFits(destination, target);
+        _roundUpDestination = destination;
+    }
+
+    public void SetCashbackDestination(MoneyDestination destination, Account? target = null)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        EnsureSupportsCashback(Has, Name);
+        EnsureCashbackDestinationFits(destination, target);
+        _cashbackDestination = destination;
+    }
+
+    public void EnsureOnlyRoundUpsReceived(IEnumerable<Transfer> transfers, IEnumerable<Income> incomes)
+    {
+        ArgumentNullException.ThrowIfNull(transfers);
+        ArgumentNullException.ThrowIfNull(incomes);
+
+        if (transfers.Any(transfer => transfer.DestinationAccount.Id == Id)
+            || incomes.Any(income => income.Account?.Id == Id && income.IncomeSource.Group != IncomeGroup.DividendoJuros))
+        {
+            throw new ArgumentException($"{Name} already has money in that isn't a round-up or interest.");
+        }
+    }
+
+    public static void EnsureRoundUpDestinationFits(MoneyDestination destination, Account? target) =>
+        EnsureDestinationFits(destination, target, candidate => candidate.CanReceiveRoundUps, RoundUpDestinationMessage);
+
+    public static void EnsureCashbackDestinationFits(MoneyDestination destination, Account? target) =>
+        EnsureDestinationFits(destination, target, candidate => candidate.CanReceiveCashback, CashbackDestinationMessage);
+
+    private static void EnsureDestinationFits(
+        MoneyDestination destination, Account? target, Func<Account, bool> canReceive, string message)
+    {
+        if (destination.Kind == MoneyDestinationKind.Account
+            && (target is null || !destination.IsAccount(target.Id) || !canReceive(target)))
+        {
+            throw new ArgumentException(message);
+        }
     }
 
     public void SetSavings(SavingsTerms savings)
@@ -368,6 +429,8 @@ public class Account
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
         Savings = Has(Capability.EarnsInterest) ? Savings : null;
         _cashback = Has(Capability.SupportsCashback) ? _cashback : null;
+        _roundUpDestination = Has(Capability.SupportsRoundUp) ? _roundUpDestination : null;
+        _cashbackDestination = Has(Capability.SupportsCashback) ? _cashbackDestination : null;
         _currencies = Has(Capability.MultiCurrency) ? [Currency] : [];
         OtherParticipant = Has(Capability.HasParticipants) ? OtherParticipant : null;
         if (!Has(Capability.HasPots))

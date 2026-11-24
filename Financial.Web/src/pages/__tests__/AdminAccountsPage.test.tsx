@@ -114,6 +114,8 @@ describe('AdminAccountsPage', () => {
         roundUpEnabled: null,
         cashbackEnabled: null,
         cashbackRatePercent: null,
+        roundUpDestination: null,
+        cashbackDestination: null,
         categoryId: null,
         savings: null,
       }),
@@ -201,6 +203,8 @@ describe('AdminAccountsPage', () => {
       roundUpEnabled: null,
       cashbackEnabled: null,
       cashbackRatePercent: null,
+      roundUpDestination: null,
+      cashbackDestination: null,
       categoryId: 'c1',
       savings: null,
     })

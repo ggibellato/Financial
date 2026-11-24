@@ -292,7 +292,17 @@ public class Expense : IAccountTransaction
     public decimal ContributionTo(Account account) =>
         PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0))
         : IsUnpaidChargeOn(account) ? -Value
-        : 0m;
+        : RoundUpRoutedTo(account) + CashbackRoutedTo(account);
+
+    public decimal RoundUpRoutedTo(Account account) =>
+        PaymentStatus == ExpensePaymentStatus.ImmediatePayment && PaymentSourceAccount!.RoundUpDestination?.IsAccount(account.Id) == true
+            ? RoundUpAmount ?? 0m
+            : 0m;
+
+    public decimal CashbackRoutedTo(Account account) =>
+        PaymentStatus == ExpensePaymentStatus.ImmediatePayment && PaymentSourceAccount!.CashbackDestination?.IsAccount(account.Id) == true
+            ? CashbackAmount ?? 0m
+            : 0m;
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 

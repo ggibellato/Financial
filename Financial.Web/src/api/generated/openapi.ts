@@ -7211,6 +7211,7 @@ export interface components {
         AccountCreateDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            cashbackDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             cashbackEnabled?: null | boolean;
             /** Format: double */
             cashbackRatePercent?: null | number;
@@ -7222,6 +7223,7 @@ export interface components {
             /** Format: double */
             openingBalance?: null | number;
             otherParticipant?: null | string;
+            roundUpDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             roundUpEnabled?: null | boolean;
             savings?: null | components["schemas"]["SavingsTermsDTO"];
             templateName: string;
@@ -7230,6 +7232,7 @@ export interface components {
             /** Format: date */
             balanceStartDate?: null | string;
             capabilities: string[];
+            cashbackDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             cashbackEnabled?: null | boolean;
             /** Format: double */
             cashbackRatePercent?: null | number;
@@ -7248,6 +7251,7 @@ export interface components {
             openingBalance?: null | number;
             otherParticipant?: null | string;
             replacesPage?: null | string;
+            roundUpDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             roundUpEnabled?: null | boolean;
             savings?: null | components["schemas"]["SavingsTermsDTO"];
             templateName: string;
@@ -7257,6 +7261,7 @@ export interface components {
             /** Format: double */
             balance: number;
             balanceIsOwed: boolean;
+            cashbackDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             currency: string;
             currentBalances: components["schemas"]["CurrencyBalanceDTO"][];
             disabledActions: {
@@ -7271,6 +7276,7 @@ export interface components {
             month: number;
             name: string;
             otherParticipant?: null | string;
+            roundUpDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             savings?: null | components["schemas"]["SavingsSummaryDTO"];
             templateName: string;
             /** Format: double */
@@ -7465,6 +7471,7 @@ export interface components {
         AccountUpdateDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            cashbackDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             cashbackEnabled?: null | boolean;
             /** Format: double */
             cashbackRatePercent?: null | number;
@@ -7477,6 +7484,7 @@ export interface components {
             /** Format: double */
             openingBalance?: null | number;
             otherParticipant?: null | string;
+            roundUpDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             roundUpEnabled?: null | boolean;
             savings?: null | components["schemas"]["SavingsTermsDTO"];
             templateName: string;
@@ -8525,6 +8533,12 @@ export interface components {
         };
         /** @enum {unknown} */
         MarketStatus: "Current" | "Stale" | "Unavailable";
+        MoneyDestinationDTO: {
+            /** Format: uuid */
+            accountId?: null | string;
+            accountName?: null | string;
+            kind: string;
+        };
         MonthTransactionDTO: {
             accountCurrency: null | string;
             /** Format: uuid */
@@ -8968,6 +8982,7 @@ export interface components {
             isTaxFree: boolean;
             /** Format: int32 */
             paymentDay?: null | number;
+            roundUpOnly: boolean;
             upcomingRate?: null | components["schemas"]["InterestRateDTO"];
         };
         SavingsTermsDTO: {
@@ -8976,6 +8991,7 @@ export interface components {
             /** Format: int32 */
             paymentDay?: null | number;
             rates: components["schemas"]["InterestRateDTO"][];
+            roundUpOnly?: boolean;
         };
         SetAssetPriceDTO: {
             assetName: string;

@@ -15,7 +15,7 @@ public static class AccountActions
         (AccountAction.AddCharge, (account, _) => account.Has(Capability.HasStatements)),
         (AccountAction.AddRefund, (account, _) => account.Has(Capability.HasStatements)),
         (AccountAction.RefundCreditToBank, (account, isInCredit) => account.Has(Capability.HasStatements) && isInCredit),
-        (AccountAction.AddIncome, (account, _) => account.Has(Capability.ReceivesIncome)),
+        (AccountAction.AddIncome, (account, _) => account.Has(Capability.ReceivesIncome) && !account.ReceivesOnlyRoundUps),
         (AccountAction.AddInterest, (account, _) => account.Has(Capability.EarnsInterest)),
         (AccountAction.TransferTo, (account, _) => account.Has(Capability.CanSendTransfers)),
         (AccountAction.TransferFrom, (account, _) => account.Has(Capability.CanReceiveTransfers)),

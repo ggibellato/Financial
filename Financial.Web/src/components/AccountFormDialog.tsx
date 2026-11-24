@@ -248,6 +248,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
     cashbackEnabled: supportsCashback ? values.cashbackEnabled : null,
     cashbackRatePercent: supportsCashback && values.cashbackEnabled ? Number(values.cashbackRatePercent) : null,
+    roundUpDestination: null,
+    cashbackDestination: null,
     savings: earnsInterest ? toSavingsTermsDto(values.savings) : null,
     isActive: values.isActive,
   })

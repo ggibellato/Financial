@@ -62,6 +62,8 @@ export default function AdminAccountsPage() {
         roundUpEnabled,
         cashbackEnabled,
         cashbackRatePercent,
+        roundUpDestination,
+        cashbackDestination,
         categoryId,
         savings,
       } = request
@@ -76,6 +78,8 @@ export default function AdminAccountsPage() {
         roundUpEnabled,
         cashbackEnabled,
         cashbackRatePercent,
+        roundUpDestination,
+        cashbackDestination,
         categoryId,
         savings,
       })

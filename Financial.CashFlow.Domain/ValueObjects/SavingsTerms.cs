@@ -16,16 +16,19 @@ public sealed class SavingsTerms
     public int? PaymentDay { get; }
     public bool IsTaxFree { get; }
     public IReadOnlyList<InterestRate> Rates { get; }
+    public bool RoundUpOnly { get; }
 
-    private SavingsTerms(InterestFrequency frequency, int? paymentDay, bool isTaxFree, IReadOnlyList<InterestRate> rates)
+    private SavingsTerms(InterestFrequency frequency, int? paymentDay, bool isTaxFree, IReadOnlyList<InterestRate> rates, bool roundUpOnly)
     {
         Frequency = frequency;
         PaymentDay = paymentDay;
         IsTaxFree = isTaxFree;
         Rates = rates;
+        RoundUpOnly = roundUpOnly;
     }
 
-    public static SavingsTerms Create(InterestFrequency frequency, int? paymentDay, bool isTaxFree, IEnumerable<InterestRate> rates)
+    public static SavingsTerms Create(
+        InterestFrequency frequency, int? paymentDay, bool isTaxFree, IEnumerable<InterestRate> rates, bool roundUpOnly = false)
     {
         ArgumentNullException.ThrowIfNull(rates);
 
@@ -42,7 +45,7 @@ public sealed class SavingsTerms
             throw new ArgumentException("Two rates can't take effect on the same date.");
         }
 
-        return new(frequency, paymentDay, isTaxFree, ordered.AsReadOnly());
+        return new(frequency, paymentDay, isTaxFree, ordered.AsReadOnly(), roundUpOnly);
     }
 
     public InterestRate? CurrentRate(DateOnly today) => Rates.LastOrDefault(rate => rate.EffectiveFrom <= today);

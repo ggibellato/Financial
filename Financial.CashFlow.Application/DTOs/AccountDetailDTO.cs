@@ -20,4 +20,6 @@ public sealed class AccountDetailDTO
     public required bool HasPlannedEntries { get; init; }
     public string? OtherParticipant { get; init; }
     public SavingsSummaryDTO? Savings { get; init; }
+    public MoneyDestinationDTO? RoundUpDestination { get; init; }
+    public MoneyDestinationDTO? CashbackDestination { get; init; }
 }

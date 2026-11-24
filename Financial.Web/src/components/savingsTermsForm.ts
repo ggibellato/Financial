@@ -19,6 +19,7 @@ export interface SavingsFormValues {
   paymentDay: string
   isTaxFree: boolean
   rates: RateRow[]
+  roundUpOnly: boolean
 }
 
 interface RateErrors {
@@ -36,12 +37,13 @@ export function newRateRow(annualPercent = '', effectiveFrom = todayIsoDate()): 
 }
 
 export function initialSavingsValues(savings: SavingsTermsDto | null | undefined): SavingsFormValues {
-  if (!savings) return { interestFrequency: 'Monthly', paymentDay: '', isTaxFree: false, rates: [newRateRow()] }
+  if (!savings) return { interestFrequency: 'Monthly', paymentDay: '', isTaxFree: false, rates: [newRateRow()], roundUpOnly: false }
   return {
     interestFrequency: savings.interestFrequency as InterestFrequency,
     paymentDay: savings.paymentDay?.toString() ?? '',
     isTaxFree: savings.isTaxFree,
     rates: savings.rates.map((rate) => newRateRow(rate.annualPercent.toFixed(2), rate.effectiveFrom)),
+    roundUpOnly: savings.roundUpOnly ?? false,
   }
 }
 
@@ -96,5 +98,6 @@ export function toSavingsTermsDto(values: SavingsFormValues): SavingsTermsDto {
     paymentDay: values.interestFrequency === 'Monthly' ? Number(values.paymentDay) : null,
     isTaxFree: values.isTaxFree,
     rates: values.rates.map((rate) => ({ annualPercent: Number(rate.annualPercent), effectiveFrom: rate.effectiveFrom })),
+    roundUpOnly: values.roundUpOnly,
   }
 }

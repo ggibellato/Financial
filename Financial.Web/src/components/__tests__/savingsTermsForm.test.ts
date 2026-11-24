@@ -12,6 +12,7 @@ const terms = (overrides: Partial<SavingsFormValues> = {}): SavingsFormValues =>
   interestFrequency: 'Monthly',
   paymentDay: '5',
   isTaxFree: false,
+  roundUpOnly: false,
   rates: [newRateRow('4.50', '2026-09-01')],
   ...overrides,
 })
@@ -72,6 +73,7 @@ describe('savingsTermsForm', () => {
       interestFrequency: 'Daily',
       paymentDay: null,
       isTaxFree: false,
+  roundUpOnly: false,
       rates: [{ annualPercent: 4.5, effectiveFrom: '2026-09-01' }],
     })
   })

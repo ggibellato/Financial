@@ -28,7 +28,7 @@ public class Income : IAccountTransaction
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
-        ValidateAccount(account);
+        ValidateAccount(account, incomeSource);
         ActiveAccountRule.EnsureUsable(null, account);
         ValidatePotsAccount(incomeSource, potsAccount);
         ActiveAccountRule.EnsureUsable(null, potsAccount);
@@ -57,7 +57,7 @@ public class Income : IAccountTransaction
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
-        ValidateAccount(account);
+        ValidateAccount(account, incomeSource);
         ActiveAccountRule.EnsureUsable(Account, account);
         ValidatePotsAccount(incomeSource, potsAccount);
         ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
@@ -91,11 +91,16 @@ public class Income : IAccountTransaction
 
     public decimal ContributionTo(Account account) => Account?.Id == account.Id ? NetValue : 0m;
 
-    private static void ValidateAccount(Account? account)
+    private static void ValidateAccount(Account? account, IncomeSource incomeSource)
     {
         if (account is not null && !account.Has(Capability.ReceivesIncome))
         {
             throw new ArgumentException($"Account '{account.Name}' cannot receive income.");
+        }
+
+        if (account is not null && !account.AcceptsIncomeFrom(incomeSource.Group))
+        {
+            throw new ArgumentException($"{account.Name} only receives round-ups and its interest.");
         }
     }
 

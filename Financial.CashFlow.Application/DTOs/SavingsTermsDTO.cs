@@ -8,4 +8,5 @@ public sealed class SavingsTermsDTO
     public int? PaymentDay { get; init; }
     public required bool IsTaxFree { get; init; }
     public required IReadOnlyList<InterestRateDTO> Rates { get; init; }
+    public bool RoundUpOnly { get; init; }
 }
