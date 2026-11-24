@@ -24,7 +24,13 @@ $worktree = Join-Path (Split-Path -Parent $mainRoot) "financial-wt-$Topic"
 
 if (Test-Path $worktree) { throw "$worktree already exists." }
 
-git -C $mainRoot fetch origin
+foreach ($port in $ApiPort, $WebPort) {
+    if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
+        Write-Warning "Port $port is already in use; pass a different -ApiPort or -WebPort to run the app from this worktree."
+    }
+}
+
+git -C $mainRoot fetch origin main
 if ($LASTEXITCODE) { throw 'git fetch failed.' }
 git -C $mainRoot worktree add --no-track $worktree -b $Branch origin/main
 if ($LASTEXITCODE) { throw 'git worktree add failed.' }
@@ -41,17 +47,13 @@ foreach ($relativePath in $localFiles) {
     Write-Host "Copied $relativePath"
 }
 
-Add-Content -Path (Join-Path $worktree 'Financial.Web/.env') -Value "API_PROXY_TARGET=http://localhost:$ApiPort"
+$webEnv = Join-Path $worktree 'Financial.Web/.env'
+$webEnvLines = @(if (Test-Path $webEnv) { Get-Content $webEnv | Where-Object { $_ -notmatch '^\s*API_PROXY_TARGET=' } })
+Set-Content -Path $webEnv -Value ($webEnvLines + "API_PROXY_TARGET=http://localhost:$ApiPort")
 
 if (-not $SkipNpmInstall) {
     npm --prefix (Join-Path $worktree 'Financial.Web') ci --no-audit --no-fund
     if ($LASTEXITCODE) { throw 'npm ci failed.' }
-}
-
-foreach ($port in $ApiPort, $WebPort) {
-    if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
-        Write-Warning "Port $port is already in use; pass a different -ApiPort or -WebPort."
-    }
 }
 
 Write-Host ''
