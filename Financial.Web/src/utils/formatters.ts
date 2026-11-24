@@ -173,6 +173,11 @@ export function hasAtMostTwoDecimals(value: string): boolean {
   return (value.trim().split('.')[1] ?? '').replace(/0+$/, '').length <= 2
 }
 
+export function parseIntegerInRange(value: string, min: number, max: number): number | null {
+  const parsed = parseValidatedNumber(value, { min, max })
+  return parsed !== null && Number.isInteger(parsed) ? parsed : null
+}
+
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {
   const parsed = Number(value)
   if (!value.trim() || !isFinite(parsed)) return null

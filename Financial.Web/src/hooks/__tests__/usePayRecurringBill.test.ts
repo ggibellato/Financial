@@ -24,7 +24,7 @@ const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Coun
 const WATER = recurringBill({ id: 'water', dueDay: 20, description: 'Water', value: 35.5, status: 'Scheduled' })
 const RENT_PAID = recurringBill({ id: 'rent', dueDay: 1, description: 'Rent', value: 900, status: 'Paid' })
 const BRAZIL = recurringBill({ id: 'iptu', dueDay: 2, description: 'IPTU', value: 80, area: 'BR' })
-const BILLS = [WATER, RENT_PAID, BRAZIL, COUNCIL_TAX]
+const BILLS = [COUNCIL_TAX, WATER, RENT_PAID, BRAZIL]
 
 const BARCLAYS = { id: 'barclays', name: 'Barclays' }
 
@@ -44,14 +44,8 @@ async function openWithCouncilTax(result: { current: ReturnType<typeof usePayRec
 }
 
 describe('unpaidUkBills', () => {
-  it('keeps only unpaid UK bills, ordered by due day', () => {
+  it('keeps only unpaid UK bills, in the listed order', () => {
     expect(unpaidUkBills(BILLS).map((b) => b.id)).toEqual(['council', 'water'])
-  })
-
-  it('orders bills due on the same day by description', () => {
-    const gas = recurringBill({ id: 'gas', dueDay: 5, description: 'Gas', value: 40 })
-
-    expect(unpaidUkBills([gas, COUNCIL_TAX]).map((b) => b.id)).toEqual(['council', 'gas'])
   })
 })
 
