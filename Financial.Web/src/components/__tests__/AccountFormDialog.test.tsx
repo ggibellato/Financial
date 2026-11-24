@@ -833,6 +833,63 @@ describe('AccountFormDialog', () => {
       )
     })
 
+    it('warns that saving with round-up off stops sending round-ups to the saved destination', () => {
+      const chase = account({
+        id: 'a1',
+        name: 'Chase',
+        roundUpEnabled: true,
+        roundUpDestination: { kind: 'Account', accountId: 'saver', accountName: 'Round-up saver' },
+      })
+      renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase, roundUpSaver] })
+
+      fireEvent.click(screen.getByRole('switch', { name: 'Round-up' }))
+
+      expect(screen.getByRole('switch', { name: 'Round-up' })).toHaveAccessibleDescription(
+        'Saving with round-up off stops sending round-ups to Round-up saver.',
+      )
+    })
+
+    it('warns that saving with cashback off stops investing it automatically', () => {
+      const chase = account({
+        id: 'a1',
+        name: 'Chase',
+        cashbackEnabled: true,
+        cashbackRatePercent: 2,
+        cashbackDestination: { kind: 'InvestedAutomatically', accountId: null, accountName: null },
+      })
+      renderDialog({ account: chase, templates: [DESTINATION_BANK], accounts: [chase] })
+
+      fireEvent.click(screen.getByRole('switch', { name: 'Cashback' }))
+
+      expect(screen.getByRole('switch', { name: 'Cashback' })).toHaveAccessibleDescription(
+        'Saving with cashback off stops investing it automatically.',
+      )
+    })
+
+    it('tells a round-up saver which bank sends it round-ups, and shows the refusal when it is switched off anyway', async () => {
+      const chase = account({
+        id: 'a1',
+        name: 'Chase',
+        roundUpEnabled: true,
+        roundUpDestination: { kind: 'Account', accountId: 'saver', accountName: 'Round-up saver' },
+      })
+      const refusal = "Round-up saver receives Chase's round-ups."
+      renderDialog({
+        account: roundUpSaver,
+        templates: [BANK, SAVINGS],
+        accounts: [chase, roundUpSaver],
+        onSubmit: vi.fn().mockRejectedValue(new ApiError(refusal, 400)),
+      })
+
+      const roundUpOnly = screen.getByRole('switch', { name: 'Round-up only' })
+      expect(roundUpOnly).toHaveAccessibleDescription('Chase sends its round-ups here. Change its destination before switching this off.')
+      fireEvent.click(roundUpOnly)
+      save('Save')
+
+      expect(await findErrorAlert()).toHaveTextContent(refusal)
+      expect(screen.getByRole('switch', { name: 'Round-up only' })).not.toBeChecked()
+    })
+
     it('opens with the saved destinations selected', () => {
       const chase = account({
         id: 'a1',

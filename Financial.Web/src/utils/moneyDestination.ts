@@ -29,10 +29,40 @@ export function cashbackDestinationAccounts(accounts: AccountDto[], keptId: stri
 interface MoneyWording {
   goesTo: string
   invested: string
+  stopsGoingTo: string
+  stopsBeingInvested: string
 }
 
-const ROUND_UPS: MoneyWording = { goesTo: 'Round-ups go to', invested: 'Round-ups are invested automatically' }
-const CASHBACK: MoneyWording = { goesTo: 'Cashback goes to', invested: 'Cashback is invested automatically' }
+const ROUND_UPS: MoneyWording = {
+  goesTo: 'Round-ups go to',
+  invested: 'Round-ups are invested automatically',
+  stopsGoingTo: 'Saving with round-up off stops sending round-ups to',
+  stopsBeingInvested: 'Saving with round-up off stops investing them automatically.',
+}
+
+const CASHBACK: MoneyWording = {
+  goesTo: 'Cashback goes to',
+  invested: 'Cashback is invested automatically',
+  stopsGoingTo: 'Saving with cashback off stops sending cashback to',
+  stopsBeingInvested: 'Saving with cashback off stops investing it automatically.',
+}
+
+function switchOffHint(wording: MoneyWording, choice: string, accounts: readonly AccountDto[]): string | undefined {
+  if (choice === NO_DESTINATION) return undefined
+  if (choice === INVESTED_AUTOMATICALLY) return wording.stopsBeingInvested
+  const name = accounts.find((account) => account.id === choice)?.name
+  return name ? `${wording.stopsGoingTo} ${name}.` : undefined
+}
+
+export const roundUpSwitchOffHint = (choice: string, accounts: readonly AccountDto[]) => switchOffHint(ROUND_UPS, choice, accounts)
+
+export const cashbackSwitchOffHint = (choice: string, accounts: readonly AccountDto[]) => switchOffHint(CASHBACK, choice, accounts)
+
+export function roundUpSourceNames(accounts: readonly AccountDto[], accountId: string | undefined): string[] {
+  return accounts
+    .filter((account) => accountId !== undefined && account.roundUpDestination?.accountId === accountId)
+    .map((account) => account.name)
+}
 
 function destinationPhrase(wording: MoneyWording, destination: MoneyDestinationDto | null | undefined): string | null {
   if (destination?.kind === INVESTED_AUTOMATICALLY) return wording.invested

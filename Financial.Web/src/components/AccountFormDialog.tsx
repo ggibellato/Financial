@@ -20,10 +20,13 @@ import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { inactiveMarked } from '../utils/selectableBanks'
 import {
   cashbackDestinationAccounts,
+  cashbackSwitchOffHint,
   destinationChoice,
   INVESTED_AUTOMATICALLY,
   NO_DESTINATION,
   roundUpDestinationAccounts,
+  roundUpSourceNames,
+  roundUpSwitchOffHint,
   toMoneyDestination,
 } from '../utils/moneyDestination'
 import { hasAtMostTwoDecimals, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
@@ -462,12 +465,13 @@ export default function AccountFormDialog({ account, templates, categories, acco
         <SavingsTermsFields
           values={values.savings}
           errors={showValidation ? savingsErrors : null}
+          roundUpSources={roundUpSourceNames(accounts, account?.id)}
           onChange={(savings) => setField('savings', savings)}
         />
       )}
 
       {supportsRoundUp && (
-        <Field label="Round-up">
+        <Field label="Round-up" hint={values.roundUpEnabled ? undefined : roundUpSwitchOffHint(values.roundUpDestination, accounts)}>
           <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
         </Field>
       )}
@@ -483,7 +487,7 @@ export default function AccountFormDialog({ account, templates, categories, acco
       )}
 
       {supportsCashback && (
-        <Field label="Cashback">
+        <Field label="Cashback" hint={values.cashbackEnabled ? undefined : cashbackSwitchOffHint(values.cashbackDestination, accounts)}>
           <Switch checked={values.cashbackEnabled} onChange={(_, data) => changeCashbackEnabled(data.checked)} />
         </Field>
       )}

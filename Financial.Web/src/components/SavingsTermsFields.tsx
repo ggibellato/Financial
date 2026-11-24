@@ -17,6 +17,7 @@ import './SavingsTermsFields.css'
 interface SavingsTermsFieldsProps {
   values: SavingsFormValues
   errors: SavingsErrors | null
+  roundUpSources?: readonly string[]
   onChange: (values: SavingsFormValues) => void
 }
 
@@ -25,7 +26,15 @@ const validation = (message: string | undefined) => ({
   validationMessage: message,
 })
 
-export default function SavingsTermsFields({ values, errors, onChange }: SavingsTermsFieldsProps) {
+function roundUpOnlyHint(sources: readonly string[]): string {
+  return sources.length === 0
+    ? "Only round-ups and this account's interest can go in."
+    : sources.length === 1
+      ? `${sources[0]} sends its round-ups here. Change its destination before switching this off.`
+      : `${sources.join(', ')} send their round-ups here. Change their destinations before switching this off.`
+}
+
+export default function SavingsTermsFields({ values, errors, roundUpSources = [], onChange }: SavingsTermsFieldsProps) {
   const ratesLabelId = useId()
   const ratesHintId = useId()
   const { containerRef, addButtonRef } = useRowListFocus(values.rates.length, '.savings-terms__percent input')
@@ -75,7 +84,7 @@ export default function SavingsTermsFields({ values, errors, onChange }: Savings
         <Switch checked={values.isTaxFree} onChange={(_, data) => change({ isTaxFree: data.checked })} />
       </Field>
 
-      <Field label="Round-up only" hint="Only round-ups and this account's interest can go in.">
+      <Field label="Round-up only" hint={roundUpOnlyHint(roundUpSources)}>
         <Switch checked={values.roundUpOnly} onChange={(_, data) => change({ roundUpOnly: data.checked })} />
       </Field>
 
