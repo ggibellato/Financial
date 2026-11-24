@@ -2,7 +2,6 @@ import { act, fireEvent, render, screen, within } from '../../test/renderWithFlu
 import { afterEach, describe, expect, it } from 'vitest'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
 import CategoryTotalsGrid from '../CategoryTotalsGrid'
-import type { MonthResult } from '../../utils/monthResult'
 import type { CategoryTotalDto } from '../../api/types'
 
 const CATEGORY_TOTALS: CategoryTotalDto[] = [
@@ -10,11 +9,9 @@ const CATEGORY_TOTALS: CategoryTotalDto[] = [
   { category: 'Casa', totalValue: 100 },
 ]
 
-const SURPLUS: MonthResult = { value: 10, label: 'Surplus' }
-
 describe('CategoryTotalsGrid', () => {
   it('renders a row per category with the footer total', () => {
-    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
     expect(screen.getByText('Mercado')).toBeInTheDocument()
     expect(screen.getByText('Casa')).toBeInTheDocument()
@@ -24,30 +21,30 @@ describe('CategoryTotalsGrid', () => {
   })
 
   it('labels the footer total as covering all categories while a Category filter is active, and plainly when none is', () => {
-    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
     const footer = () => document.querySelector('.monthly-page__section-total')!.textContent
 
-    expect(footer()).toBe('Total: 142.50 · Result: +10.00 Surplus')
+    expect(footer()).toBe('Total: 142.50')
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
-    expect(footer()).toBe('Total (all categories): 142.50 · Result (all categories): +10.00 Surplus')
+    expect(footer()).toBe('Total (all categories): 142.50')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
-    expect(footer()).toBe('Total: 142.50 · Result: +10.00 Surplus')
+    expect(footer()).toBe('Total: 142.50')
   })
 
   it('names its totals group once, not "Totals for Category totals"', () => {
-    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
     expect(screen.getByRole('group', { name: 'Totals for categories' })).toBeInTheDocument()
   })
 
   it('sorts rows by Category ascending when its header is clicked', () => {
-    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Category' }))
 
@@ -57,7 +54,7 @@ describe('CategoryTotalsGrid', () => {
   })
 
   it('filters rows by Category via the header checklist, and shows the empty message when nothing matches', () => {
-    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
@@ -74,7 +71,7 @@ describe('CategoryTotalsGrid', () => {
   })
 
   it('shows its empty message when no expense was recorded in the month', () => {
-    render(<CategoryTotalsGrid categoryTotals={[]} categoryTotalsSum={0} result={SURPLUS} />)
+    render(<CategoryTotalsGrid categoryTotals={[]} categoryTotalsSum={0} />)
 
     expect(screen.getByText('No expenses recorded for this month.')).toBeInTheDocument()
     expect(screen.getByText('0.00')).toBeInTheDocument()
@@ -94,7 +91,7 @@ describe('CategoryTotalsGrid', () => {
 
     it('shows an active filter above the grid, and Clear filters brings every row back', async () => {
       mockMatchMedia(true)
-      render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+      render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
       expect(screen.getByRole('status')).toBeEmptyDOMElement()
 
       filterOutMercado()
@@ -110,7 +107,7 @@ describe('CategoryTotalsGrid', () => {
 
     it('announces a filter set at desktop width, and adds Clear filters only once the window narrows', async () => {
       const media = mockMatchMedia(false)
-      render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} result={SURPLUS} />)
+      render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
       filterOutMercado()
       expect(await screen.findByRole('status')).toHaveTextContent('Filtered: 1 of 2 rows')
       expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()

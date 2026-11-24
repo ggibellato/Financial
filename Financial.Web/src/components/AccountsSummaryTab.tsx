@@ -5,6 +5,7 @@ import CategoryTotalsGrid from './CategoryTotalsGrid'
 import ErrorState from './ErrorState'
 import IncomingGrid from './IncomingGrid'
 import LoadingState from './LoadingState'
+import MonthResultPanel from './MonthResultPanel'
 
 function SummarySection({ heading, children }: { heading: string; children: ReactNode }) {
   return (
@@ -27,10 +28,11 @@ export default function AccountsSummaryTab({ year, month }: { year: number; mont
     <div className="monthly-page__summary-groups">
       <div className="monthly-page__grids-row">
         <SummarySection heading="Category totals">
-          <CategoryTotalsGrid categoryTotals={summary.categoryTotals} categoryTotalsSum={summary.categoryTotalsSum} result={summary.result} />
+          <CategoryTotalsGrid categoryTotals={summary.categoryTotals} categoryTotalsSum={summary.categoryTotalsSum} />
         </SummarySection>
         <SummarySection heading="Income by source">
           <IncomingGrid incomeTotals={summary.incomeTotals} totalIncoming={summary.totalIncoming} />
+          <MonthResultPanel totalIncoming={summary.totalIncoming} categoryTotalsSum={summary.categoryTotalsSum} result={summary.result} />
         </SummarySection>
       </div>
     </div>

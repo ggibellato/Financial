@@ -1,6 +1,5 @@
 import type { CategoryTotalDto } from '../api/types'
-import { formatN2, formatSignedN2 } from '../utils/formatters'
-import type { MonthResult } from '../utils/monthResult'
+import { formatN2 } from '../utils/formatters'
 import TotalsGrid from './TotalsGrid'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useColumnFilters } from '../hooks/useColumnFilters'
@@ -8,14 +7,13 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 interface CategoryTotalsGridProps {
   categoryTotals: CategoryTotalDto[]
   categoryTotalsSum: number
-  result: MonthResult
 }
 
 const FILTER_ACCESSORS = {
   category: (c: CategoryTotalDto) => c.category,
 }
 
-export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum, result }: CategoryTotalsGridProps) {
+export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum }: CategoryTotalsGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, filterSummary } =
     useColumnFilters(categoryTotals, FILTER_ACCESSORS)
 
@@ -53,10 +51,7 @@ export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum, 
       filter={{ ...filterSummary, itemsNoun: 'categories' }}
       rowKey={(c) => c.category}
       emptyMessage="No expenses recorded for this month."
-      footerItems={[
-        { label: 'Total', value: formatN2(categoryTotalsSum) },
-        { label: 'Result', value: `${formatSignedN2(result.value)} ${result.label}` },
-      ]}
+      footerItems={[{ label: 'Total', value: formatN2(categoryTotalsSum) }]}
     />
   )
 }

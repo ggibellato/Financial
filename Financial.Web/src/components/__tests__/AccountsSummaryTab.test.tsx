@@ -46,7 +46,11 @@ const SUMMARY: AccountGroupSummaryDto = {
 }
 
 function result() {
-  return screen.getByRole('group', { name: 'Totals for categories' })
+  return screen.getByRole('table', { name: 'Month result' })
+}
+
+function resultRows() {
+  return within(result()).getAllByRole('row').map((row) => row.textContent)
 }
 
 describe('AccountsSummaryTab', () => {
@@ -56,7 +60,7 @@ describe('AccountsSummaryTab', () => {
     getTitheSummaryByMonthMock.mockReset()
   })
 
-  it(`${AC_03} shows Category totals with the Result as a Surplus beside the Total, then Income by source with Total incoming`, async () => {
+  it(`${AC_03} shows Category totals, Income by source with Total incoming, then the Month result as a Surplus`, async () => {
     render(<AccountsSummaryTab year={2026} month={10} />)
 
     const categories = await screen.findByRole('table', { name: 'Category totals' })
@@ -66,8 +70,8 @@ describe('AccountsSummaryTab', () => {
     expect(within(income).getByText('Salary')).toBeInTheDocument()
     expect(within(income).getByText('Dividendo/Juros')).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Totals for income' })).toHaveTextContent('Total incoming: 4,185.20')
-    expect(result()).toHaveTextContent('Result: +1,345.10 Surplus')
-    expect(categories.compareDocumentPosition(result()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(resultRows()).toEqual(['Total incoming4,185.20', 'Category total-2,840.10', 'Surplus+1,345.10'])
+    expect(income.compareDocumentPosition(result()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 10)
   })
 
@@ -77,15 +81,19 @@ describe('AccountsSummaryTab', () => {
     render(<AccountsSummaryTab year={2026} month={10} />)
 
     await screen.findByRole('table', { name: 'Category totals' })
-    expect(result()).toHaveTextContent('Result: -840.10 Deficit')
+    expect(resultRows()).toEqual(['Total incoming2,000.00', 'Category total-2,840.10', 'Deficit-840.10'])
   })
 
   it(`${AC_03} shows no bank or card grid`, async () => {
     render(<AccountsSummaryTab year={2026} month={10} />)
 
     await screen.findByRole('table', { name: 'Category totals' })
-    expect(screen.getAllByRole('table').map((table) => table.getAttribute('aria-label'))).toEqual(['Category totals', 'Income totals'])
-    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Category totals', 'Income by source'])
+    expect(screen.getAllByRole('table')).toEqual([
+      screen.getByRole('table', { name: 'Category totals' }),
+      screen.getByRole('table', { name: 'Income totals' }),
+      result(),
+    ])
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Category totals', 'Income by source', 'Month result'])
     expect(screen.queryByText(/Bank balance:|Combined adjustment figure/)).not.toBeInTheDocument()
   })
 
@@ -116,7 +124,7 @@ describe('AccountsSummaryTab', () => {
 
     expect(await screen.findByText('No expenses recorded for this month.')).toBeInTheDocument()
     expect(screen.getByText('No income recorded for this month.')).toBeInTheDocument()
-    expect(result()).toHaveTextContent('Result: 0.00 Balanced')
+    expect(resultRows()).toEqual(['Total incoming0.00', 'Category total0.00', 'Balanced0.00'])
   })
 
   it(`${AC_07} shows an error with Try again and no partial grid, and Try again reloads`, async () => {
