@@ -75,7 +75,6 @@
 
 .investment-tree__broker + .investment-tree__broker {
   margin-top: var(--spacingVerticalXS);
-  padding-top: var(--spacingVerticalXS);
   border-top: 1px solid var(--colorNeutralStroke2);
 }
 

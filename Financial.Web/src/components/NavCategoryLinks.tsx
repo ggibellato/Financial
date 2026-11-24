@@ -1,16 +1,18 @@
+import { useId } from 'react'
 import { NavLink } from 'react-router-dom'
-import type { NavCategory, NavChild } from '../navigation/navTree'
+import type { NavCategory, NavChild, NavGroup } from '../navigation/navTree'
 import './NavCategoryLinks.css'
 
 interface NavLinkListProps {
-  label: string
+  label?: string
+  labelledBy?: string
   items: NavChild[]
   onNavigate?: () => void
 }
 
-function NavLinkList({ label, items, onNavigate }: NavLinkListProps) {
+function NavLinkList({ label, labelledBy, items, onNavigate }: NavLinkListProps) {
   return (
-    <ul className="nav-links__list" aria-label={label}>
+    <ul className="nav-links__list" aria-label={label} aria-labelledby={labelledBy}>
       {items.map((child) => (
         <li key={child.id}>
           <NavLink to={child.route} className="sidebar__link" onClick={onNavigate}>
@@ -19,6 +21,23 @@ function NavLinkList({ label, items, onNavigate }: NavLinkListProps) {
         </li>
       ))}
     </ul>
+  )
+}
+
+interface NavGroupSectionProps {
+  group: NavGroup
+  onNavigate?: () => void
+}
+
+function NavGroupSection({ group, onNavigate }: NavGroupSectionProps) {
+  const titleId = useId()
+  return (
+    <div className="nav-links__group">
+      <span id={titleId} className="nav-links__group-title">
+        {group.label}
+      </span>
+      <NavLinkList labelledBy={titleId} items={group.children} onNavigate={onNavigate} />
+    </div>
   )
 }
 
@@ -35,10 +54,7 @@ function NavCategoryLinks({ category, onNavigate }: NavCategoryLinksProps) {
   return (
     <>
       {category.groups.map((group) => (
-        <div className="nav-links__group" key={group.id}>
-          <span className="nav-links__group-title">{group.label}</span>
-          <NavLinkList label={group.label} items={group.children} onNavigate={onNavigate} />
-        </div>
+        <NavGroupSection key={group.id} group={group} onNavigate={onNavigate} />
       ))}
     </>
   )
