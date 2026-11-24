@@ -62,7 +62,11 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var snapshot in DeserializeCollection<InvestmentSnapshot>(root, "InvestmentSnapshots", resolvedOptions)) data.AddInvestmentSnapshot(snapshot);
         foreach (var transfer in DeserializeCollection<Transfer>(root, "Transfers", resolvedOptions)) data.AddTransfer(transfer);
         foreach (var adjustment in DeserializeCollection<BalanceAdjustment>(root, "BalanceAdjustments", resolvedOptions)) data.AddBalanceAdjustment(adjustment);
-        foreach (var payment in DeserializeCollection<ExternalPayment>(root, ExternalPaymentsProperty, resolvedOptions)) data.AddExternalPayment(payment);
+        foreach (var payment in DeserializeCollection<ExternalPayment>(root, ExternalPaymentsProperty, resolvedOptions))
+        {
+            EnsureLoadedPaymentHasDirection(payment);
+            data.AddExternalPayment(payment);
+        }
         foreach (var decision in DeserializeCollection<TitheCarryForward>(root, "TitheCarryForwards", resolvedOptions)) data.AddTitheCarryForward(decision);
 
         if (root.TryGetProperty("TitheCarryForwardEffectiveFrom", out var effectiveFromElement)
@@ -110,6 +114,14 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         }
 
         writer.WriteEndObject();
+    }
+
+    private static void EnsureLoadedPaymentHasDirection(ExternalPayment payment)
+    {
+        if (!Enum.IsDefined(payment.Direction))
+        {
+            throw new JsonException($"ExternalPayment {payment.Id} has an unrecognised direction {payment.Direction}.");
+        }
     }
 
     private static void EnsureLoadedSettlementFits(SettlementTransaction entry)

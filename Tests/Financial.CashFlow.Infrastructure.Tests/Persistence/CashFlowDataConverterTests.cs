@@ -108,6 +108,20 @@ public class CashFlowDataConverterTests
         }
     }
 
+    [Theory]
+    [InlineData("2")]
+    [InlineData("\"Sideways\"")]
+    public void Load_PaymentWithAnUnknownDirection_Throws(string direction)
+    {
+        var withBadPayment = V5File.Replace(
+            "\"BalanceAdjustments\":[],",
+            "\"BalanceAdjustments\":[],\"ExternalPayments\":[{\"Id\":\"" + PaymentId + "\",\"Direction\":" + direction + ",\"Date\":\"2026-11-12\",\"AccountId\":\"" + BarclaysId + "\",\"Amount\":12.5,\"Description\":\"Chase cashback\"}],");
+
+        var act = () => _serializer.Deserialize(withBadPayment);
+
+        act.Should().Throw<JsonException>();
+    }
+
     [Fact]
     public void LoadAndSave_StatementPaidByTransfer_IsByteIdentical()
     {
