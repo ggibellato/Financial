@@ -27,8 +27,8 @@ function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][]
     else groups.set(account.templateName, [account])
   }
   return [...groups.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([templateName, members]): [string, AccountDto[]] => [accountTemplateLabel(templateName), members])
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([templateName, members]) => [accountTemplateLabel(templateName), members])
 }
 
 function viewedStatementAmount(statement: AccountStatementDto | null): number {

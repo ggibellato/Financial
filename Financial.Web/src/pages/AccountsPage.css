@@ -24,7 +24,9 @@
   margin: 0;
 }
 
-.accounts-page__groups--ruled {
+.accounts-page__template-groups {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 

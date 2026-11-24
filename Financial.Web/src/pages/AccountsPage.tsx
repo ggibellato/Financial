@@ -77,10 +77,8 @@ function statementColumn(year: number, month: number) {
     key: 'statement',
     header: `${formatMonthYear(new Date(year, month - 1, 1))} statement`,
     numeric: true,
-    render: (row: AccountGroupMemberDto) => {
-      if (!row.statement) return <MissingValue label="None" />
-      return row.statement.isPaid ? 'Paid' : formatN2(row.statement.outstandingTotal)
-    },
+    render: (row: AccountGroupMemberDto) =>
+      orMissing(row.statement, (statement) => (statement.isPaid ? 'Paid' : formatN2(statement.outstandingTotal)), 'None'),
     sortAccessor: (row: AccountGroupMemberDto) => (row.statement?.isPaid ? null : row.statement?.outstandingTotal),
   }
 }
@@ -92,7 +90,7 @@ function columnTotalsRows(grid: AccountTemplateGrid, group: AccountTemplateGroup
     values: {
       balance: formatN2(total),
       cashback: cashbackTotal == null ? undefined : formatN2(cashbackTotal),
-      statement: orMissing(openStatementTotal, formatN2),
+      statement: openStatementTotal == null ? undefined : formatN2(openStatementTotal),
       totalOwed: formatOwedOrCredit(total),
     },
   }))
@@ -139,7 +137,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
   const monthInputValue = formatMonthInputValue(year, month)
 
   return (
-    <div className="accounts-page__groups accounts-page__groups--ruled">
+    <div className="accounts-page__template-groups">
       {isLoading ? (
         <LoadingState />
       ) : error || !groups ? (
