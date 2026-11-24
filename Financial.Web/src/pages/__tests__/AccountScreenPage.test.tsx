@@ -236,10 +236,10 @@ const CARD_PAYMENT_ROW = accountTransactionRow({
 const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
 
 const BILLS: RecurringBillDto[] = [
-  recurringBill({ id: 'water', dueDay: 20, description: 'Water', value: 35.5, status: 'Scheduled' }),
   recurringBill({ id: 'rent', dueDay: 1, description: 'Rent', value: 900, status: 'Paid' }),
   recurringBill({ id: 'iptu', dueDay: 2, description: 'IPTU', value: 80, area: 'BR' }),
   COUNCIL_TAX,
+  recurringBill({ id: 'water', dueDay: 20, description: 'Water', value: 35.5, status: 'Scheduled' }),
 ]
 
 const RESERVA_ID = '8f3b1c1a-2e3a-4b1a-9a7f-700000000001'

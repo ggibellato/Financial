@@ -1,5 +1,5 @@
 import type { SavingsTermsDto } from '../api/types'
-import { hasAtMostTwoDecimals, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { hasAtMostTwoDecimals, parseIntegerInRange, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { nextRowKey } from '../utils/rowKeys'
 
 export type InterestFrequency = 'Monthly' | 'Daily'
@@ -50,8 +50,7 @@ export function initialSavingsValues(savings: SavingsTermsDto | null | undefined
 function paymentDayError(values: SavingsFormValues): string | undefined {
   if (values.interestFrequency !== 'Monthly') return undefined
   if (values.paymentDay.trim().length === 0) return 'Enter the day interest is paid.'
-  const day = parseValidatedNumber(values.paymentDay, { min: MIN_PAYMENT_DAY, max: MAX_PAYMENT_DAY })
-  if (day === null || !Number.isInteger(day))
+  if (parseIntegerInRange(values.paymentDay, MIN_PAYMENT_DAY, MAX_PAYMENT_DAY) === null)
     return `Interest payment day must be between ${MIN_PAYMENT_DAY} and ${MAX_PAYMENT_DAY}.`
   return undefined
 }

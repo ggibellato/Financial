@@ -675,12 +675,35 @@ describe('MensaisPage', () => {
       fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1000' } })
     }
 
-    it('names the bill being edited and focuses Value, the first field it can change', async () => {
+    it('names the bill being edited and focuses Due day, the first field it can change', async () => {
       await openEditInss()
 
-      expect(screen.getByLabelText('Bill')).toHaveValue('INSS · Brasil · due day 10')
+      expect(screen.getByLabelText('Bill')).toHaveValue('INSS · Brasil')
       expect(screen.getByLabelText('Bill')).toHaveAttribute('readonly')
-      await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
+      await waitFor(() => expect(screen.getByLabelText(/^Due day/)).toHaveFocus())
+      expect(screen.getByLabelText(/^Due day/)).toHaveValue(10)
+    })
+
+    it('saves a changed due day', async () => {
+      updateMensaisBillMock.mockResolvedValue({ ...BILLS[0], dueDay: 12 })
+      const form = await openEditInss()
+
+      fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '12' } })
+      fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
+
+      await waitFor(() =>
+        expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', expect.objectContaining({ dueDay: 12, value: 850 })),
+      )
+    })
+
+    it('rejects a due day outside 1 to 31', async () => {
+      const form = await openEditInss()
+
+      fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '32' } })
+      fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
+
+      expect(await screen.findByText('Due day must be between 1 and 31.')).toBeInTheDocument()
+      expect(updateMensaisBillMock).not.toHaveBeenCalled()
     })
 
     it('names a UK bill being edited', async () => {
@@ -688,7 +711,7 @@ describe('MensaisPage', () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Edit bill Council Tax' }))
 
       await screen.findByRole('form', { name: 'Edit bill' })
-      expect(screen.getByLabelText('Bill')).toHaveValue('Council Tax · UK · due day 15')
+      expect(screen.getByLabelText('Bill')).toHaveValue('Council Tax · UK')
     })
 
     it('returns focus to the Edit it was opened from once the edit is saved', async () => {
@@ -698,7 +721,7 @@ describe('MensaisPage', () => {
       edit.focus()
       fireEvent.click(edit)
       const form = await screen.findByRole('form', { name: 'Edit bill' })
-      await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
+      await waitFor(() => expect(screen.getByLabelText(/^Due day/)).toHaveFocus())
 
       fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
 
@@ -757,7 +780,7 @@ describe('MensaisPage', () => {
       fireEvent.click(within(form).getByRole('button', { name: 'Add bill' }))
 
       expect(await screen.findByText('Description is required.')).toBeInTheDocument()
-      expect(screen.getByText('Due day must be a number.')).toBeInTheDocument()
+      expect(screen.getByText('Due day must be between 1 and 31.')).toBeInTheDocument()
       await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
       expect(createMensaisBillMock).not.toHaveBeenCalled()
     })

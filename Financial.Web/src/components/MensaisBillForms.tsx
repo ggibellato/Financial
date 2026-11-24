@@ -4,6 +4,7 @@ import { AREAS, BILL_STATUSES, type AddField, type EditField } from '../hooks/us
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { generalErrorOf } from '../utils/fieldErrors'
+import { MAX_DUE_DAY, MIN_DUE_DAY } from '../utils/recurringBillRules'
 import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import ReadOnlyInput from './ReadOnlyInput'
@@ -103,7 +104,7 @@ export function AddBillForm({ values, isSaving, error, errorFields, onFieldChang
         validationState={fieldError('newDueDay') ? 'error' : 'none'}
         validationMessage={fieldError('newDueDay')}
       >
-        <Input type="number" min="1" max="31" value={values.newDueDay} onChange={(e) => onFieldChange('newDueDay', e.target.value)} />
+        <Input type="number" min={MIN_DUE_DAY} max={MAX_DUE_DAY} value={values.newDueDay} onChange={(e) => onFieldChange('newDueDay', e.target.value)} />
       </Field>
 
       <Field
@@ -144,6 +145,15 @@ export function EditBillForm({ billLabel, values, isSaving, error, errorFields, 
     >
       <Field label="Bill" className={styles.spanAll}>
         <ReadOnlyInput value={billLabel} />
+      </Field>
+
+      <Field
+        label="Due day"
+        required
+        validationState={fieldError('editDueDay') ? 'error' : 'none'}
+        validationMessage={fieldError('editDueDay')}
+      >
+        <Input type="number" min={MIN_DUE_DAY} max={MAX_DUE_DAY} step="1" value={values.editDueDay} onChange={(e) => onFieldChange('editDueDay', e.target.value)} />
       </Field>
 
       <Field

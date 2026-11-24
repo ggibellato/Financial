@@ -4,6 +4,7 @@ import type { RecurringBillDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useEntityForm } from '../hooks/useEntityForm'
+import { DUE_DAY_MESSAGE, parseDueDay } from '../utils/recurringBillRules'
 
 const AREA_OPTIONS = ['Brasil', 'UK']
 const STATUS_OPTIONS = ['Unset', 'Scheduled', 'Paid']
@@ -48,21 +49,17 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
   const { isSaving, error, submit } = useDialogSubmit('The recurring bill could not be saved.')
   const form = useEntityForm({ dueDay, description, value, area, note, nitNumber, minimumWageValue, status })
 
-  const parsedDueDay = Number(dueDay)
+  const parsedDueDay = parseDueDay(dueDay)
   const parsedValue = Number(value)
   const trimmedDescription = description.trim()
 
-  const dueDayError = dueDay.trim().length === 0 || !Number.isInteger(parsedDueDay) || parsedDueDay < 1 || parsedDueDay > 31
-    ? 'Due day must be between 1 and 31.'
-    : ''
+  const dueDayError = parsedDueDay === null ? DUE_DAY_MESSAGE : ''
   const descriptionError = trimmedDescription.length === 0 ? 'Description is required.' : ''
   const valueError = valueErrorOf(value, parsedValue)
 
-  const canSubmit = !dueDayError && !descriptionError && !valueError
-
   const handleSubmit = () => {
     form.revealValidation()
-    if (!canSubmit) return
+    if (parsedDueDay === null || descriptionError || valueError) return
     void submit(() =>
       onSubmit({
         dueDay: parsedDueDay,

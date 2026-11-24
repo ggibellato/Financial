@@ -32,9 +32,7 @@ interface BillSelection {
 }
 
 export function unpaidUkBills(bills: readonly RecurringBillDto[]): RecurringBillDto[] {
-  return bills
-    .filter((bill) => bill.area === UK_AREA && bill.status !== PAID_STATUS)
-    .sort((a, b) => a.dueDay - b.dueDay || a.description.localeCompare(b.description))
+  return bills.filter((bill) => bill.area === UK_AREA && bill.status !== PAID_STATUS)
 }
 
 export function usePayRecurringBill(

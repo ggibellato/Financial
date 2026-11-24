@@ -88,7 +88,7 @@ public sealed class MensaisService : IMensaisService
         using var span = StartSpan("GetBills");
         try
         {
-            var result = _repository.GetRecurringBills().Select(ToDto).ToList();
+            var result = InListingOrder(_repository.GetRecurringBills());
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBills");
@@ -224,7 +224,7 @@ public sealed class MensaisService : IMensaisService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "ResetAllToUnset");
-            return bills.Select(ToDto).ToList();
+            return InListingOrder(bills);
         }
         catch (Exception ex)
         {
@@ -259,6 +259,9 @@ public sealed class MensaisService : IMensaisService
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(MensaisService), operationName, EntityType);
     }
+
+    private static List<RecurringBillDTO> InListingOrder(IEnumerable<RecurringBill> bills) =>
+        bills.OrderBy(bill => bill.DueDay).ThenBy(bill => bill.Description, StringComparer.InvariantCultureIgnoreCase).Select(ToDto).ToList();
 
     private static RecurringBillDTO ToDto(RecurringBill bill) => new()
     {

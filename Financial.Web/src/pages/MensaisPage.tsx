@@ -226,6 +226,7 @@ export default function MensaisPage() {
     error,
     retry,
     editingId,
+    editDueDay,
     editStatus,
     editValue,
     isSaving,
@@ -269,7 +270,7 @@ export default function MensaisPage() {
   const isEditing = editingId !== null
   const isEditedBill = (bill: RecurringBillDto) => bill.id === editingId
   const editingBill = brasilBills.find(isEditedBill) ?? ukBills.find(isEditedBill)
-  const editingBillLabel = editingBill ? `${editingBill.description} · ${editingBill.area} · due day ${editingBill.dueDay}` : ''
+  const editingBillLabel = editingBill ? `${editingBill.description} · ${editingBill.area}` : ''
   const discardPrompt = useDiscardPrompt(isFormDirty)
   const formAreaRef = useRef<HTMLDivElement | null>(null)
   const openerRef = useRef<HTMLElement | null>(null)
@@ -362,7 +363,7 @@ export default function MensaisPage() {
         {isEditing && (
           <EditBillForm
             billLabel={editingBillLabel}
-            values={{ editValue, editStatus }}
+            values={{ editDueDay, editValue, editStatus }}
             isSaving={isSaving}
             error={saveError}
             errorFields={saveErrorFields}

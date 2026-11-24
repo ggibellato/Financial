@@ -111,6 +111,22 @@ public class MensaisServiceTests
         _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.GetBills");
     }
 
+    [Fact]
+    public async Task GetBills_ListsByDueDayThenDescription()
+    {
+        _repository.RecurringBills.AddRange([
+            RecurringBill.Create(20, "Water", 40m, Area.UK, string.Empty, null, null),
+            RecurringBill.Create(5, "rent", 900m, Area.UK, string.Empty, null, null),
+            RecurringBill.Create(5, "Gas", 60m, Area.UK, string.Empty, null, null),
+        ]);
+
+        var listed = _sut.GetBills();
+        var afterReset = await _sut.ResetAllToUnsetAsync();
+
+        listed.Select(b => b.Description).Should().Equal("Gas", "rent", "Water");
+        afterReset.Select(b => b.Description).Should().Equal("Gas", "rent", "Water");
+    }
+
     private static RecurringBillUpdateDTO ValidUpdateRequest(string status = "Paid", decimal value = 900m) => new()
     {
         DueDay = 10,
