@@ -46,7 +46,7 @@ const SUMMARY: AccountGroupSummaryDto = {
 }
 
 function result() {
-  return screen.getByRole('group', { name: 'Month result' })
+  return screen.getByRole('group', { name: 'Totals for income' })
 }
 
 describe('AccountsSummaryTab', () => {

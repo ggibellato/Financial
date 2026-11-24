@@ -13,6 +13,7 @@ function renderGrid(overrides: Partial<Parameters<typeof IncomingGrid>[0]> = {})
     <IncomingGrid
       incomeTotals={INCOME_TOTALS}
       totalIncoming={2550}
+      result={{ value: 2550, label: 'Surplus' }}
       {...overrides}
     />,
   )

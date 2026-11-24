@@ -1,12 +1,10 @@
 import { Text } from '@fluentui/react-components'
 import type { ReactNode } from 'react'
 import { SUMMARY_LOAD_ERROR, useAccountsSummary } from '../hooks/useAccountsSummary'
-import { formatSignedN2 } from '../utils/formatters'
 import CategoryTotalsGrid from './CategoryTotalsGrid'
 import ErrorState from './ErrorState'
 import IncomingGrid from './IncomingGrid'
 import LoadingState from './LoadingState'
-import SectionTotals from './SectionTotals'
 
 function SummarySection({ heading, children }: { heading: string; children: ReactNode }) {
   return (
@@ -32,10 +30,9 @@ export default function AccountsSummaryTab({ year, month }: { year: number; mont
           <CategoryTotalsGrid categoryTotals={summary.categoryTotals} categoryTotalsSum={summary.categoryTotalsSum} />
         </SummarySection>
         <SummarySection heading="Income by source">
-          <IncomingGrid incomeTotals={summary.incomeTotals} totalIncoming={summary.totalIncoming} />
+          <IncomingGrid incomeTotals={summary.incomeTotals} totalIncoming={summary.totalIncoming} result={summary.result} />
         </SummarySection>
       </div>
-      <SectionTotals label="Month result" items={[{ label: 'Result', value: `${formatSignedN2(summary.result.value)} ${summary.result.label}` }]} />
     </div>
   )
 }

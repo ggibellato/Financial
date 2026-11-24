@@ -1,14 +1,16 @@
 import type { IncomeSourceTotalDto } from '../api/types'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, formatSignedN2 } from '../utils/formatters'
+import type { MonthResult } from '../utils/monthResult'
 import { orMissing } from '../utils/orMissing'
 import TotalsGrid from './TotalsGrid'
 
 interface IncomingGridProps {
   incomeTotals: IncomeSourceTotalDto[]
   totalIncoming: number
+  result: MonthResult
 }
 
-export default function IncomingGrid({ incomeTotals, totalIncoming }: IncomingGridProps) {
+export default function IncomingGrid({ incomeTotals, totalIncoming, result }: IncomingGridProps) {
   return (
     <TotalsGrid
       label="Income totals"
@@ -38,7 +40,10 @@ export default function IncomingGrid({ incomeTotals, totalIncoming }: IncomingGr
       rows={incomeTotals}
       rowKey={(i) => i.incomeSourceId}
       emptyMessage="No income recorded for this month."
-      footerItems={[{ label: 'Total incoming', value: formatN2(totalIncoming) }]}
+      footerItems={[
+        { label: 'Total incoming', value: formatN2(totalIncoming) },
+        { label: 'Result', value: `${formatSignedN2(result.value)} ${result.label}` },
+      ]}
     />
   )
 }
