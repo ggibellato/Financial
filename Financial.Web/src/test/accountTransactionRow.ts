@@ -20,6 +20,7 @@ export function accountTransactionRow(fields: RequiredRowFields & Partial<Accoun
     operation: null,
     movement: null,
     settlement: null,
+    externalPayment: null,
     ...fields,
   }
 }

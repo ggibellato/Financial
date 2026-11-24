@@ -14,6 +14,7 @@ import type {
   CardCreditDto,
   CategoryDto,
   ExpenseDto,
+  ExternalPaymentDto,
   IncomeDto,
   IncomeSourceDto,
   PayableStatementDto,
@@ -72,10 +73,16 @@ const {
   createSettlementEntryMock,
   updateSettlementEntryMock,
   settleAccountMock,
+  createExternalPaymentMock,
+  updateExternalPaymentMock,
+  deleteExternalPaymentMock,
 } = vi.hoisted(() => ({
   createSettlementEntryMock: vi.fn<FinancialApiClient['createSettlementEntry']>(),
   updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
   settleAccountMock: vi.fn<FinancialApiClient['settleAccount']>(),
+  createExternalPaymentMock: vi.fn<FinancialApiClient['createExternalPayment']>(),
+  updateExternalPaymentMock: vi.fn<FinancialApiClient['updateExternalPayment']>(),
+  deleteExternalPaymentMock: vi.fn<FinancialApiClient['deleteExternalPayment']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
   getAccountTransactionsMock: vi.fn<FinancialApiClient['getAccountTransactions']>(),
@@ -121,6 +128,9 @@ vi.mock('../../api/financialApiClient', () => ({
     createSettlementEntry: createSettlementEntryMock,
     updateSettlementEntry: updateSettlementEntryMock,
     settleAccount: settleAccountMock,
+    createExternalPayment: createExternalPaymentMock,
+    updateExternalPayment: updateExternalPaymentMock,
+    deleteExternalPayment: deleteExternalPaymentMock,
     getAccounts: getAccountsMock,
     getAccount: getAccountMock,
     getAccountTransactions: getAccountTransactionsMock,
@@ -353,6 +363,10 @@ async function enabledButton(name: string | RegExp, container: HTMLElement = doc
   const button = await within(container).findByRole('button', { name })
   await waitFor(() => expect(button).toBeEnabled())
   return button
+}
+
+function rowOf(text: string): HTMLElement {
+  return screen.getByText(text).closest('tr') as HTMLElement
 }
 
 async function dialogButton(dialogTitle: string, buttonName: string) {
@@ -2258,10 +2272,6 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Transfer to' })).toBeEnabled())
   }
 
-  function rowOf(text: string): HTMLElement {
-    return screen.getByText(text).closest('tr') as HTMLElement
-  }
-
   it('opens the row named by the edit address in its edit form and drops the address', async () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=transactions&edit=TransferOut-t1`)
 
@@ -3444,5 +3454,189 @@ describe('AccountScreenPage bank side card payments', () => {
     await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
 
     expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)).toBeInTheDocument()
+  })
+})
+
+describe('AccountScreenPage pay in and pay out', () => {
+  const PAY_IN: ExternalPaymentDto = { id: 'x1', direction: 'In', date: '2026-10-03', accountId: BARCLAYS_ID, accountName: 'Barclays', amount: 100, description: 'Money from Ana' }
+  const PAY_OUT: ExternalPaymentDto = { id: 'x2', direction: 'Out', date: '2026-10-04', accountId: BARCLAYS_ID, accountName: 'Barclays', amount: 30, description: 'Money to João' }
+
+  const ROWS: AccountTransactionDto[] = [
+    accountTransactionRow({ id: 'x1', kind: 'PayIn', date: PAY_IN.date, description: PAY_IN.description, amount: 100, canEdit: true, externalPayment: PAY_IN }),
+    accountTransactionRow({ id: 'x2', kind: 'PayOut', date: PAY_OUT.date, description: PAY_OUT.description, amount: -30, canEdit: true, externalPayment: PAY_OUT }),
+  ]
+
+  beforeEach(() => {
+    withActions(['AddExpense', 'PayIn', 'PayOut'])
+    getAccountTransactionsMock.mockResolvedValue(ROWS)
+    createExternalPaymentMock.mockReset().mockResolvedValue({ ...PAY_IN, id: 'x3' })
+    updateExternalPaymentMock.mockReset().mockResolvedValue(PAY_IN)
+    deleteExternalPaymentMock.mockReset().mockResolvedValue(undefined)
+  })
+
+  async function openScreen() {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await screen.findByText('Money from Ana')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Pay in' })).toBeEnabled())
+  }
+
+  async function openForm(user: ReturnType<typeof userEvent.setup>, action: string) {
+    await openScreen()
+    await user.click(screen.getByRole('button', { name: action }))
+    return screen.getByRole('heading', { name: action }).closest('form') as HTMLElement
+  }
+
+  it('[AC P67-F02-pay-in-out-web-01] shows Pay in and Pay out as the server allows them', async () => {
+    await openScreen()
+
+    const actions = within(screen.getByRole('group', { name: 'Account actions' })).getAllByRole('button')
+    expect(actions.map((button) => button.textContent)).toEqual(['New expense', 'Pay in', 'Pay out'])
+  })
+
+  it('[AC P67-F02-pay-in-out-web-01] shows only Pay out on a Round-up only account', async () => {
+    withActions(['PayOut'])
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Pay out' })).toBeEnabled())
+    expect(screen.queryByRole('button', { name: 'Pay in' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P67-F02-pay-in-out-web-02] records a pay-in with the account locked, then clears for the next one with a toast', async () => {
+    const user = userEvent.setup()
+    const form = await openForm(user, 'Pay in')
+    const date = within(form).getByLabelText(/^Date/)
+    await waitFor(() => expect(date).toHaveFocus())
+    expect(date).toHaveValue('2026-10-15')
+    expect(within(form).getByText('Barclays')).toBeInTheDocument()
+
+    await user.type(within(form).getByLabelText(/^Description/), '  Chase cashback ')
+    await user.type(within(form).getByLabelText(/^Amount \(GBP\)/), '12.5')
+    await user.click(within(form).getByRole('button', { name: 'Add pay-in' }))
+
+    await waitFor(() =>
+      expect(createExternalPaymentMock).toHaveBeenCalledWith(BARCLAYS_ID, { direction: 'In', date: '2026-10-15', description: 'Chase cashback', amount: 12.5 }),
+    )
+    expect(await screen.findByText('Pay-in added')).toBeInTheDocument()
+    expect(within(form).getByLabelText(/^Description/)).toHaveValue('')
+    expect(within(form).getByLabelText(/^Amount \(GBP\)/)).toHaveValue(null)
+  })
+
+  it('[AC P67-F02-pay-in-out-web-02] names the pay-out form, button and toast after the action', async () => {
+    const user = userEvent.setup()
+    createExternalPaymentMock.mockResolvedValue(PAY_OUT)
+    const form = await openForm(user, 'Pay out')
+
+    await user.type(within(form).getByLabelText(/^Description/), 'Money to João')
+    await user.type(within(form).getByLabelText(/^Amount \(GBP\)/), '30')
+    await user.click(within(form).getByRole('button', { name: 'Add pay-out' }))
+
+    await waitFor(() => expect(createExternalPaymentMock).toHaveBeenCalledWith(BARCLAYS_ID, expect.objectContaining({ direction: 'Out', amount: 30 })))
+    expect(await screen.findByText('Pay-out added')).toBeInTheDocument()
+  })
+
+  it('[AC P67-F02-pay-in-out-web-02] moves focus to the error summary when several fields are invalid, and to the field when one is', async () => {
+    const user = userEvent.setup()
+    const form = await openForm(user, 'Pay in')
+
+    await user.click(within(form).getByRole('button', { name: 'Add pay-in' }))
+
+    expect(document.activeElement).toHaveTextContent('Enter a description.')
+    expect(document.activeElement).toHaveTextContent('Enter an amount above 0 with at most 2 decimal places.')
+
+    await user.type(within(form).getByLabelText(/^Description/), 'Gift')
+    await user.type(within(form).getByLabelText(/^Amount \(GBP\)/), '1.005')
+    await user.click(within(form).getByRole('button', { name: 'Add pay-in' }))
+
+    expect(within(form).getByLabelText(/^Amount \(GBP\)/)).toHaveFocus()
+    expect(createExternalPaymentMock).not.toHaveBeenCalled()
+  })
+
+  it('[AC P67-F02-pay-in-out-web-02] shows the server refusal in the form and keeps the values', async () => {
+    const user = userEvent.setup()
+    createExternalPaymentMock.mockRejectedValue(new ApiError('Barclays is inactive.', 400))
+    const form = await openForm(user, 'Pay in')
+    await user.type(within(form).getByLabelText(/^Description/), 'Gift')
+    await user.type(within(form).getByLabelText(/^Amount \(GBP\)/), '20')
+
+    await user.click(within(form).getByRole('button', { name: 'Add pay-in' }))
+
+    expect(await within(form).findByText('Barclays is inactive.')).toBeInTheDocument()
+    expect(within(form).getByLabelText(/^Description/)).toHaveValue('Gift')
+  })
+
+  it('[AC P67-F02-pay-in-out-web-03] labels the rows Pay in and Pay out with right-aligned signed amounts', async () => {
+    await openScreen()
+
+    expect(within(rowOf('Money from Ana')).getByText('Pay in')).toBeInTheDocument()
+    expect(within(rowOf('Money to João')).getByText('Pay out')).toBeInTheDocument()
+    const payOutAmount = within(rowOf('Money to João')).getAllByRole('cell').find((cell) => cell.textContent?.includes('30.00'))
+    expect(payOutAmount?.textContent).toContain('-30.00')
+    expect(payOutAmount).toHaveClass('data-table__col--numeric')
+  })
+
+  it('[AC P67-F02-pay-in-out-web-03] edits a pay-in in its form and saves it with a toast', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(within(rowOf('Money from Ana')).getByRole('button', { name: /^Edit pay-in\b/ }))
+    const form = screen.getByRole('heading', { name: 'Edit pay-in' }).closest('form') as HTMLElement
+    const amount = within(form).getByLabelText(/^Amount \(GBP\)/)
+    expect(amount).toHaveValue(100)
+    await user.clear(amount)
+    await user.type(amount, '120')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateExternalPaymentMock).toHaveBeenCalledWith(BARCLAYS_ID, 'x1', { date: '2026-10-03', description: 'Money from Ana', amount: 120 }),
+    )
+    expect(await screen.findByText('Pay-in updated')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Edit pay-in' })).not.toBeInTheDocument())
+  })
+
+  it('[AC P67-F02-pay-in-out-web-03] deletes a pay-out after asking', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(within(rowOf('Money to João')).getByRole('button', { name: /^Delete pay-out\b/ }))
+    const dialog = await findDialog('Delete pay-out')
+    expect(dialog).toHaveTextContent('Delete this pay-out? This cannot be undone.')
+    await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+    await waitFor(() => expect(deleteExternalPaymentMock).toHaveBeenCalledWith(BARCLAYS_ID, 'x2'))
+    expect(await screen.findByText('Pay-out deleted')).toBeInTheDocument()
+  })
+})
+
+describe('AccountScreenPage expense form focus', () => {
+  async function openExpenseForm(user: ReturnType<typeof userEvent.setup>) {
+    withActions(['AddExpense'])
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await user.click(await enabledButton('New expense'))
+    return screen.getByRole('heading', { name: 'New expense' }).closest('form') as HTMLElement
+  }
+
+  it('[AC P67-F03-ui-cleanups-02] moves focus to the error summary when several fields are invalid', async () => {
+    const user = userEvent.setup()
+    const form = await openExpenseForm(user)
+
+    await user.click(within(form).getByRole('button', { name: 'Add expense' }))
+
+    expect(document.activeElement).toHaveTextContent('Description is required.')
+    expect(document.activeElement).toHaveTextContent('Value must be a non-zero number.')
+    expect(createExpenseMock).not.toHaveBeenCalled()
+  })
+
+  it('[AC P67-F03-ui-cleanups-02] moves focus to the one invalid field, round-up included', async () => {
+    const user = userEvent.setup()
+    const form = await openExpenseForm(user)
+    await user.type(within(form).getByLabelText(/^Description/), 'Tesco')
+    await user.type(within(form).getByLabelText(/^Value/), '10')
+    await user.clear(within(form).getByLabelText(/^Round-up/))
+    await user.type(within(form).getByLabelText(/^Round-up/), '5')
+
+    await user.click(within(form).getByRole('button', { name: 'Add expense' }))
+
+    expect(within(form).getByLabelText(/^Round-up/)).toHaveFocus()
+    expect(createExpenseMock).not.toHaveBeenCalled()
   })
 })

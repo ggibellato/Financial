@@ -197,14 +197,14 @@ graph TD
 - [x] **P67-F01-pay-in-out-08** A data file without pay-ins loads and saves unchanged; a pay-in survives a save-load round trip; the OpenAPI snapshot and generated web types include the new endpoints and their freshness tests pass
 
 ### F02. Pay In and Pay Out in the Web App
-- [ ] **P67-F02-pay-in-out-web-01** Bank and Savings account screens show Pay in and Pay out as the server allows, and a Round-up only account shows Pay out only
-- [ ] **P67-F02-pay-in-out-web-02** The form takes date, amount and description with the account locked, validates inline with focus on the first invalid field, and saves with the matching title, button and toast
-- [ ] **P67-F02-pay-in-out-web-03** The rows show "Pay in" or "Pay out" with a right-aligned signed amount, and can be edited and deleted from the account's transactions and All transactions
-- [ ] **P67-F02-pay-in-out-web-04** Every touched view passes `docs/ui/review-checklist.md`
+- [x] **P67-F02-pay-in-out-web-01** Bank and Savings account screens show Pay in and Pay out as the server allows, and a Round-up only account shows Pay out only
+- [x] **P67-F02-pay-in-out-web-02** The form takes date, amount and description with the account locked, validates inline with focus on the first invalid field, and saves with the matching title, button and toast
+- [x] **P67-F02-pay-in-out-web-03** The rows show "Pay in" or "Pay out" with a right-aligned signed amount, and can be edited and deleted from the account's transactions and All transactions
+- [x] **P67-F02-pay-in-out-web-04** Every touched view passes `docs/ui/review-checklist.md`
 
 ### F03. UI Clean-ups
 - [x] **P67-F03-ui-cleanups-01** On the Accounts tab, a bank with round-up off and no round-ups that month shows the missing-value mark in the Round-up column, and a round-up bank shows its total
-- [ ] **P67-F03-ui-cleanups-02** When an expense can't be saved because of field errors, focus moves to the first invalid field, or to the error summary when several fields are invalid
+- [x] **P67-F03-ui-cleanups-02** When an expense can't be saved because of field errors, focus moves to the first invalid field, or to the error summary when several fields are invalid
 
 ### Cross-Feature Integration
-- [ ] **P67-CF-cross-feature-01** A pay-in of Chase cashback into Chase Save, recorded from the web app (F02, F01), raises Chase Save's balance and its snapshot suggestion from the following month, while the month's income and tithe stay the same
+- [x] **P67-CF-cross-feature-01** A pay-in of Chase cashback into Chase Save, recorded from the web app (F02, F01), raises Chase Save's balance and its snapshot suggestion from the following month, while the month's income and tithe stay the same

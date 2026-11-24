@@ -555,7 +555,8 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = payment.Description,
         Amount = payment.ContributionTo(account),
         Currency = account.Currency.ToString(),
-        CanEdit = account.IsActive
+        CanEdit = account.IsActive,
+        ExternalPayment = ExternalPaymentService.ToDto(payment)
     };
 
     private static AccountTransactionDTO ToRow(SettlementTransaction entry, Account account) => new()

@@ -9,6 +9,7 @@ import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCredi
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardCreditRefundForm from '../components/CardCreditRefundForm'
+import ExternalPaymentForm from '../components/ExternalPaymentForm'
 import CardStatementsTab from '../components/CardStatementsTab'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
@@ -90,6 +91,7 @@ export default function AccountScreenPage() {
     depositForm,
     withdrawalForm,
     settlementEntryForm,
+    paymentForm,
     operationDelete,
     isManagePotsOpen,
     closeManagePots,
@@ -375,6 +377,7 @@ export default function AccountScreenPage() {
           <PayCardStatementForm payForm={payStatementForm} lockedBank={lockedBank} onCancel={closeActiveForm} />
         )}
         {creditRefundForm.isOpen && <CardCreditRefundForm refundForm={creditRefundForm} onCancel={closeActiveForm} />}
+        {paymentForm.isOpen && <ExternalPaymentForm form={paymentForm} onCancel={closeActiveForm} />}
         {adjustmentForm.isOpen && (
           <BalanceAdjustmentForm
             isEditing={adjustmentForm.isEditing}

@@ -56,14 +56,12 @@ const balanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
-const roundUpOf = (row: AccountGroupMemberDto) => row.roundUpTotal ?? 0
-
 const roundUpColumn = {
   key: 'roundUp',
   header: 'Round-up',
   numeric: true,
-  render: (row: AccountGroupMemberDto) => formatN2(roundUpOf(row)),
-  sortAccessor: roundUpOf,
+  render: (row: AccountGroupMemberDto) => orMissing(row.roundUpTotal, formatN2, 'None'),
+  sortAccessor: (row: AccountGroupMemberDto) => row.roundUpTotal,
 }
 
 const cashbackColumn = {

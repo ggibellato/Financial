@@ -60,6 +60,9 @@ import type {
   DividendHistoryItemDto,
   DividendSummaryDto,
   ExpenseDto,
+  ExternalPaymentCreateDto,
+  ExternalPaymentDto,
+  ExternalPaymentUpdateDto,
   IncomeDto,
   IncomeSourceCreateDto,
   IncomeSourceDto,
@@ -252,6 +255,9 @@ export interface FinancialApiClient {
   createSettlementEntry: (accountId: string, requestBody: SettlementEntryCreateDto) => Promise<SettlementEntryDto>
   updateSettlementEntry: (accountId: string, entryId: string, requestBody: SettlementEntryUpdateDto) => Promise<SettlementEntryDto>
   deleteSettlementEntry: (accountId: string, entryId: string) => Promise<void>
+  createExternalPayment: (accountId: string, requestBody: ExternalPaymentCreateDto) => Promise<ExternalPaymentDto>
+  updateExternalPayment: (accountId: string, paymentId: string, requestBody: ExternalPaymentUpdateDto) => Promise<ExternalPaymentDto>
+  deleteExternalPayment: (accountId: string, paymentId: string) => Promise<void>
   settleAccount: (accountId: string, requestBody: SettleRequestDto) => Promise<SettlementEntryDto>
   getCardsInCredit: () => Promise<CardCreditDto[]>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
@@ -720,6 +726,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteSettlementEntry: (accountId, entryId) =>
       requestVoid(`/accounts/${encodeURIComponent(accountId)}/settlement-entries/${encodeURIComponent(entryId)}`, { method: 'DELETE' }),
+    createExternalPayment: (accountId, requestBody) =>
+      request<ExternalPaymentDto>(`/accounts/${encodeURIComponent(accountId)}/payments`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateExternalPayment: (accountId, paymentId, requestBody) =>
+      request<ExternalPaymentDto>(`/accounts/${encodeURIComponent(accountId)}/payments/${encodeURIComponent(paymentId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteExternalPayment: (accountId, paymentId) =>
+      requestVoid(`/accounts/${encodeURIComponent(accountId)}/payments/${encodeURIComponent(paymentId)}`, { method: 'DELETE' }),
     settleAccount: (accountId, requestBody) =>
       request<SettlementEntryDto>(`/accounts/${encodeURIComponent(accountId)}/settlements`, {
         method: 'POST',

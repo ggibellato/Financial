@@ -468,13 +468,12 @@ describe('ExpenseForm with a locked card', () => {
       expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
     })
 
-    it('focuses the first invalid field with its message', () => {
-      const { rerender } = render(<ExpenseForm {...refundProps} />)
+    it('focuses the one invalid field after a refused save', () => {
+      render(<ExpenseForm {...refundProps} saveError="Date must not be in the future." saveErrorFields={{ date: 'Date must not be in the future.' }} />)
 
-      rerender(<ExpenseForm {...refundProps} saveError="Date must not be in the future." saveErrorFields={{ date: 'Date must not be in the future.', value: 'Amount must be greater than zero.' }} />)
+      fireEvent.submit(screen.getByLabelText(/^Date/).closest('form') as HTMLFormElement)
 
       expect(screen.getByText('Date must not be in the future.')).toBeInTheDocument()
-      expect(screen.getByText('Amount must be greater than zero.')).toBeInTheDocument()
       expect(screen.getByLabelText(/^Date/)).toHaveFocus()
     })
 

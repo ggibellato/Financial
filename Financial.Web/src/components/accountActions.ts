@@ -14,6 +14,8 @@ export type AccountFormAction =
   | 'PayRecurringBill'
   | 'PayCardStatement'
   | 'Reconcile'
+  | 'PayIn'
+  | 'PayOut'
   | 'Deposit'
   | 'Withdraw'
   | 'ManagePots'
@@ -34,6 +36,8 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   PayRecurringBill: 'Pay recurring bill',
   PayCardStatement: 'Pay card statement',
   Reconcile: 'Adjust balance',
+  PayIn: 'Pay in',
+  PayOut: 'Pay out',
   Deposit: 'New deposit',
   Withdraw: 'New withdrawal',
   ManagePots: 'Manage pots',
@@ -43,7 +47,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
 }
 
 const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferFrom']
-const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots', 'RefundCreditToBank', 'ReceiveCardCredit', 'AddEntry', 'Settle']
+const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots', 'RefundCreditToBank', 'ReceiveCardCredit', 'AddEntry', 'Settle', 'PayIn', 'PayOut']
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',
@@ -58,6 +62,8 @@ const KIND_LABELS: Record<string, string> = {
   Interest: 'Interest',
   RoundUp: 'Round-up',
   Cashback: 'Cashback',
+  PayIn: 'Pay in',
+  PayOut: 'Pay out',
 }
 
 const RECORD_NOUNS: Record<string, string> = {
@@ -75,6 +81,8 @@ const RECORD_NOUNS: Record<string, string> = {
   Interest: 'interest',
   RoundUp: 'round-up',
   Cashback: 'cashback',
+  PayIn: 'pay-in',
+  PayOut: 'pay-out',
 }
 
 export function isFormAction(action: string): action is AccountFormAction {
