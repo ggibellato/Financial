@@ -13,7 +13,7 @@ checks them (first match wins):
 
 | Group | Paths | Why it is its own group |
 |---|---|---|
-| Docs | `docs/`, `specs/`, `dev-util/`, `.claude/`, `.specify/`, `LICENSE`, `.gitignore`, `.editorconfig`, `.dockerignore`, and `*.md` outside the source directories below | Nothing here reaches a build. A Markdown file inside `Financial.*`, `Tests/`, `Tools/` or `Integrations/` follows that directory's rule |
+| Docs | `docs/`, `specs/`, `dev-util/`, `.claude/`, `.specify/`, `LICENSE`, `.gitignore`, `.editorconfig`, `.dockerignore`, `.worktreeinclude`, and `*.md` outside the source directories below | Nothing here reaches a build. A Markdown file inside `Financial.*`, `Tests/`, `Tools/` or `Integrations/` follows that directory's rule |
 | Contract (server side) | `Financial.Api/`, `Tests/Financial.Api.Tests/` (includes the OpenAPI snapshot) | The HTTP surface `Financial.Web` is compiled against |
 | Contract (DTOs) | `Financial.*.Application/DTOs/` | Wire format the SPA is compiled against |
 | Contract (client side) | `Financial.Web/src/api/` | Hand-written TypeScript mirror of the DTOs (`types.ts`, client) |
