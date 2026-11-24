@@ -81,8 +81,8 @@ const BANKS: AccountTemplateGroupDto = {
     member('old', 'Old Savings', 'Bank', { balance: 10, isActive: false }),
   ],
   totals: [
-    { currency: 'GBP', total: 3310.25 },
-    { currency: 'BRL', total: 1000 },
+    { currency: 'GBP', total: 3310.25, cashbackTotal: 0.34, openStatementTotal: null },
+    { currency: 'BRL', total: 1000, cashbackTotal: null, openStatementTotal: null },
   ],
 }
 
@@ -98,7 +98,7 @@ const CARDS: AccountTemplateGroupDto = {
     }),
     member('visa', 'Old Visa', 'CreditCard', { balanceIsOwed: true, isActive: false, totalOwed: 0 }),
   ],
-  totals: [{ currency: 'GBP', total: 740.12 }],
+  totals: [{ currency: 'GBP', total: 740.12, cashbackTotal: null, openStatementTotal: 228 }],
 }
 
 const POTS: AccountTemplateGroupDto = {
@@ -107,7 +107,7 @@ const POTS: AccountTemplateGroupDto = {
     member('old-pots', 'Old pots', 'Pots', { balance: 12.5, isActive: false }),
     member('reserva', 'Reserva', 'Pots', { balance: 704.08 }),
   ],
-  totals: [{ currency: 'GBP', total: 716.58 }],
+  totals: [{ currency: 'GBP', total: 716.58, cashbackTotal: null, openStatementTotal: null }],
 }
 
 const SETTLEMENT: AccountTemplateGroupDto = {
@@ -173,7 +173,7 @@ async function openAllTransactions() {
 }
 
 function bodyRows(table: HTMLElement) {
-  return within(table).getAllByRole('row').slice(1)
+  return within(table.querySelector('tbody')!).getAllByRole('row')
 }
 
 function accountNames(table: HTMLElement) {
@@ -184,8 +184,10 @@ function headers(table: HTMLElement) {
   return within(within(table).getAllByRole('row')[0]).getAllByRole('columnheader').map((cell) => cell.textContent)
 }
 
-function footer(table: HTMLElement) {
-  return table.closest('section')?.querySelector('.monthly-page__section-total')?.textContent
+function footerRows(table: HTMLElement) {
+  return [...table.querySelectorAll('tfoot tr')].map((row) =>
+    within(row as HTMLElement).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]*:/, '')),
+  )
 }
 
 describe('AccountsPage', () => {
@@ -230,13 +232,35 @@ describe('AccountsPage', () => {
     expect(within(bodyRows(banks)[0]).getByText('2,800.25')).toBeInTheDocument()
     expect(within(bodyRows(banks)[2]).getByText('BRL')).toBeInTheDocument()
     expect(within(bodyRows(banks)[0]).queryByText('Inactive')).not.toBeInTheDocument()
-    expect(footer(banks)).toBe('Bank total GBP: 3,310.25 · Bank total BRL: 1,000.00 · Cashback total GBP: 0.34')
+    expect(footerRows(banks)).toEqual([
+      ['Bank total GBP', '', '3,310.25', '', '0.34'],
+      ['Bank total BRL', '', '1,000.00', '', ''],
+    ])
+    expect(banks.querySelector('tfoot td')?.textContent).toBe('Total:Bank total GBP')
 
     const pots = screen.getByRole('table', { name: 'Pots' })
     expect(headers(pots)).toEqual(['Account', 'Currency', 'Balance'])
     expect(accountNames(pots)).toEqual(['Old potsInactive', 'Reserva'])
     expect(within(bodyRows(pots)[1]).getByText('704.08')).toBeInTheDocument()
-    expect(footer(pots)).toBe('Pots total GBP: 716.58')
+    expect(footerRows(pots)).toEqual([['Pots total GBP', '', '716.58']])
+  })
+
+  it("shows a card's paid statement for the month as Paid, with the month's open total from the server under the column", async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([
+      {
+        ...CARDS,
+        members: [
+          CARDS.members[0],
+          member('visa', 'Visa', 'CreditCard', { balanceIsOwed: true, totalOwed: 0, statement: { outstandingTotal: 90, isPaid: true } }),
+        ],
+      },
+    ])
+
+    renderPage()
+
+    const cards = await screen.findByRole('table', { name: 'Credit cards' })
+    expect(within(bodyRows(cards)[1]).getByText('Paid')).toBeInTheDocument()
+    expect(footerRows(cards)).toEqual([['Card total GBP', '', '228.00', '', '740.12']])
   })
 
   it('shows no grid for a template without listed accounts', async () => {
@@ -253,15 +277,15 @@ describe('AccountsPage', () => {
     renderPage()
 
     const cards = await screen.findByRole('table', { name: 'Credit cards' })
-    expect(headers(cards)).toEqual(['Account', 'Currency', 'Next statement', 'Total owed'])
+    expect(headers(cards)).toEqual(['Account', 'Currency', 'Oct 2026 statement', 'Next statement', 'Total owed'])
     const [amex, visa] = bodyRows(cards)
     expect(within(amex).getByText('Oct 2026 · 512.30')).toBeInTheDocument()
     expect(within(amex).getByText('740.12')).toBeInTheDocument()
     expect(within(amex).queryByText('Owed 740.12')).not.toBeInTheDocument()
-    expect(within(visa).getByText('—')).toBeInTheDocument()
+    expect(within(visa).getAllByText('—')).toHaveLength(2)
     expect(within(visa).getByText('0.00')).toBeInTheDocument()
     expect(within(visa).getByText('Inactive')).toBeInTheDocument()
-    expect(footer(cards)).toBe('Net owed GBP: 740.12')
+    expect(footerRows(cards)).toEqual([['Card total GBP', '', '228.00', '', '740.12']])
   })
 
   it('[AC P60-F15-card-refunds-and-credit-06] shows a card in credit as Credit x in its Total owed cell and the footer, with no next statement', async () => {
@@ -269,7 +293,7 @@ describe('AccountsPage', () => {
       {
         templateName: 'CreditCard',
         members: [member('amex', 'BA Amex', 'CreditCard', { balance: 35, balanceIsOwed: true, totalOwed: -35, nextStatement: null })],
-        totals: [{ currency: 'GBP', total: -35 }],
+        totals: [{ currency: 'GBP', total: -35, cashbackTotal: null, openStatementTotal: 0 }],
       },
     ])
 
@@ -278,16 +302,16 @@ describe('AccountsPage', () => {
     const cards = await screen.findByRole('table', { name: 'Credit cards' })
     const [amex] = bodyRows(cards)
     expect(within(amex).getByText('Credit 35.00')).toBeInTheDocument()
-    expect(within(amex).getByText('—')).toBeInTheDocument()
-    expect(footer(cards)).toBe('Net owed GBP: Credit 35.00')
+    expect(within(amex).getAllByText('—')).toHaveLength(2)
+    expect(footerRows(cards)).toEqual([['Card total GBP', '', '0.00', '', 'Credit 35.00']])
   })
 
   it('keeps a negative balance total as a plain figure on a bank grid', async () => {
-    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20 }] }])
+    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20, cashbackTotal: 0.34, openStatementTotal: null }] }])
 
     renderPage()
 
-    expect(footer(await screen.findByRole('table', { name: 'Banks' }))).toBe('Bank total GBP: -20.00 · Cashback total GBP: 0.34')
+    expect(footerRows(await screen.findByRole('table', { name: 'Banks' }))).toEqual([['Bank total GBP', '', '-20.00', '', '0.34']])
   })
 
   it('sorts the cards by total owed', async () => {
@@ -330,7 +354,7 @@ describe('AccountsPage', () => {
     expect(within(mae).getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
     expect(within(samuel).getByText('Settled')).toBeInTheDocument()
     expect(within(tia).getByText('You owe Tia £15.00')).toBeInTheDocument()
-    expect(footer(settlement)).toBeFalsy()
+    expect(footerRows(settlement)).toEqual([])
   })
 
   it('links a Settlement row to its account screen for the month, without a tab', async () => {
@@ -355,7 +379,7 @@ describe('AccountsPage', () => {
 
   it('shows an unknown template under its own name with a "Total" footer and plain-text rows', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
-      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50 }] },
+      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50, cashbackTotal: null, openStatementTotal: null }] },
     ])
 
     renderPage()
@@ -363,7 +387,7 @@ describe('AccountsPage', () => {
     const table = await screen.findByRole('table', { name: 'Loans' })
     expect(headers(table)).toEqual(['Account', 'Currency', 'Balance'])
     expect(within(table).queryByRole('link')).not.toBeInTheDocument()
-    expect(footer(table)).toBe('Total GBP: 50.00')
+    expect(footerRows(table)).toEqual([['Total GBP', '', '50.00']])
   })
 
   it('shows the month the balances belong to', async () => {
@@ -477,8 +501,7 @@ describe('AccountsPage', () => {
     const chaseCashback = within(bodyRows(banks)[1]).getAllByRole('cell').at(-1)
     expect(chaseCashback?.textContent).toContain('0.34')
     expect(chaseCashback).toHaveClass('data-table__col--numeric')
-    expect(footer(banks)).toContain('Cashback total GBP: 0.34')
-    expect(footer(banks)).not.toContain('Cashback total BRL')
+    expect(footerRows(banks).map((row) => row.at(-1))).toEqual(['0.34', ''])
     expect(within(bodyRows(banks)[2]).getAllByRole('cell').at(-1)?.textContent).toContain('—')
     expect(headers(screen.getByRole('table', { name: 'Pots' }))).not.toContain('Cashback')
   })

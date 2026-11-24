@@ -67,9 +67,9 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             var toMember = GroupMemberBuilder(year, month, records, records.OfType<Expense>().ToList());
 
             var result = DefaultAccountGroup.ListedIn(_repository.GetAccounts(), year, month, records)
-                .GroupBy(account => account.TemplateOrder)
-                .OrderBy(group => group.Key)
-                .Select(group => ToTemplateGroupDto(group.Select(toMember).ToList(), group.First().Has(Capability.HasParticipants)))
+                .GroupBy(account => account.TemplateName)
+                .OrderBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => ToTemplateGroupDto(group.Select(toMember).ToList(), group.First()))
                 .ToList();
 
             span.MarkSuccess();
@@ -99,19 +99,24 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             NextStatementFor(account, expenses, statements, transfers));
     }
 
-    private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members, bool hasParticipants) => new()
+    private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members, Account templateAccount) => new()
     {
         TemplateName = members[0].TemplateName,
         Members = members,
-        Totals = hasParticipants ? [] : members
+        Totals = templateAccount.Has(Capability.HasParticipants) ? [] : members
             .GroupBy(member => member.Currency)
             .Select(group => new AccountTemplateGroupTotalDTO
             {
                 Currency = group.Key,
-                Total = group.Sum(member => member.TotalOwed ?? member.Balance)
+                Total = group.Sum(member => member.TotalOwed ?? member.Balance),
+                CashbackTotal = group.Any(member => member.CashbackTotal is not null) ? group.Sum(member => member.CashbackTotal ?? 0m) : null,
+                OpenStatementTotal = templateAccount.Has(Capability.HasStatements) ? group.Sum(OpenStatementAmount) : null
             })
             .ToList()
     };
+
+    private static decimal OpenStatementAmount(AccountGroupMemberDTO member) =>
+        member.Statement is { IsPaid: false } statement ? statement.OutstandingTotal : 0m;
 
     private static AccountGroupMemberDTO ToGroupMemberDto(
         Account account,

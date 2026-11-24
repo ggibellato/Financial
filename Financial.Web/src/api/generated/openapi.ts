@@ -7531,7 +7531,11 @@ export interface components {
             totals: components["schemas"]["AccountTemplateGroupTotalDTO"][];
         };
         AccountTemplateGroupTotalDTO: {
+            /** Format: double */
+            cashbackTotal?: null | number;
             currency: string;
+            /** Format: double */
+            openStatementTotal?: null | number;
             /** Format: double */
             total: number;
         };

@@ -149,6 +149,10 @@
     box-sizing: border-box;
   }
 
+  .data-table td.data-table__cell--no-total {
+    display: none;
+  }
+
   .data-table tbody tr,
   .data-table tfoot tr {
     border: 1px solid var(--colorNeutralStroke2);

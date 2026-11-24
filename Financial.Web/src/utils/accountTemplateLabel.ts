@@ -16,17 +16,10 @@ export interface AccountTemplateGrid {
 
 const TEMPLATE_GRIDS: Record<string, AccountTemplateGrid> = {
   Bank: { heading: 'Banks', footerLabel: 'Bank total', columns: 'bank', linksRows: true },
-  CreditCard: { heading: 'Credit cards', footerLabel: 'Net owed', columns: 'card', linksRows: true },
+  CreditCard: { heading: 'Credit cards', footerLabel: 'Card total', columns: 'card', linksRows: true },
   Pots: { heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: true, rowLinkTab: 'pots' },
   Settlement: { heading: 'Settlement', columns: 'settlement', linksRows: true },
   Savings: { heading: 'Savings', footerLabel: 'Savings total', columns: 'balance', linksRows: true },
-}
-
-const TEMPLATE_ORDER = ['Bank', 'CreditCard', 'Pots', 'Settlement', 'Savings']
-
-export function accountTemplateOrder(templateName: string): number {
-  const index = TEMPLATE_ORDER.indexOf(templateName)
-  return index === -1 ? TEMPLATE_ORDER.length : index
 }
 
 export function accountTemplateLabel(templateName: string): string {

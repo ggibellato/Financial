@@ -324,17 +324,19 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
-    public void GetTemplateGroups_Month_GroupsAccountsInTemplateOrderWithMembersByName()
+    public void GetTemplateGroups_Month_GroupsAccountsAlphabeticallyByTemplateWithMembersByName()
     {
         var reserva = TestAccounts.Pots("Reserva");
         var holidays = TestAccounts.Pots("holidays");
-        _repository.Accounts.AddRange([reserva, _amex, holidays]);
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL], "Mãe");
+        var chaseSave = TestAccounts.Savings("Chase Save");
+        _repository.Accounts.AddRange([mae, reserva, _amex, chaseSave, holidays]);
 
         var groups = _sut.GetTemplateGroups(2026, 9);
 
         using (new AssertionScope())
         {
-            groups.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard", "Pots");
+            groups.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard", "Pots", "Savings", "Settlement");
             groups[0].Members.Select(member => member.Name).Should().Equal("Barclays", "Chase", "Itaú");
             groups[1].Members.Select(member => member.Name).Should().Equal("Amex");
             groups[2].Members.Select(member => member.Name).Should().Equal("holidays", "Reserva");
@@ -400,7 +402,37 @@ public class AccountGroupSummaryServiceTests
         {
             groups[0].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 1200m), ("BRL", 500m));
             groups[1].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 80m));
+            groups[0].Totals.Should().OnlyContain(total => total.OpenStatementTotal == null);
+            groups[1].Totals.Single().OpenStatementTotal.Should().Be(30m);
         }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_Totals_SumCashbackPerCurrencyOnlyWhereAMemberEarnsIt()
+    {
+        var monzo = TestAccounts.Bank("Monzo", cashbackRatePercent: 2m);
+        _repository.Accounts.Add(monzo);
+        var expense = Expense.Create(new DateOnly(2026, 9, 10), "Shop", 50m, _groceries, monzo, creditCard: null);
+        expense.SetCashbackAmount(1.5m);
+        _repository.Expenses.Add(expense);
+
+        var banks = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "Bank");
+
+        banks.Totals.Select(total => (total.Currency, total.CashbackTotal)).Should().Equal(("GBP", (decimal?)1.5m), ("BRL", null));
+    }
+
+    [Fact]
+    public void GetTemplateGroups_Totals_LeaveAPaidStatementOutOfTheMonthsOpenStatementTotal()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        var statement = CardStatement.Create(_amex, 2026, 9);
+        statement.MarkLegacyPaid();
+        _repository.CardStatements.Add(statement);
+
+        var cards = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "CreditCard");
+
+        cards.Totals.Single().OpenStatementTotal.Should().Be(0m);
     }
 
     [Fact]

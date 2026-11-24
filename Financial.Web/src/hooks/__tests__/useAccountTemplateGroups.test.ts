@@ -18,7 +18,7 @@ const GROUPS: AccountTemplateGroupDto[] = [
     members: [
       { accountId: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 100, currencyBalances: [{ currency: 'GBP', balance: 100 }], otherParticipant: null, roundUpTotal: null, cashbackTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
     ],
-    totals: [{ currency: 'GBP', total: 100 }],
+    totals: [{ currency: 'GBP', total: 100, cashbackTotal: null, openStatementTotal: null }],
   },
 ]
 

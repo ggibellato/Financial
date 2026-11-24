@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import { mergeClasses, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -18,18 +18,24 @@ interface TotalsGridColumn<T> {
   filterSlot?: ReactNode
 }
 
+export interface ColumnTotalsRow {
+  label: string
+  values: Partial<Record<string, ReactNode>>
+}
+
 interface TotalsGridProps<T> {
   label: string
   totalsLabel?: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
-  footerItems: SectionTotalItem[]
+  footerItems?: SectionTotalItem[]
+  columnTotals?: ColumnTotalsRow[]
   filter?: FilterSummary & { itemsNoun: string }
   emptyMessage: string
 }
 
-export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label}`, columns, rows, rowKey, footerItems, filter, emptyMessage }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label}`, columns, rows, rowKey, footerItems = [], columnTotals = [], filter, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
   const tableRef = useRef<HTMLTableElement>(null)
@@ -78,6 +84,23 @@ export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label
               ))
             )}
           </TableBody>
+          {columnTotals.length > 0 && rows.length > 0 && (
+            <tfoot>
+              {columnTotals.map((totals) => (
+                <TableRow key={totals.label}>
+                  {columns.map((col, index) => (
+                    <DataTableCell
+                      key={col.key}
+                      label={index === 0 ? 'Total' : col.header}
+                      className={mergeClasses(col.numeric && 'data-table__col--numeric', index > 0 && totals.values[col.key] === undefined && 'data-table__cell--no-total')}
+                    >
+                      {index === 0 ? totals.label : totals.values[col.key]}
+                    </DataTableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </tfoot>
+          )}
         </Table>
       </div>
       {footerItems.length > 0 && (

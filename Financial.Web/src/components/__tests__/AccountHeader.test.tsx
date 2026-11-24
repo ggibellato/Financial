@@ -223,7 +223,7 @@ describe('AccountHeader', () => {
     expect(screen.queryByRole('option', { name: 'Old Savings' })).not.toBeInTheDocument()
   })
 
-  it('orders the picker groups by account type as the Accounts page does, whatever order the accounts arrive in', async () => {
+  it('orders the picker groups alphabetically by account type, whatever order the accounts arrive in', async () => {
     const user = userEvent.setup()
     renderHeader()
 
@@ -231,10 +231,10 @@ describe('AccountHeader', () => {
 
     expect(screen.getAllByRole('group').map((group) => within(group).getAllByRole('option').map((option) => option.textContent))).toEqual([
       ['Barclays', 'Chase'],
+      ['Wallet'],
       ['BA Amex'],
       ['Reserva'],
       ['Mãe'],
-      ['Wallet'],
     ])
   })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accountTemplateGrid, accountTemplateLabel, accountTemplateOrder } from '../accountTemplateLabel'
+import { accountTemplateGrid, accountTemplateLabel } from '../accountTemplateLabel'
 
 describe('accountTemplateLabel', () => {
   it('names the Bank template "Bank"', () => {
@@ -19,21 +19,13 @@ describe('accountTemplateLabel', () => {
   })
 })
 
-describe('accountTemplateOrder', () => {
-  it('orders templates as the Accounts page groups them, any other template last', () => {
-    const templates = ['Cash', 'Savings', 'Settlement', 'Pots', 'CreditCard', 'Bank']
-
-    expect(templates.sort((a, b) => accountTemplateOrder(a) - accountTemplateOrder(b))).toEqual(['Bank', 'CreditCard', 'Pots', 'Settlement', 'Savings', 'Cash'])
-  })
-})
-
 describe('accountTemplateGrid', () => {
   it('shows banks with their balance under "Banks", totalled as "Bank total", with linked rows', () => {
     expect(accountTemplateGrid('Bank')).toEqual({ heading: 'Banks', footerLabel: 'Bank total', columns: 'bank', linksRows: true })
   })
 
-  it('shows cards with their next statement and total owed under "Credit cards", totalled as "Net owed", with linked rows', () => {
-    expect(accountTemplateGrid('CreditCard')).toEqual({ heading: 'Credit cards', footerLabel: 'Net owed', columns: 'card', linksRows: true })
+  it('shows cards with their next statement and total owed under "Credit cards", totalled as "Card total", with linked rows', () => {
+    expect(accountTemplateGrid('CreditCard')).toEqual({ heading: 'Credit cards', footerLabel: 'Card total', columns: 'card', linksRows: true })
   })
 
   it('shows Pots accounts with their balance under "Pots", totalled as "Pots total", with rows linked to the Pots tab', () => {

@@ -24,6 +24,29 @@
   margin: 0;
 }
 
+.accounts-page__template-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accounts-page__group {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: start;
+}
+
+.accounts-page__group + .accounts-page__group {
+  padding-top: 16px;
+  border-top: 1px solid var(--colorNeutralStroke2);
+}
+
+.accounts-page__group h2 {
+  margin: 0;
+  padding-top: 15px;
+}
+
 .accounts-page__name {
   display: inline-flex;
   align-items: center;
@@ -34,5 +57,14 @@
 @media (max-width: 599px) {
   .accounts-page {
     padding: 16px;
+  }
+
+  .accounts-page__group {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .accounts-page__group h2 {
+    padding-top: 0;
   }
 }
