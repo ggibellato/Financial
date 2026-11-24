@@ -18,7 +18,7 @@ The Investment domain must allow users to:
 
 The CashFlow domain must allow users to:
 
-* Keep every money place as an account built from a template: Bank, Credit card, Pots and Settlement.
+* Keep every money place as an account built from a template: Bank, Credit card, Pots, Settlement and Savings.
 * Record monthly expenses.
 * Record incomes.
 * Split savings into the pots of a Pots account (Reserva), each with its own running balance.
@@ -73,7 +73,7 @@ The solution must be extensible so that new asset classes can be added in the fu
 
 A second, fully independent domain that tracks household finances — income, expenses, bank/card balances, savings pots, recurring bills, and a household ledger with my mother — separate from investment tracking. It was migrated from a personal Excel workbook (`Despesas.xlsx`) and has no cross-domain references to the Investment side — see `docs/prd/P11-prd-cashflow-tracking/cashflow-context.md`. See [Implemented Features (CashFlow Domain)](#implemented-features-cashflow-domain) below for the full feature breakdown.
 
-Core entities: `Account` (built from a template — `Bank`, `CreditCard`, `Pots`, `Settlement` or `Savings` — whose capabilities decide what it can hold), `Expense`, `Income`, `Transfer`, `BalanceAdjustment`, `CardStatement`, `PotTransaction`, `SettlementTransaction`, `RecurringBill`, `InvestmentSnapshot`.
+Core entities: `Account` (built from a template — `Bank`, `CreditCard`, `Pots`, `Settlement` or `Savings` — whose capabilities decide what it can hold), `Expense`, `Income`, `Transfer`, `BalanceAdjustment`, `ExternalPayment`, `CardStatement`, `PotTransaction`, `SettlementTransaction`, `RecurringBill`, `InvestmentSnapshot`.
 
 Storage mirrors the Investment domain's pattern but is entirely separate: a dedicated `data-cashflow.json` file, with its own independent LocalJson/GoogleDrive repository selection and its own configuration keys.
 
@@ -129,6 +129,9 @@ The following features are built as React pages.
 * **Annual Summary** — yearly rollups including gross-vs-net/after-tax salary comparisons (`SalaryAfterTaxes`/`TaxDifference`) and server-side Category Totals averages scoped to the correct months.
 * **Settlement accounts** — the household ledger with my mother is the "Mãe" Settlement account (BRL and GBP): each entry records who paid, its currency, the amount and, when a rate was found, the value converted to the other currency; Settle zeroes both totals. A Settlement account with one currency (Samuel) also takes entries and Settle dated after today, for planned amounts; they count in the account's current balance and the Settle amount as soon as they are saved (the header then reads "Balance (includes planned)" and each one shows a "Planned" badge), while month balances count them from their date. An account with two currencies (Mãe) refuses future dates, because no exchange rate exists yet for the converted value. The old Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are gone; their addresses redirect to the account screen or Admin → Accounts.
 * **Savings accounts** — a `Savings` account (GBP) holds money that earns interest. Its terms are how often interest is paid (monthly on a day from 1 to 31, or daily), whether it is tax-free, and a rate history where each rate has the date it takes effect; the current rate is the latest one in effect today and a future one shows as upcoming. It has an opening balance, takes transfers in and out and balance adjustments, and receives income, but has no categories, bills or round-up. Interest is entered by hand as an income: an income from a Dividendo/Juros source paid into a Savings account is interest, counted in the month's income and tithe base like any income. An Investment Snapshot account can take its suggestion from a Savings account's balance at the end of the previous month.
+* **Bank cashback** — a Bank account can have cashback switched on with one current rate. Each expense paid from it gets a Cashback amount, filled from rate × value, which can be changed or cleared when a purchase isn't eligible. Cashback shows on each expense and as a monthly total per bank on the Accounts tab. It is a reward on spending, not income: it doesn't count in income, the Result or the tithe base, and it doesn't change the bank's balance.
+* **Round-up and cashback destinations** — a Bank account says where its round-ups go and where its cashback goes: None (the default; round-up leaves the bank untracked and cashback is only recorded), a Savings account, or Invested automatically (the money leaves cash flow). A destination's balance is derived from the bank's expenses, with nothing extra recorded. A Savings account can be **Round-up only**: it is the only kind that can be a round-up destination, it refuses transfers in and any income other than its interest, and it can't be a cashback destination.
+* **Pay in and Pay out** — money in from, or out to, somewhere outside the app's accounts (for example cashback the bank pays out, or money given to someone), recorded on a Bank or Savings account with a date, description and amount. It changes the account's balance but is neither income nor an expense, so it doesn't count in income, category totals, the Result or the tithe base. A Round-up only account offers Pay out only.
 * **Tithe calculation** — computes 10% of a month's net income on demand (not persisted), read fresh whenever income or tithe-tagged expenses change.
 
 ---
@@ -154,7 +157,7 @@ The architecture should follow Domain-Driven Design (DDD) principles while remai
 The solution is split into **two independent bounded contexts**, each with its own Domain/Application/Infrastructure projects:
 
 * `Financial.Investment.{Domain,Application,Infrastructure}` — concepts: Broker, Portfolio, Asset, Transaction, Credit.
-* `Financial.CashFlow.{Domain,Application,Infrastructure}` — concepts: Account (and its template), Expense, Income, Transfer, BalanceAdjustment, CardStatement, PotTransaction, SettlementTransaction, RecurringBill, InvestmentSnapshot.
+* `Financial.CashFlow.{Domain,Application,Infrastructure}` — concepts: Account (and its template), Expense, Income, Transfer, BalanceAdjustment, ExternalPayment, CardStatement, PotTransaction, SettlementTransaction, RecurringBill, InvestmentSnapshot.
 
 `Financial.Shared.Infrastructure` holds cross-cutting infrastructure used by both contexts (e.g. `GoogleDriveJsonStorage`).
 
