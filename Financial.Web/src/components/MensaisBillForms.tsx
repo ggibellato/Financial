@@ -147,6 +147,15 @@ export function EditBillForm({ billLabel, values, isSaving, error, errorFields, 
       </Field>
 
       <Field
+        label="Due day"
+        required
+        validationState={fieldError('editDueDay') ? 'error' : 'none'}
+        validationMessage={fieldError('editDueDay')}
+      >
+        <Input type="number" min="1" max="31" step="1" value={values.editDueDay} onChange={(e) => onFieldChange('editDueDay', e.target.value)} />
+      </Field>
+
+      <Field
         label="Value"
         required
         validationState={fieldError('editValue') ? 'error' : 'none'}

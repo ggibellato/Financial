@@ -3,12 +3,13 @@ import { apiClient } from '../api/financialApiClient'
 import type { BankOption, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
 import { deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { DUE_DAY_MESSAGE, parseDueDay } from '../utils/recurringBillRules'
 import { useLatestRequestGuard } from './useAsyncResource'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 
-export type EditField = 'editStatus' | 'editValue'
+export type EditField = 'editDueDay' | 'editValue' | 'editStatus'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
 
 export type ExpensePromptValues = BillExpense
@@ -38,6 +39,7 @@ interface MensaisState {
   error: string | null
   retryCount: number
   editingId: string | null
+  editDueDay: string
   editStatus: string
   editValue: string
   isSaving: boolean
@@ -93,9 +95,9 @@ type MensaisAction =
   | { type: 'CLOSE_EXPENSE_PROMPT' }
 
 const ADD_FIELDS: readonly AddField[] = ['newDueDay', 'newDescription', 'newValue', 'newArea', 'newNote']
-const EDIT_FIELDS: readonly EditField[] = ['editStatus', 'editValue']
+const EDIT_FIELDS: readonly EditField[] = ['editDueDay', 'editValue', 'editStatus']
 
-const CLOSED_EDIT_FORM = { editingId: null, editStatus: '', editValue: '', saveError: null, saveErrorFields: {}, editSnapshot: null }
+const CLOSED_EDIT_FORM = { editingId: null, editDueDay: '', editStatus: '', editValue: '', saveError: null, saveErrorFields: {}, editSnapshot: null }
 
 const CLOSED_ADD_FORM = { isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null, addErrorFields: {}, addSnapshot: null }
 
@@ -111,6 +113,7 @@ const INITIAL_STATE: MensaisState = {
   error: null,
   retryCount: 0,
   editingId: null,
+  editDueDay: '',
   editStatus: '',
   editValue: '',
   isSaving: false,
@@ -152,7 +155,12 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_EDIT_FORM': {
       if (state.isSaving || state.isAdding) return state
-      const edit = { editingId: action.payload.id, editStatus: action.payload.status, editValue: String(action.payload.value) }
+      const edit = {
+        editingId: action.payload.id,
+        editDueDay: String(action.payload.dueDay),
+        editStatus: action.payload.status,
+        editValue: String(action.payload.value),
+      }
       return { ...state, ...CLOSED_ADD_FORM, ...CLOSED_EDIT_FORM, ...edit, editSnapshot: snapshotFields(edit, EDIT_FIELDS) }
     }
     case 'CANCEL_EDIT':
@@ -220,6 +228,7 @@ export interface MensaisData {
   error: string | null
   retry: () => void
   editingId: string | null
+  editDueDay: string
   editStatus: string
   editValue: string
   isSaving: boolean
@@ -305,6 +314,11 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
 
     const errors: Partial<Record<EditField, string>> = {}
 
+    const dueDay = parseDueDay(state.editDueDay)
+    if (dueDay === null) {
+      errors.editDueDay = DUE_DAY_MESSAGE
+    }
+
     const value = parseValidatedNumber(state.editValue)
     if (value === null) {
       errors.editValue = 'Value must be a number.'
@@ -314,7 +328,7 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
       errors.editStatus = 'Status is required.'
     }
 
-    if (Object.keys(errors).length > 0) {
+    if (dueDay === null || value === null || Object.keys(errors).length > 0) {
       dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
@@ -326,9 +340,9 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
 
     void apiClient
       .updateMensaisBill(state.editingId, {
-        dueDay: bill.dueDay,
+        dueDay,
         description: bill.description,
-        value: value as number,
+        value,
         area: bill.area,
         note: bill.note,
         nitNumber: bill.nitNumber,
@@ -364,9 +378,9 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
       errors.newDescription = 'Description is required.'
     }
 
-    const dueDay = parseValidatedNumber(state.newDueDay)
+    const dueDay = parseDueDay(state.newDueDay)
     if (dueDay === null) {
-      errors.newDueDay = 'Due day must be a number.'
+      errors.newDueDay = DUE_DAY_MESSAGE
     }
 
     const value = parseValidatedNumber(state.newValue)
@@ -374,7 +388,7 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
       errors.newValue = 'Value must be a number.'
     }
 
-    if (Object.keys(errors).length > 0) {
+    if (dueDay === null || value === null || Object.keys(errors).length > 0) {
       dispatch({ type: 'ADD_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
@@ -382,9 +396,9 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
     dispatch({ type: 'ADD_START' })
 
     const request: RecurringBillCreateDto = {
-      dueDay: dueDay as number,
+      dueDay,
       description: state.newDescription,
-      value: value as number,
+      value,
       area: state.newArea,
       note: state.newNote,
     }
@@ -494,6 +508,7 @@ export function useMensais(notifySaved: (message: string) => void = () => {}): M
     error: state.error,
     retry,
     editingId: state.editingId,
+    editDueDay: state.editDueDay,
     editStatus: state.editStatus,
     editValue: state.editValue,
     isSaving: state.isSaving,
