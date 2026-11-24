@@ -116,7 +116,7 @@ Dev config points `Investment:DataJsonFile` at `../../../../data/data-investment
 ```
 cd Financial.Web
 npm install
-npm run dev            # Vite dev server on 5173, proxies /api to localhost:5190
+npm run dev            # Vite dev server on 5173, proxies /api to localhost:5190 (API_PROXY_TARGET in .env overrides it)
 npm run lint
 npm run build           # tsc -b && vite build — run this (not just vitest) to catch type errors
 npm test                 # vitest run
@@ -128,6 +128,26 @@ npm run generate-api-types  # regenerate src/api/generated/openapi.ts from the O
 ```
 
 `API_BASE_URL` is read from `.env` (non-`VITE_`-prefixed, so it's explicitly wired into `vite.config.ts` via `define`) and must always be a relative path in Docker/production (`/api/v1/financial`) — never empty, or the SPA fallback route returns HTML instead of JSON for API calls.
+
+### Worktrees
+
+A worktree made by plain `git worktree add` has only tracked files: no `node_modules`, no `.env` files and no `data/` JSON,
+so web lint/test/build and running the app all fail there. Create and remove worktrees with the scripts instead (run from
+the repo folder):
+
+```powershell
+./scripts/new-worktree.ps1 -Topic <topic> -Branch <branch>   # ../financial-wt-<topic> on <branch> off origin/main
+./scripts/remove-worktree.ps1 -Topic <topic>                 # after the PR merges; deletes the branch once origin/main has it (-KeepBranch to keep it)
+```
+
+`new-worktree.ps1` fetches, creates the worktree, copies the gitignored local files it needs from the repo folder (`.env`,
+`Financial.Web/.env`, `.claude/settings.local.json`, `data/data-investment.json`, `data/data-fx-rates.json`,
+`data/google-calendar-credentials.json`, `data/dev/`) and runs `npm ci`; pass `-SkipNpmInstall` only for backend- or
+docs-only work. The data files are copies taken at creation, so nothing the worktree's app saves reaches the repo folder's
+data. To browse or smoke-test from the worktree, run its own API and SPA on ports that do not clash with the repo folder's
+5190/5173 — the script prints both commands (defaults: API 5191, SPA 5176; change with `-ApiPort`/`-WebPort`) and writes
+`API_PROXY_TARGET` into the worktree's `Financial.Web/.env` so its SPA talks to its own API. Remove a worktree with
+`remove-worktree.ps1`, not by deleting the folder; it refuses while the worktree has uncommitted changes.
 
 ### Docker
 
@@ -165,7 +185,7 @@ Detailed description if there are many files or changes"
 - Branch per change; never commit to `main`.
 - "Commit" means a local commit. Push only when the user asks.
 - Work on a branch in the repo folder (`git fetch`, then `git switch -c <branch> origin/main`). Switching branches there for quick side work is fine as long as the two branches are not being worked on at the same time: check `git status` first and commit what belongs to the current branch before switching.
-- Use a worktree outside the repo (`git worktree add ../financial-wt-<topic> -b <branch> origin/main`) only for parallel work, when another session or background agent is using the repo folder at the same time. Never switch branches in a checkout someone else is working in. Remove the worktree after its PR merges.
+- Use a worktree outside the repo (`./scripts/new-worktree.ps1 -Topic <topic> -Branch <branch>`, see "Worktrees" above) only for parallel work, when another session or background agent is using the repo folder at the same time. Never switch branches in a checkout someone else is working in. Remove the worktree with `./scripts/remove-worktree.ps1 -Topic <topic>` after its PR merges.
 - Run `git branch --show-current` before any merge, fast-forward or reset.
 - The user merges every PR (branch protection requires review). Wait for the user to confirm a merge before starting work that depends on it.
 
