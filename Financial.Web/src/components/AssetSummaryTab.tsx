@@ -10,12 +10,11 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 import { formatDateTime, formatN2, formatN8, formatPercentFraction, formatShortDateUtc, signClass } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
+import { NO_PRICE_MEANING, STALE_PRICE_MEANING } from '../utils/priceStatus'
 import MissingValue from './MissingValue'
 import './AssetSummaryTab.css'
 
 const MANUAL_PRICE_MEANING = 'This price was entered manually, not fetched live.'
-const STALE_PRICE_MEANING = 'This price is older than the most recent weekday.'
-const NO_PRICE_MEANING = 'No price or value has been recorded for this holding yet.'
 const VALUE_CLASS = 'asset-summary__value'
 
 /** A live quote carries a time of day; a price read from Price History carries only a date, and

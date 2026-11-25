@@ -50,7 +50,6 @@ const ASSET: PortfolioAssetSummaryItemDto = {
   estimatedAnnualPercent: 10.8,
   currentMonthCredits: 0,
   creditsPercentOfInvested: 50,
-  monthsHeld: 65,
   monthlyYieldPercent: 50 / 65,
   aprPercent: (50 / 65) * 12,
   lastCreditPercentOfMarketValue: 1,

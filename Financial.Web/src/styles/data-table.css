@@ -104,6 +104,14 @@
 }
 
 @media (min-width: 600px) {
+  /* Fluent's Table lays columns out at fixed equal widths, which overlaps a wide grid's nowrap
+     columns; sizing to content lets the grid's own container scroll sideways instead. */
+  .data-table.data-table--fit-content {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+
   .data-table tbody:has(+ tfoot) > tr:last-child > td {
     border-bottom: none;
   }

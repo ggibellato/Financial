@@ -12,23 +12,12 @@
 }
 
 @media (min-width: 600px) {
-  /* Fluent's Table lays columns out at fixed equal widths, which overlaps 21 nowrap columns;
-     sizing to content lets the section scroll sideways instead. */
-  .broker-holdings__table {
-    table-layout: auto;
-    width: max-content;
-    min-width: 100%;
-  }
-
-  .broker-holdings__table th,
-  .broker-holdings__table td {
-    text-align: right;
+  .broker-holdings__table th {
     vertical-align: middle;
   }
 
   .broker-holdings__table th.broker-holdings__name-cell,
   .broker-holdings__table td.broker-holdings__name-cell {
-    text-align: left;
     position: sticky;
     left: 0;
     z-index: 1;

@@ -15,6 +15,7 @@ import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatMonthYear, formatN2, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
+import { NO_PRICE_MEANING, STALE_PRICE_MEANING } from '../utils/priceStatus'
 import { formatCreditMonth, parseCreditMonth } from '../utils/creditMonth'
 import './PortfolioHoldingsTab.css'
 
@@ -60,8 +61,6 @@ function renderGatedCell(
 }
 
 const MANUAL_PRICE_MEANING = 'This value came from a manually-entered price, not a live fetch.'
-const STALE_PRICE_MEANING = 'This price is older than the most recent weekday.'
-const NO_PRICE_MEANING = 'No price or value has been recorded for this holding yet.'
 
 function FooterTotal({ label, value, children }: { label: string; value: ReactNode; children?: ReactNode }) {
   return (
@@ -276,7 +275,7 @@ export default function PortfolioHoldingsTab() {
         {isLoading && <LoadingState />}
         {error && <ErrorState message={error} onRetry={retry} />}
         {!isLoading && !error && items && (
-          <Table className="portfolio-holdings__table data-table" aria-label="Holdings">
+          <Table className="portfolio-holdings__table data-table data-table--fit-content" aria-label="Holdings">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader rowSpan={2} label="Asset name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />
