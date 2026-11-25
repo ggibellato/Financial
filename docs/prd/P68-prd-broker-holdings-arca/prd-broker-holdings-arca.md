@@ -324,19 +324,19 @@ graph TD
 - [x] The asset name column stays visible while scrolling sideways, numeric columns are right-aligned, and negative values carry a minus sign.
 
 ### F02. Asset Segment and Pick Source
-- [ ] The asset dialog shows Segment only when Class is Equity or RealEstate.
-- [ ] The Segment combobox lists every segment already used by any asset, alphabetically, and accepts a new value.
-- [ ] Saving a 41-character segment is refused with "Segment must be 40 characters or fewer." and focus moves to Segment.
-- [ ] Saving a segment of only spaces stores no segment.
-- [ ] Changing Class from RealEstate to ETF on an asset with a segment shows "The segment will be removed when you save", and after saving the asset has no segment.
-- [ ] Pick source offers "Not set", "Recommended" and "My choice", and the saved value appears in the Holdings "Pick" column.
-- [ ] An existing data file without segment or pick source loads with both shown as not set.
-- [ ] Two holdings with segments "Logistics" and " logistics " fall in one segment group.
-- [ ] Inside a portfolio with segmented holdings, holdings are grouped by segment alphabetically with "No segment" last, each segment with a subtotal showing its share of the portfolio by invested and by market value.
-- [ ] A holding's "% of group" stays relative to its portfolio when segment groups are shown.
-- [ ] A portfolio with no segmented holdings shows the flat F01 list.
-- [ ] The broker Summary shows a "By segment" pie only when at least one of its holdings has a segment.
-- [ ] An API request with an unknown pick source returns 400 with "Pick source must be Recommended or MyChoice." and the dialog keeps the entered values.
+- [x] The asset dialog shows Segment only when Class is Equity or RealEstate.
+- [x] The Segment combobox lists every segment already used by any asset, alphabetically, and accepts a new value.
+- [x] Saving a 41-character segment is refused with "Segment must be 40 characters or fewer." and focus moves to Segment.
+- [x] Saving a segment of only spaces stores no segment.
+- [x] Changing Class from RealEstate to ETF on an asset with a segment shows "The segment will be removed when you save", and after saving the asset has no segment.
+- [x] Pick source offers "Not set", "Recommended" and "My choice", and the saved value appears in the Holdings "Pick" column.
+- [x] An existing data file without segment or pick source loads with both shown as not set.
+- [x] Two holdings with segments "Logistics" and " logistics " fall in one segment group.
+- [x] Inside a portfolio with segmented holdings, holdings are grouped by segment alphabetically with "No segment" last, each segment with a subtotal showing its share of the portfolio by invested and by market value.
+- [x] A holding's "% of group" stays relative to its portfolio when segment groups are shown.
+- [x] A portfolio with no segmented holdings shows the flat F01 list.
+- [x] The broker Summary shows a "By segment" pie only when at least one of its holdings has a segment.
+- [x] An API request with an unknown pick source returns 400 with "Pick source must be Recommended or MyChoice." and the dialog keeps the entered values.
 
 ### F03. Month-on-Month Values
 - [ ] In November the column headers read "1 Oct" and "1 Nov".
@@ -364,7 +364,7 @@ graph TD
 - [ ] An API request with an unknown bucket returns 400 with "ARCA bucket must be one of Shares, RealEstate, Cash, Pension, ReserveFund or empty." and the dialog keeps the entered values.
 
 ### Cross-Feature Integration
-- [ ] Segment groups (F02) are built from the same per-holding rows and portfolio groups as the broker Holdings table (F01), and segment subtotals add up to their portfolio's subtotal.
+- [x] Segment groups (F02) are built from the same per-holding rows and portfolio groups as the broker Holdings table (F01), and segment subtotals add up to their portfolio's subtotal.
 - [ ] Month-start columns (F03) use the current quantity of each F01 row, and their subtotals sit on the same subtotal rows as F01's.
 - [ ] ARCA sections (F04) are made of F01's portfolio groups; the ARCA total equals the sum of the ARCA portfolios' F01 subtotals, and the "% of ARCA" column replaces F01's "% of broker" for the same rows.
 - [ ] Inside ARCA portfolios, the segment groups and subtotals from F02 appear unchanged.
