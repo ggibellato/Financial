@@ -28,14 +28,14 @@ const BREAKDOWN: PortfolioBreakdownItemDto[] = [
     portfolioName: 'Acoes',
     totalInvested: 38639.49,
     assets: [
-      { assetName: 'BBAS3', totalInvested: 9850.4 },
-      { assetName: 'KLBN4', totalInvested: 3737.48 },
+      { assetName: 'BBAS3', totalInvested: 9850.4, segment: null },
+      { assetName: 'KLBN4', totalInvested: 3737.48, segment: null },
     ],
   },
   {
     portfolioName: 'FII',
     totalInvested: 20000,
-    assets: [{ assetName: 'MXRF11', totalInvested: 20000 }],
+    assets: [{ assetName: 'MXRF11', totalInvested: 20000, segment: null }],
   },
 ]
 
@@ -88,14 +88,40 @@ describe('BrokerBreakdownCharts', () => {
   it('merges_an_asset_held_in_two_portfolios_into_one_all_assets_slice', () => {
     setMock({
       breakdown: [
-        { portfolioName: 'A', totalInvested: 100, assets: [{ assetName: 'SAME11', totalInvested: 100 }] },
-        { portfolioName: 'B', totalInvested: 50, assets: [{ assetName: 'SAME11', totalInvested: 50 }] },
+        { portfolioName: 'A', totalInvested: 100, assets: [{ assetName: 'SAME11', totalInvested: 100, segment: null }] },
+        { portfolioName: 'B', totalInvested: 50, assets: [{ assetName: 'SAME11', totalInvested: 50, segment: null }] },
       ],
     })
     render(<BrokerBreakdownCharts />)
     const rows = within(screen.getByRole('table', { name: 'All assets' })).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(1)
     expect(within(rows[0]).getByText(/150[.,]00/)).toBeInTheDocument()
+  })
+
+  it('adds_a_by_segment_pie_with_a_no_segment_slice_when_a_holding_has_a_segment', () => {
+    setMock({
+      breakdown: [
+        {
+          portfolioName: 'FII',
+          totalInvested: 350,
+          assets: [
+            { assetName: 'LOGA11', totalInvested: 100, segment: 'Logistics' },
+            { assetName: 'LOGB11', totalInvested: 50, segment: 'logistics' },
+            { assetName: 'NONE11', totalInvested: 200, segment: null },
+          ],
+        },
+      ],
+    })
+    render(<BrokerBreakdownCharts />)
+    const rows = within(screen.getByRole('table', { name: 'By segment' })).getAllByRole('row').slice(1)
+    expect(rows.map((row) => within(row).getAllByRole('cell')[0].textContent?.replace('Label:', ''))).toEqual(['Logistics', 'No segment'])
+    expect(within(rows[0]).getByText(/150[.,]00/)).toBeInTheDocument()
+  })
+
+  it('leaves_out_the_by_segment_pie_when_no_holding_has_a_segment', () => {
+    setMock({ breakdown: BREAKDOWN })
+    render(<BrokerBreakdownCharts />)
+    expect(screen.queryByRole('table', { name: 'By segment' })).not.toBeInTheDocument()
   })
 
   it('lists_each_portfolio_with_total_invested_and_share_in_the_overview_table', () => {

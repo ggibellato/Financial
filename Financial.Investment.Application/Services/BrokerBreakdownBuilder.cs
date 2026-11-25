@@ -35,5 +35,6 @@ internal static class BrokerBreakdownBuilder
         {
             AssetName = asset.Name,
             TotalInvested = investedSelector(asset),
+            Segment = asset.Segment,
         };
 }

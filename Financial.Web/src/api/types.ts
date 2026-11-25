@@ -108,6 +108,7 @@ export type AggregatedSummaryDto = Schema<'AggregatedSummaryDTO'>
 export type PortfolioBreakdownItemDto = Schema<'PortfolioBreakdownItemDTO'>
 export type BrokerHoldingsDto = Schema<'BrokerHoldingsDTO'>
 export type HoldingsGroupDto = Schema<'HoldingsGroupDTO'>
+export type HoldingsSegmentDto = Schema<'HoldingsSegmentDTO'>
 export type HoldingRowDto = Schema<'HoldingRowDTO'>
 export type HoldingsTotalsDto = Schema<'HoldingsTotalsDTO'>
 export type WatchlistItemDto = Schema<'WatchlistItemDTO'>

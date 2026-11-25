@@ -7801,6 +7801,7 @@ export interface components {
         };
         AssetBreakdownItemDTO: {
             assetName: string;
+            segment: null | string;
             /** Format: double */
             totalInvested: number;
         };
@@ -8582,6 +8583,16 @@ export interface components {
         HoldingsGroupDTO: {
             holdings: components["schemas"]["HoldingRowDTO"][];
             name: string;
+            segments: components["schemas"]["HoldingsSegmentDTO"][];
+            subtotal: components["schemas"]["HoldingsTotalsDTO"];
+        };
+        HoldingsSegmentDTO: {
+            holdings: components["schemas"]["HoldingRowDTO"][];
+            /** Format: double */
+            investedShareOfGroup: null | number;
+            /** Format: double */
+            marketShareOfGroup: null | number;
+            name: null | string;
             subtotal: components["schemas"]["HoldingsTotalsDTO"];
         };
         HoldingsTotalsDTO: {
@@ -8946,6 +8957,7 @@ export interface components {
             marketValue: null | number;
             /** Format: double */
             monthlyYieldPercent: null | number;
+            pickSource: null | components["schemas"]["PickSource"];
             /** Format: double */
             portfolioWeight: null | number;
             /** Format: date */
@@ -8960,6 +8972,7 @@ export interface components {
             resultPercent: null | number;
             /** Format: double */
             resultWithCreditsPercent: null | number;
+            segment: null | string;
             ticker: string;
             /** Format: double */
             totalBought: number;

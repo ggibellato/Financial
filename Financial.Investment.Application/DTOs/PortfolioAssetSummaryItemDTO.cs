@@ -11,6 +11,9 @@ public sealed class PortfolioAssetSummaryItemDTO
     public string Exchange { get; init; } = string.Empty;
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlobalAssetClass Class { get; init; } = GlobalAssetClass.Unknown;
+    public string? Segment { get; init; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PickSource? PickSource { get; init; }
     public DateTime? FirstInvestmentDate { get; init; }
     public decimal CurrentQuantity { get; init; }
     public decimal AveragePrice { get; init; }

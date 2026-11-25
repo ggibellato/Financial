@@ -170,6 +170,85 @@ public class BrokerHoldingsTests
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>(SpanName);
     }
 
+    [Fact]
+    public void GetBrokerHoldings_PortfolioWithoutSegments_HasNoSegmentGroups()
+    {
+        _repository.Brokers = [MakeSampleBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        result.Groups.Should().AllSatisfy(g => g.Segments.Should().BeEmpty());
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_SegmentedPortfolio_GroupsBySegmentAlphabeticallyWithNoSegmentLast()
+    {
+        _repository.Brokers = [MakeSegmentedBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var group = result.Groups.Single();
+        using var _ = new AssertionScope();
+        group.Segments.Select(s => s.Name).Should().Equal("Logistics", "Paper", null);
+        group.Segments[0].Holdings.Select(h => h.Asset.AssetName).Should().Equal("LOGA11", "LOGB11");
+        group.Segments[2].Holdings.Select(h => h.Asset.AssetName).Should().Equal("NONE11");
+        group.Holdings.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_SegmentsDifferingOnlyInCaseAndSpaces_ShareOneGroupNamedAfterTheFirstHolding()
+    {
+        _repository.Brokers = [MakeSegmentedBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var logistics = result.Groups.Single().Segments[0];
+        logistics.Name.Should().Be("Logistics");
+        logistics.Holdings.Select(h => h.Asset.Segment).Should().Equal("Logistics", "logistics");
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_SegmentSubtotal_ShowsItsShareOfThePortfolioAndAddsUpToThePortfolioSubtotal()
+    {
+        _repository.Brokers = [MakeSegmentedBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var group = result.Groups.Single();
+        var logistics = group.Segments[0];
+        using var _ = new AssertionScope();
+        logistics.Subtotal.Invested.Should().Be(3000m);
+        logistics.InvestedShareOfGroup.Should().Be(60m);
+        logistics.MarketShareOfGroup.Should().BeApproximately(54.5455m, 0.0001m);
+        logistics.Subtotal.InvestedShareOfBase.Should().Be(60m);
+        group.Segments.Sum(s => s.Subtotal.Invested).Should().Be(group.Subtotal.Invested);
+        group.Segments.Sum(s => s.Subtotal.MarketValue).Should().Be(group.Subtotal.MarketValue);
+        group.Segments.Sum(s => s.Subtotal.TotalCredits).Should().Be(group.Subtotal.TotalCredits);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_HoldingShareOfGroup_StaysRelativeToThePortfolio()
+    {
+        _repository.Brokers = [MakeSegmentedBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var holding = result.Groups.Single().Segments[0].Holdings[0];
+        holding.InvestedShareOfGroup.Should().Be(20m);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_Rows_CarryTheSegmentAndPickSource()
+    {
+        _repository.Brokers = [MakeSegmentedBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var holding = result.Groups.Single().Segments[1].Holdings.Single().Asset;
+        holding.Segment.Should().Be("Paper");
+        holding.PickSource.Should().Be(PickSource.Recommended);
+    }
+
     private PortfolioAssetSummaryService CreateService() =>
         new(_repository, TestHoldingValuationService.Create(), TestClock.At(), _tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
@@ -183,6 +262,28 @@ public class BrokerHoldingsTests
         fii.AddAsset(MakeAsset("AAAA", units: 10m, price: 90m));
         broker.AddPortfolio("Acoes").AddAsset(MakeAsset("CCCC", units: 60m));
         return broker;
+    }
+
+    private static Broker MakeSegmentedBroker()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var fii = broker.AddPortfolio("FII");
+        fii.AddAsset(MakeRealEstateAsset("LOGA11", 10m, 100m, "Logistics"));
+        fii.AddAsset(MakeRealEstateAsset("LOGB11", 20m, 100m, " logistics "));
+        var paper = MakeRealEstateAsset("PAPR11", 10m, 150m, "Paper");
+        paper.SetPickSource(PickSource.Recommended);
+        fii.AddAsset(paper);
+        fii.AddAsset(MakeRealEstateAsset("NONE11", 10m, 100m, null));
+        return broker;
+    }
+
+    private static Asset MakeRealEstateAsset(string name, decimal units, decimal price, string? segment)
+    {
+        var asset = Asset.Create(name, "ISIN", "BVMF", name, CountryCode.BR, "FII", GlobalAssetClass.RealEstate);
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, units, 100m, 0m));
+        asset.SetPrice(TestClock.Today, price, isManual: false);
+        asset.SetSegment(segment);
+        return asset;
     }
 
     private static Asset MakeAsset(string name, decimal units, decimal? price = null)

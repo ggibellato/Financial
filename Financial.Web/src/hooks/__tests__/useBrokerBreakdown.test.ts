@@ -41,8 +41,8 @@ const BREAKDOWN_DTO: PortfolioBreakdownItemDto[] = [
     portfolioName: 'Acoes',
     totalInvested: 38639.49,
     assets: [
-      { assetName: 'BBAS3', totalInvested: 9850.4 },
-      { assetName: 'KLBN4', totalInvested: 3737.48 },
+      { assetName: 'BBAS3', totalInvested: 9850.4, segment: null },
+      { assetName: 'KLBN4', totalInvested: 3737.48, segment: null },
     ],
   },
 ]

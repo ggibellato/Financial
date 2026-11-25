@@ -2,6 +2,7 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import AllocationPieChart, { type AllocationChartEntry } from './dashboard/AllocationPieChart'
 import { useBrokerBreakdown } from '../hooks/useBrokerBreakdown'
+import { totalsBySegment } from '../utils/assetSegments'
 import './BrokerBreakdownCharts.css'
 
 function buildChartEntries(items: { name: string; value: number }[]): AllocationChartEntry[] {
@@ -45,15 +46,19 @@ export default function BrokerBreakdownCharts() {
     breakdown.map((portfolio) => ({ name: portfolio.portfolioName, value: portfolio.totalInvested })),
   )
 
+  const assets = breakdown.flatMap((portfolio) => portfolio.assets)
   const investedByAsset = new Map<string, number>()
-  breakdown
-    .flatMap((portfolio) => portfolio.assets)
-    .forEach((asset) => investedByAsset.set(asset.assetName, (investedByAsset.get(asset.assetName) ?? 0) + asset.totalInvested))
+  assets.forEach((asset) => investedByAsset.set(asset.assetName, (investedByAsset.get(asset.assetName) ?? 0) + asset.totalInvested))
   const assetEntries = buildChartEntries([...investedByAsset].map(([name, value]) => ({ name, value })))
+
+  const segmentEntries = assets.some((asset) => asset.segment)
+    ? buildChartEntries(totalsBySegment(assets.map((asset) => ({ name: asset.assetName, segment: asset.segment, value: asset.totalInvested }))))
+    : null
 
   return (
     <div className="broker-breakdown">
       <BreakdownPie title="All assets" entries={assetEntries} />
+      {segmentEntries && <BreakdownPie title="By segment" entries={segmentEntries} />}
       <BreakdownPie title="Portfolio breakdown" entries={portfolioEntries} />
       <div className="broker-breakdown__grid">
         {breakdown.map((portfolio) => (
