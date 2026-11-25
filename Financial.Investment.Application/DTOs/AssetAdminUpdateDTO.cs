@@ -32,4 +32,10 @@ public class AssetAdminUpdateDTO
     /// <summary>Left null to default to <see cref="IncomePolicy.Unknown"/>.</summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public IncomePolicy? IncomePolicy { get; set; }
+
+    /// <summary>Unlike the fields above, null or blank clears the segment rather than keeping it.</summary>
+    public string? Segment { get; set; }
+
+    /// <summary>"Recommended" or "MyChoice"; unlike the fields above, null or blank clears it rather than keeping it.</summary>
+    public string? PickSource { get; set; }
 }

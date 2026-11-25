@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import AdminEntityPage from '../components/AdminEntityPage'
-import AssetFormDialog from '../components/AssetFormDialog'
+import AssetFormDialog, { type AssetFormValues } from '../components/AssetFormDialog'
+import { distinctSegments } from '../utils/assetSegments'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import TruncatedText from '../components/TruncatedText'
 import DataTableCell from '../components/grid/DataTableCell'
@@ -36,17 +37,7 @@ export default function AssetsPage() {
     setIsCreating(false)
   }
 
-  const handleFormSubmit = async (values: {
-    brokerName: string
-    portfolioName: string
-    name: string
-    isin: string
-    exchange: string
-    ticker: string
-    country: string
-    localTypeCode: string
-    assetClass: string
-  }) => {
+  const handleFormSubmit = async (values: AssetFormValues) => {
     const result = editingAsset
       ? await updateAsset(
           editingAsset.brokerName,
@@ -67,6 +58,8 @@ export default function AssetsPage() {
             // asset already has (valuation method / income policy pickers are a later increment).
             valuationMethod: null,
             incomePolicy: null,
+            segment: values.segment || null,
+            pickSource: values.pickSource || null,
           },
           editingAsset.brokerStatus === 'Active' ? 'active' : 'historic',
         )
@@ -87,12 +80,15 @@ export default function AssetsPage() {
           // (valuation method / income policy pickers are a later increment).
           valuationMethod: null,
           incomePolicy: null,
+          segment: values.segment || null,
+          pickSource: values.pickSource || null,
         })
     closeFormDialog()
     return result
   }
 
   const assetClasses = Array.from(new Set(assets.map((a) => a.class))).sort()
+  const segments = distinctSegments(assets.map((a) => a.segment))
 
   const filteredAssets = assets.filter(
     (a) =>
@@ -151,6 +147,7 @@ export default function AssetsPage() {
               asset={editingAsset}
               activeBrokers={activeBrokers}
               portfolios={portfolios}
+              segments={segments}
               onCancel={closeFormDialog}
               onSubmit={handleFormSubmit}
             />

@@ -143,6 +143,32 @@ public class AssetEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task UpdateAsset_WithAnUnknownPickSource_ReturnsBadRequestNamingTheAllowedValues()
+    {
+        var response = await Client.PutAsJsonAsync(
+            "/api/v1/financial/assets/XPI/Default/BCIA11",
+            new AssetAdminUpdateDTO { Name = "BCIA11", PickSource = "Friend" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        doc.RootElement.GetProperty("detail").GetString().Should().Be("Pick source must be Recommended or MyChoice.");
+    }
+
+    [Fact]
+    public async Task UpdateAsset_WithSegmentAndPickSource_ReturnsThemOnTheAssetList()
+    {
+        var response = await Client.PutAsJsonAsync(
+            "/api/v1/financial/assets/XPI/Default/BCIA11",
+            new AssetAdminUpdateDTO { Name = "BCIA11", Class = GlobalAssetClass.RealEstate, Segment = "Logistics", PickSource = "Recommended" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var assets = await Client.GetFromJsonAsync<List<AssetAdminDTO>>("/api/v1/financial/assets");
+        var updated = assets!.Single(a => a.Name == "BCIA11" && a.BrokerStatus == "Active");
+        updated.Segment.Should().Be("Logistics");
+        updated.PickSource.Should().Be(PickSource.Recommended);
+    }
+
+    [Fact]
     public async Task MoveAsset_WithABlankDestinationName_ReturnsBadRequest()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/assets/move", MoveRequest(destination: "   "));

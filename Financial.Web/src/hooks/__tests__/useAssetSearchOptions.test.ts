@@ -44,6 +44,8 @@ function makeAsset(overrides: Partial<AssetAdminDto>): AssetAdminDto {
     class: 'Unknown',
     valuationMethod: 'Unspecified',
     incomePolicy: 'Unknown',
+    segment: null,
+    pickSource: null,
     quantity: 0,
     ...overrides,
   }

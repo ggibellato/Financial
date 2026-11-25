@@ -1401,8 +1401,20 @@
           "name": {
             "type": "string"
           },
+          "pickSource": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "portfolioName": {
             "type": "string"
+          },
+          "segment": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ticker": {
             "type": "string"
@@ -1454,12 +1466,28 @@
           "name": {
             "type": "string"
           },
+          "pickSource": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PickSource"
+              }
+            ]
+          },
           "portfolioName": {
             "type": "string"
           },
           "quantity": {
             "format": "double",
             "type": "number"
+          },
+          "segment": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ticker": {
             "type": "string"
@@ -1512,6 +1540,18 @@
           },
           "name": {
             "type": "string"
+          },
+          "pickSource": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "segment": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ticker": {
             "type": "string"
@@ -5245,6 +5285,13 @@
           "daysRemaining"
         ],
         "type": "object"
+      },
+      "PickSource": {
+        "enum": [
+          "Recommended",
+          "MyChoice",
+          null
+        ]
       },
       "PortfolioAssetSummaryItemDTO": {
         "properties": {

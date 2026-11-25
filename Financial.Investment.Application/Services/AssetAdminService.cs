@@ -58,6 +58,8 @@ public sealed class AssetAdminService : IAssetAdminService
             var portfolioName = Required(request.PortfolioName, nameof(request.PortfolioName));
             var name = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
+            var segment = Asset.NormalizeSegment(request.Segment);
+            var pickSource = PickSourceParser.ParseOptional(request.PickSource);
 
             var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
 
@@ -72,6 +74,8 @@ public sealed class AssetAdminService : IAssetAdminService
                 created = Asset.Create(name, request.ISIN, request.Exchange, request.Ticker, request.Country, request.LocalTypeCode, assetClass);
                 created.SetValuationMethod(request.ValuationMethod ?? ValuationMethod.Unspecified);
                 created.SetIncomePolicy(request.IncomePolicy ?? IncomePolicy.Unknown);
+                created.SetSegment(segment);
+                created.SetPickSource(pickSource);
                 portfolio.RegisterAsset(created);
                 return true;
             }).ConfigureAwait(false);
@@ -98,6 +102,8 @@ public sealed class AssetAdminService : IAssetAdminService
             Required(currentName, nameof(currentName));
             var newName = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
+            var segment = Asset.NormalizeSegment(request.Segment);
+            var pickSource = PickSourceParser.ParseOptional(request.PickSource);
             var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
 
             Broker? broker = null;
@@ -113,6 +119,8 @@ public sealed class AssetAdminService : IAssetAdminService
                     request.Country, request.LocalTypeCode, assetClass);
                 updated.SetValuationMethod(request.ValuationMethod ?? updated.ValuationMethod);
                 updated.SetIncomePolicy(request.IncomePolicy ?? updated.IncomePolicy);
+                updated.SetSegment(segment);
+                updated.SetPickSource(pickSource);
                 return true;
             }).ConfigureAwait(false);
 
@@ -157,6 +165,8 @@ public sealed class AssetAdminService : IAssetAdminService
         Class = asset.Class,
         ValuationMethod = asset.ValuationMethod,
         IncomePolicy = asset.IncomePolicy,
+        Segment = asset.Segment,
+        PickSource = asset.PickSource,
         Quantity = asset.Quantity
     };
 }

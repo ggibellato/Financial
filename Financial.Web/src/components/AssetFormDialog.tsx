@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Field, Input, Select } from '@fluentui/react-components'
+import { Combobox, Field, InfoLabel, Input, Option, Select, type LabelProps } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
+import { useFreeformCombobox } from '../hooks/useFreeformCombobox'
 import { isValidIsin } from '../utils/validators'
+import { MAX_SEGMENT_LENGTH, SEGMENT_CLASSES, segmentKey } from '../utils/assetSegments'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
 const CLASS_OPTIONS = [
@@ -22,8 +24,13 @@ const CLASS_OPTIONS = [
   'Cryptocurrency',
   'PrivateCredit',
 ] as const
+const PICK_SOURCE_OPTIONS = [
+  { value: '', label: 'Not set' },
+  { value: 'Recommended', label: 'Recommended' },
+  { value: 'MyChoice', label: 'My choice' },
+] as const
 
-interface AssetFormValues {
+export interface AssetFormValues {
   brokerName: string
   portfolioName: string
   name: string
@@ -33,17 +40,20 @@ interface AssetFormValues {
   country: string
   localTypeCode: string
   assetClass: string
+  segment: string
+  pickSource: string
 }
 
 interface AssetFormDialogProps {
   asset: AssetAdminDto | null
   activeBrokers: BrokerDto[]
   portfolios: PortfolioDto[]
+  segments: string[]
   onCancel: () => void
   onSubmit: (values: AssetFormValues) => Promise<unknown>
 }
 
-export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCancel, onSubmit }: AssetFormDialogProps) {
+export default function AssetFormDialog({ asset, activeBrokers, portfolios, segments, onCancel, onSubmit }: AssetFormDialogProps) {
   const isEditing = asset !== null
   const [brokerName, setBrokerName] = useState(asset?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [portfolioName, setPortfolioName] = useState(asset?.portfolioName ?? '')
@@ -54,8 +64,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   const [country, setCountry] = useState<string>(asset?.country ?? 'Unknown')
   const [localTypeCode, setLocalTypeCode] = useState(asset?.localTypeCode ?? '')
   const [assetClass, setAssetClass] = useState<string>(asset?.class ?? 'Unknown')
+  const [segment, setSegment] = useState(asset?.segment ?? '')
+  const [pickSource, setPickSource] = useState<string>(asset?.pickSource ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The asset could not be saved.')
-  const form = useEntityForm({ brokerName, portfolioName, name, isin, exchange, ticker, country, localTypeCode, assetClass })
+  const form = useEntityForm({ brokerName, portfolioName, name, isin, exchange, ticker, country, localTypeCode, assetClass, segment, pickSource })
 
   const brokerPortfolios = portfolios.filter((p) => p.brokerName === brokerName)
 
@@ -75,11 +87,21 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
     trimmedIsin.length > 0 && !isValidIsin(trimmedIsin)
       ? 'ISIN must be 2 letters, 9 alphanumeric characters, and a check digit (e.g. US0378331005).'
       : ''
+  const hasSegments = SEGMENT_CLASSES.includes(assetClass)
+  const trimmedSegment = segment.trim()
+  const segmentWillBeRemoved = !hasSegments && trimmedSegment.length > 0
+  const segmentValidationMessage =
+    hasSegments && trimmedSegment.length > MAX_SEGMENT_LENGTH ? `Segment must be ${MAX_SEGMENT_LENGTH} characters or fewer.` : ''
+  const typedSegmentKey = segmentKey(segment)
+  const isChosenSegment = segments.some((s) => segmentKey(s) === typedSegmentKey)
+  const shownSegments = isChosenSegment ? segments : segments.filter((s) => segmentKey(s).includes(typedSegmentKey))
+  const segmentCombobox = useFreeformCombobox(shownSegments.length > 0)
   const canSubmit =
     nameValidationMessage.length === 0 &&
     brokerValidationMessage.length === 0 &&
     portfolioValidationMessage.length === 0 &&
-    isinValidationMessage.length === 0
+    isinValidationMessage.length === 0 &&
+    segmentValidationMessage.length === 0
 
   const handleSubmit = () => {
     form.revealValidation()
@@ -95,6 +117,8 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
         country,
         localTypeCode: localTypeCode.trim(),
         assetClass,
+        segment: trimmedSegment,
+        pickSource,
       }),
     )
   }
@@ -192,11 +216,54 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
         <Input value={localTypeCode} onChange={(e) => setLocalTypeCode(e.target.value)} />
       </Field>
 
-      <Field label="Class">
+      <Field
+        label="Class"
+        validationState={segmentWillBeRemoved ? 'warning' : 'none'}
+        validationMessage={segmentWillBeRemoved ? 'The segment will be removed when you save' : undefined}
+      >
         <Select value={assetClass} onChange={(e) => setAssetClass(e.target.value)}>
           {CLASS_OPTIONS.map((c) => (
             <option key={c} value={c}>
               {c}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      {hasSegments && (
+        <Field label="Segment" {...form.fieldValidation(segmentValidationMessage)}>
+          <Combobox
+            freeform
+            value={segment}
+            selectedOptions={segment ? [segment] : []}
+            onChange={(e) => setSegment(e.target.value)}
+            onOptionSelect={(_event, data) => {
+              if (data.optionValue !== undefined) setSegment(data.optionValue)
+            }}
+            {...segmentCombobox}
+          >
+            {shownSegments.map((s) => (
+              <Option key={s} value={s}>
+                {s}
+              </Option>
+            ))}
+          </Combobox>
+        </Field>
+      )}
+
+      <Field
+        label={{
+          children: (_: unknown, props: LabelProps) => (
+            <InfoLabel {...props} info="Recommended: picked from an analysis service. My choice: picked by you.">
+              Pick source
+            </InfoLabel>
+          ),
+        }}
+      >
+        <Select value={pickSource} onChange={(e) => setPickSource(e.target.value)}>
+          {PICK_SOURCE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </Select>

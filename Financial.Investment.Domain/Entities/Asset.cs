@@ -28,6 +28,12 @@ public class Asset
 
     public IncomePolicy IncomePolicy { get; private set; } = IncomePolicy.Unknown;
 
+    public const int MaxSegmentLength = 40;
+
+    public string? Segment { get; private set; }
+
+    public PickSource? PickSource { get; private set; }
+
     public Transactions Transactions { get; private set; } = new();
 
     public decimal AveragePrice => Transactions.AveragePrice;
@@ -164,7 +170,33 @@ public class Asset
         Country = country;
         LocalTypeCode = NormalizeLocalTypeCode(localTypeCode);
         Class = assetClass;
+        if (!HasSegments(assetClass))
+        {
+            Segment = null;
+        }
     }
+
+    public static bool HasSegments(GlobalAssetClass assetClass) =>
+        assetClass is GlobalAssetClass.Equity or GlobalAssetClass.RealEstate;
+
+    public static string? NormalizeSegment(string? segment)
+    {
+        var trimmed = segment?.Trim();
+        if (trimmed?.Length > MaxSegmentLength)
+        {
+            throw new ArgumentException($"Segment must be {MaxSegmentLength} characters or fewer.");
+        }
+
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
+    }
+
+    public void SetSegment(string? segment)
+    {
+        var normalized = NormalizeSegment(segment);
+        Segment = HasSegments(Class) ? normalized : null;
+    }
+
+    public void SetPickSource(PickSource? pickSource) => PickSource = pickSource;
 
     public void AddTransaction(Transaction transaction) => Transactions.Add(transaction);
 
