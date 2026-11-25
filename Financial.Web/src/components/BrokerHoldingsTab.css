@@ -63,6 +63,16 @@
   border-top: 1px solid var(--colorNeutralStroke1);
 }
 
+.broker-holdings__segment-row th {
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorNeutralForeground2);
+  border-top: 1px solid var(--colorNeutralStroke2);
+}
+
+.broker-holdings__segment-row .broker-holdings__group-name {
+  padding-left: var(--spacingHorizontalL);
+}
+
 .broker-holdings__caption {
   margin: 0 0 8px;
   color: var(--colorNeutralForeground3);
@@ -101,5 +111,11 @@
 @media (max-width: 599px) {
   .broker-holdings {
     height: auto;
+  }
+
+  .broker-holdings__table th.broker-holdings__group-cell,
+  .broker-holdings__totals-row th {
+    display: block;
+    position: static;
   }
 }

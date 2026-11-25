@@ -26,10 +26,20 @@ public sealed class HoldingRowDTO
     public decimal? MarketShareOfBase { get; init; }
 }
 
+public sealed class HoldingsSegmentDTO
+{
+    public string? Name { get; init; }
+    public IReadOnlyList<HoldingRowDTO> Holdings { get; init; } = [];
+    public HoldingsTotalsDTO Subtotal { get; init; } = new();
+    public decimal? InvestedShareOfGroup { get; init; }
+    public decimal? MarketShareOfGroup { get; init; }
+}
+
 public sealed class HoldingsGroupDTO
 {
     public string Name { get; init; } = string.Empty;
     public IReadOnlyList<HoldingRowDTO> Holdings { get; init; } = [];
+    public IReadOnlyList<HoldingsSegmentDTO> Segments { get; init; } = [];
     public HoldingsTotalsDTO Subtotal { get; init; } = new();
 }
 

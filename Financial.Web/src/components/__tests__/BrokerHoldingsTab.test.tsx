@@ -20,6 +20,8 @@ const ASSET: PortfolioAssetSummaryItemDto = {
   ticker: 'BBBB11',
   exchange: 'BVMF',
   class: 'RealEstate',
+  segment: null,
+  pickSource: null,
   firstInvestmentDate: '2021-06-14T00:00:00',
   currentQuantity: 20,
   averagePrice: 100,
@@ -87,11 +89,13 @@ const HOLDINGS: BrokerHoldingsDto = {
   groups: [
     {
       name: 'Acoes',
+      segments: [],
       holdings: [row({ assetName: 'CCCC3', marketValue: null, unrealisedGain: null, resultPercent: null }, { investedShareOfGroup: null, marketShareOfGroup: null })],
       subtotal: { ...TOTALS, holdingCount: 1, unvaluedHoldingCount: 1, marketValue: null, profitAmount: null },
     },
     {
       name: 'FII',
+      segments: [],
       holdings: [row({ assetName: 'BBBB11', totalInvested: 1000 }), row({ assetName: 'AAAA11', totalInvested: 3000 })],
       subtotal: TOTALS,
     },
@@ -219,6 +223,74 @@ describe('BrokerHoldingsTab', () => {
     const subtotalCells = within(screen.getByText('Subtotal FII').closest('tr')!).getAllByRole('cell')
     const priceCell = subtotalCells.find(cell => cell.textContent?.startsWith('Current price:'))!
     expect(priceCell).toHaveClass('data-table__cell--no-total')
+  })
+
+  it('shows_the_pick_source_of_each_holding', async () => {
+    await renderLoaded({
+      ...HOLDINGS,
+      groups: [{ ...HOLDINGS.groups[1], holdings: [row({ assetName: 'PICK11', pickSource: 'MyChoice' }), row({ assetName: 'NOPK11' })] }],
+    })
+    expect(cellText(assetRow('PICK11'), 'Pick')).toBe('My choice')
+    expect(cellText(assetRow('NOPK11'), 'Pick')).toBe('—')
+  })
+
+  it('groups_a_segmented_portfolio_by_segment_with_each_segments_subtotal_and_share_of_the_portfolio', async () => {
+    const logistics = row({ assetName: 'LOGA11', segment: 'Logistics' })
+    const unsegmented = row({ assetName: 'NONE11' })
+    await renderLoaded({
+      ...HOLDINGS,
+      groups: [
+        {
+          ...HOLDINGS.groups[1],
+          holdings: [logistics, unsegmented],
+          segments: [
+            { name: 'Logistics', holdings: [logistics], subtotal: { ...TOTALS, invested: 1000 }, investedShareOfGroup: 25, marketShareOfGroup: 30 },
+            { name: null, holdings: [unsegmented], subtotal: { ...TOTALS, invested: 3000 }, investedShareOfGroup: 75, marketShareOfGroup: 70 },
+          ],
+        },
+      ],
+    })
+
+    const headers = screen.getAllByRole('rowheader').map(cell => cell.textContent)
+    expect(headers).toEqual([
+      'FII',
+      'Segment: Logistics',
+      'Segment subtotal: Logistics',
+      'Segment: No segment',
+      'Segment subtotal: No segment',
+      'Subtotal FII',
+      expect.stringContaining('Broker total'),
+    ])
+    expect(within(assetRow('LOGA11')).getByText('Segment Logistics:', { exact: false })).toBeInTheDocument()
+    const segmentSubtotal = screen.getByText('Segment subtotal: Logistics').closest('tr')!
+    expect(cellText(segmentSubtotal, 'Invested')).toBe('1,000.00')
+    expect(cellText(segmentSubtotal, 'Invested % of group')).toBe('25.00%')
+    expect(cellText(segmentSubtotal, 'Market % of group')).toBe('30.00%')
+    expect(cellText(screen.getByText('Subtotal FII').closest('tr')!, 'Invested % of group')).toBe('')
+  })
+
+  it('sorts_within_each_segment', async () => {
+    const small = row({ assetName: 'SMAL11', segment: 'Logistics', totalInvested: 100 })
+    const large = row({ assetName: 'LARG11', segment: 'Logistics', totalInvested: 900 })
+    const other = row({ assetName: 'OTHR11', segment: 'Paper', totalInvested: 500 })
+    await renderLoaded({
+      ...HOLDINGS,
+      groups: [
+        {
+          ...HOLDINGS.groups[1],
+          holdings: [small, large, other],
+          segments: [
+            { name: 'Logistics', holdings: [small, large], subtotal: TOTALS, investedShareOfGroup: 66, marketShareOfGroup: 66 },
+            { name: 'Paper', holdings: [other], subtotal: TOTALS, investedShareOfGroup: 34, marketShareOfGroup: 34 },
+          ],
+        },
+      ],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Invested' }))
+
+    const names = screen.getAllByRole('row').slice(2).map(r => (r as HTMLTableRowElement).cells[0].textContent?.replace(/^Asset name:(Segment [^:]+: )?/, ''))
+    expect(names.slice(0, 7)).toEqual(['FII', 'Segment: Logistics', 'SMAL11', 'LARG11', 'Segment subtotal: Logistics', 'Segment: Paper', 'OTHR11'])
   })
 
   it('shows_the_empty_message_when_the_broker_has_no_active_holdings', async () => {

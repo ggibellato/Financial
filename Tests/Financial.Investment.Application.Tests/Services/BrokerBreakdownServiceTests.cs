@@ -270,6 +270,19 @@ public class BrokerBreakdownServiceTests
         result.Single().Assets.Select(a => a.AssetName).Should().Equal("AAAA3", "ZZZZ3");
     }
 
+    [Fact]
+    public void GetBrokerBreakdown_CarriesEachAssetsSegment()
+    {
+        var asset = Asset.Create("AAAA11", "ISIN", "BVMF", "AAAA11", CountryCode.BR, "FII", GlobalAssetClass.RealEstate);
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.SetSegment("Logistics");
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "FII", asset)];
+
+        var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Active);
+
+        result.Single().Assets.Single().Segment.Should().Be("Logistics");
+    }
+
     private BrokerBreakdownService CreateService() => new(_repository, _tracer, NullLogger<BrokerBreakdownService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>

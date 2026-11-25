@@ -77,6 +77,8 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   ticker: 'ALZR11',
   exchange: 'BVMF',
   class: 'RealEstate',
+  segment: null,
+  pickSource: null,
   firstInvestmentDate: '2021-03-01T00:00:00',
   currentQuantity: 25,
   averagePrice: 100,

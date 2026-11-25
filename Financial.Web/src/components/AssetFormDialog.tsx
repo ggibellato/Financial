@@ -9,6 +9,7 @@ import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { useFreeformCombobox } from '../hooks/useFreeformCombobox'
 import { isValidIsin } from '../utils/validators'
 import { MAX_SEGMENT_LENGTH, SEGMENT_CLASSES, segmentKey } from '../utils/assetSegments'
+import { PICK_SOURCE_LABELS } from '../utils/pickSource'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
 const CLASS_OPTIONS = [
@@ -26,9 +27,8 @@ const CLASS_OPTIONS = [
 ] as const
 const PICK_SOURCE_OPTIONS = [
   { value: '', label: 'Not set' },
-  { value: 'Recommended', label: 'Recommended' },
-  { value: 'MyChoice', label: 'My choice' },
-] as const
+  ...Object.entries(PICK_SOURCE_LABELS).map(([value, label]) => ({ value, label })),
+]
 
 export interface AssetFormValues {
   brokerName: string

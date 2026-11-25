@@ -167,6 +167,8 @@ describe('useAssetSummary', () => {
       ticker: 'KLBN4',
       exchange: 'BVMF',
       class: 'Equity',
+      segment: null,
+      pickSource: null,
       firstInvestmentDate: '2024-01-01T00:00:00',
       currentQuantity: 0,
       averagePrice: 20,

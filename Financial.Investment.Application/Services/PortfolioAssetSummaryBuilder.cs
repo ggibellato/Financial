@@ -56,7 +56,7 @@ internal static class PortfolioAssetSummaryBuilder
             : PositionResultCalculator.ForOpenPosition(valuation.UnrealisedGain, valuation.CostOfUnitsHeld, totals.TotalCredits);
 
         return new AssetComputedData(
-            asset.Name, asset.Ticker, asset.Exchange, asset.Class,
+            asset.Name, asset.Ticker, asset.Exchange, asset.Class, asset.Segment, asset.PickSource,
             firstBuyDate, asset.Quantity, asset.AveragePrice, averageSellPrice,
             totals.TotalBought, totals.TotalSold, bases.InvestedAmount, realisedGainLoss, realisedGainLossSharesOnly, bases.WeightBasis,
             totals.TotalCredits, valuation, result,
@@ -73,6 +73,8 @@ internal static class PortfolioAssetSummaryBuilder
             Ticker = c.Ticker,
             Exchange = c.Exchange,
             Class = c.Class,
+            Segment = c.Segment,
+            PickSource = c.PickSource,
             FirstInvestmentDate = c.FirstInvestmentDate,
             CurrentQuantity = c.CurrentQuantity,
             AveragePrice = c.AveragePrice,
@@ -115,7 +117,7 @@ internal static class PortfolioAssetSummaryBuilder
     }
 
     private sealed record AssetComputedData(
-        string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
+        string AssetName, string Ticker, string Exchange, GlobalAssetClass Class, string? Segment, PickSource? PickSource,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealisedGainLoss, decimal RealisedGainLossSharesOnly, decimal? WeightBasis,
         decimal TotalCredits, HoldingValuation Valuation, PositionResult Result,

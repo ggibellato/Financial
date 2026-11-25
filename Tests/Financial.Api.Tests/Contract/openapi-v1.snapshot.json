@@ -1577,6 +1577,12 @@
           "assetName": {
             "type": "string"
           },
+          "segment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "totalInvested": {
             "format": "double",
             "type": "number"
@@ -4178,6 +4184,46 @@
           "name": {
             "type": "string"
           },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingsSegmentDTO"
+            },
+            "type": "array"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/HoldingsTotalsDTO"
+          }
+        },
+        "type": "object"
+      },
+      "HoldingsSegmentDTO": {
+        "properties": {
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingRowDTO"
+            },
+            "type": "array"
+          },
+          "investedShareOfGroup": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "marketShareOfGroup": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "subtotal": {
             "$ref": "#/components/schemas/HoldingsTotalsDTO"
           }
@@ -5417,6 +5463,16 @@
               "number"
             ]
           },
+          "pickSource": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PickSource"
+              }
+            ]
+          },
           "portfolioWeight": {
             "format": "double",
             "type": [
@@ -5458,6 +5514,12 @@
             "type": [
               "null",
               "number"
+            ]
+          },
+          "segment": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "ticker": {
