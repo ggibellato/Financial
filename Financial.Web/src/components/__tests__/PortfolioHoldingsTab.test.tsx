@@ -105,6 +105,12 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   estimatedAnnualCredits: null,
   estimatedAnnualPercent: null,
   currentMonthCredits: 0,
+  investedWeight: null,
+  creditsPercentOfInvested: null,
+  monthsHeld: null,
+  monthlyYieldPercent: null,
+  aprPercent: null,
+  lastCreditPercentOfMarketValue: null,
 }
 
 const LOADING_ROW_PRICE: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false, isManual: false }

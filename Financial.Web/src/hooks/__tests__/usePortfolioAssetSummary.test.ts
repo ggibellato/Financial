@@ -72,6 +72,12 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   estimatedAnnualCredits: 600,
   estimatedAnnualPercent: 24.0,
   currentMonthCredits: 0,
+  investedWeight: null,
+  creditsPercentOfInvested: null,
+  monthsHeld: null,
+  monthlyYieldPercent: null,
+  aprPercent: null,
+  lastCreditPercentOfMarketValue: null,
 }
 
 const ITEM_2: PortfolioAssetSummaryItemDto = {
@@ -107,6 +113,12 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   estimatedAnnualCredits: null,
   estimatedAnnualPercent: null,
   currentMonthCredits: 0,
+  investedWeight: null,
+  creditsPercentOfInvested: null,
+  monthsHeld: null,
+  monthlyYieldPercent: null,
+  aprPercent: null,
+  lastCreditPercentOfMarketValue: null,
 }
 
 const PRICE_DTO: AssetPriceDto = {

@@ -195,6 +195,12 @@ describe('useAssetSummary', () => {
       estimatedAnnualCredits: null,
       estimatedAnnualPercent: null,
       currentMonthCredits: 0,
+      investedWeight: null,
+      creditsPercentOfInvested: null,
+      monthsHeld: null,
+      monthlyYieldPercent: null,
+      aprPercent: null,
+      lastCreditPercentOfMarketValue: null,
     }
     getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...summaryItem, assetName: 'OTHER', portfolioWeight: 40 }, summaryItem])
     const { wrapper, setNode } = createSelectedNodeWrapper('historic')
