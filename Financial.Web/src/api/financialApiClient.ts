@@ -84,6 +84,7 @@ import type {
   PaymentDueDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
+  BrokerHoldingsDto,
   PortfolioCreateDto,
   PortfolioDashboardDto,
   PortfolioDto,
@@ -148,6 +149,7 @@ export interface FinancialApiClient {
   getSummaryByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<AggregatedSummaryDto>
   getSummaryByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<AggregatedSummaryDto>
   getBrokerBreakdown: (brokerName: string, scope?: InvestmentScope) => Promise<PortfolioBreakdownItemDto[]>
+  getBrokerHoldings: (brokerName: string) => Promise<BrokerHoldingsDto>
   getTransactionsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   getTransactionsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   getTransactionTypeEffects: () => Promise<TransactionTypeEffectDto[]>
@@ -440,6 +442,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       ),
     getBrokerBreakdown: (brokerName, scope = 'active') =>
       request<PortfolioBreakdownItemDto[]>(`/summary/broker/${encodeURIComponent(brokerName)}/breakdown${buildScopeQuery(scope)}`),
+    getBrokerHoldings: (brokerName) =>
+      request<BrokerHoldingsDto>(`/summary/broker/${encodeURIComponent(brokerName)}/holdings`),
     getTransactionsByBroker: (brokerName, scope = 'active') =>
       request<TransactionSummaryItemDto[]>(`/transactions/broker/${encodeURIComponent(brokerName)}${buildScopeQuery(scope)}`),
     getTransactionsByPortfolio: (brokerName, portfolioName, scope = 'active') =>

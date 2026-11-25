@@ -68,10 +68,34 @@ describe('BrokerBreakdownCharts', () => {
   it('renders_an_accessible_table_equivalent_for_every_pie', () => {
     setMock({ breakdown: BREAKDOWN })
     render(<BrokerBreakdownCharts />)
-    expect(screen.getAllByRole('table')).toHaveLength(3)
+    expect(screen.getAllByRole('table')).toHaveLength(4)
+    expect(screen.getByRole('table', { name: 'All assets' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Portfolio breakdown' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Acoes' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'FII' })).toBeInTheDocument()
+  })
+
+  it('lists_every_asset_of_the_broker_by_invested_amount_in_the_all_assets_pie_above_the_portfolio_breakdown', () => {
+    setMock({ breakdown: BREAKDOWN })
+    render(<BrokerBreakdownCharts />)
+    const tables = screen.getAllByRole('table')
+    expect(tables[0]).toHaveAccessibleName('All assets')
+    expect(tables[1]).toHaveAccessibleName('Portfolio breakdown')
+    const assetCount = BREAKDOWN.reduce((count, portfolio) => count + portfolio.assets.length, 0)
+    expect(within(tables[0]).getAllByRole('row').slice(1)).toHaveLength(assetCount)
+  })
+
+  it('merges_an_asset_held_in_two_portfolios_into_one_all_assets_slice', () => {
+    setMock({
+      breakdown: [
+        { portfolioName: 'A', totalInvested: 100, assets: [{ assetName: 'SAME11', totalInvested: 100 }] },
+        { portfolioName: 'B', totalInvested: 50, assets: [{ assetName: 'SAME11', totalInvested: 50 }] },
+      ],
+    })
+    render(<BrokerBreakdownCharts />)
+    const rows = within(screen.getByRole('table', { name: 'All assets' })).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(1)
+    expect(within(rows[0]).getByText(/150[.,]00/)).toBeInTheDocument()
   })
 
   it('lists_each_portfolio_with_total_invested_and_share_in_the_overview_table', () => {

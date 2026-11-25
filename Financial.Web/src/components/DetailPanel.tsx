@@ -15,6 +15,7 @@ import './DetailPanel.css'
 const AggregatedSummaryTab = lazy(() => import('./AggregatedSummaryTab'))
 const PortfolioSummaryTab = lazy(() => import('./PortfolioSummaryTab'))
 const PortfolioHoldingsTab = lazy(() => import('./PortfolioHoldingsTab'))
+const BrokerHoldingsTab = lazy(() => import('./BrokerHoldingsTab'))
 const CreditsTab = lazy(() => import('./CreditsTab'))
 const TransactionsTab = lazy(() => import('./TransactionsTab'))
 const PriceHistoryTab = lazy(() => import('./PriceHistoryTab'))
@@ -43,7 +44,14 @@ export default function DetailPanel() {
   const { selectedNode, setSelectedNode, scope, reload } = useSelectedNode()
   const { deleteError, deletePortfolio } = usePortfolioDeletion()
   const [activeTab, setActiveTab] = useState<TabId>('summary')
-  const tabPanel = useTabPanel(activeTab)
+  const hasBrokerHoldings = selectedNode?.nodeType === 'Broker' && scope === 'active'
+  const tabs = selectedNode?.nodeType === 'Asset'
+    ? [...BASE_TABS, PRICE_HISTORY_TAB, REALISED_GAINS_TAB, CORPORATE_ACTIONS_TAB]
+    : selectedNode?.nodeType === 'Portfolio' || hasBrokerHoldings
+      ? [BASE_TABS[0], HOLDINGS_TAB, ...BASE_TABS.slice(1)]
+      : BASE_TABS
+  const shownTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'summary'
+  const tabPanel = useTabPanel(shownTab)
   const [prevKey, setPrevKey] = useState('')
   const [isMoving, setIsMoving] = useState(false)
 
@@ -160,15 +168,10 @@ export default function DetailPanel() {
 
       <PageTabList
         aria-label="Detail views"
-        selectedValue={activeTab}
+        selectedValue={shownTab}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as TabId)}
       >
-        {(isAsset
-          ? [...BASE_TABS, PRICE_HISTORY_TAB, REALISED_GAINS_TAB, CORPORATE_ACTIONS_TAB]
-          : isPortfolio
-            ? [BASE_TABS[0], HOLDINGS_TAB, ...BASE_TABS.slice(1)]
-            : BASE_TABS
-        ).map((tab) => (
+        {tabs.map((tab) => (
           <Tab key={tab.id} value={tab.id} {...tabPanel.tabProps(tab.id)}>
             {tab.label}
           </Tab>
@@ -177,15 +180,16 @@ export default function DetailPanel() {
 
       <div className="detail-panel__content" {...tabPanel.panelProps}>
         <Suspense fallback={<LoadingState />}>
-          {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
-          {activeTab === 'summary' && isPortfolio && <PortfolioSummaryTab />}
-          {activeTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
-          {activeTab === 'holdings' && isPortfolio && <PortfolioHoldingsTab />}
-          {activeTab === 'transactions' && <TransactionsTab />}
-          {activeTab === 'credits' && <CreditsTab />}
-          {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
-          {activeTab === 'realisedGains' && isAsset && <RealisedGainsTab />}
-          {activeTab === 'corporateActions' && isAsset && <CorporateActionsTab focusRecordId={focusRecordId} />}
+          {shownTab === 'summary' && isAsset && <AssetSummaryTab />}
+          {shownTab === 'summary' && isPortfolio && <PortfolioSummaryTab />}
+          {shownTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
+          {shownTab === 'holdings' && isPortfolio && <PortfolioHoldingsTab />}
+          {shownTab === 'holdings' && hasBrokerHoldings && <BrokerHoldingsTab />}
+          {shownTab === 'transactions' && <TransactionsTab />}
+          {shownTab === 'credits' && <CreditsTab />}
+          {shownTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
+          {shownTab === 'realisedGains' && isAsset && <RealisedGainsTab />}
+          {shownTab === 'corporateActions' && isAsset && <CorporateActionsTab focusRecordId={focusRecordId} />}
         </Suspense>
       </div>
     </div>

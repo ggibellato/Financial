@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetDetailsDto, RealisedGainDto, SelectedNode } from '../../api/types'
+import type { AssetDetailsDto, InvestmentScope, RealisedGainDto, SelectedNode } from '../../api/types'
 import { ApiError } from '../../api/apiError'
 import { never } from '../../test-utils/deferred'
 
@@ -78,9 +78,9 @@ function NodeSetter({ node }: { node: SelectedNode | null }) {
   )
 }
 
-function renderPanel(initial: SelectedNode | null = null) {
+function renderPanel(initial: SelectedNode | null = null, scope: InvestmentScope = 'active') {
   return render(
-    <SelectedNodeProvider>
+    <SelectedNodeProvider scope={scope}>
       <NodeSetter node={initial} />
       <DetailPanel />
     </SelectedNodeProvider>,
@@ -330,8 +330,34 @@ describe('DetailPanel', () => {
     })
   })
 
-  it('does not show Holdings tab for a broker node', () => {
+  it('shows Holdings tab for a broker node right after Summary in the active scope', () => {
     renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    const tabs = screen.getAllByRole('tab')
+    const order = ['Summary', 'Holdings', 'Transactions', 'Credits']
+    expect(tabs).toHaveLength(order.length)
+    order.forEach((label, index) => {
+      expect(tabs[index]).toHaveAccessibleName(label)
+    })
+  })
+
+  it('names the panel after Summary when the scope switches away from a broker Holdings tab', () => {
+    const { rerender } = renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    fireEvent.click(screen.getByRole('tab', { name: 'Holdings' }))
+    rerender(
+      <SelectedNodeProvider scope="historic">
+        <NodeSetter node={brokerNode} />
+        <DetailPanel />
+      </SelectedNodeProvider>,
+    )
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Summary')
+  })
+
+  it('does not show Holdings tab for a broker node in the historic scope', () => {
+    renderPanel(brokerNode, 'historic')
     act(() => screen.getByTestId('setter').click())
     expect(screen.queryByRole('tab', { name: 'Holdings' })).not.toBeInTheDocument()
   })

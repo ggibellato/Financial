@@ -13,6 +13,16 @@
   overflow: auto;
 }
 
+/* Fluent's Table lays columns out at fixed equal widths, which overlaps this many nowrap columns;
+   sizing to content lets the section scroll sideways instead. */
+@media (min-width: 600px) {
+  .portfolio-holdings__table {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+}
+
 .portfolio-holdings__table th:nth-child(n+3),
 .portfolio-holdings__table td:nth-child(n+3) {
   text-align: right;

@@ -181,6 +181,15 @@ describe('financialApiClient', () => {
     ])
   })
 
+  it('requests the broker holdings with the broker name encoded and no scope', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getBrokerHoldings('Trading 212')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/summary/broker/Trading%20212/holdings`)
+  })
+
   it('posts a move to the move endpoint', async () => {
     const responseBody = { name: 'BCIA11', portfolioName: 'ISA' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
