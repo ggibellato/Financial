@@ -33,5 +33,10 @@ public class AssetAdminDTO
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public IncomePolicy IncomePolicy { get; set; } = IncomePolicy.Unknown;
 
+    public string? Segment { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PickSource? PickSource { get; set; }
+
     public decimal Quantity { get; set; }
 }

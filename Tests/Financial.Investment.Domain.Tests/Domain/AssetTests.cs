@@ -56,6 +56,84 @@ public class AssetTests
         asset.Quantity.Should().Be(10);
     }
 
+    [Theory]
+    [InlineData(GlobalAssetClass.Equity)]
+    [InlineData(GlobalAssetClass.RealEstate)]
+    public void SetSegment_ClassWithSegments_StoresTheTrimmedSegment(GlobalAssetClass assetClass)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", assetClass);
+
+        asset.SetSegment("  Logistics  ");
+
+        asset.Segment.Should().Be("Logistics");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void SetSegment_BlankSegment_StoresNoSegment(string? segment)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetSegment("Logistics");
+
+        asset.SetSegment(segment);
+
+        asset.Segment.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetSegment_ClassWithoutSegments_StoresNoSegment()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "LSE", "AAA", CountryCode.UK, "", GlobalAssetClass.ETF);
+
+        asset.SetSegment("Logistics");
+
+        asset.Segment.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetSegment_FortyCharacters_IsAccepted()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Equity);
+
+        asset.SetSegment(new string('a', 40));
+
+        asset.Segment.Should().HaveLength(40);
+    }
+
+    [Fact]
+    public void SetSegment_LongerThanFortyCharacters_IsRefused()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Equity);
+
+        var act = () => asset.SetSegment(new string('a', 41));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Segment must be 40 characters or fewer.");
+    }
+
+    [Fact]
+    public void UpdateIdentity_ClassChangedToOneWithoutSegments_RemovesTheSegment()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetSegment("Logistics");
+
+        asset.UpdateIdentity("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.ETF);
+
+        asset.Segment.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateIdentity_ClassChangedBetweenClassesWithSegments_KeepsTheSegment()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetSegment("Logistics");
+
+        asset.UpdateIdentity("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Equity);
+
+        asset.Segment.Should().Be("Logistics");
+    }
+
     [Fact]
     public void Create_CryptocurrencyAssetShape_SetsPropertiesWithBlankIsinAndExchange()
     {

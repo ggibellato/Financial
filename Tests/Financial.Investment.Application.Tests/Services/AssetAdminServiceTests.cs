@@ -444,6 +444,82 @@ public class AssetAdminServiceTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
+    [Fact]
+    public async Task CreateAssetAsync_SegmentAndPickSourceSet_ArePersisted()
+    {
+        SeedBrokerWithAsset(null);
+
+        var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "AAAA11",
+            Class = GlobalAssetClass.RealEstate,
+            Segment = " Logistics ",
+            PickSource = "MyChoice"
+        });
+
+        using (new AssertionScope())
+        {
+            result.Segment.Should().Be("Logistics");
+            result.PickSource.Should().Be(PickSource.MyChoice);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_SegmentAndPickSourceLeftEmpty_ClearsBoth()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("AAAA11", "ISIN123", "BVMF", "AAAA11", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetSegment("Logistics");
+        asset.SetPickSource(PickSource.Recommended);
+        broker.CreatePortfolio("Default").RegisterAsset(asset);
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA11", new AssetAdminUpdateDTO
+        {
+            Name = "AAAA11",
+            Class = GlobalAssetClass.RealEstate,
+            Segment = "   "
+        });
+
+        using (new AssertionScope())
+        {
+            result.Segment.Should().BeNull();
+            result.PickSource.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_UnknownPickSource_ThrowsWithTheAllowedValuesAndWritesNothing()
+    {
+        SeedBrokerWithAsset("AAAA");
+
+        var act = async () => await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAA", PickSource = "Friend" });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Pick source must be Recommended or MyChoice.");
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreateAssetAsync_SegmentLongerThanForty_ThrowsAndWritesNothing()
+    {
+        SeedBrokerWithAsset(null);
+
+        var act = async () => await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "AAAA11",
+            Class = GlobalAssetClass.RealEstate,
+            Segment = new string('a', 41)
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Segment must be 40 characters or fewer.");
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
     private void SeedBrokerWithAsset(string? assetName)
     {
         _repository.Investments = Investments.Create();

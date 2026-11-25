@@ -36,4 +36,9 @@ public class AssetAdminCreateDTO
     /// <summary>Left null to default to <see cref="IncomePolicy.Unknown"/>.</summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public IncomePolicy? IncomePolicy { get; set; }
+
+    public string? Segment { get; set; }
+
+    /// <summary>"Recommended" or "MyChoice"; null or blank leaves it unset.</summary>
+    public string? PickSource { get; set; }
 }

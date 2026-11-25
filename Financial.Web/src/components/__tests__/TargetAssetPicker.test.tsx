@@ -34,6 +34,8 @@ function makeAsset(name: string): AssetAdminDto {
     class: 'Unknown',
     valuationMethod: 'Unspecified',
     incomePolicy: 'Unknown',
+    segment: null,
+    pickSource: null,
     quantity: 0,
   }
 }

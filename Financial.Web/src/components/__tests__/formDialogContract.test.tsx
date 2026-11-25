@@ -95,7 +95,7 @@ const CASES: FormDialogCase[] = [
   {
     ...nameDialog(
       'AssetFormDialog',
-      (h) => render(<AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} {...h} />),
+      (h) => render(<AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} segments={[]} {...h} />),
       'BCIA11',
       'Portfolio "Default" already has an asset named "BCIA11".',
       'Add asset',

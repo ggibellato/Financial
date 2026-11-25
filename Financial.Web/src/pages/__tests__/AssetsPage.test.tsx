@@ -47,6 +47,8 @@ const ASSETS: AssetAdminDto[] = [
     class: 'RealEstate',
     valuationMethod: 'Unspecified',
     incomePolicy: 'Unknown',
+    segment: null,
+    pickSource: null,
     quantity: 100,
   },
   {
@@ -62,6 +64,8 @@ const ASSETS: AssetAdminDto[] = [
     class: 'Unknown',
     valuationMethod: 'Unspecified',
     incomePolicy: 'Unknown',
+    segment: null,
+    pickSource: null,
     quantity: 0,
   },
 ]
@@ -172,6 +176,26 @@ describe('AssetsPage', () => {
 
     await waitFor(() =>
       expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', expect.objectContaining({ class: null }), 'historic'),
+    )
+  })
+
+  it('sends the segment and pick source, and null for a pick source left as Not set', async () => {
+    updateAssetMock.mockResolvedValue(ASSETS[0])
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit BCIA11' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Segment' }), { target: { value: 'Logistics' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateAssetMock).toHaveBeenCalledWith(
+        'XPI',
+        'Default',
+        'BCIA11',
+        expect.objectContaining({ segment: 'Logistics', pickSource: null }),
+        'active',
+      ),
     )
   })
 

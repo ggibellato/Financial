@@ -179,6 +179,37 @@ public class InvestmentSerializerAdapterTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTripPreservesSegmentAndPickSource()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("AAAA11", "ISIN123", "BVMF", "AAAA11", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetSegment("Logistics");
+        asset.SetPickSource(PickSource.MyChoice);
+        broker.AddPortfolio("FII").AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        var result = Serializer.Deserialize(Serializer.Serialize(investments));
+
+        var loaded = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        loaded.Segment.Should().Be("Logistics");
+        loaded.PickSource.Should().Be(PickSource.MyChoice);
+    }
+
+    [Fact]
+    public void Deserialize_AssetWithoutSegmentOrPickSource_LoadsBothAsNotSet()
+    {
+        const string json = """
+            { "ActiveBrokers": [ { "Name": "XPI", "Currency": "BRL", "Portfolios": [ { "Name": "FII", "Assets": [ { "Name": "AAAA11", "Class": "RealEstate" } ] } ] } ] }
+            """;
+
+        var asset = Serializer.Deserialize(json).ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+
+        asset.Segment.Should().BeNull();
+        asset.PickSource.Should().BeNull();
+    }
+
+    [Fact]
     public void Deserialize_MissingHistoricBrokersKey_ResultsInEmptyHistoricCollection()
     {
         const string json = """

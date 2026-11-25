@@ -7762,7 +7762,9 @@ export interface components {
             isin?: string;
             localTypeCode?: string;
             name: string;
+            pickSource?: null | string;
             portfolioName: string;
+            segment?: null | string;
             ticker?: string;
             valuationMethod?: null | components["schemas"]["ValuationMethod"];
         };
@@ -7776,9 +7778,11 @@ export interface components {
             isin?: string;
             localTypeCode?: string;
             name: string;
+            pickSource?: null | components["schemas"]["PickSource"];
             portfolioName: string;
             /** Format: double */
             quantity?: number;
+            segment?: null | string;
             ticker?: string;
             valuationMethod?: components["schemas"]["ValuationMethod"];
         };
@@ -7790,6 +7794,8 @@ export interface components {
             isin?: string;
             localTypeCode?: string;
             name: string;
+            pickSource?: null | string;
+            segment?: null | string;
             ticker?: string;
             valuationMethod?: null | components["schemas"]["ValuationMethod"];
         };
@@ -8898,6 +8904,8 @@ export interface components {
             name: string;
             type: string;
         };
+        /** @enum {unknown} */
+        PickSource: "Recommended" | "MyChoice" | null;
         PortfolioAssetSummaryItemDTO: {
             /** Format: double */
             aprPercent: null | number;

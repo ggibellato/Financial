@@ -16,6 +16,8 @@ const CREATE_REQUEST: AssetAdminCreateDto = {
   class: null,
   valuationMethod: null,
   incomePolicy: null,
+  segment: null,
+  pickSource: null,
 }
 
 const UPDATE_REQUEST: AssetAdminUpdateDto = {
@@ -28,6 +30,8 @@ const UPDATE_REQUEST: AssetAdminUpdateDto = {
   class: 'Unknown',
   valuationMethod: null,
   incomePolicy: null,
+  segment: null,
+  pickSource: null,
 }
 
 const { getAdminAssetsMock, createAssetMock, updateAssetMock, archiveAssetMock } = vi.hoisted(() => ({
@@ -60,6 +64,8 @@ const ASSETS: AssetAdminDto[] = [
     class: 'RealEstate',
     valuationMethod: 'Unspecified',
     incomePolicy: 'Unknown',
+    segment: null,
+    pickSource: null,
     quantity: 100,
   },
   {
@@ -75,6 +81,8 @@ const ASSETS: AssetAdminDto[] = [
     class: 'Unknown',
     valuationMethod: 'Unspecified',
     incomePolicy: 'Unknown',
+    segment: null,
+    pickSource: null,
     quantity: 0,
   },
 ]
