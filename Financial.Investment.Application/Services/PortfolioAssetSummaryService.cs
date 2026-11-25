@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
@@ -63,6 +64,48 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             throw;
         }
     }
+
+    public BrokerHoldingsDTO GetBrokerHoldings(string brokerName)
+    {
+        using var span = StartSpan("GetBrokerHoldings");
+        try
+        {
+            var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
+            var today = _timeProvider.GetLocalDate();
+            var result = broker is null
+                ? new BrokerHoldingsDTO()
+                : BrokerHoldingsBuilder.Build(HeldCurrencies(broker), broker.Portfolios.Select(p => BuildGroupSource(p, today)));
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetBrokerHoldings");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private static IReadOnlyList<string> HeldCurrencies(Broker broker)
+    {
+        var currencies = broker.Portfolios
+            .SelectMany(p => p.Assets)
+            .Where(a => a.Quantity > 0m)
+            .SelectMany(a => a.Transactions)
+            .Select(t => t.Currency.ToString())
+            .Distinct()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        return currencies.Count == 0 ? [broker.Currency] : currencies;
+    }
+
+    private HoldingsGroupSource BuildGroupSource(Portfolio portfolio, DateTime today) =>
+        new(portfolio.Name, PortfolioAssetSummaryBuilder.Build(
+            portfolio.Assets.Where(a => a.Quantity > 0m),
+            today,
+            InvestmentScope.Active,
+            _holdingValuationService));
 
     private ITelemetrySpan StartSpan(string operationName)
     {

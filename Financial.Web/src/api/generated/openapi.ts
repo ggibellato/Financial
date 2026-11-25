@@ -6486,6 +6486,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/summary/broker/{brokerName}/holdings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists a broker's active holdings grouped by portfolio, with subtotals and a broker total. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The broker's name. */
+                    brokerName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrokerHoldingsDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/summary/portfolio/{brokerName}/{portfolioName}": {
         parameters: {
             query?: never;
@@ -7905,6 +7953,11 @@ export interface components {
             portfolioCount?: number;
             status: string;
         };
+        BrokerHoldingsDTO: {
+            currencies: string[];
+            groups: components["schemas"]["HoldingsGroupDTO"][];
+            total: components["schemas"]["HoldingsTotalsDTO"];
+        };
         BrokerNodeDTO: {
             currency: string;
             name: string;
@@ -8509,6 +8562,50 @@ export interface components {
             /** Format: double */
             quantity: number;
         };
+        HoldingRowDTO: {
+            asset: components["schemas"]["PortfolioAssetSummaryItemDTO"];
+            /** Format: double */
+            investedShareOfBase: null | number;
+            /** Format: double */
+            investedShareOfGroup: null | number;
+            /** Format: double */
+            marketShareOfBase: null | number;
+            /** Format: double */
+            marketShareOfGroup: null | number;
+        };
+        HoldingsGroupDTO: {
+            holdings: components["schemas"]["HoldingRowDTO"][];
+            name: string;
+            subtotal: components["schemas"]["HoldingsTotalsDTO"];
+        };
+        HoldingsTotalsDTO: {
+            /** Format: double */
+            creditsPercentOfInvested: null | number;
+            /** Format: int32 */
+            holdingCount: number;
+            /** Format: double */
+            invested: number;
+            /** Format: double */
+            investedShareOfBase: null | number;
+            /** Format: double */
+            lastCreditAmount: number;
+            /** Format: double */
+            lastCreditPercentOfMarketValue: null | number;
+            /** Format: double */
+            marketShareOfBase: null | number;
+            /** Format: double */
+            marketValue: null | number;
+            /** Format: double */
+            profitAmount: null | number;
+            /** Format: double */
+            profitPercent: null | number;
+            /** Format: double */
+            profitWithCreditsPercent: null | number;
+            /** Format: double */
+            totalCredits: number;
+            /** Format: int32 */
+            unvaluedHoldingCount: number;
+        };
         IncomeAnnualSummaryDTO: {
             /** Format: double */
             dividendoJurosAnnualTotal: number;
@@ -8802,6 +8899,8 @@ export interface components {
             type: string;
         };
         PortfolioAssetSummaryItemDTO: {
+            /** Format: double */
+            aprPercent: null | number;
             assetName: string;
             /** Format: double */
             averagePrice: number;
@@ -8813,6 +8912,8 @@ export interface components {
             /** Format: int32 */
             creditFrequencyPerYear: null | number;
             /** Format: double */
+            creditsPercentOfInvested: null | number;
+            /** Format: double */
             currentMonthCredits: number;
             /** Format: double */
             currentQuantity: number;
@@ -8823,7 +8924,11 @@ export interface components {
             exchange: string;
             /** Format: date-time */
             firstInvestmentDate: null | string;
+            /** Format: double */
+            investedWeight: null | number;
             lastCreditMonth: null | string;
+            /** Format: double */
+            lastCreditPercentOfMarketValue: null | number;
             /** Format: double */
             lastMonthCredits: number;
             /** Format: double */
@@ -8831,6 +8936,8 @@ export interface components {
             marketStatus: components["schemas"]["MarketStatus"];
             /** Format: double */
             marketValue: null | number;
+            /** Format: double */
+            monthlyYieldPercent: null | number;
             /** Format: double */
             portfolioWeight: null | number;
             /** Format: date */

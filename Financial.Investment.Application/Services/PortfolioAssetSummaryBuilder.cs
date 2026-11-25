@@ -20,10 +20,14 @@ internal static class PortfolioAssetSummaryBuilder
         var portfolioWeightBasis = computed
             .Where(c => c.WeightBasis.HasValue)
             .Sum(c => c.WeightBasis!.Value);
+        var portfolioInvested = computed.Sum(c => c.TotalInvested);
 
         return computed
             .OrderBy(c => c.AssetName, StringComparer.CurrentCultureIgnoreCase)
-            .Select(c => ToDTO(c, CalculateWeight(c.WeightBasis, portfolioWeightBasis)))
+            .Select(c => ToDTO(
+                c,
+                CalculateWeight(c.WeightBasis, portfolioWeightBasis),
+                CalculateWeight(c.TotalInvested, portfolioInvested)))
             .ToList();
     }
 
@@ -44,6 +48,9 @@ internal static class PortfolioAssetSummaryBuilder
             .Min();
 
         var creditsAnalysis = CreditsAnalysisCalculator.Calculate(asset.Credits, bases.IncomeYieldBasis, today);
+        var holdingYield = HoldingYieldCalculator.Calculate(
+            bases.InvestedAmount, totals.TotalCredits, firstBuyDate,
+            creditsAnalysis.LastMonthCredits, valuation.MarketValue, today);
         var result = scope == InvestmentScope.Historic
             ? PositionResultCalculator.ForClosedPosition(realisedGainLoss, totals.TotalCredits, totals.TotalBought)
             : PositionResultCalculator.ForOpenPosition(valuation.UnrealisedGain, valuation.CostOfUnitsHeld, totals.TotalCredits);
@@ -56,10 +63,10 @@ internal static class PortfolioAssetSummaryBuilder
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
             creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
             creditsAnalysis.EstimatedAnnualCredits, creditsAnalysis.EstimatedAnnualPercent,
-            creditsAnalysis.CurrentMonthCredits);
+            creditsAnalysis.CurrentMonthCredits, holdingYield);
     }
 
-    private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal? weight) =>
+    private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal? weight, decimal? investedWeight) =>
         new()
         {
             AssetName = c.AssetName,
@@ -76,6 +83,7 @@ internal static class PortfolioAssetSummaryBuilder
             RealisedGainLoss = c.RealisedGainLoss,
             RealisedGainLossSharesOnly = c.RealisedGainLossSharesOnly,
             PortfolioWeight = weight,
+            InvestedWeight = investedWeight,
             MarketValue = c.Valuation.MarketValue,
             CostOfUnitsHeld = c.Valuation.CostOfUnitsHeld,
             UnrealisedGain = c.Valuation.UnrealisedGain,
@@ -93,7 +101,11 @@ internal static class PortfolioAssetSummaryBuilder
             CreditFrequencyPerYear = c.CreditFrequencyPerYear,
             EstimatedAnnualCredits = c.EstimatedAnnualCredits,
             EstimatedAnnualPercent = c.EstimatedAnnualPercent,
-            CurrentMonthCredits = c.CurrentMonthCredits
+            CurrentMonthCredits = c.CurrentMonthCredits,
+            CreditsPercentOfInvested = c.Yield.CreditsPercentOfInvested,
+            MonthlyYieldPercent = c.Yield.MonthlyYieldPercent,
+            AprPercent = c.Yield.AprPercent,
+            LastCreditPercentOfMarketValue = c.Yield.LastCreditPercentOfMarketValue
         };
 
     private static decimal? CalculateWeight(decimal? weightBasis, decimal portfolioWeightBasis)
@@ -109,5 +121,5 @@ internal static class PortfolioAssetSummaryBuilder
         decimal TotalCredits, HoldingValuation Valuation, PositionResult Result,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
-        decimal CurrentMonthCredits);
+        decimal CurrentMonthCredits, HoldingYield Yield);
 }

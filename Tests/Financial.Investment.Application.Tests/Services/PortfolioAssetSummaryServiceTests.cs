@@ -389,6 +389,28 @@ public class PortfolioAssetSummaryServiceTests
     }
 
     [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_ReturnsInvestedWeightAndCreditYields()
+    {
+        var held = MakeAsset("HELD", "HLD", "BVMF");
+        held.AddTransaction(Transaction.Create(new DateTime(2026, 6, 10), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        held.AddCredit(Credit.Create(new DateTime(2026, 9, 15), Credit.CreditType.Dividend, 40m));
+        held.SetPrice(TestClock.Today, 80m, isManual: false);
+        var other = MakeAsset("OTHER", "OTH", "BVMF");
+        other.AddTransaction(Transaction.Create(new DateTime(2026, 6, 10), Transaction.TransactionType.Buy, 30m, 100m, 0m));
+        _repository.AssetsByBrokerPortfolio = [held, other];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        var item = result.Single(i => i.AssetName == "HELD");
+        using var _ = new AssertionScope();
+        item.InvestedWeight.Should().Be(25m);
+        item.CreditsPercentOfInvested.Should().Be(4m);
+        item.MonthlyYieldPercent.Should().Be(1m);
+        item.AprPercent.Should().Be(12m);
+        item.LastCreditPercentOfMarketValue.Should().Be(5m);
+    }
+
+    [Fact]
     public void GetPortfolioAssetsSummary_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
