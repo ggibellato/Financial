@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Services;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,7 +25,7 @@ public class BrokerHoldingsTests
         var result = CreateService().GetBrokerHoldings("XPI");
 
         using var _ = new AssertionScope();
-        result.Currency.Should().Be("BRL");
+        result.Currencies.Should().Equal("BRL");
         result.Groups.Select(g => g.Name).Should().Equal("Acoes", "FII");
         result.Groups[1].Holdings.Select(h => h.Asset.AssetName).Should().Equal("AAAA", "BBBB");
         _tracer.ShouldHaveSucceededSpan(SpanName);
@@ -115,6 +116,36 @@ public class BrokerHoldingsTests
         total.ProfitPercent.Should().Be(5m);
         result.Groups[0].Subtotal.MarketValue.Should().BeNull();
         result.Groups[0].Subtotal.ProfitAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_HoldingsBoughtInSeveralCurrencies_ListsEachCurrency()
+    {
+        var broker = MakeSampleBroker();
+        var dollarAsset = Asset.Create("USDA", "ISIN", "NYSE", "USDA");
+        dollarAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m, currency: Currency.USD));
+        broker.Portfolios.Single(p => p.Name == "FII").AddAsset(dollarAsset);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        result.Currencies.Should().Equal("BRL", "USD");
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_UnvaluedHoldingWithALastCredit_LeavesTheLastCreditPercentEmpty()
+    {
+        var broker = MakeSampleBroker();
+        broker.Portfolios.Single(p => p.Name == "Acoes").Assets.Single()
+            .AddCredit(Credit.Create(TestClock.LocalToday, Credit.CreditType.Dividend, 12m));
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        using var _ = new AssertionScope();
+        result.Total.LastCreditAmount.Should().Be(45m);
+        result.Total.LastCreditPercentOfMarketValue.Should().BeNull();
+        result.Groups[1].Subtotal.LastCreditPercentOfMarketValue.Should().NotBeNull();
     }
 
     [Fact]

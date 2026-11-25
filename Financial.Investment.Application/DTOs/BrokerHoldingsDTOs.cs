@@ -35,7 +35,7 @@ public sealed class HoldingsGroupDTO
 
 public sealed class BrokerHoldingsDTO
 {
-    public string Currency { get; init; } = string.Empty;
+    public IReadOnlyList<string> Currencies { get; init; } = [];
     public IReadOnlyList<HoldingsGroupDTO> Groups { get; init; } = [];
     public HoldingsTotalsDTO Total { get; init; } = new();
 }

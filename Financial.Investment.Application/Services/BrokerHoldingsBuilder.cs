@@ -7,7 +7,7 @@ internal sealed record HoldingsGroupSource(string Name, IReadOnlyList<PortfolioA
 
 internal static class BrokerHoldingsBuilder
 {
-    internal static BrokerHoldingsDTO Build(string currency, IEnumerable<HoldingsGroupSource> groups)
+    internal static BrokerHoldingsDTO Build(IReadOnlyList<string> currencies, IEnumerable<HoldingsGroupSource> groups)
     {
         var nonEmptyGroups = groups
             .Where(g => g.Holdings.Count > 0)
@@ -18,7 +18,7 @@ internal static class BrokerHoldingsBuilder
 
         return new BrokerHoldingsDTO
         {
-            Currency = currency,
+            Currencies = currencies,
             Groups = nonEmptyGroups.Select(g => BuildGroup(g, shareBase)).ToList(),
             Total = BuildTotals(allHoldings, shareBase),
         };
@@ -54,6 +54,8 @@ internal static class BrokerHoldingsBuilder
         var profit = own.MarketValue - valuedInvested;
         var result = PositionResultCalculator.ForOpenPosition(profit, valuedInvested, valued.Sum(h => h.TotalCredits));
         var totalCredits = holdings.Sum(h => h.TotalCredits);
+        var lastCredits = holdings.Sum(h => h.LastMonthCredits);
+        var everyLastCreditIsValued = valued.Sum(h => h.LastMonthCredits) == lastCredits;
 
         return new HoldingsTotalsDTO
         {
@@ -68,8 +70,8 @@ internal static class BrokerHoldingsBuilder
             ProfitWithCreditsPercent = result.ResultWithCreditsPercent,
             TotalCredits = totalCredits,
             CreditsPercentOfInvested = Share(totalCredits, own.Invested),
-            LastCreditAmount = holdings.Sum(h => h.LastMonthCredits),
-            LastCreditPercentOfMarketValue = Share(valued.Sum(h => h.LastMonthCredits), own.MarketValue),
+            LastCreditAmount = lastCredits,
+            LastCreditPercentOfMarketValue = everyLastCreditIsValued ? Share(lastCredits, own.MarketValue) : null,
         };
     }
 

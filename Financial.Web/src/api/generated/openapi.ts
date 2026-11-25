@@ -7954,7 +7954,7 @@ export interface components {
             status: string;
         };
         BrokerHoldingsDTO: {
-            currency: string;
+            currencies: string[];
             groups: components["schemas"]["HoldingsGroupDTO"][];
             total: components["schemas"]["HoldingsTotalsDTO"];
         };

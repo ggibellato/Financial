@@ -73,7 +73,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
             var result = broker is null
                 ? new BrokerHoldingsDTO()
-                : BrokerHoldingsBuilder.Build(broker.Currency, broker.Portfolios.Select(BuildGroupSource));
+                : BrokerHoldingsBuilder.Build(HeldCurrencies(broker), broker.Portfolios.Select(BuildGroupSource));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerHoldings");
@@ -84,6 +84,19 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             span.MarkFailed(ex);
             throw;
         }
+    }
+
+    private static IReadOnlyList<string> HeldCurrencies(Broker broker)
+    {
+        var currencies = broker.Portfolios
+            .SelectMany(p => p.Assets)
+            .Where(a => a.Quantity > 0m)
+            .SelectMany(a => a.Transactions)
+            .Select(t => t.Currency.ToString())
+            .Distinct()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        return currencies.Count == 0 ? [broker.Currency] : currencies;
     }
 
     private HoldingsGroupSource BuildGroupSource(Portfolio portfolio) =>
