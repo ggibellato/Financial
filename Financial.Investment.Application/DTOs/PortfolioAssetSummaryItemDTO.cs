@@ -21,6 +21,7 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal RealisedGainLoss { get; init; }
     public decimal RealisedGainLossSharesOnly { get; init; }
     public decimal? PortfolioWeight { get; init; }
+    public decimal? InvestedWeight { get; init; }
     public decimal? MarketValue { get; init; }
     public decimal CostOfUnitsHeld { get; init; }
     public decimal? UnrealisedGain { get; init; }
@@ -42,4 +43,9 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal? EstimatedAnnualCredits { get; init; }
     public decimal? EstimatedAnnualPercent { get; init; }
     public decimal CurrentMonthCredits { get; init; }
+    public decimal? CreditsPercentOfInvested { get; init; }
+    public int? MonthsHeld { get; init; }
+    public decimal? MonthlyYieldPercent { get; init; }
+    public decimal? AprPercent { get; init; }
+    public decimal? LastCreditPercentOfMarketValue { get; init; }
 }

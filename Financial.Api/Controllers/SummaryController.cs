@@ -73,6 +73,17 @@ public sealed class SummaryController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Lists a broker's active holdings grouped by portfolio, with subtotals and a broker total.</summary>
+    /// <param name="brokerName">The broker's name.</param>
+    /// <returns>200 OK with the grouped holdings (an unknown broker returns no groups), or 400 Bad Request if <paramref name="brokerName"/> is missing.</returns>
+    [HttpGet("broker/{brokerName}/holdings")]
+    [ProducesResponseType(typeof(BrokerHoldingsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<BrokerHoldingsDTO> GetBrokerHoldings(string brokerName)
+    {
+        return Ok(_portfolioAssetSummaryService.GetBrokerHoldings(brokerName));
+    }
+
     /// <summary>Lists the portfolio breakdown (allocation by portfolio) for a broker.</summary>
     /// <param name="brokerName">The broker's name.</param>
     /// <param name="scope">Optional investment scope filter (e.g. "all", "active-only").</param>

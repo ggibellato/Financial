@@ -99,6 +99,31 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetBrokerHoldings_Returns200WithGroupsThatAddUpToTheTotal()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI/holdings");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var holdings = await response.Content.ReadFromJsonAsync<BrokerHoldingsDTO>();
+        using var _ = new AssertionScope();
+        holdings!.Groups.Should().NotBeEmpty();
+        holdings.Groups.Select(g => g.Name).Should().BeInAscendingOrder(StringComparer.CurrentCultureIgnoreCase);
+        holdings.Total.Invested.Should().Be(holdings.Groups.Sum(g => g.Subtotal.Invested));
+        holdings.Total.HoldingCount.Should().Be(holdings.Groups.Sum(g => g.Holdings.Count));
+        holdings.Groups.SelectMany(g => g.Holdings).Should().AllSatisfy(h => h.Asset.CurrentQuantity.Should().BePositive());
+    }
+
+    [Fact]
+    public async Task GetBrokerHoldings_UnknownBroker_Returns200WithNoGroups()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/Nowhere/holdings");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var holdings = await response.Content.ReadFromJsonAsync<BrokerHoldingsDTO>();
+        holdings!.Groups.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task GetBrokerBreakdown_Returns400ForWhitespaceBrokerName()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/%20/breakdown");

@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
@@ -63,6 +64,34 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             throw;
         }
     }
+
+    public BrokerHoldingsDTO GetBrokerHoldings(string brokerName)
+    {
+        using var span = StartSpan("GetBrokerHoldings");
+        try
+        {
+            var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
+            var result = broker is null
+                ? new BrokerHoldingsDTO()
+                : BrokerHoldingsBuilder.Build(broker.Currency, broker.Portfolios.Select(BuildGroupSource));
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetBrokerHoldings");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private HoldingsGroupSource BuildGroupSource(Portfolio portfolio) =>
+        new(portfolio.Name, PortfolioAssetSummaryBuilder.Build(
+            portfolio.Assets.Where(a => a.Quantity > 0m),
+            _timeProvider.GetLocalDate(),
+            InvestmentScope.Active,
+            _holdingValuationService));
 
     private ITelemetrySpan StartSpan(string operationName)
     {

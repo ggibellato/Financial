@@ -2034,6 +2034,23 @@
         ],
         "type": "object"
       },
+      "BrokerHoldingsDTO": {
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingsGroupDTO"
+            },
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/HoldingsTotalsDTO"
+          }
+        },
+        "type": "object"
+      },
       "BrokerNodeDTO": {
         "properties": {
           "currency": {
@@ -4071,6 +4088,140 @@
         ],
         "type": "object"
       },
+      "HoldingRowDTO": {
+        "properties": {
+          "asset": {
+            "$ref": "#/components/schemas/PortfolioAssetSummaryItemDTO"
+          },
+          "investedShareOfBase": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "investedShareOfGroup": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "marketShareOfBase": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "marketShareOfGroup": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "HoldingsGroupDTO": {
+        "properties": {
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingRowDTO"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/HoldingsTotalsDTO"
+          }
+        },
+        "type": "object"
+      },
+      "HoldingsTotalsDTO": {
+        "properties": {
+          "creditsPercentOfInvested": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "holdingCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "invested": {
+            "format": "double",
+            "type": "number"
+          },
+          "investedShareOfBase": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "lastCreditAmount": {
+            "format": "double",
+            "type": "number"
+          },
+          "lastCreditPercentOfMarketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "marketShareOfBase": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "marketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "profitAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "profitPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "profitWithCreditsPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "totalCredits": {
+            "format": "double",
+            "type": "number"
+          },
+          "unvaluedHoldingCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "IncomeAnnualSummaryDTO": {
         "properties": {
           "dividendoJurosAnnualTotal": {
@@ -5094,6 +5245,13 @@
       },
       "PortfolioAssetSummaryItemDTO": {
         "properties": {
+          "aprPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "assetName": {
             "type": "string"
           },
@@ -5120,6 +5278,13 @@
             "type": [
               "null",
               "integer"
+            ]
+          },
+          "creditsPercentOfInvested": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
             ]
           },
           "currentMonthCredits": {
@@ -5154,10 +5319,24 @@
               "string"
             ]
           },
+          "investedWeight": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "lastCreditMonth": {
             "type": [
               "null",
               "string"
+            ]
+          },
+          "lastCreditPercentOfMarketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
             ]
           },
           "lastMonthCredits": {
@@ -5179,6 +5358,20 @@
             "type": [
               "null",
               "number"
+            ]
+          },
+          "monthlyYieldPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "monthsHeld": {
+            "format": "int32",
+            "type": [
+              "null",
+              "integer"
             ]
           },
           "portfolioWeight": {
@@ -15632,6 +15825,47 @@
           }
         },
         "summary": "Lists the portfolio breakdown (allocation by portfolio) for a broker.",
+        "tags": [
+          "Summary"
+        ]
+      }
+    },
+    "/summary/broker/{brokerName}/holdings": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The broker\u0027s name.",
+            "in": "path",
+            "name": "brokerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrokerHoldingsDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Lists a broker\u0027s active holdings grouped by portfolio, with subtotals and a broker total.",
         "tags": [
           "Summary"
         ]
