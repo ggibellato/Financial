@@ -350,21 +350,21 @@ graph TD
 - [x] No price is fetched or saved by opening the Holdings tab.
 
 ### F04. ARCA Allocation
-- [ ] The portfolio create and edit dialogs offer an "ARCA bucket" dropdown with "Not in ARCA", "A – Shares and businesses", "R – Real estate", "C – Cash and fixed income", "Pension" and "Reserve fund", and the saved value persists after the API restarts.
-- [ ] An existing data file without buckets loads with every portfolio "Not in ARCA", and every broker keeps the F01 layout.
-- [ ] For a broker with buckets, the Holdings table shows the ARCA section (portfolios ordered A, R, C, Pension), an "ARCA total" row, the Reserve fund section, the Not in ARCA section only when it has portfolios, and a "Grand total" row.
-- [ ] With A 200.00, R 300.00, C 100.00, Pension 400.00 and Reserve fund 250.00 (current values), the ARCA total is 1,000.00, R's share is 30.00%, and the Grand total is 1,250.00.
-- [ ] In a broker using ARCA, the share columns read "% of ARCA", divide by the ARCA total, and show "—" for Reserve fund and Not in ARCA rows.
-- [ ] Segment groups from F02 still appear inside ARCA portfolios.
-- [ ] The broker Summary shows the ARCA panel only for brokers using ARCA, with the Reserve fund row, one row per assigned bucket in A, R, C, Pension order with value and %, the ARCA total at 100.00% and the Grand total.
-- [ ] A bucket with no portfolio is not listed in the panel.
-- [ ] The panel's bucket percentages add up to 100.00% (±0.01).
-- [ ] When the ARCA total is zero, "% of ARCA" shows "—" and the panel shows "No valued holdings in ARCA."
-- [ ] Removing every portfolio's bucket returns the broker to the F01 layout and removes the panel.
-- [ ] An API request with an unknown bucket returns 400 with "ARCA bucket must be one of Shares, RealEstate, Cash, Pension, ReserveFund or empty." and the dialog keeps the entered values.
+- [x] The portfolio create and edit dialogs offer an "ARCA bucket" dropdown with "Not in ARCA", "A – Shares and businesses", "R – Real estate", "C – Cash and fixed income", "Pension" and "Reserve fund", and the saved value persists after the API restarts.
+- [x] An existing data file without buckets loads with every portfolio "Not in ARCA", and every broker keeps the F01 layout.
+- [x] For a broker with buckets, the Holdings table shows the ARCA section (portfolios ordered A, R, C, Pension), an "ARCA total" row, the Reserve fund section, the Not in ARCA section only when it has portfolios, and a "Grand total" row.
+- [x] With A 200.00, R 300.00, C 100.00, Pension 400.00 and Reserve fund 250.00 (current values), the ARCA total is 1,000.00, R's share is 30.00%, and the Grand total is 1,250.00.
+- [x] In a broker using ARCA, the share columns read "% of ARCA", divide by the ARCA total, and show "—" for Reserve fund and Not in ARCA rows.
+- [x] Segment groups from F02 still appear inside ARCA portfolios.
+- [x] The broker Summary shows the ARCA panel only for brokers using ARCA, with the Reserve fund row, one row per assigned bucket in A, R, C, Pension order with value and %, the ARCA total at 100.00% and the Grand total.
+- [x] A bucket with no portfolio is not listed in the panel.
+- [x] The panel's bucket percentages add up to 100.00% (±0.01).
+- [x] When the ARCA total is zero, "% of ARCA" shows "—" and the panel shows "No valued holdings in ARCA."
+- [x] Removing every portfolio's bucket returns the broker to the F01 layout and removes the panel.
+- [x] An API request with an unknown bucket returns 400 with "ARCA bucket must be one of Shares, RealEstate, Cash, Pension, ReserveFund or empty." and the dialog keeps the entered values.
 
 ### Cross-Feature Integration
 - [x] Segment groups (F02) are built from the same per-holding rows and portfolio groups as the broker Holdings table (F01), and segment subtotals add up to their portfolio's subtotal.
 - [x] Month-start columns (F03) use the current quantity of each F01 row, and their subtotals sit on the same subtotal rows as F01's.
-- [ ] ARCA sections (F04) are made of F01's portfolio groups; the ARCA total equals the sum of the ARCA portfolios' F01 subtotals, and the "% of ARCA" column replaces F01's "% of broker" for the same rows.
-- [ ] Inside ARCA portfolios, the segment groups and subtotals from F02 appear unchanged.
+- [x] ARCA sections (F04) are made of F01's portfolio groups; the ARCA total equals the sum of the ARCA portfolios' F01 subtotals, and the "% of ARCA" column replaces F01's "% of broker" for the same rows.
+- [x] Inside ARCA portfolios, the segment groups and subtotals from F02 appear unchanged.
