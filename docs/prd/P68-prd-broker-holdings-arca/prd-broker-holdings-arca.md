@@ -339,15 +339,15 @@ graph TD
 - [x] An API request with an unknown pick source returns 400 with "Pick source must be Recommended or MyChoice." and the dialog keeps the entered values.
 
 ### F03. Month-on-Month Values
-- [ ] In November the column headers read "1 Oct" and "1 Nov".
-- [ ] With saved prices dated 30 Oct (10.00) and 1 Nov (11.00), the 1 Nov value uses 11.00.
-- [ ] With saved prices dated 30 Oct (10.00) and 2 Nov (11.00) and none on 1 Nov, the 1 Nov value uses 10.00.
-- [ ] With the latest saved price before 1 Nov dated 20 Oct, the 1 Nov cell shows the missing-value mark with "No saved price between 25 Oct and 1 Nov".
-- [ ] A market-priced holding of 100 units with month-start prices 10.00 and 11.00 shows 1,000.00, 1,100.00 and Change % +10.00%.
-- [ ] A holding valued by recorded total value shows the recorded values themselves, not multiplied by quantity.
-- [ ] Each value cell's tooltip shows the unit price used and the date it was saved.
-- [ ] A subtotal excluding a holding without a month-start price is marked "*" with "Excludes 1 holdings without a month-start price".
-- [ ] No price is fetched or saved by opening the Holdings tab.
+- [x] In November the column headers read "1 Oct" and "1 Nov".
+- [x] With saved prices dated 30 Oct (10.00) and 1 Nov (11.00), the 1 Nov value uses 11.00.
+- [x] With saved prices dated 30 Oct (10.00) and 2 Nov (11.00) and none on 1 Nov, the 1 Nov value uses 10.00.
+- [x] With the latest saved price before 1 Nov dated 20 Oct, the 1 Nov cell shows the missing-value mark with "No saved price between 25 Oct and 1 Nov".
+- [x] A market-priced holding of 100 units with month-start prices 10.00 and 11.00 shows 1,000.00, 1,100.00 and Change % +10.00%.
+- [x] A holding valued by recorded total value shows the recorded values themselves, not multiplied by quantity.
+- [x] Each value cell's tooltip shows the unit price used and the date it was saved.
+- [x] A subtotal excluding a holding without a month-start price is marked "*" with "Excludes 1 holdings without a month-start price".
+- [x] No price is fetched or saved by opening the Holdings tab.
 
 ### F04. ARCA Allocation
 - [ ] The portfolio create and edit dialogs offer an "ARCA bucket" dropdown with "Not in ARCA", "A – Shares and businesses", "R – Real estate", "C – Cash and fixed income", "Pension" and "Reserve fund", and the saved value persists after the API restarts.
@@ -365,6 +365,6 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Segment groups (F02) are built from the same per-holding rows and portfolio groups as the broker Holdings table (F01), and segment subtotals add up to their portfolio's subtotal.
-- [ ] Month-start columns (F03) use the current quantity of each F01 row, and their subtotals sit on the same subtotal rows as F01's.
+- [x] Month-start columns (F03) use the current quantity of each F01 row, and their subtotals sit on the same subtotal rows as F01's.
 - [ ] ARCA sections (F04) are made of F01's portfolio groups; the ARCA total equals the sum of the ARCA portfolios' F01 subtotals, and the "% of ARCA" column replaces F01's "% of broker" for the same rows.
 - [ ] Inside ARCA portfolios, the segment groups and subtotals from F02 appear unchanged.
