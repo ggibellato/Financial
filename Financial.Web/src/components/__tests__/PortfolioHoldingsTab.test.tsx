@@ -107,7 +107,6 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   currentMonthCredits: 0,
   investedWeight: null,
   creditsPercentOfInvested: null,
-  monthsHeld: null,
   monthlyYieldPercent: null,
   aprPercent: null,
   lastCreditPercentOfMarketValue: null,

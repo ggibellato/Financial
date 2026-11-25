@@ -8938,8 +8938,6 @@ export interface components {
             marketValue: null | number;
             /** Format: double */
             monthlyYieldPercent: null | number;
-            /** Format: int32 */
-            monthsHeld: null | number;
             /** Format: double */
             portfolioWeight: null | number;
             /** Format: date */

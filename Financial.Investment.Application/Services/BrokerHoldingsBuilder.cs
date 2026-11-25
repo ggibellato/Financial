@@ -20,7 +20,7 @@ internal static class BrokerHoldingsBuilder
         {
             Currencies = currencies,
             Groups = nonEmptyGroups.Select(g => BuildGroup(g, shareBase)).ToList(),
-            Total = BuildTotals(allHoldings, shareBase),
+            Total = BuildTotals(allHoldings, shareBase, shareBase),
         };
     }
 
@@ -42,14 +42,13 @@ internal static class BrokerHoldingsBuilder
                     MarketShareOfBase = Share(h.MarketValue, brokerBase.MarketValue),
                 })
                 .ToList(),
-            Subtotal = BuildTotals(group.Holdings, brokerBase),
+            Subtotal = BuildTotals(group.Holdings, groupBase, brokerBase),
         };
     }
 
-    private static HoldingsTotalsDTO BuildTotals(IReadOnlyList<PortfolioAssetSummaryItemDTO> holdings, ShareBase brokerBase)
+    private static HoldingsTotalsDTO BuildTotals(IReadOnlyList<PortfolioAssetSummaryItemDTO> holdings, ShareBase own, ShareBase brokerBase)
     {
         var valued = holdings.Where(h => h.MarketValue.HasValue).ToList();
-        var own = ShareBase.Of(holdings);
         var valuedInvested = valued.Sum(h => h.TotalInvested);
         var profit = own.MarketValue - valuedInvested;
         var result = PositionResultCalculator.ForOpenPosition(profit, valuedInvested, valued.Sum(h => h.TotalCredits));

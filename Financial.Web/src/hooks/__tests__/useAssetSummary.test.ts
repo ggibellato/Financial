@@ -197,7 +197,6 @@ describe('useAssetSummary', () => {
       currentMonthCredits: 0,
       investedWeight: null,
       creditsPercentOfInvested: null,
-      monthsHeld: null,
       monthlyYieldPercent: null,
       aprPercent: null,
       lastCreditPercentOfMarketValue: null,

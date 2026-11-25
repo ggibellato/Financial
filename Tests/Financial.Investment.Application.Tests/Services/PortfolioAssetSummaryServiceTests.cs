@@ -405,7 +405,6 @@ public class PortfolioAssetSummaryServiceTests
         using var _ = new AssertionScope();
         item.InvestedWeight.Should().Be(25m);
         item.CreditsPercentOfInvested.Should().Be(4m);
-        item.MonthsHeld.Should().Be(4);
         item.MonthlyYieldPercent.Should().Be(1m);
         item.AprPercent.Should().Be(12m);
         item.LastCreditPercentOfMarketValue.Should().Be(5m);

@@ -71,9 +71,10 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         try
         {
             var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
+            var today = _timeProvider.GetLocalDate();
             var result = broker is null
                 ? new BrokerHoldingsDTO()
-                : BrokerHoldingsBuilder.Build(HeldCurrencies(broker), broker.Portfolios.Select(BuildGroupSource));
+                : BrokerHoldingsBuilder.Build(HeldCurrencies(broker), broker.Portfolios.Select(p => BuildGroupSource(p, today)));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerHoldings");
@@ -99,10 +100,10 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         return currencies.Count == 0 ? [broker.Currency] : currencies;
     }
 
-    private HoldingsGroupSource BuildGroupSource(Portfolio portfolio) =>
+    private HoldingsGroupSource BuildGroupSource(Portfolio portfolio, DateTime today) =>
         new(portfolio.Name, PortfolioAssetSummaryBuilder.Build(
             portfolio.Assets.Where(a => a.Quantity > 0m),
-            _timeProvider.GetLocalDate(),
+            today,
             InvestmentScope.Active,
             _holdingValuationService));
 

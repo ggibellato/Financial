@@ -103,7 +103,6 @@ internal static class PortfolioAssetSummaryBuilder
             EstimatedAnnualPercent = c.EstimatedAnnualPercent,
             CurrentMonthCredits = c.CurrentMonthCredits,
             CreditsPercentOfInvested = c.Yield.CreditsPercentOfInvested,
-            MonthsHeld = c.Yield.MonthsHeld,
             MonthlyYieldPercent = c.Yield.MonthlyYieldPercent,
             AprPercent = c.Yield.AprPercent,
             LastCreditPercentOfMarketValue = c.Yield.LastCreditPercentOfMarketValue

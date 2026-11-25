@@ -5370,13 +5370,6 @@
               "number"
             ]
           },
-          "monthsHeld": {
-            "format": "int32",
-            "type": [
-              "null",
-              "integer"
-            ]
-          },
           "portfolioWeight": {
             "format": "double",
             "type": [

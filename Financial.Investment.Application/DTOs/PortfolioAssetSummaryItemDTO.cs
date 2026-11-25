@@ -44,7 +44,6 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal? EstimatedAnnualPercent { get; init; }
     public decimal CurrentMonthCredits { get; init; }
     public decimal? CreditsPercentOfInvested { get; init; }
-    public int? MonthsHeld { get; init; }
     public decimal? MonthlyYieldPercent { get; init; }
     public decimal? AprPercent { get; init; }
     public decimal? LastCreditPercentOfMarketValue { get; init; }
