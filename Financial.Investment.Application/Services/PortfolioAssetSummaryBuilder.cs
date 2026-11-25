@@ -12,22 +12,29 @@ internal static class PortfolioAssetSummaryBuilder
         IEnumerable<Asset> assets,
         DateTime today,
         InvestmentScope scope,
+        IHoldingValuationService holdingValuationService) =>
+        BuildWithSources(assets, today, scope, holdingValuationService).Select(b => b.Item).ToList();
+
+    internal static IReadOnlyList<(Asset Source, PortfolioAssetSummaryItemDTO Item)> BuildWithSources(
+        IEnumerable<Asset> assets,
+        DateTime today,
+        InvestmentScope scope,
         IHoldingValuationService holdingValuationService)
     {
         var computed = assets
-            .Select(a => ComputeAssetData(a, today, scope, holdingValuationService))
+            .Select(a => (Source: a, Data: ComputeAssetData(a, today, scope, holdingValuationService)))
             .ToList();
         var portfolioWeightBasis = computed
-            .Where(c => c.WeightBasis.HasValue)
-            .Sum(c => c.WeightBasis!.Value);
-        var portfolioInvested = computed.Sum(c => c.TotalInvested);
+            .Where(c => c.Data.WeightBasis.HasValue)
+            .Sum(c => c.Data.WeightBasis!.Value);
+        var portfolioInvested = computed.Sum(c => c.Data.TotalInvested);
 
         return computed
-            .OrderBy(c => c.AssetName, StringComparer.CurrentCultureIgnoreCase)
-            .Select(c => ToDTO(
-                c,
-                CalculateWeight(c.WeightBasis, portfolioWeightBasis),
-                CalculateWeight(c.TotalInvested, portfolioInvested)))
+            .OrderBy(c => c.Data.AssetName, StringComparer.CurrentCultureIgnoreCase)
+            .Select(c => (c.Source, ToDTO(
+                c.Data,
+                CalculateWeight(c.Data.WeightBasis, portfolioWeightBasis),
+                CalculateWeight(c.Data.TotalInvested, portfolioInvested))))
             .ToList();
     }
 

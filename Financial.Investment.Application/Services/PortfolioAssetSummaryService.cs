@@ -73,8 +73,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         {
             var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
             var today = _timeProvider.GetLocalDate();
-            var thisMonthStart = new DateOnly(today.Year, today.Month, 1);
-            var lastMonthStart = thisMonthStart.AddMonths(-1);
+            var (lastMonthStart, thisMonthStart) = MonthStartValueCalculator.MonthStartsFor(DateOnly.FromDateTime(today));
             var result = BrokerHoldingsBuilder.Build(
                 broker is null ? [] : HeldCurrencies(broker),
                 lastMonthStart,
@@ -107,19 +106,16 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 
     private HoldingsGroupSource BuildGroupSource(Broker broker, Portfolio portfolio, DateTime today, DateOnly lastMonthStart, DateOnly thisMonthStart)
     {
-        var held = portfolio.Assets.Where(a => a.Quantity > 0m).ToList();
+        var built = PortfolioAssetSummaryBuilder.BuildWithSources(
+            portfolio.Assets.Where(a => a.Quantity > 0m), today, InvestmentScope.Active, _holdingValuationService);
         return new(
             portfolio.Name,
-            PortfolioAssetSummaryBuilder.Build(held, today, InvestmentScope.Active, _holdingValuationService),
-            held.ToDictionary(
-                a => a.Name,
-                a =>
-                {
-                    var currency = a.Transactions.LastOrDefault()?.Currency.ToString() ?? broker.Currency;
-                    return new HoldingMonthStarts(
-                        MonthStartValueCalculator.Calculate(a, lastMonthStart, currency),
-                        MonthStartValueCalculator.Calculate(a, thisMonthStart, currency));
-                }));
+            built.Select(b => b.Item).ToList(),
+            built
+                .Select(b => new HoldingMonthStarts(
+                    MonthStartValueCalculator.Calculate(b.Source, lastMonthStart, broker.Currency),
+                    MonthStartValueCalculator.Calculate(b.Source, thisMonthStart, broker.Currency)))
+                .ToList());
     }
 
     private ITelemetrySpan StartSpan(string operationName)

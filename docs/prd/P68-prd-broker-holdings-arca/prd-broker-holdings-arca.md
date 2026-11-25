@@ -194,7 +194,7 @@ Everything is generic. No screen is tied to a broker's name. A broker without se
   - Assets valued by market price: current quantity × month-start price.
   - Assets valued by a recorded total value (provider value or manual valuation): the recorded value itself.
 - **Change %** = (start of this month − start of last month) ÷ start of last month × 100, shown only when both values exist.
-- Subtotal and total rows sum each month-start column over holdings that have both values and show the change % of those sums. When any holding in the group lacks a value, the subtotal is marked with "*" and the tooltip "Excludes N holdings without a month-start price".
+- Subtotal and total rows sum each month-start column over holdings that have both values and show the change % of those sums. When any holding in the group lacks either value, the subtotal is marked with "*" and the tooltip "Excludes N holdings without both month-start prices".
 - The tooltip on every value cell shows the unit price used and the date it was saved (for example "R$ 105.38 saved 1 Nov").
 - Prices are read from the price history the app already saves on every automatic fetch and every manual entry. Nothing new is fetched or stored. A fetch on the 1st before the market opens saves the previous trading day's close under the 1st, which is the value this feature expects.
 
@@ -346,7 +346,7 @@ graph TD
 - [x] A market-priced holding of 100 units with month-start prices 10.00 and 11.00 shows 1,000.00, 1,100.00 and Change % +10.00%.
 - [x] A holding valued by recorded total value shows the recorded values themselves, not multiplied by quantity.
 - [x] Each value cell's tooltip shows the unit price used and the date it was saved.
-- [x] A subtotal excluding a holding without a month-start price is marked "*" with "Excludes 1 holdings without a month-start price".
+- [x] A subtotal excluding a holding without a month-start price is marked "*" with "Excludes 1 holdings without both month-start prices".
 - [x] No price is fetched or saved by opening the Holdings tab.
 
 ### F04. ARCA Allocation

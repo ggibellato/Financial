@@ -76,7 +76,7 @@ const monthChange = (value: number | null | undefined) => orMissing(value, v => 
 function monthStartNotice(totals: HoldingsTotalsDto): string | null {
   return totals.monthStartExcludedCount === 0
     ? null
-    : `* Excludes ${totals.monthStartExcludedCount} holdings without a month-start price`
+    : `* Excludes ${totals.monthStartExcludedCount} holdings without both month-start prices`
 }
 
 function starredWhenExcluding(totals: HoldingsTotalsDto, content: ReactNode): ReactNode {

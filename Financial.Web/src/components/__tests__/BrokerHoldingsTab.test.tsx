@@ -336,7 +336,7 @@ describe('BrokerHoldingsTab', () => {
       groups: [{ ...HOLDINGS.groups[1], subtotal: { ...TOTALS, monthStartExcludedCount: 1 } }],
     })
     const subtotal = screen.getByText('Subtotal FII').closest('tr')!
-    expect(within(subtotal).getByText('* Excludes 1 holdings without a month-start price')).toBeInTheDocument()
+    expect(within(subtotal).getByText('* Excludes 1 holdings without both month-start prices')).toBeInTheDocument()
     expect(cellText(subtotal, 'Start of last month (1 Oct)')).toBe('3,000.00*')
     expect(cellText(subtotal, 'Start of this month (1 Nov)')).toBe('3,300.00*')
     expect(cellText(subtotal, 'Month change %')).toBe('+10.00%*')

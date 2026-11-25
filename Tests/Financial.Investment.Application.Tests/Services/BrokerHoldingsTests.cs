@@ -319,6 +319,42 @@ public class BrokerHoldingsTests
     }
 
     [Fact]
+    public void GetBrokerHoldings_TwoHoldingsWithTheSameName_EachKeepsItsOwnMonthStartValues()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var fii = broker.AddPortfolio("FII");
+        var first = MakeAsset("SAME11", units: 10m);
+        first.SetPrice(new DateOnly(2026, 10, 1), 5m, isManual: false);
+        var second = MakeAsset("SAME11", units: 20m);
+        second.SetPrice(new DateOnly(2026, 10, 1), 7m, isManual: false);
+        fii.AddAsset(first);
+        fii.AddAsset(second);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        result.Groups.Single().Holdings
+            .Select(h => (h.Asset.CurrentQuantity, h.ThisMonthStart.Value))
+            .Should().BeEquivalentTo([(10m, (decimal?)50m), (20m, (decimal?)140m)]);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_PriceSavedWithoutACurrency_UsesTheCurrencyOfTheLatestTransactionByDate()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        var asset = Asset.Create("VWRL", "ISIN", "LSE", "VWRL");
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 5), Transaction.TransactionType.Buy, 10m, 100m, 0m, currency: Currency.GBP));
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 5), Transaction.TransactionType.Buy, 10m, 100m, 0m, currency: Currency.USD));
+        asset.SetPrice(new DateOnly(2026, 10, 1), 110m, isManual: false);
+        broker.AddPortfolio("ETF").AddAsset(asset);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerHoldings("Trading 212");
+
+        result.Groups.Single().Holdings.Single().ThisMonthStart.Currency.Should().Be("GBP");
+    }
+
+    [Fact]
     public void GetBrokerHoldings_DoesNotSaveAnything()
     {
         _repository.Brokers = [MakeMonthStartBroker()];

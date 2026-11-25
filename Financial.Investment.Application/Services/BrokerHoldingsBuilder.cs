@@ -8,7 +8,7 @@ internal sealed record HoldingMonthStarts(MonthStartValue Last, MonthStartValue 
 internal sealed record HoldingsGroupSource(
     string Name,
     IReadOnlyList<PortfolioAssetSummaryItemDTO> Holdings,
-    IReadOnlyDictionary<string, HoldingMonthStarts> MonthStarts);
+    IReadOnlyList<HoldingMonthStarts> MonthStarts);
 
 internal static class BrokerHoldingsBuilder
 {
@@ -54,9 +54,9 @@ internal static class BrokerHoldingsBuilder
         var groupBase = ShareBase.Of(group.Holdings);
         var hasSiblings = group.Holdings.Count > 1;
         var rows = group.Holdings
-            .Select(h =>
+            .Select((h, index) =>
             {
-                var monthStarts = group.MonthStarts[h.AssetName];
+                var monthStarts = group.MonthStarts[index];
                 return new HoldingRowDTO
                 {
                     Asset = h,
