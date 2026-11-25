@@ -306,22 +306,22 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Broker Holdings
-- [ ] Selecting a broker in the Active scope shows a Holdings tab between Summary and Transactions; in the Historic scope it is not shown.
-- [ ] The table lists every asset with quantity above zero in the broker's active portfolios and no asset with zero quantity.
-- [ ] Holdings are grouped by portfolio in alphabetical order, each group with a header row and a subtotal row, and the table ends with a broker total row.
-- [ ] For a holding with invested 1,000.00 in a group with invested 4,000.00 and a broker with invested 10,000.00, "% of group" (Invested) shows 25.00% and "% of broker" (Invested) shows 10.00%; the Market columns follow the same rule with current values.
-- [ ] A group with a single holding shows "—" in both "% of group" columns.
-- [ ] A holding with invested 2,000.00 and current value 1,800.00 shows Profit amount -200.00 and Profit % -10.00%.
-- [ ] A holding first bought in June 2021 with credits 50.00% of invested, viewed in November 2026, shows Credits % 50.00%, Monthly yield 0.77% (50.00 ÷ 65) and APR 9.23%.
-- [ ] A holding first bought in the current month shows months held as 1.
-- [ ] A holding with last credit 20.00 and current value 2,000.00 shows Last credit % of market value 1.00%.
-- [ ] Subtotal rows show profit % = (value − invested) ÷ invested and profit % with credits = (value + credits − invested) ÷ invested over the group's sums, and leave the per-asset-only columns blank.
-- [ ] When one of 5 holdings has no price, its market cells show the missing-value mark and the subtotal and total carry "1 of 5 holdings could not be valued; the total is incomplete."
-- [ ] Sorting by any column reorders rows only within their group; group headers and subtotal rows don't move.
-- [ ] The portfolio Holdings tab in the Active scope shows the new columns, with "% of portfolio" in place of "% of broker"; the Historic scope shows today's columns unchanged.
-- [ ] The broker Summary shows an "All assets" pie sized by invested amount above "Portfolio breakdown".
-- [ ] A broker with no active holdings shows "This broker has no active holdings."; a failed load shows the error panel with Retry, and Retry reloads the table.
-- [ ] The asset name column stays visible while scrolling sideways, numeric columns are right-aligned, and negative values carry a minus sign.
+- [x] Selecting a broker in the Active scope shows a Holdings tab between Summary and Transactions; in the Historic scope it is not shown.
+- [x] The table lists every asset with quantity above zero in the broker's active portfolios and no asset with zero quantity.
+- [x] Holdings are grouped by portfolio in alphabetical order, each group with a header row and a subtotal row, and the table ends with a broker total row.
+- [x] For a holding with invested 1,000.00 in a group with invested 4,000.00 and a broker with invested 10,000.00, "% of group" (Invested) shows 25.00% and "% of broker" (Invested) shows 10.00%; the Market columns follow the same rule with current values.
+- [x] A group with a single holding shows "—" in both "% of group" columns.
+- [x] A holding with invested 2,000.00 and current value 1,800.00 shows Profit amount -200.00 and Profit % -10.00%.
+- [x] A holding first bought in June 2021 with credits 50.00% of invested, viewed in November 2026, shows Credits % 50.00%, Monthly yield 0.77% (50.00 ÷ 65) and APR 9.23%.
+- [x] A holding first bought in the current month shows months held as 1.
+- [x] A holding with last credit 20.00 and current value 2,000.00 shows Last credit % of market value 1.00%.
+- [x] Subtotal rows show profit % = (value − invested) ÷ invested and profit % with credits = (value + credits − invested) ÷ invested over the group's sums, and leave the per-asset-only columns blank.
+- [x] When one of 5 holdings has no price, its market cells show the missing-value mark and the subtotal and total carry "1 of 5 holdings could not be valued; the total is incomplete."
+- [x] Sorting by any column reorders rows only within their group; group headers and subtotal rows don't move.
+- [x] The portfolio Holdings tab in the Active scope shows the new columns, with "% of portfolio" in place of "% of broker"; the Historic scope shows today's columns unchanged.
+- [x] The broker Summary shows an "All assets" pie sized by invested amount above "Portfolio breakdown".
+- [x] A broker with no active holdings shows "This broker has no active holdings."; a failed load shows the error panel with Retry, and Retry reloads the table.
+- [x] The asset name column stays visible while scrolling sideways, numeric columns are right-aligned, and negative values carry a minus sign.
 
 ### F02. Asset Segment and Pick Source
 - [ ] The asset dialog shows Segment only when Class is Equity or RealEstate.

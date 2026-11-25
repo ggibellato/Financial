@@ -45,8 +45,15 @@ export default function BrokerBreakdownCharts() {
     breakdown.map((portfolio) => ({ name: portfolio.portfolioName, value: portfolio.totalInvested })),
   )
 
+  const investedByAsset = new Map<string, number>()
+  breakdown
+    .flatMap((portfolio) => portfolio.assets)
+    .forEach((asset) => investedByAsset.set(asset.assetName, (investedByAsset.get(asset.assetName) ?? 0) + asset.totalInvested))
+  const assetEntries = buildChartEntries([...investedByAsset].map(([name, value]) => ({ name, value })))
+
   return (
     <div className="broker-breakdown">
+      <BreakdownPie title="All assets" entries={assetEntries} />
       <BreakdownPie title="Portfolio breakdown" entries={portfolioEntries} />
       <div className="broker-breakdown__grid">
         {breakdown.map((portfolio) => (

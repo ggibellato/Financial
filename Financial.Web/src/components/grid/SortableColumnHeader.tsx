@@ -17,6 +17,7 @@ interface SortableColumnHeaderProps {
   rowSpan?: number
   /** Extra class alongside the base header classes, e.g. a group's accent/separator style. */
   className?: string
+  ariaLabel?: string
 }
 
 export default function SortableColumnHeader({
@@ -28,6 +29,7 @@ export default function SortableColumnHeader({
   children,
   rowSpan,
   className,
+  ariaLabel,
 }: SortableColumnHeaderProps) {
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
 
@@ -43,6 +45,7 @@ export default function SortableColumnHeader({
         type="button"
         className="sortable-column-header__button"
         tabIndex={isStackedLayout ? -1 : undefined}
+        aria-label={ariaLabel}
         onClick={() => onSort(columnKey)}
       >
         <span className="sortable-column-header__label">{label}</span>

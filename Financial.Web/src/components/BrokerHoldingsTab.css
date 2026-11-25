@@ -1,0 +1,105 @@
+.broker-holdings {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.broker-holdings__table-section {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (min-width: 600px) {
+  .broker-holdings__table th {
+    vertical-align: middle;
+  }
+
+  .broker-holdings__table th.broker-holdings__name-cell,
+  .broker-holdings__table td.broker-holdings__name-cell {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    max-width: 220px;
+    background: var(--colorNeutralBackground1);
+  }
+
+  .broker-holdings__table tbody th,
+  .broker-holdings__table tfoot th {
+    top: auto;
+  }
+
+  .broker-holdings__table thead th.broker-holdings__name-cell {
+    z-index: 2;
+  }
+
+  .broker-holdings__table th.broker-holdings__group-cell {
+    text-align: left;
+    position: static;
+  }
+
+  /* A full-width cell can't stay in view while the table scrolls sideways, so its text is pinned instead. */
+  .broker-holdings__group-name {
+    position: sticky;
+    left: 10px;
+  }
+
+  .broker-holdings__table th.broker-holdings__group-header {
+    text-align: center;
+  }
+
+  /* Second header row sits below the rowSpan=2 cells and group labels in the first row,
+     so its sticky offset must clear the first row's height instead of also using top: 0. */
+  .broker-holdings__table thead tr:nth-child(2) th {
+    top: 43px;
+  }
+}
+
+.broker-holdings__group-row th,
+.broker-holdings__totals-row th,
+.broker-holdings__totals-row td {
+  font-weight: var(--fontWeightSemibold);
+  border-top: 1px solid var(--colorNeutralStroke1);
+}
+
+.broker-holdings__caption {
+  margin: 0 0 8px;
+  color: var(--colorNeutralForeground3);
+  font-size: var(--fontSizeBase200);
+}
+
+.broker-holdings__price-badge {
+  margin-left: 4px;
+  color: var(--colorStatusDangerForeground3);
+  font-style: italic;
+  font-size: var(--fontSizeBase100);
+}
+
+.broker-holdings__notice {
+  display: block;
+  font-weight: var(--fontWeightRegular);
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground3);
+  white-space: normal;
+}
+
+.broker-holdings__profit--green {
+  color: var(--colorStatusSuccessForeground1);
+}
+
+.broker-holdings__profit--red {
+  color: var(--colorStatusDangerForeground3);
+}
+
+.broker-holdings__empty {
+  color: var(--colorNeutralForeground3);
+  font-size: var(--fontSizeBase300);
+  padding: 16px;
+}
+
+@media (max-width: 599px) {
+  .broker-holdings {
+    height: auto;
+  }
+}
