@@ -13,6 +13,7 @@ namespace Financial.Investment.Application.Services;
 public sealed class AssetAdminService : IAssetAdminService
 {
     private const string EntityType = "Asset";
+    private const string UnknownPickSource = "Pick source must be Recommended or MyChoice.";
 
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -59,7 +60,7 @@ public sealed class AssetAdminService : IAssetAdminService
             var name = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
             var segment = Asset.NormalizeSegment(request.Segment);
-            var pickSource = PickSourceParser.ParseOptional(request.PickSource);
+            var pickSource = EnumParser.ParseOptionalDefinedName<PickSource>(request.PickSource, UnknownPickSource);
 
             var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
 
@@ -103,7 +104,7 @@ public sealed class AssetAdminService : IAssetAdminService
             var newName = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
             var segment = Asset.NormalizeSegment(request.Segment);
-            var pickSource = PickSourceParser.ParseOptional(request.PickSource);
+            var pickSource = EnumParser.ParseOptionalDefinedName<PickSource>(request.PickSource, UnknownPickSource);
             var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
 
             Broker? broker = null;

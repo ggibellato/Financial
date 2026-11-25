@@ -5894,7 +5894,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Renames an existing portfolio. The parent broker is fixed and not part of this operation. */
+        /** Renames an existing portfolio and sets its ARCA bucket; a missing or blank bucket takes it out of ARCA. The parent broker is fixed and not part of this operation. */
         put: {
             parameters: {
                 query?: {
@@ -7747,6 +7747,8 @@ export interface components {
             isPartial: boolean;
             isUnavailable: boolean;
         };
+        /** @enum {unknown} */
+        ArcaBucket: "Shares" | "RealEstate" | "Cash" | "Pension" | "ReserveFund" | null;
         ArchiveAssetRequestDTO: {
             assetName: string;
             brokerName: string;
@@ -9025,10 +9027,12 @@ export interface components {
             totalInvested: number;
         };
         PortfolioCreateDTO: {
+            arcaBucket?: null | string;
             brokerName: string;
             name: string;
         };
         PortfolioDTO: {
+            arcaBucket?: null | components["schemas"]["ArcaBucket"];
             /** Format: int32 */
             assetCount?: number;
             brokerName: string;
@@ -9087,6 +9091,7 @@ export interface components {
             portfolioName: string;
         };
         PortfolioUpdateDTO: {
+            arcaBucket?: null | string;
             name: string;
         };
         /** @enum {unknown} */

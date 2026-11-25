@@ -3,6 +3,7 @@ import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluen
 import AdminEntityPage from '../components/AdminEntityPage'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import PortfolioFormDialog from '../components/PortfolioFormDialog'
+import { arcaBucketLabel, type ArcaBucket } from '../utils/arcaBucket'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState } from '../components/grid/rowDeleteState'
@@ -40,15 +41,15 @@ export default function PortfoliosPage() {
     setIsCreating(false)
   }
 
-  const handleFormSubmit = async (brokerName: string, name: string) => {
+  const handleFormSubmit = async (brokerName: string, name: string, arcaBucket: ArcaBucket | null) => {
     const result = editingPortfolio
       ? await updatePortfolio(
           editingPortfolio.brokerName,
           editingPortfolio.name,
-          { name },
+          { name, arcaBucket },
           editingPortfolio.brokerStatus === 'Active' ? 'active' : 'historic',
         )
-      : await createPortfolio({ brokerName, name })
+      : await createPortfolio({ brokerName, name, arcaBucket })
     closeFormDialog()
     return result
   }
@@ -100,6 +101,7 @@ export default function PortfoliosPage() {
           <TableRow>
             <TableHeaderCell>Name</TableHeaderCell>
             <TableHeaderCell>Broker</TableHeaderCell>
+            <TableHeaderCell>ARCA bucket</TableHeaderCell>
             <TableHeaderCell>Broker status</TableHeaderCell>
             <TableHeaderCell className="data-table__col--numeric">Assets</TableHeaderCell>
             <ActionsColumnHeader />
@@ -112,6 +114,7 @@ export default function PortfoliosPage() {
               <TableRow key={key}>
                 <DataTableCell label="Name">{portfolio.name}</DataTableCell>
                 <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
+                <DataTableCell label="ARCA bucket">{arcaBucketLabel(portfolio.arcaBucket)}</DataTableCell>
                 <DataTableCell label="Broker status">{portfolio.brokerStatus}</DataTableCell>
                 <DataTableCell label="Assets" className="data-table__col--numeric">
                   {portfolio.assetCount}

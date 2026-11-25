@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PortfoliosPage from '../PortfoliosPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -31,8 +31,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const PORTFOLIOS: PortfolioDto[] = [
-  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 2 },
-  { name: 'Old', brokerName: 'Avenue', brokerStatus: 'Historic', assetCount: 0 },
+  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 2, arcaBucket: null },
+  { name: 'Old', brokerName: 'Avenue', brokerStatus: 'Historic', assetCount: 0, arcaBucket: null },
 ]
 
 const BROKERS: BrokerDto[] = [
@@ -72,7 +72,7 @@ describe('PortfoliosPage', () => {
   })
 
   it('creates a portfolio through the New portfolio dialog', async () => {
-    createPortfolioMock.mockResolvedValue({ name: 'New Portfolio', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 })
+    createPortfolioMock.mockResolvedValue({ name: 'New Portfolio', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0, arcaBucket: null })
     render(<PortfoliosPage />)
     await waitFor(() => expect(screen.getByText('Default')).toBeInTheDocument())
 
@@ -81,7 +81,7 @@ describe('PortfoliosPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add portfolio' }))
 
     await waitFor(() =>
-      expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio' }),
+      expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio', arcaBucket: null }),
     )
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'New portfolio' })).not.toBeInTheDocument())
   })
@@ -107,7 +107,7 @@ describe('PortfoliosPage', () => {
   })
 
   it('edits a portfolio through its row action', async () => {
-    updatePortfolioMock.mockResolvedValue({ name: 'Default Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 2 })
+    updatePortfolioMock.mockResolvedValue({ name: 'Default Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 2, arcaBucket: null })
     render(<PortfoliosPage />)
     await waitFor(() => expect(screen.getByText('Default')).toBeInTheDocument())
 
@@ -117,8 +117,32 @@ describe('PortfoliosPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed' }, 'active'),
+      expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed', arcaBucket: null }, 'active'),
     )
+  })
+
+  it('keeps the portfolio ARCA bucket when only its name is edited', async () => {
+    getAdminPortfoliosMock.mockResolvedValue([{ ...PORTFOLIOS[0], arcaBucket: 'RealEstate' }, ...PORTFOLIOS.slice(1)])
+    updatePortfolioMock.mockResolvedValue({ ...PORTFOLIOS[0], name: 'Default Renamed', arcaBucket: 'RealEstate' })
+    render(<PortfoliosPage />)
+    await waitFor(() => expect(screen.getByText('Default')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Default' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default Renamed' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed', arcaBucket: 'RealEstate' }, 'active'),
+    )
+  })
+
+  it('shows each portfolio ARCA bucket in the grid', async () => {
+    getAdminPortfoliosMock.mockResolvedValue([{ ...PORTFOLIOS[0], arcaBucket: 'ReserveFund' }, ...PORTFOLIOS.slice(1)])
+    render(<PortfoliosPage />)
+
+    const row = (await screen.findByText('Default')).closest('tr')!
+    expect(within(row).getByText('Reserve fund')).toBeInTheDocument()
+    expect(screen.getAllByText('Not in ARCA').length).toBeGreaterThan(0)
   })
 
   it('disables delete confirmation when the portfolio still holds assets', async () => {

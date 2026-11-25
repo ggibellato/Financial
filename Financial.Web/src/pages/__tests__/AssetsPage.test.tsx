@@ -73,7 +73,7 @@ const ASSETS: AssetAdminDto[] = [
 const BROKERS: BrokerDto[] = [
   { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
 ]
-const PORTFOLIOS: PortfolioDto[] = [{ name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1 }]
+const PORTFOLIOS: PortfolioDto[] = [{ name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1, arcaBucket: null }]
 
 describe('AssetsPage', () => {
   beforeEach(() => {

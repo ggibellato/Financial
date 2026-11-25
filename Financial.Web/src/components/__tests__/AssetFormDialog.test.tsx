@@ -12,8 +12,8 @@ const ACTIVE_BROKERS: BrokerDto[] = [
 ]
 
 const PORTFOLIOS: PortfolioDto[] = [
-  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1 },
-  { name: 'ISA', brokerName: 'Avenue', brokerStatus: 'Active', assetCount: 0 },
+  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1, arcaBucket: null },
+  { name: 'ISA', brokerName: 'Avenue', brokerStatus: 'Active', assetCount: 0, arcaBucket: null },
 ]
 
 const EXISTING_ASSET: AssetAdminDto = {
@@ -149,7 +149,7 @@ describe('AssetFormDialog', () => {
   it('drops a duplicate-name message once a different portfolio under the same broker is chosen', async () => {
     const message = 'Portfolio "Default" already holds an asset named "BCIA11".'
     const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
-    const portfolios: PortfolioDto[] = [...PORTFOLIOS, { name: 'Growth', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }]
+    const portfolios: PortfolioDto[] = [...PORTFOLIOS, { name: 'Growth', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0, arcaBucket: null }]
     render(<AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={portfolios} segments={SEGMENTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
     fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'BCIA11' } })

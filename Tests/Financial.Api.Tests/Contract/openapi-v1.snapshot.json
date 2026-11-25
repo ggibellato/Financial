@@ -1338,6 +1338,16 @@
         },
         "type": "object"
       },
+      "ArcaBucket": {
+        "enum": [
+          "Shares",
+          "RealEstate",
+          "Cash",
+          "Pension",
+          "ReserveFund",
+          null
+        ]
+      },
       "ArchiveAssetRequestDTO": {
         "properties": {
           "assetName": {
@@ -5674,6 +5684,12 @@
       },
       "PortfolioCreateDTO": {
         "properties": {
+          "arcaBucket": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "brokerName": {
             "type": "string"
           },
@@ -5689,6 +5705,16 @@
       },
       "PortfolioDTO": {
         "properties": {
+          "arcaBucket": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ArcaBucket"
+              }
+            ]
+          },
           "assetCount": {
             "format": "int32",
             "type": "integer"
@@ -5866,6 +5892,12 @@
       },
       "PortfolioUpdateDTO": {
         "properties": {
+          "arcaBucket": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "name": {
             "type": "string"
           }
@@ -15390,7 +15422,7 @@
             "description": "Conflict"
           }
         },
-        "summary": "Renames an existing portfolio. The parent broker is fixed and not part of this operation.",
+        "summary": "Renames an existing portfolio and sets its ARCA bucket; a missing or blank bucket takes it out of ARCA. The parent broker is fixed and not part of this operation.",
         "tags": [
           "Portfolios"
         ]

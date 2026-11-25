@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Investment.Application.Validation;
 using Microsoft.Extensions.Logging;
 using static Financial.Investment.Application.Validation.RequiredValueValidator;
 
@@ -11,6 +12,7 @@ namespace Financial.Investment.Application.Services;
 public sealed class PortfolioService : IPortfolioService
 {
     private const string EntityType = "Portfolio";
+    private const string UnknownArcaBucket = "ARCA bucket must be one of Shares, RealEstate, Cash, Pension, ReserveFund or empty.";
 
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -52,6 +54,7 @@ public sealed class PortfolioService : IPortfolioService
             ArgumentNullException.ThrowIfNull(request);
             var brokerName = Required(request.BrokerName, nameof(request.BrokerName));
             var name = Required(request.Name, nameof(request.Name));
+            var arcaBucket = EnumParser.ParseOptionalDefinedName<ArcaBucket>(request.ArcaBucket, UnknownArcaBucket);
 
             Broker? broker = null;
             Portfolio? created = null;
@@ -59,6 +62,7 @@ public sealed class PortfolioService : IPortfolioService
             {
                 broker = AssetMutationHelper.ResolveActiveBroker(_repository, brokerName);
                 created = broker.CreatePortfolio(name);
+                created.SetArcaBucket(arcaBucket);
                 return true;
             }).ConfigureAwait(false);
 
@@ -82,6 +86,7 @@ public sealed class PortfolioService : IPortfolioService
             var requiredBrokerName = Required(brokerName, nameof(brokerName));
             Required(currentName, nameof(currentName));
             var newName = Required(request.Name, nameof(request.Name));
+            var arcaBucket = EnumParser.ParseOptionalDefinedName<ArcaBucket>(request.ArcaBucket, UnknownArcaBucket);
 
             Broker? broker = null;
             Portfolio? updated = null;
@@ -89,6 +94,7 @@ public sealed class PortfolioService : IPortfolioService
             {
                 broker = _repository.GetInvestments().GetBroker(requiredBrokerName, preferHistoric: scope == InvestmentScope.Historic);
                 updated = broker.RenamePortfolio(currentName, newName);
+                updated.SetArcaBucket(arcaBucket);
                 return true;
             }).ConfigureAwait(false);
 
@@ -140,6 +146,7 @@ public sealed class PortfolioService : IPortfolioService
         Name = portfolio.Name,
         BrokerName = broker.Name,
         BrokerStatus = brokerStatus,
-        AssetCount = portfolio.Assets.Count
+        AssetCount = portfolio.Assets.Count,
+        ArcaBucket = portfolio.ArcaBucket
     };
 }

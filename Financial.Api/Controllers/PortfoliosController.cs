@@ -47,7 +47,7 @@ public sealed class PortfoliosController : ControllerBase
         return Ok(portfolio);
     }
 
-    /// <summary>Renames an existing portfolio. The parent broker is fixed and not part of this operation.</summary>
+    /// <summary>Renames an existing portfolio and sets its ARCA bucket; a missing or blank bucket takes it out of ARCA. The parent broker is fixed and not part of this operation.</summary>
     /// <param name="brokerName">The portfolio's parent broker name.</param>
     /// <param name="portfolioName">The portfolio's current name.</param>
     /// <param name="request">The portfolio's new name.</param>

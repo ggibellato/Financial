@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const PORTFOLIOS: PortfolioDto[] = [
-  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1 },
-  { name: 'Old', brokerName: 'Avenue', brokerStatus: 'Historic', assetCount: 0 },
+  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1, arcaBucket: null },
+  { name: 'Old', brokerName: 'Avenue', brokerStatus: 'Historic', assetCount: 0, arcaBucket: null },
 ]
 
 describe('usePortfolios', () => {
@@ -54,28 +54,28 @@ describe('usePortfolios', () => {
   })
 
   it('createPortfolio calls the API and re-fetches the list', async () => {
-    createPortfolioMock.mockResolvedValue({ name: 'New Portfolio', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 })
+    createPortfolioMock.mockResolvedValue({ name: 'New Portfolio', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0, arcaBucket: null })
     const { result } = renderHook(() => usePortfolios())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.createPortfolio({ brokerName: 'XPI', name: 'New Portfolio' })
+      await result.current.createPortfolio({ brokerName: 'XPI', name: 'New Portfolio', arcaBucket: null })
     })
 
-    expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio' })
+    expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio', arcaBucket: null })
     await waitFor(() => expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(2))
   })
 
   it('updatePortfolio calls the API and re-fetches the list', async () => {
-    updatePortfolioMock.mockResolvedValue({ name: 'Default Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1 })
+    updatePortfolioMock.mockResolvedValue({ name: 'Default Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1, arcaBucket: null })
     const { result } = renderHook(() => usePortfolios())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.updatePortfolio('XPI', 'Default', { name: 'Default Renamed' })
+      await result.current.updatePortfolio('XPI', 'Default', { name: 'Default Renamed', arcaBucket: null })
     })
 
-    expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed' }, undefined)
+    expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed', arcaBucket: null }, undefined)
     await waitFor(() => expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(2))
   })
 

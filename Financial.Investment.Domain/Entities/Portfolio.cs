@@ -9,6 +9,8 @@ public class Portfolio
 {
     public string Name { get; private set; } = string.Empty;
 
+    public ArcaBucket? ArcaBucket { get; private set; }
+
     /// <summary>Derived rather than stored: a persisted flag would be a second source of truth
     /// that could disagree with <see cref="Assets"/>.</summary>
     public bool IsEmpty => _assets.Count == 0;
@@ -34,6 +36,8 @@ public class Portfolio
     {
         Name = name;
     }
+
+    public void SetArcaBucket(ArcaBucket? bucket) => ArcaBucket = bucket;
 
     public void AddAsset(Asset asset)
     {
