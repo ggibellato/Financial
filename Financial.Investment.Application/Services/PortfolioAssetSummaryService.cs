@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
@@ -72,9 +73,12 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         {
             var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
             var today = _timeProvider.GetLocalDate();
-            var result = broker is null
-                ? new BrokerHoldingsDTO()
-                : BrokerHoldingsBuilder.Build(HeldCurrencies(broker), broker.Portfolios.Select(p => BuildGroupSource(p, today)));
+            var (lastMonthStart, thisMonthStart) = MonthStartValueCalculator.MonthStartsFor(DateOnly.FromDateTime(today));
+            var result = BrokerHoldingsBuilder.Build(
+                broker is null ? [] : HeldCurrencies(broker),
+                lastMonthStart,
+                thisMonthStart,
+                broker?.Portfolios.Select(p => BuildGroupSource(broker, p, today, lastMonthStart, thisMonthStart)) ?? []);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerHoldings");
@@ -100,12 +104,19 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         return currencies.Count == 0 ? [broker.Currency] : currencies;
     }
 
-    private HoldingsGroupSource BuildGroupSource(Portfolio portfolio, DateTime today) =>
-        new(portfolio.Name, PortfolioAssetSummaryBuilder.Build(
-            portfolio.Assets.Where(a => a.Quantity > 0m),
-            today,
-            InvestmentScope.Active,
-            _holdingValuationService));
+    private HoldingsGroupSource BuildGroupSource(Broker broker, Portfolio portfolio, DateTime today, DateOnly lastMonthStart, DateOnly thisMonthStart)
+    {
+        var built = PortfolioAssetSummaryBuilder.BuildWithSources(
+            portfolio.Assets.Where(a => a.Quantity > 0m), today, InvestmentScope.Active, _holdingValuationService);
+        return new(
+            portfolio.Name,
+            built.Select(b => b.Item).ToList(),
+            built
+                .Select(b => new HoldingMonthStarts(
+                    MonthStartValueCalculator.Calculate(b.Source, lastMonthStart, broker.Currency),
+                    MonthStartValueCalculator.Calculate(b.Source, thisMonthStart, broker.Currency)))
+                .ToList());
+    }
 
     private ITelemetrySpan StartSpan(string operationName)
     {

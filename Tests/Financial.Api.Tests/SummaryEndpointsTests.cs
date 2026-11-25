@@ -114,6 +114,24 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetBrokerHoldings_ReturnsEachHoldingsMonthStartValuesFromSavedPrices()
+    {
+        await SavePriceAsync(new DateOnly(2026, 9, 1), 10m);
+        await SavePriceAsync(new DateOnly(2026, 10, 1), 11m);
+
+        var holdings = await Client.GetFromJsonAsync<BrokerHoldingsDTO>("/api/v1/financial/summary/broker/XPI/holdings");
+
+        var row = holdings!.Groups.Single(g => g.Name == "Default").Holdings.Single(h => h.Asset.AssetName == "BCIA11");
+        using var _ = new AssertionScope();
+        holdings.LastMonthStart.Date.Should().Be(new DateOnly(2026, 9, 1));
+        holdings.ThisMonthStart.Date.Should().Be(new DateOnly(2026, 10, 1));
+        row.LastMonthStart.UnitPrice.Should().Be(10m);
+        row.ThisMonthStart.UnitPrice.Should().Be(11m);
+        row.ThisMonthStart.Value.Should().Be(row.Asset.CurrentQuantity * 11m);
+        row.MonthChangePercent.Should().Be(10m);
+    }
+
+    [Fact]
     public async Task GetBrokerHoldings_UnknownBroker_Returns200WithNoGroups()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/Nowhere/holdings");

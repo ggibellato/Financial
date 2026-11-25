@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.Investment.Application.DTOs;
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -45,6 +46,19 @@ public abstract class ApiEndpointTests : IAsyncLifetime
     protected void ReplaceCashFlowDataBeforeStart(string json) => _factory.ReplaceCashFlowData(json);
 
     protected string SavedCashFlowData() => _factory.ReadCashFlowData();
+
+    protected async Task SavePriceAsync(DateOnly date, decimal price)
+    {
+        var response = await Client.PutAsJsonAsync($"{Api}/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = date,
+            Price = price
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 
     protected static async Task<string?> ProblemDetailAsync(HttpResponseMessage response) =>
         (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;

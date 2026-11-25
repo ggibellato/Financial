@@ -249,6 +249,121 @@ public class BrokerHoldingsTests
         holding.PickSource.Should().Be(PickSource.Recommended);
     }
 
+    [Fact]
+    public void GetBrokerHoldings_NamesTheStartOfLastMonthAndOfThisMonthWithTheirPriceWindows()
+    {
+        _repository.Brokers = [MakeSampleBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        using var _ = new AssertionScope();
+        result.LastMonthStart.Date.Should().Be(new DateOnly(2026, 9, 1));
+        result.LastMonthStart.EarliestPriceDate.Should().Be(new DateOnly(2026, 8, 25));
+        result.ThisMonthStart.Date.Should().Be(new DateOnly(2026, 10, 1));
+        result.ThisMonthStart.EarliestPriceDate.Should().Be(new DateOnly(2026, 9, 24));
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_UnknownBroker_StillNamesTheMonthStarts()
+    {
+        var result = CreateService().GetBrokerHoldings("Nowhere");
+
+        result.ThisMonthStart.Date.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_Row_ShowsBothMonthStartValuesTheirPricesAndTheChange()
+    {
+        _repository.Brokers = [MakeMonthStartBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var row = result.Groups.Single().Holdings.Single(h => h.Asset.AssetName == "BOTH11");
+        using var _ = new AssertionScope();
+        row.LastMonthStart.Value.Should().Be(1000m);
+        row.LastMonthStart.UnitPrice.Should().Be(10m);
+        row.LastMonthStart.PriceDate.Should().Be(new DateOnly(2026, 9, 1));
+        row.ThisMonthStart.Value.Should().Be(1100m);
+        row.ThisMonthStart.PriceDate.Should().Be(new DateOnly(2026, 9, 30));
+        row.MonthChangePercent.Should().Be(10m);
+        row.ThisMonthStart.Currency.Should().Be("BRL");
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_Subtotal_SumsOnlyHoldingsWithBothMonthStartValuesAndCountsTheOthers()
+    {
+        _repository.Brokers = [MakeMonthStartBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        var subtotal = result.Groups.Single().Subtotal;
+        using var _ = new AssertionScope();
+        subtotal.LastMonthStartValue.Should().Be(1000m);
+        subtotal.ThisMonthStartValue.Should().Be(1100m);
+        subtotal.MonthChangePercent.Should().Be(10m);
+        subtotal.MonthStartExcludedCount.Should().Be(1);
+        result.Total.MonthStartExcludedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_NoHoldingWithBothMonthStartValues_LeavesTheSubtotalSumsEmpty()
+    {
+        _repository.Brokers = [MakeSampleBroker()];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        using var _ = new AssertionScope();
+        result.Total.LastMonthStartValue.Should().BeNull();
+        result.Total.MonthChangePercent.Should().BeNull();
+        result.Total.MonthStartExcludedCount.Should().Be(3);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_TwoHoldingsWithTheSameName_EachKeepsItsOwnMonthStartValues()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var fii = broker.AddPortfolio("FII");
+        var first = MakeAsset("SAME11", units: 10m);
+        first.SetPrice(new DateOnly(2026, 10, 1), 5m, isManual: false);
+        var second = MakeAsset("SAME11", units: 20m);
+        second.SetPrice(new DateOnly(2026, 10, 1), 7m, isManual: false);
+        fii.AddAsset(first);
+        fii.AddAsset(second);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerHoldings("XPI");
+
+        result.Groups.Single().Holdings
+            .Select(h => (h.Asset.CurrentQuantity, h.ThisMonthStart.Value))
+            .Should().BeEquivalentTo([(10m, (decimal?)50m), (20m, (decimal?)140m)]);
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_PriceSavedWithoutACurrency_UsesTheCurrencyOfTheLatestTransactionByDate()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        var asset = Asset.Create("VWRL", "ISIN", "LSE", "VWRL");
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 5), Transaction.TransactionType.Buy, 10m, 100m, 0m, currency: Currency.GBP));
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 5), Transaction.TransactionType.Buy, 10m, 100m, 0m, currency: Currency.USD));
+        asset.SetPrice(new DateOnly(2026, 10, 1), 110m, isManual: false);
+        broker.AddPortfolio("ETF").AddAsset(asset);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerHoldings("Trading 212");
+
+        result.Groups.Single().Holdings.Single().ThisMonthStart.Currency.Should().Be("GBP");
+    }
+
+    [Fact]
+    public void GetBrokerHoldings_DoesNotSaveAnything()
+    {
+        _repository.Brokers = [MakeMonthStartBroker()];
+
+        CreateService().GetBrokerHoldings("XPI");
+
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
     private PortfolioAssetSummaryService CreateService() =>
         new(_repository, TestHoldingValuationService.Create(), TestClock.At(), _tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
@@ -261,6 +376,20 @@ public class BrokerHoldingsTests
         fii.AddAsset(second);
         fii.AddAsset(MakeAsset("AAAA", units: 10m, price: 90m));
         broker.AddPortfolio("Acoes").AddAsset(MakeAsset("CCCC", units: 60m));
+        return broker;
+    }
+
+    private static Broker MakeMonthStartBroker()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var fii = broker.AddPortfolio("FII");
+        var both = MakeAsset("BOTH11", units: 100m);
+        both.SetPrice(new DateOnly(2026, 9, 1), 10m, isManual: false);
+        both.SetPrice(new DateOnly(2026, 9, 30), 11m, isManual: false);
+        fii.AddAsset(both);
+        var onlyThisMonth = MakeAsset("ONLY11", units: 10m);
+        onlyThisMonth.SetPrice(new DateOnly(2026, 10, 1), 50m, isManual: false);
+        fii.AddAsset(onlyThisMonth);
         return broker;
     }
 

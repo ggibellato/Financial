@@ -9,11 +9,12 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useBrokerHoldings } from '../hooks/useBrokerHoldings'
 import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 import { useSortableRows, type SortAccessor, type SortDirection, type SortState } from '../hooks/useSortableRows'
-import type { HoldingRowDto, HoldingsGroupDto, HoldingsSegmentDto, HoldingsTotalsDto } from '../api/types'
+import type { HoldingRowDto, HoldingsGroupDto, HoldingsSegmentDto, HoldingsTotalsDto, MonthStartColumnDto } from '../api/types'
+import MonthStartValue from './MonthStartValue'
 import { NO_SEGMENT } from '../utils/assetSegments'
 import { pickSourceLabel } from '../utils/pickSource'
 import { formatCreditMonth, parseCreditMonth } from '../utils/creditMonth'
-import { formatN2, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
+import { formatDayMonthUtc, formatN2, formatN8, formatPercentN2, formatShortDate, formatSignedPercentN2, signClass } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import { NO_PRICE_MEANING, STALE_PRICE_MEANING } from '../utils/priceStatus'
 import './BrokerHoldingsTab.css'
@@ -29,7 +30,8 @@ interface HoldingColumn {
   cellLabel?: string
   text?: boolean
   sortValue: SortAccessor<HoldingRowDto>
-  render: (holding: HoldingRowDto) => ReactNode
+  headerLabel?: (months: MonthColumns) => string
+  render: (holding: HoldingRowDto, months: MonthColumns) => ReactNode
   total?: (totals: HoldingsTotalsDto) => ReactNode
   shareOfGroup?: keyof ShareOfGroup
 }
@@ -37,6 +39,11 @@ interface HoldingColumn {
 interface ShareOfGroup {
   invested: number | null
   market: number | null
+}
+
+interface MonthColumns {
+  lastMonth: MonthStartColumnDto
+  thisMonth: MonthStartColumnDto
 }
 
 interface ColumnGroup {
@@ -63,6 +70,18 @@ const percent = (value: number | null | undefined) => orMissing(value, formatPer
 const amount = (value: number | null | undefined) => orMissing(value, formatN2)
 const signedPercent = (value: number | null | undefined) => orMissing(value, v => signed(v, formatPercentN2))
 const signedAmount = (value: number | null | undefined) => orMissing(value, v => signed(v, formatN2))
+const MISSING_MONTH_CHANGE = 'No change: a month-start price is missing'
+const monthChange = (value: number | null | undefined) => orMissing(value, v => signed(v, formatSignedPercentN2), MISSING_MONTH_CHANGE)
+
+function monthStartNotice(totals: HoldingsTotalsDto): string | null {
+  return totals.monthStartExcludedCount === 0
+    ? null
+    : `* Excludes ${totals.monthStartExcludedCount} holdings without both month-start prices`
+}
+
+function starredWhenExcluding(totals: HoldingsTotalsDto, content: ReactNode): ReactNode {
+  return totals.monthStartExcludedCount === 0 ? content : <span>{content}<span aria-hidden="true">*</span></span>
+}
 
 const COLUMN_GROUPS: ColumnGroup[] = [
   {
@@ -143,6 +162,31 @@ const COLUMN_GROUPS: ColumnGroup[] = [
     ],
   },
   {
+    label: 'Month',
+    columns: [
+      {
+        key: 'lastMonthStart', label: 'Start of last month',
+        headerLabel: m => formatDayMonthUtc(m.lastMonth.date),
+        sortValue: h => h.lastMonthStart.value,
+        render: (h, m) => <MonthStartValue value={h.lastMonthStart} column={m.lastMonth} />,
+        total: t => starredWhenExcluding(t, amount(t.lastMonthStartValue)),
+      },
+      {
+        key: 'thisMonthStart', label: 'Start of this month',
+        headerLabel: m => formatDayMonthUtc(m.thisMonth.date),
+        sortValue: h => h.thisMonthStart.value,
+        render: (h, m) => <MonthStartValue value={h.thisMonthStart} column={m.thisMonth} />,
+        total: t => starredWhenExcluding(t, amount(t.thisMonthStartValue)),
+      },
+      {
+        key: 'monthChange', label: 'Change %', cellLabel: 'Month change %',
+        sortValue: h => h.monthChangePercent,
+        render: h => monthChange(h.monthChangePercent),
+        total: t => starredWhenExcluding(t, monthChange(t.monthChangePercent)),
+      },
+    ],
+  },
+  {
     label: 'Profit',
     columns: [
       {
@@ -218,7 +262,8 @@ const COLUMN_GROUPS: ColumnGroup[] = [
 
 const COLUMNS = COLUMN_GROUPS.flatMap(g => g.columns)
 
-const cellLabelOf = (column: HoldingColumn) => column.cellLabel ?? column.label
+const cellLabelOf = (column: HoldingColumn, months: MonthColumns) =>
+  column.headerLabel ? `${column.label} (${column.headerLabel(months)})` : (column.cellLabel ?? column.label)
 const numericClass = (column: HoldingColumn) => (column.text ? undefined : 'data-table__col--numeric')
 const COLUMN_COUNT = COLUMNS.length + 1
 
@@ -260,6 +305,7 @@ function unvaluedNotice(totals: HoldingsTotalsDto): string | null {
 interface TotalsRowProps {
   label: string
   totals: HoldingsTotalsDto
+  months: MonthColumns
   shareOfGroup?: ShareOfGroup
 }
 
@@ -268,20 +314,22 @@ function totalCell(column: HoldingColumn, totals: HoldingsTotalsDto, shareOfGrou
   return column.total?.(totals)
 }
 
-function TotalsRow({ label, totals, shareOfGroup }: TotalsRowProps) {
-  const notice = unvaluedNotice(totals)
+function TotalsRow({ label, totals, months, shareOfGroup }: TotalsRowProps) {
+  const notices = [unvaluedNotice(totals), monthStartNotice(totals)].filter(notice => notice !== null)
   return (
     <TableRow className="broker-holdings__totals-row">
       <TableHeaderCell scope="row" className="broker-holdings__name-cell">
         <span>{label}</span>
-        {notice && <span className="broker-holdings__notice">{notice}</span>}
+        {notices.map(notice => (
+          <span key={notice} className="broker-holdings__notice">{notice}</span>
+        ))}
       </TableHeaderCell>
       {COLUMNS.map(column => {
         const value = totalCell(column, totals, shareOfGroup)
         return (
           <DataTableCell
             key={column.key}
-            label={cellLabelOf(column)}
+            label={cellLabelOf(column, months)}
             className={mergeClasses(numericClass(column), value === undefined && 'data-table__cell--no-total')}
           >
             {value}
@@ -292,7 +340,7 @@ function TotalsRow({ label, totals, shareOfGroup }: TotalsRowProps) {
   )
 }
 
-function SegmentSection({ segment, rows }: { segment: HoldingsSegmentDto; rows: GroupedRow[] }) {
+function SegmentSection({ segment, rows, months }: { segment: HoldingsSegmentDto; rows: GroupedRow[]; months: MonthColumns }) {
   const name = segment.name ?? NO_SEGMENT
   const hidden = useVisuallyHiddenStyles()
   return (
@@ -306,19 +354,21 @@ function SegmentSection({ segment, rows }: { segment: HoldingsSegmentDto; rows: 
         <HoldingRow
           key={row.holding.asset.assetName}
           holding={row.holding}
+          months={months}
           segmentLabel={<span className={hidden.visuallyHidden}>Segment {name}: </span>}
         />
       ))}
       <TotalsRow
         label={`Segment subtotal: ${name}`}
         totals={segment.subtotal}
+        months={months}
         shareOfGroup={{ invested: segment.investedShareOfGroup, market: segment.marketShareOfGroup }}
       />
     </>
   )
 }
 
-function HoldingRow({ holding, segmentLabel }: { holding: HoldingRowDto; segmentLabel?: ReactNode }) {
+function HoldingRow({ holding, months, segmentLabel }: { holding: HoldingRowDto; months: MonthColumns; segmentLabel?: ReactNode }) {
   return (
     <TableRow>
       <DataTableCell label="Asset name" className="broker-holdings__name-cell">
@@ -326,8 +376,8 @@ function HoldingRow({ holding, segmentLabel }: { holding: HoldingRowDto; segment
         <TruncatedText text={holding.asset.assetName} />
       </DataTableCell>
       {COLUMNS.map(column => (
-        <DataTableCell key={column.key} label={cellLabelOf(column)} className={numericClass(column)}>
-          {column.render(holding)}
+        <DataTableCell key={column.key} label={cellLabelOf(column, months)} className={numericClass(column)}>
+          {column.render(holding, months)}
         </DataTableCell>
       ))}
     </TableRow>
@@ -353,6 +403,10 @@ export default function BrokerHoldingsTab() {
   if (holdings.groups.length === 0) {
     return <p className="broker-holdings__empty">This broker has no active holdings.</p>
   }
+  const months: MonthColumns = { lastMonth: holdings.lastMonthStart, thisMonth: holdings.thisMonthStart }
+  const headerLabelOf = (column: HoldingColumn) => column.headerLabel?.(months) ?? column.label
+  const headerAriaLabelOf = (column: HoldingColumn) =>
+    column.headerLabel ? `${column.headerLabel(months)}, ${column.label.toLowerCase()}` : cellLabelOf(column, months)
 
   return (
     <div className="broker-holdings">
@@ -377,7 +431,7 @@ export default function BrokerHoldingsTab() {
             <TableRow>
               {COLUMN_GROUPS.filter(group => group.label !== null).flatMap(group =>
                 group.columns.map(column => (
-                  <SortableColumnHeader key={column.key} numeric={!column.text} label={column.label} ariaLabel={cellLabelOf(column)} columnKey={column.key} sortDirection={sortDirectionFor(column.key)} onSort={requestSort} />
+                  <SortableColumnHeader key={column.key} numeric={!column.text} label={headerLabelOf(column)} ariaLabel={headerAriaLabelOf(column)} columnKey={column.key} sortDirection={sortDirectionFor(column.key)} onSort={requestSort} />
                 )),
               )}
             </TableRow>
@@ -391,20 +445,21 @@ export default function BrokerHoldingsTab() {
               </TableRow>
               {group.segments.length === 0
                 ? (rowsBySection.get(`${groupIndex}`) ?? []).map(row => (
-                    <HoldingRow key={row.holding.asset.assetName} holding={row.holding} />
+                    <HoldingRow key={row.holding.asset.assetName} holding={row.holding} months={months} />
                   ))
                 : group.segments.map((segment, segmentIndex) => (
                     <SegmentSection
                       key={segmentIndex}
                       segment={segment}
                       rows={rowsBySection.get(`${groupIndex}:${segmentIndex}`) ?? []}
+                      months={months}
                     />
                   ))}
-              <TotalsRow label={`Subtotal ${group.name}`} totals={group.subtotal} />
+              <TotalsRow label={`Subtotal ${group.name}`} totals={group.subtotal} months={months} />
             </TableBody>
           ))}
           <tfoot>
-            <TotalsRow label="Broker total" totals={holdings.total} />
+            <TotalsRow label="Broker total" totals={holdings.total} months={months} />
           </tfoot>
         </Table>
       </div>

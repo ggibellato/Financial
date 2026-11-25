@@ -30,8 +30,13 @@ const EMPTY_TOTALS = {
   creditsPercentOfInvested: null,
   lastCreditAmount: 0,
   lastCreditPercentOfMarketValue: null,
+  lastMonthStartValue: null,
+  thisMonthStartValue: null,
+  monthChangePercent: null,
+  monthStartExcludedCount: 0,
 }
-const HOLDINGS: BrokerHoldingsDto = { currencies: ['BRL'], groups: [], total: EMPTY_TOTALS }
+const MONTH = { date: '2026-11-01', earliestPriceDate: '2026-10-25' }
+const HOLDINGS: BrokerHoldingsDto = { currencies: ['BRL'], lastMonthStart: MONTH, thisMonthStart: MONTH, groups: [], total: EMPTY_TOTALS }
 
 describe('useBrokerHoldings', () => {
   beforeEach(() => {

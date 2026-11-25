@@ -23,7 +23,7 @@ public class AllocationBreakdownEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task GetAllocationBreakdown_Returns200WithEveryDimension()
     {
-        await SetPriceAsync(130m);
+        await SavePriceAsync(DateOnly.FromDateTime(Today.UtcDateTime), 130m);
 
         var response = await Client.GetAsync(AllocationBreakdownRoute);
 
@@ -49,18 +49,5 @@ public class AllocationBreakdownEndpointsTests : ApiEndpointTests
         dto.ByCurrency.Should().BeEmpty();
         dto.ByCountry.Should().BeEmpty();
         dto.ByBroker.Should().BeEmpty();
-    }
-
-    private async Task SetPriceAsync(decimal price)
-    {
-        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "BCIA11",
-            Date = DateOnly.FromDateTime(Today.UtcDateTime),
-            Price = price
-        });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

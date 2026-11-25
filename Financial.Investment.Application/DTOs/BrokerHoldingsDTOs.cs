@@ -15,6 +15,24 @@ public sealed class HoldingsTotalsDTO
     public decimal? CreditsPercentOfInvested { get; init; }
     public decimal LastCreditAmount { get; init; }
     public decimal? LastCreditPercentOfMarketValue { get; init; }
+    public decimal? LastMonthStartValue { get; init; }
+    public decimal? ThisMonthStartValue { get; init; }
+    public decimal? MonthChangePercent { get; init; }
+    public int MonthStartExcludedCount { get; init; }
+}
+
+public sealed class MonthStartValueDTO
+{
+    public decimal? Value { get; init; }
+    public decimal? UnitPrice { get; init; }
+    public DateOnly? PriceDate { get; init; }
+    public string? Currency { get; init; }
+}
+
+public sealed class MonthStartColumnDTO
+{
+    public DateOnly Date { get; init; }
+    public DateOnly EarliestPriceDate { get; init; }
 }
 
 public sealed class HoldingRowDTO
@@ -24,6 +42,9 @@ public sealed class HoldingRowDTO
     public decimal? MarketShareOfGroup { get; init; }
     public decimal? InvestedShareOfBase { get; init; }
     public decimal? MarketShareOfBase { get; init; }
+    public MonthStartValueDTO LastMonthStart { get; init; } = new();
+    public MonthStartValueDTO ThisMonthStart { get; init; } = new();
+    public decimal? MonthChangePercent { get; init; }
 }
 
 public sealed class HoldingsSegmentDTO
@@ -46,6 +67,8 @@ public sealed class HoldingsGroupDTO
 public sealed class BrokerHoldingsDTO
 {
     public IReadOnlyList<string> Currencies { get; init; } = [];
+    public MonthStartColumnDTO LastMonthStart { get; init; } = new();
+    public MonthStartColumnDTO ThisMonthStart { get; init; } = new();
     public IReadOnlyList<HoldingsGroupDTO> Groups { get; init; } = [];
     public HoldingsTotalsDTO Total { get; init; } = new();
 }

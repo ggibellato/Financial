@@ -7963,6 +7963,8 @@ export interface components {
         BrokerHoldingsDTO: {
             currencies: string[];
             groups: components["schemas"]["HoldingsGroupDTO"][];
+            lastMonthStart: components["schemas"]["MonthStartColumnDTO"];
+            thisMonthStart: components["schemas"]["MonthStartColumnDTO"];
             total: components["schemas"]["HoldingsTotalsDTO"];
         };
         BrokerNodeDTO: {
@@ -8575,10 +8577,14 @@ export interface components {
             investedShareOfBase: null | number;
             /** Format: double */
             investedShareOfGroup: null | number;
+            lastMonthStart: components["schemas"]["MonthStartValueDTO"];
             /** Format: double */
             marketShareOfBase: null | number;
             /** Format: double */
             marketShareOfGroup: null | number;
+            /** Format: double */
+            monthChangePercent: null | number;
+            thisMonthStart: components["schemas"]["MonthStartValueDTO"];
         };
         HoldingsGroupDTO: {
             holdings: components["schemas"]["HoldingRowDTO"][];
@@ -8609,15 +8615,23 @@ export interface components {
             /** Format: double */
             lastCreditPercentOfMarketValue: null | number;
             /** Format: double */
+            lastMonthStartValue: null | number;
+            /** Format: double */
             marketShareOfBase: null | number;
             /** Format: double */
             marketValue: null | number;
+            /** Format: double */
+            monthChangePercent: null | number;
+            /** Format: int32 */
+            monthStartExcludedCount: number;
             /** Format: double */
             profitAmount: null | number;
             /** Format: double */
             profitPercent: null | number;
             /** Format: double */
             profitWithCreditsPercent: null | number;
+            /** Format: double */
+            thisMonthStartValue: null | number;
             /** Format: double */
             totalCredits: number;
             /** Format: int32 */
@@ -8845,6 +8859,21 @@ export interface components {
             accountId?: null | string;
             accountName?: null | string;
             kind: string;
+        };
+        MonthStartColumnDTO: {
+            /** Format: date */
+            date: string;
+            /** Format: date */
+            earliestPriceDate: string;
+        };
+        MonthStartValueDTO: {
+            currency: null | string;
+            /** Format: date */
+            priceDate: null | string;
+            /** Format: double */
+            unitPrice: null | number;
+            /** Format: double */
+            value: null | number;
         };
         MonthTransactionDTO: {
             accountCurrency: null | string;

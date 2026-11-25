@@ -12,6 +12,11 @@ const percentFractionFormatter = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
+const alwaysSignedN2Formatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  signDisplay: 'always',
+})
 const signedN2Formatter = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -41,6 +46,10 @@ export function formatPercentFraction(value: number): string {
 
 export function formatPercentN2(value: number): string {
   return `${formatN2(value)}%`
+}
+
+export function formatSignedPercentN2(value: number): string {
+  return `${alwaysSignedN2Formatter.format(value)}%`
 }
 
 export function formatPercent1(value: number): string {
@@ -98,6 +107,10 @@ export function lastDayOfMonthIsoDate(year: number, month: number): string {
 export function todayIsoDate(): string {
   const now = new Date()
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+export function formatDayMonthUtc(isoString: string): string {
+  return new Date(isoString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
 }
 
 export function formatDayMonthYearUtc(isoString: string): string {
