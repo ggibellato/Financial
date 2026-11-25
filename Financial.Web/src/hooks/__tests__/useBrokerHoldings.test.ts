@@ -31,7 +31,7 @@ const EMPTY_TOTALS = {
   lastCreditAmount: 0,
   lastCreditPercentOfMarketValue: null,
 }
-const HOLDINGS: BrokerHoldingsDto = { currency: 'BRL', groups: [], total: EMPTY_TOTALS }
+const HOLDINGS: BrokerHoldingsDto = { currencies: ['BRL'], groups: [], total: EMPTY_TOTALS }
 
 describe('useBrokerHoldings', () => {
   beforeEach(() => {
@@ -53,6 +53,18 @@ describe('useBrokerHoldings', () => {
     setNode(PORTFOLIO_NODE)
     await act(async () => {})
     expect(getBrokerHoldingsMock).not.toHaveBeenCalled()
+  })
+
+  it('reloads_when_the_tree_reselects_the_same_broker', async () => {
+    getBrokerHoldingsMock.mockResolvedValue(HOLDINGS)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useBrokerHoldings(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() => expect(result.current.holdings).toEqual(HOLDINGS))
+
+    setNode({ ...BROKER_NODE })
+
+    await waitFor(() => expect(getBrokerHoldingsMock).toHaveBeenCalledTimes(2))
   })
 
   it('reports_a_failed_load', async () => {

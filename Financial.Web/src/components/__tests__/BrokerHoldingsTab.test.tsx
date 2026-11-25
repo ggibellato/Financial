@@ -84,7 +84,7 @@ function row(asset: Partial<PortfolioAssetSummaryItemDto>, shares: Partial<Holdi
 }
 
 const HOLDINGS: BrokerHoldingsDto = {
-  currency: 'BRL',
+  currencies: ['BRL'],
   groups: [
     {
       name: 'Acoes',
@@ -123,6 +123,13 @@ describe('BrokerHoldingsTab', () => {
     await renderLoaded()
     expect(getBrokerHoldingsMock).toHaveBeenCalledWith('XPI')
     expect(screen.getByRole('table')).toHaveAccessibleName('Holdings, amounts in BRL')
+  })
+
+  it('says_amounts_are_in_each_holdings_own_currency_when_the_broker_holds_several', async () => {
+    await renderLoaded({ ...HOLDINGS, currencies: ['GBP', 'USD'] })
+    expect(screen.getByRole('table')).toHaveAccessibleName(
+      "Holdings, amounts in each holding's own currency (GBP, USD); subtotals and totals add them without conversion",
+    )
   })
 
   it('shows_each_portfolio_as_a_row_group_header_followed_by_its_holdings_and_subtotal', async () => {

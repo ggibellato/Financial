@@ -17,7 +17,6 @@ interface SortableColumnHeaderProps {
   rowSpan?: number
   /** Extra class alongside the base header classes, e.g. a group's accent/separator style. */
   className?: string
-  /** Full name for the sort button when the visible label only makes sense under its group heading. */
   ariaLabel?: string
 }
 

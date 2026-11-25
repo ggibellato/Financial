@@ -211,6 +211,12 @@ const SORT_ACCESSORS: Record<string, SortAccessor<GroupedRow>> = Object.fromEntr
 
 const FIRST_PURCHASE_DESC: SortState = { columnKey: 'firstPurchase', direction: 'descending' }
 
+function currencyCaption(currencies: string[]): string {
+  return currencies.length === 1
+    ? `Holdings, amounts in ${currencies[0]}`
+    : `Holdings, amounts in each holding's own currency (${currencies.join(', ')}); subtotals and totals add them without conversion`
+}
+
 function unvaluedNotice(totals: HoldingsTotalsDto): string | null {
   return totals.unvaluedHoldingCount === 0
     ? null
@@ -269,7 +275,7 @@ export default function BrokerHoldingsTab() {
 
   return (
     <div className="broker-holdings">
-      <p id={captionId} className="broker-holdings__caption">Holdings, amounts in {holdings.currency}</p>
+      <p id={captionId} className="broker-holdings__caption">{currencyCaption(holdings.currencies)}</p>
       <div className="broker-holdings__table-section">
         <Table className="broker-holdings__table data-table" aria-labelledby={captionId}>
           <TableHeader>

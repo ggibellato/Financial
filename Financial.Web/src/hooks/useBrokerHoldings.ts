@@ -17,7 +17,7 @@ export function useBrokerHoldings(): BrokerHoldingsData {
 
   const { data, isLoading, error, retry } = useAsyncResource<BrokerHoldingsDto>(
     () => (brokerName ? apiClient.getBrokerHoldings(brokerName) : null),
-    [brokerName, apiClient],
+    [selectedNode, brokerName, apiClient],
     'Unable to load holdings.',
   )
 
