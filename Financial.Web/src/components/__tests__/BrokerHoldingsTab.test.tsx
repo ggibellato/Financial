@@ -71,7 +71,13 @@ const TOTALS: HoldingsTotalsDto = {
   creditsPercentOfInvested: 25,
   lastCreditAmount: 18,
   lastCreditPercentOfMarketValue: 0.46,
+  lastMonthStartValue: 3000,
+  thisMonthStartValue: 3300,
+  monthChangePercent: 10,
+  monthStartExcludedCount: 0,
 }
+
+const NO_MONTH_START = { value: null, unitPrice: null, priceDate: null, currency: null }
 
 function row(asset: Partial<PortfolioAssetSummaryItemDto>, shares: Partial<HoldingRowDto> = {}): HoldingRowDto {
   return {
@@ -80,12 +86,17 @@ function row(asset: Partial<PortfolioAssetSummaryItemDto>, shares: Partial<Holdi
     marketShareOfGroup: 30,
     investedShareOfBase: 10,
     marketShareOfBase: 12,
+    lastMonthStart: { value: 1000, unitPrice: 10, priceDate: '2026-10-30', currency: 'BRL' },
+    thisMonthStart: { value: 1100, unitPrice: 11, priceDate: '2026-11-01', currency: 'BRL' },
+    monthChangePercent: 10,
     ...shares,
   }
 }
 
 const HOLDINGS: BrokerHoldingsDto = {
   currencies: ['BRL'],
+  lastMonthStart: { date: '2026-10-01', earliestPriceDate: '2026-09-24' },
+  thisMonthStart: { date: '2026-11-01', earliestPriceDate: '2026-10-25' },
   groups: [
     {
       name: 'Acoes',
@@ -291,6 +302,44 @@ describe('BrokerHoldingsTab', () => {
 
     const names = screen.getAllByRole('row').slice(2).map(r => (r as HTMLTableRowElement).cells[0].textContent?.replace(/^Asset name:(Segment [^:]+: )?/, ''))
     expect(names.slice(0, 7)).toEqual(['FII', 'Segment: Logistics', 'SMAL11', 'LARG11', 'Segment subtotal: Logistics', 'Segment: Paper', 'OTHR11'])
+  })
+
+  it('heads_the_month_columns_with_the_first_of_last_month_and_of_this_month', async () => {
+    await renderLoaded()
+    expect(screen.getByRole('button', { name: '1 Oct, start of last month' })).toHaveTextContent('1 Oct')
+    expect(screen.getByRole('button', { name: '1 Nov, start of this month' })).toHaveTextContent('1 Nov')
+  })
+
+  it('shows_the_month_start_values_with_the_price_used_and_a_signed_change', async () => {
+    await renderLoaded()
+    const holding = assetRow('BBBB11')
+    expect(cellText(holding, 'Start of last month (1 Oct)')).toMatch(/^1,000\.00, R\$\s?10\.00 saved 30 Oct$/)
+    expect(cellText(holding, 'Start of this month (1 Nov)')).toMatch(/^1,100\.00, R\$\s?11\.00 saved 1 Nov$/)
+    expect(within(holding).getByTitle(/R\$\s?11\.00 saved 1 Nov/)).toBeInTheDocument()
+    expect(cellText(holding, 'Month change %')).toBe('+10.00%')
+  })
+
+  it('marks_a_missing_month_start_value_with_the_price_window_it_searched', async () => {
+    await renderLoaded({
+      ...HOLDINGS,
+      groups: [{ ...HOLDINGS.groups[1], holdings: [row({ assetName: 'NOPR11' }, { thisMonthStart: NO_MONTH_START, monthChangePercent: null })] }],
+    })
+    const holding = assetRow('NOPR11')
+    expect(within(holding).getByRole('img', { name: 'No saved price between 25 Oct and 1 Nov' })).toBeInTheDocument()
+    expect(within(holding).getByRole('img', { name: 'No change: a month-start price is missing' })).toBeInTheDocument()
+    expect(within(holding).getByTitle('No saved price between 25 Oct and 1 Nov')).toBeInTheDocument()
+  })
+
+  it('stars_a_month_start_subtotal_that_excludes_holdings_without_a_price', async () => {
+    await renderLoaded({
+      ...HOLDINGS,
+      groups: [{ ...HOLDINGS.groups[1], subtotal: { ...TOTALS, monthStartExcludedCount: 1 } }],
+    })
+    const subtotal = screen.getByText('Subtotal FII').closest('tr')!
+    expect(within(subtotal).getByText('* Excludes 1 holdings without a month-start price')).toBeInTheDocument()
+    expect(cellText(subtotal, 'Start of last month (1 Oct)')).toBe('3,000.00*')
+    expect(cellText(subtotal, 'Start of this month (1 Nov)')).toBe('3,300.00*')
+    expect(cellText(subtotal, 'Month change %')).toBe('+10.00%*')
   })
 
   it('shows_the_empty_message_when_the_broker_has_no_active_holdings', async () => {

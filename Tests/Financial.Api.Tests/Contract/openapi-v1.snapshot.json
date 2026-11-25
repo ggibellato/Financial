@@ -2094,6 +2094,12 @@
             },
             "type": "array"
           },
+          "lastMonthStart": {
+            "$ref": "#/components/schemas/MonthStartColumnDTO"
+          },
+          "thisMonthStart": {
+            "$ref": "#/components/schemas/MonthStartColumnDTO"
+          },
           "total": {
             "$ref": "#/components/schemas/HoldingsTotalsDTO"
           }
@@ -4156,6 +4162,9 @@
               "number"
             ]
           },
+          "lastMonthStart": {
+            "$ref": "#/components/schemas/MonthStartValueDTO"
+          },
           "marketShareOfBase": {
             "format": "double",
             "type": [
@@ -4169,6 +4178,16 @@
               "null",
               "number"
             ]
+          },
+          "monthChangePercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "thisMonthStart": {
+            "$ref": "#/components/schemas/MonthStartValueDTO"
           }
         },
         "type": "object"
@@ -4265,6 +4284,13 @@
               "number"
             ]
           },
+          "lastMonthStartValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "marketShareOfBase": {
             "format": "double",
             "type": [
@@ -4278,6 +4304,17 @@
               "null",
               "number"
             ]
+          },
+          "monthChangePercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "monthStartExcludedCount": {
+            "format": "int32",
+            "type": "integer"
           },
           "profitAmount": {
             "format": "double",
@@ -4294,6 +4331,13 @@
             ]
           },
           "profitWithCreditsPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "thisMonthStartValue": {
             "format": "double",
             "type": [
               "null",
@@ -5096,6 +5140,51 @@
         "required": [
           "kind"
         ],
+        "type": "object"
+      },
+      "MonthStartColumnDTO": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "earliestPriceDate": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MonthStartValueDTO": {
+        "properties": {
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priceDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "unitPrice": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "value": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
         "type": "object"
       },
       "MonthTransactionDTO": {
