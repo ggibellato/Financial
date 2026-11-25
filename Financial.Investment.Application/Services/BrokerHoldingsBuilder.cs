@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Application.Services;
@@ -7,6 +8,7 @@ internal sealed record HoldingMonthStarts(MonthStartValue Last, MonthStartValue 
 
 internal sealed record HoldingsGroupSource(
     string Name,
+    ArcaBucket? ArcaBucket,
     IReadOnlyList<PortfolioAssetSummaryItemDTO> Holdings,
     IReadOnlyList<HoldingMonthStarts> MonthStarts);
 
@@ -18,12 +20,18 @@ internal static class BrokerHoldingsBuilder
         DateOnly thisMonthStart,
         IEnumerable<HoldingsGroupSource> groups)
     {
-        var nonEmptyGroups = groups
-            .Where(g => g.Holdings.Count > 0)
-            .OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase)
+        var heldGroups = groups.Where(g => g.Holdings.Count > 0).ToList();
+        var usesArca = heldGroups.Any(g => g.ArcaBucket is not null);
+        bool InShareBase(HoldingsGroupSource g) => !usesArca || g.ArcaBucket.CountsTowardArca();
+
+        var nonEmptyGroups = heldGroups
+            .OrderBy(g => usesArca ? g.ArcaBucket.DisplayOrder() : 0)
+            .ThenBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
-        var shareBase = ShareBase.Of(nonEmptyGroups.SelectMany(g => g.Holdings).ToList());
-        var builtGroups = nonEmptyGroups.Select(g => BuildGroup(g, shareBase)).ToList();
+        var shareBase = ShareBase.Of(nonEmptyGroups.Where(InShareBase).SelectMany(g => g.Holdings).ToList());
+        var builtGroups = nonEmptyGroups
+            .Select(g => BuildGroup(g, InShareBase(g) ? shareBase : ShareBase.None, usesArca ? SectionOf(g.ArcaBucket) : null))
+            .ToList();
 
         return new BrokerHoldingsDTO
         {
@@ -31,9 +39,44 @@ internal static class BrokerHoldingsBuilder
             LastMonthStart = MonthStartColumn(lastMonthStart),
             ThisMonthStart = MonthStartColumn(thisMonthStart),
             Groups = builtGroups,
-            Total = BuildTotals(builtGroups.SelectMany(g => g.Holdings).ToList(), shareBase, shareBase),
+            Total = TotalsOf(builtGroups.SelectMany(g => g.Holdings).ToList(), usesArca ? ShareBase.None : shareBase),
+            Arca = usesArca ? BuildArca(builtGroups, shareBase) : null,
         };
     }
+
+    private static ArcaSection SectionOf(ArcaBucket? bucket) =>
+        bucket.CountsTowardArca() ? ArcaSection.Arca
+        : bucket == ArcaBucket.ReserveFund ? ArcaSection.ReserveFund
+        : ArcaSection.NotInArca;
+
+    private static ArcaAllocationDTO BuildArca(IReadOnlyList<HoldingsGroupDTO> groups, ShareBase arcaBase)
+    {
+        IReadOnlyList<HoldingRowDTO> RowsOf(params ArcaSection[] sections) =>
+            groups.Where(g => sections.Contains(g.ArcaSection!.Value)).SelectMany(g => g.Holdings).ToList();
+        HoldingsTotalsDTO? OptionalTotals(IReadOnlyList<HoldingRowDTO> rows) =>
+            rows.Count == 0 ? null : TotalsOf(rows, ShareBase.None);
+
+        return new ArcaAllocationDTO
+        {
+            Buckets = groups
+                .Where(g => g.ArcaSection == ArcaSection.Arca)
+                .GroupBy(g => g.ArcaBucket)
+                .OrderBy(bucket => bucket.Key.DisplayOrder())
+                .Select(bucket => new ArcaBucketTotalsDTO
+                {
+                    Bucket = bucket.Key!.Value,
+                    Totals = TotalsOf(bucket.SelectMany(g => g.Holdings).ToList(), arcaBase),
+                })
+                .ToList(),
+            ArcaTotal = TotalsOf(RowsOf(ArcaSection.Arca), arcaBase),
+            ReserveFund = OptionalTotals(RowsOf(ArcaSection.ReserveFund)),
+            NotInArca = OptionalTotals(RowsOf(ArcaSection.NotInArca)),
+            ArcaAndReserveFundTotal = TotalsOf(RowsOf(ArcaSection.Arca, ArcaSection.ReserveFund), ShareBase.None),
+        };
+    }
+
+    private static HoldingsTotalsDTO TotalsOf(IReadOnlyList<HoldingRowDTO> rows, ShareBase shareBase) =>
+        BuildTotals(rows, ShareBase.Of(rows.Select(r => r.Asset).ToList()), shareBase);
 
     private static MonthStartColumnDTO MonthStartColumn(DateOnly monthStart) => new()
     {
@@ -49,7 +92,7 @@ internal static class BrokerHoldingsBuilder
         Currency = value.Currency,
     };
 
-    private static HoldingsGroupDTO BuildGroup(HoldingsGroupSource group, ShareBase brokerBase)
+    private static HoldingsGroupDTO BuildGroup(HoldingsGroupSource group, ShareBase brokerBase, ArcaSection? section)
     {
         var groupBase = ShareBase.Of(group.Holdings);
         var hasSiblings = group.Holdings.Count > 1;
@@ -74,6 +117,8 @@ internal static class BrokerHoldingsBuilder
         return new HoldingsGroupDTO
         {
             Name = group.Name,
+            ArcaBucket = group.ArcaBucket,
+            ArcaSection = section,
             Holdings = rows,
             Segments = BuildSegments(rows, groupBase, brokerBase),
             Subtotal = BuildTotals(rows, groupBase, brokerBase),
@@ -149,6 +194,8 @@ internal static class BrokerHoldingsBuilder
 
     private sealed record ShareBase(decimal Invested, decimal? MarketValue)
     {
+        internal static readonly ShareBase None = new(0m, null);
+
         internal static ShareBase Of(IReadOnlyList<PortfolioAssetSummaryItemDTO> holdings)
         {
             var valued = holdings.Where(h => h.MarketValue.HasValue).ToList();

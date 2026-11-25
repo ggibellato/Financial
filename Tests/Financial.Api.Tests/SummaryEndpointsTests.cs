@@ -132,6 +132,25 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetBrokerHoldings_AfterAPortfolioGetsAnArcaBucket_ReturnsTheArcaAllocation()
+    {
+        var before = await Client.GetFromJsonAsync<BrokerHoldingsDTO>("/api/v1/financial/summary/broker/XPI/holdings");
+        var update = await Client.PutAsJsonAsync("/api/v1/financial/portfolios/XPI/Default", new PortfolioUpdateDTO { Name = "Default", ArcaBucket = "RealEstate" });
+        update.EnsureSuccessStatusCode();
+
+        var after = await Client.GetFromJsonAsync<BrokerHoldingsDTO>("/api/v1/financial/summary/broker/XPI/holdings");
+
+        using var _ = new AssertionScope();
+        before!.Arca.Should().BeNull();
+        after!.Arca!.Buckets.Select(b => b.Bucket).Should().Equal(Financial.Investment.Domain.Entities.ArcaBucket.RealEstate);
+        after.Groups.First().Name.Should().Be("Default");
+        after.Total.Invested.Should().Be(before.Total.Invested);
+
+        var arca = await Client.GetFromJsonAsync<BrokerArcaDTO>("/api/v1/financial/summary/broker/XPI/arca");
+        arca!.Arca!.ArcaTotal.Invested.Should().Be(after.Arca.ArcaTotal.Invested);
+    }
+
+    [Fact]
     public async Task GetBrokerHoldings_UnknownBroker_Returns200WithNoGroups()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/Nowhere/holdings");

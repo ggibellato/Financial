@@ -71,14 +71,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         using var span = StartSpan("GetBrokerHoldings");
         try
         {
-            var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
-            var today = _timeProvider.GetLocalDate();
-            var (lastMonthStart, thisMonthStart) = MonthStartValueCalculator.MonthStartsFor(DateOnly.FromDateTime(today));
-            var result = BrokerHoldingsBuilder.Build(
-                broker is null ? [] : HeldCurrencies(broker),
-                lastMonthStart,
-                thisMonthStart,
-                broker?.Portfolios.Select(p => BuildGroupSource(broker, p, today, lastMonthStart, thisMonthStart)) ?? []);
+            var result = BuildBrokerHoldings(brokerName);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerHoldings");
@@ -89,6 +82,37 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             span.MarkFailed(ex);
             throw;
         }
+    }
+
+    public BrokerArcaDTO GetBrokerArca(string brokerName)
+    {
+        using var span = StartSpan("GetBrokerArca");
+        try
+        {
+            var holdings = BuildBrokerHoldings(brokerName);
+            var result = new BrokerArcaDTO { Currencies = holdings.Currencies, Arca = holdings.Arca };
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetBrokerArca");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private BrokerHoldingsDTO BuildBrokerHoldings(string brokerName)
+    {
+        var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName);
+        var today = _timeProvider.GetLocalDate();
+        var (lastMonthStart, thisMonthStart) = MonthStartValueCalculator.MonthStartsFor(DateOnly.FromDateTime(today));
+        return BrokerHoldingsBuilder.Build(
+            broker is null ? [] : HeldCurrencies(broker),
+            lastMonthStart,
+            thisMonthStart,
+            broker?.Portfolios.Select(p => BuildGroupSource(broker, p, today, lastMonthStart, thisMonthStart)) ?? []);
     }
 
     private static IReadOnlyList<string> HeldCurrencies(Broker broker)
@@ -110,6 +134,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             portfolio.Assets.Where(a => a.Quantity > 0m), today, InvestmentScope.Active, _holdingValuationService);
         return new(
             portfolio.Name,
+            portfolio.ArcaBucket,
             built.Select(b => b.Item).ToList(),
             built
                 .Select(b => new HoldingMonthStarts(

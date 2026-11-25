@@ -190,6 +190,15 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/summary/broker/Trading%20212/holdings`)
   })
 
+  it('requests the broker ARCA allocation with the broker name encoded', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getBrokerArca('Trading 212')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/summary/broker/Trading%20212/arca`)
+  })
+
   it('posts a move to the move endpoint', async () => {
     const responseBody = { name: 'BCIA11', portfolioName: 'ISA' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

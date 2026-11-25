@@ -73,6 +73,23 @@
   padding-left: var(--spacingHorizontalL);
 }
 
+.broker-holdings__section-row th {
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightBold);
+  border-top: 2px solid var(--colorNeutralStroke1);
+  background: var(--colorNeutralBackground3);
+}
+
+.broker-holdings__section-total th,
+.broker-holdings__section-total td {
+  font-weight: var(--fontWeightBold);
+}
+
+.broker-holdings__bucket {
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorNeutralForeground2);
+}
+
 .broker-holdings__caption {
   margin: 0 0 8px;
   color: var(--colorNeutralForeground3);

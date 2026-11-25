@@ -84,6 +84,17 @@ public sealed class SummaryController : ControllerBase
         return Ok(_portfolioAssetSummaryService.GetBrokerHoldings(brokerName));
     }
 
+    /// <summary>Returns a broker's ARCA allocation: each assigned bucket's totals and share of ARCA, the ARCA total, the Reserve fund and the portfolios outside ARCA.</summary>
+    /// <param name="brokerName">The broker's name.</param>
+    /// <returns>200 OK with the held currencies and the allocation (null when no held portfolio has an ARCA bucket), or 400 Bad Request if <paramref name="brokerName"/> is missing.</returns>
+    [HttpGet("broker/{brokerName}/arca")]
+    [ProducesResponseType(typeof(BrokerArcaDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<BrokerArcaDTO> GetBrokerArca(string brokerName)
+    {
+        return Ok(_portfolioAssetSummaryService.GetBrokerArca(brokerName));
+    }
+
     /// <summary>Lists the portfolio breakdown (allocation by portfolio) for a broker.</summary>
     /// <param name="brokerName">The broker's name.</param>
     /// <param name="scope">Optional investment scope filter (e.g. "all", "active-only").</param>

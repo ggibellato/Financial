@@ -6435,6 +6435,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/summary/broker/{brokerName}/arca": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns a broker's ARCA allocation: each assigned bucket's totals and share of ARCA, the ARCA total, the Reserve fund and the portfolios outside ARCA. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The broker's name. */
+                    brokerName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrokerArcaDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/summary/broker/{brokerName}/breakdown": {
         parameters: {
             query?: never;
@@ -7747,8 +7795,21 @@ export interface components {
             isPartial: boolean;
             isUnavailable: boolean;
         };
+        ArcaAllocationDTO: {
+            arcaAndReserveFundTotal: components["schemas"]["HoldingsTotalsDTO"];
+            arcaTotal: components["schemas"]["HoldingsTotalsDTO"];
+            buckets: components["schemas"]["ArcaBucketTotalsDTO"][];
+            notInArca: null | components["schemas"]["HoldingsTotalsDTO"];
+            reserveFund: null | components["schemas"]["HoldingsTotalsDTO"];
+        };
         /** @enum {unknown} */
         ArcaBucket: "Shares" | "RealEstate" | "Cash" | "Pension" | "ReserveFund" | null;
+        ArcaBucketTotalsDTO: {
+            bucket: components["schemas"]["ArcaBucket"];
+            totals: components["schemas"]["HoldingsTotalsDTO"];
+        };
+        /** @enum {unknown} */
+        ArcaSection: "Arca" | "ReserveFund" | "NotInArca" | null;
         ArchiveAssetRequestDTO: {
             assetName: string;
             brokerName: string;
@@ -7949,6 +8010,10 @@ export interface components {
             /** Format: double */
             percentage: number;
         };
+        BrokerArcaDTO: {
+            arca: null | components["schemas"]["ArcaAllocationDTO"];
+            currencies: string[];
+        };
         BrokerCreateDTO: {
             costBasisMethod?: null | components["schemas"]["CostBasisMethod"];
             currency: string;
@@ -7963,6 +8028,7 @@ export interface components {
             status: string;
         };
         BrokerHoldingsDTO: {
+            arca: null | components["schemas"]["ArcaAllocationDTO"];
             currencies: string[];
             groups: components["schemas"]["HoldingsGroupDTO"][];
             lastMonthStart: components["schemas"]["MonthStartColumnDTO"];
@@ -8589,6 +8655,8 @@ export interface components {
             thisMonthStart: components["schemas"]["MonthStartValueDTO"];
         };
         HoldingsGroupDTO: {
+            arcaBucket: null | components["schemas"]["ArcaBucket"];
+            arcaSection: null | components["schemas"]["ArcaSection"];
             holdings: components["schemas"]["HoldingRowDTO"][];
             name: string;
             segments: components["schemas"]["HoldingsSegmentDTO"][];

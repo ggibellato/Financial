@@ -7,4 +7,6 @@ public interface IPortfolioAssetSummaryService
 {
     IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active);
     BrokerHoldingsDTO GetBrokerHoldings(string brokerName);
+
+    BrokerArcaDTO GetBrokerArca(string brokerName);
 }

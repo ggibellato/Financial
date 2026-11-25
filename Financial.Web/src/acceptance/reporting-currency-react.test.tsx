@@ -13,6 +13,7 @@ const {
   setReportingCurrencyMock,
   getSummaryByBrokerMock,
   getBrokerBreakdownMock,
+  getBrokerArcaMock,
   getAssetDetailsMock,
   getTransactionTypeEffectsMock,
 } = vi.hoisted(() => ({
@@ -20,6 +21,7 @@ const {
   setReportingCurrencyMock: vi.fn<FinancialApiClient['setReportingCurrency']>(),
   getSummaryByBrokerMock: vi.fn<FinancialApiClient['getSummaryByBroker']>(),
   getBrokerBreakdownMock: vi.fn<FinancialApiClient['getBrokerBreakdown']>(),
+  getBrokerArcaMock: vi.fn<FinancialApiClient['getBrokerArca']>(),
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
   getTransactionTypeEffectsMock: vi.fn<FinancialApiClient['getTransactionTypeEffects']>(),
 }))
@@ -30,6 +32,7 @@ vi.mock('../api/financialApiClient', () => ({
     setReportingCurrency: setReportingCurrencyMock,
     getSummaryByBroker: getSummaryByBrokerMock,
     getBrokerBreakdown: getBrokerBreakdownMock,
+    getBrokerArca: getBrokerArcaMock,
     getAssetDetails: getAssetDetailsMock,
     getTransactionTypeEffects: getTransactionTypeEffectsMock,
   } as Partial<FinancialApiClient>,
@@ -114,6 +117,7 @@ function renderBrokerSummary(summary: AggregatedSummaryDto) {
   const { wrapper, setNode } = createSelectedNodeWrapper()
   getSummaryByBrokerMock.mockResolvedValue(summary)
   getBrokerBreakdownMock.mockReturnValue(never())
+  getBrokerArcaMock.mockReturnValue(never())
   const result = render(<AggregatedSummaryTab />, { wrapper })
   setNode({ nodeType: 'Broker', brokerName: 'XPI', currency: 'BRL' })
   return result
@@ -125,6 +129,7 @@ describe('P49 F04 — React Reporting currency acceptance', () => {
     setReportingCurrencyMock.mockReset()
     getSummaryByBrokerMock.mockReset()
     getBrokerBreakdownMock.mockReset()
+    getBrokerArcaMock.mockReset()
     getAssetDetailsMock.mockReset()
     getTransactionTypeEffectsMock.mockReset()
     getTransactionTypeEffectsMock.mockReturnValue(never())
