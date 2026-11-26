@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Financial.Investment.Domain.Entities;
+
 namespace Financial.Investment.Application.DTOs;
 
 public sealed class HoldingsTotalsDTO
@@ -56,12 +59,45 @@ public sealed class HoldingsSegmentDTO
     public decimal? MarketShareOfGroup { get; init; }
 }
 
+public enum ArcaSection
+{
+    Arca,
+    ReserveFund,
+    NotInArca
+}
+
 public sealed class HoldingsGroupDTO
 {
     public string Name { get; init; } = string.Empty;
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ArcaBucket? ArcaBucket { get; init; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ArcaSection? ArcaSection { get; init; }
     public IReadOnlyList<HoldingRowDTO> Holdings { get; init; } = [];
     public IReadOnlyList<HoldingsSegmentDTO> Segments { get; init; } = [];
     public HoldingsTotalsDTO Subtotal { get; init; } = new();
+}
+
+public sealed class ArcaBucketTotalsDTO
+{
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ArcaBucket Bucket { get; init; }
+    public HoldingsTotalsDTO Totals { get; init; } = new();
+}
+
+public sealed class ArcaAllocationDTO
+{
+    public IReadOnlyList<ArcaBucketTotalsDTO> Buckets { get; init; } = [];
+    public HoldingsTotalsDTO ArcaTotal { get; init; } = new();
+    public HoldingsTotalsDTO? ReserveFund { get; init; }
+    public HoldingsTotalsDTO? NotInArca { get; init; }
+    public HoldingsTotalsDTO ArcaAndReserveFundTotal { get; init; } = new();
+}
+
+public sealed class BrokerArcaDTO
+{
+    public IReadOnlyList<string> Currencies { get; init; } = [];
+    public ArcaAllocationDTO? Arca { get; init; }
 }
 
 public sealed class BrokerHoldingsDTO
@@ -71,4 +107,5 @@ public sealed class BrokerHoldingsDTO
     public MonthStartColumnDTO ThisMonthStart { get; init; } = new();
     public IReadOnlyList<HoldingsGroupDTO> Groups { get; init; } = [];
     public HoldingsTotalsDTO Total { get; init; } = new();
+    public ArcaAllocationDTO? Arca { get; init; }
 }

@@ -1338,6 +1338,43 @@
         },
         "type": "object"
       },
+      "ArcaAllocationDTO": {
+        "properties": {
+          "arcaAndReserveFundTotal": {
+            "$ref": "#/components/schemas/HoldingsTotalsDTO"
+          },
+          "arcaTotal": {
+            "$ref": "#/components/schemas/HoldingsTotalsDTO"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/ArcaBucketTotalsDTO"
+            },
+            "type": "array"
+          },
+          "notInArca": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HoldingsTotalsDTO"
+              }
+            ]
+          },
+          "reserveFund": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HoldingsTotalsDTO"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
       "ArcaBucket": {
         "enum": [
           "Shares",
@@ -1345,6 +1382,25 @@
           "Cash",
           "Pension",
           "ReserveFund",
+          null
+        ]
+      },
+      "ArcaBucketTotalsDTO": {
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/ArcaBucket"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/HoldingsTotalsDTO"
+          }
+        },
+        "type": "object"
+      },
+      "ArcaSection": {
+        "enum": [
+          "Arca",
+          "ReserveFund",
+          "NotInArca",
           null
         ]
       },
@@ -2039,6 +2095,27 @@
         ],
         "type": "object"
       },
+      "BrokerArcaDTO": {
+        "properties": {
+          "arca": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ArcaAllocationDTO"
+              }
+            ]
+          },
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "BrokerCreateDTO": {
         "properties": {
           "costBasisMethod": {
@@ -2092,6 +2169,16 @@
       },
       "BrokerHoldingsDTO": {
         "properties": {
+          "arca": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ArcaAllocationDTO"
+              }
+            ]
+          },
           "currencies": {
             "items": {
               "type": "string"
@@ -4204,6 +4291,26 @@
       },
       "HoldingsGroupDTO": {
         "properties": {
+          "arcaBucket": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ArcaBucket"
+              }
+            ]
+          },
+          "arcaSection": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ArcaSection"
+              }
+            ]
+          },
           "holdings": {
             "items": {
               "$ref": "#/components/schemas/HoldingRowDTO"
@@ -15999,6 +16106,47 @@
           }
         },
         "summary": "Returns the aggregated investment summary for a broker.",
+        "tags": [
+          "Summary"
+        ]
+      }
+    },
+    "/summary/broker/{brokerName}/arca": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The broker\u0027s name.",
+            "in": "path",
+            "name": "brokerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrokerArcaDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Returns a broker\u0027s ARCA allocation: each assigned bucket\u0027s totals and share of ARCA, the ARCA total, the Reserve fund and the portfolios outside ARCA.",
         "tags": [
           "Summary"
         ]

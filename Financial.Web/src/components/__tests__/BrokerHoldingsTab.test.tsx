@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BrokerHoldingsDto, HoldingRowDto, HoldingsTotalsDto, PortfolioAssetSummaryItemDto, SelectedNode } from '../../api/types'
+import type { BrokerHoldingsDto, HoldingRowDto, HoldingsGroupDto, HoldingsTotalsDto, PortfolioAssetSummaryItemDto, SelectedNode } from '../../api/types'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import BrokerHoldingsTab from '../BrokerHoldingsTab'
 
@@ -101,17 +101,22 @@ const HOLDINGS: BrokerHoldingsDto = {
     {
       name: 'Acoes',
       segments: [],
+      arcaBucket: null,
+      arcaSection: null,
       holdings: [row({ assetName: 'CCCC3', marketValue: null, unrealisedGain: null, resultPercent: null }, { investedShareOfGroup: null, marketShareOfGroup: null })],
       subtotal: { ...TOTALS, holdingCount: 1, unvaluedHoldingCount: 1, marketValue: null, profitAmount: null },
     },
     {
       name: 'FII',
       segments: [],
+      arcaBucket: null,
+      arcaSection: null,
       holdings: [row({ assetName: 'BBBB11', totalInvested: 1000 }), row({ assetName: 'AAAA11', totalInvested: 3000 })],
       subtotal: TOTALS,
     },
   ],
   total: { ...TOTALS, holdingCount: 3, unvaluedHoldingCount: 1, invested: 10000 },
+  arca: null,
 }
 
 const cellText = (rowElement: HTMLElement, label: string) =>
@@ -342,6 +347,54 @@ describe('BrokerHoldingsTab', () => {
     expect(cellText(subtotal, 'Month change %')).toBe('+10.00%*')
   })
 
+  it('arranges_a_broker_using_arca_into_arca_reserve_fund_and_not_in_arca_sections_with_a_grand_total', async () => {
+    await renderLoaded(ARCA_HOLDINGS)
+
+    expect(screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent)).toEqual(['ARCA', 'Reserve fund', 'Not in ARCA'])
+    expect(screen.getAllByRole('rowheader').map(cell => cell.textContent?.replace(/\d+ of \d+ holdings.*$/, ''))).toEqual([
+      'Acoes · , A – Shares and businesses',
+      'Subtotal Acoes',
+      'FII · , R – Real estate',
+      'Subtotal FII',
+      'ARCA total',
+      'Reserva',
+      'Subtotal Reserva',
+      'Subtotal Reserve fund',
+      'Outros',
+      'Subtotal Outros',
+      'Subtotal Not in ARCA',
+      'Grand total',
+    ])
+  })
+
+  it('reads_the_share_columns_as_percent_of_arca_and_leaves_rows_outside_arca_blank', async () => {
+    await renderLoaded(ARCA_HOLDINGS)
+
+    expect(screen.getByRole('button', { name: 'Market % of ARCA' })).toBeInTheDocument()
+    expect(cellText(assetRow('FIIA11'), 'Invested % of ARCA')).toBe('30.00%')
+    expect(cellText(assetRow('RESV11'), 'Invested % of ARCA')).toBe('—')
+    expect(within(assetRow('RESV11')).getAllByRole('img', { name: 'Not part of ARCA' })).toHaveLength(2)
+    expect(cellText(assetRow('RESV11'), 'Invested % of group')).toBe('—')
+  })
+
+  it('leaves_out_the_not_in_arca_section_when_every_portfolio_has_a_bucket', async () => {
+    await renderLoaded({
+      ...ARCA_HOLDINGS,
+      groups: ARCA_HOLDINGS.groups.filter(g => g.arcaBucket !== null),
+      arca: { ...ARCA_HOLDINGS.arca!, notInArca: null },
+    })
+
+    expect(screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent)).toEqual(['ARCA', 'Reserve fund'])
+  })
+
+  it('keeps_the_broker_layout_and_base_when_no_portfolio_has_a_bucket', async () => {
+    await renderLoaded()
+
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Market % of broker' })).toBeInTheDocument()
+    expect(screen.getByText('Broker total')).toBeInTheDocument()
+  })
+
   it('shows_the_empty_message_when_the_broker_has_no_active_holdings', async () => {
     getBrokerHoldingsMock.mockResolvedValue({ ...HOLDINGS, groups: [] })
     renderWithSelectedNode(<BrokerHoldingsTab />, BROKER_NODE)
@@ -358,3 +411,28 @@ describe('BrokerHoldingsTab', () => {
     expect(getBrokerHoldingsMock).toHaveBeenCalledTimes(2)
   })
 })
+
+function arcaGroup(name: string, arcaBucket: HoldingsGroupDto['arcaBucket'], assetName: string, shares: Partial<HoldingRowDto> = {}): HoldingsGroupDto {
+  const arcaSection = arcaBucket === null ? 'NotInArca' : arcaBucket === 'ReserveFund' ? 'ReserveFund' : 'Arca'
+  return { name, arcaBucket, arcaSection, segments: [], holdings: [row({ assetName }, shares)], subtotal: TOTALS }
+}
+
+const ARCA_HOLDINGS: BrokerHoldingsDto = {
+  ...HOLDINGS,
+  groups: [
+    arcaGroup('Acoes', 'Shares', 'ACAO3'),
+    arcaGroup('FII', 'RealEstate', 'FIIA11', { investedShareOfBase: 30 }),
+    arcaGroup('Reserva', 'ReserveFund', 'RESV11', { investedShareOfBase: null, marketShareOfBase: null, investedShareOfGroup: null, marketShareOfGroup: null }),
+    arcaGroup('Outros', null, 'OUTR11', { investedShareOfBase: null, marketShareOfBase: null }),
+  ],
+  arca: {
+    buckets: [
+      { bucket: 'Shares', totals: TOTALS },
+      { bucket: 'RealEstate', totals: TOTALS },
+    ],
+    arcaTotal: TOTALS,
+    reserveFund: TOTALS,
+    notInArca: TOTALS,
+    arcaAndReserveFundTotal: TOTALS,
+  },
+}

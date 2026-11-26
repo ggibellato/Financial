@@ -1,3 +1,4 @@
+import ArcaPanel from './ArcaPanel'
 import BrokerBreakdownCharts from './BrokerBreakdownCharts'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -16,7 +17,7 @@ function incompleteValuationMessage(summary: AggregatedSummaryDto): string | nul
 }
 
 export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedSummaryDto; retry: () => void }) {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const isBroker = selectedNode?.nodeType === 'Broker'
   const incompleteMessage = incompleteValuationMessage(summary)
 
@@ -136,6 +137,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           </div>
         </div>
       )}
+      {isBroker && scope === 'active' && <ArcaPanel />}
       {isBroker && <BrokerBreakdownCharts />}
     </div>
   )

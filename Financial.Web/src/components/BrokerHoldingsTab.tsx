@@ -1,4 +1,4 @@
-import { useId, useMemo, type ReactNode } from 'react'
+import { Fragment, useId, useMemo, type ReactNode } from 'react'
 import { mergeClasses, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from './ErrorState'
 import PriceBadge from './PriceBadge'
@@ -9,7 +9,9 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useBrokerHoldings } from '../hooks/useBrokerHoldings'
 import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 import { useSortableRows, type SortAccessor, type SortDirection, type SortState } from '../hooks/useSortableRows'
-import type { HoldingRowDto, HoldingsGroupDto, HoldingsSegmentDto, HoldingsTotalsDto, MonthStartColumnDto } from '../api/types'
+import type { ArcaAllocationDto, HoldingRowDto, HoldingsGroupDto, HoldingsSegmentDto, HoldingsTotalsDto, MonthStartColumnDto } from '../api/types'
+import { ARCA_BUCKET_LABELS, NOT_IN_ARCA } from '../utils/arcaBucket'
+import { amountsCaption, incompleteTotalNotice } from '../utils/holdingsTotals'
 import MonthStartValue from './MonthStartValue'
 import { NO_SEGMENT } from '../utils/assetSegments'
 import { pickSourceLabel } from '../utils/pickSource'
@@ -24,15 +26,17 @@ interface GroupedRow {
   sectionKey: string
 }
 
+type ColumnText = string | ((context: TableContext) => string)
+
 interface HoldingColumn {
   key: string
-  label: string
-  cellLabel?: string
+  label: ColumnText
+  cellLabel?: ColumnText
   text?: boolean
   sortValue: SortAccessor<HoldingRowDto>
-  headerLabel?: (months: MonthColumns) => string
-  render: (holding: HoldingRowDto, months: MonthColumns) => ReactNode
-  total?: (totals: HoldingsTotalsDto) => ReactNode
+  headerLabel?: (context: TableContext) => string
+  render: (holding: HoldingRowDto, context: TableContext) => ReactNode
+  total?: (totals: HoldingsTotalsDto, context: TableContext) => ReactNode
   shareOfGroup?: keyof ShareOfGroup
 }
 
@@ -41,10 +45,17 @@ interface ShareOfGroup {
   market: number | null
 }
 
-interface MonthColumns {
+interface TableContext {
   lastMonth: MonthStartColumnDto
   thisMonth: MonthStartColumnDto
+  base: 'broker' | 'ARCA'
 }
+
+const textOf = (value: ColumnText, context: TableContext) => (typeof value === 'string' ? value : value(context))
+
+const NOT_PART_OF_ARCA = 'Not part of ARCA'
+const shareOfBase = (value: number | null | undefined, context: TableContext) =>
+  orMissing(value, formatPercentN2, context.base === 'ARCA' ? NOT_PART_OF_ARCA : undefined)
 
 interface ColumnGroup {
   label: string | null
@@ -120,10 +131,10 @@ const COLUMN_GROUPS: ColumnGroup[] = [
         shareOfGroup: 'invested',
       },
       {
-        key: 'investedShareOfBase', label: '% of broker', cellLabel: 'Invested % of broker',
+        key: 'investedShareOfBase', label: c => `% of ${c.base}`, cellLabel: c => `Invested % of ${c.base}`,
         sortValue: h => h.investedShareOfBase,
-        render: h => percent(h.investedShareOfBase),
-        total: t => percent(t.investedShareOfBase),
+        render: (h, c) => shareOfBase(h.investedShareOfBase, c),
+        total: (t, c) => shareOfBase(t.investedShareOfBase, c),
       },
     ],
   },
@@ -154,10 +165,10 @@ const COLUMN_GROUPS: ColumnGroup[] = [
         shareOfGroup: 'market',
       },
       {
-        key: 'marketShareOfBase', label: '% of broker', cellLabel: 'Market % of broker',
+        key: 'marketShareOfBase', label: c => `% of ${c.base}`, cellLabel: c => `Market % of ${c.base}`,
         sortValue: h => h.marketShareOfBase,
-        render: h => percent(h.marketShareOfBase),
-        total: t => percent(t.marketShareOfBase),
+        render: (h, c) => shareOfBase(h.marketShareOfBase, c),
+        total: (t, c) => shareOfBase(t.marketShareOfBase, c),
       },
     ],
   },
@@ -262,8 +273,15 @@ const COLUMN_GROUPS: ColumnGroup[] = [
 
 const COLUMNS = COLUMN_GROUPS.flatMap(g => g.columns)
 
-const cellLabelOf = (column: HoldingColumn, months: MonthColumns) =>
-  column.headerLabel ? `${column.label} (${column.headerLabel(months)})` : (column.cellLabel ?? column.label)
+const cellLabelOf = (column: HoldingColumn, context: TableContext) =>
+  column.headerLabel
+    ? `${textOf(column.label, context)} (${column.headerLabel(context)})`
+    : textOf(column.cellLabel ?? column.label, context)
+const headerLabelOf = (column: HoldingColumn, context: TableContext) => column.headerLabel?.(context) ?? textOf(column.label, context)
+const headerAriaLabelOf = (column: HoldingColumn, context: TableContext) =>
+  column.headerLabel
+    ? `${column.headerLabel(context)}, ${textOf(column.label, context).toLowerCase()}`
+    : cellLabelOf(column, context)
 const numericClass = (column: HoldingColumn) => (column.text ? undefined : 'data-table__col--numeric')
 const COLUMN_COUNT = COLUMNS.length + 1
 
@@ -274,11 +292,6 @@ const SORT_ACCESSORS: Record<string, SortAccessor<GroupedRow>> = Object.fromEntr
 
 const FIRST_PURCHASE_DESC: SortState = { columnKey: 'firstPurchase', direction: 'descending' }
 
-function currencyCaption(currencies: string[]): string {
-  return currencies.length === 1
-    ? `Holdings, amounts in ${currencies[0]}`
-    : `Holdings, amounts in each holding's own currency (${currencies.join(', ')}); subtotals and totals add them without conversion`
-}
 
 function groupRows(rows: GroupedRow[]): Map<string, GroupedRow[]> {
   const bySection = new Map<string, GroupedRow[]>()
@@ -296,28 +309,24 @@ function sectionRows(group: HoldingsGroupDto, groupIndex: number): GroupedRow[] 
       )
 }
 
-function unvaluedNotice(totals: HoldingsTotalsDto): string | null {
-  return totals.unvaluedHoldingCount === 0
-    ? null
-    : `${totals.unvaluedHoldingCount} of ${totals.holdingCount} holdings could not be valued; the total is incomplete.`
-}
 
 interface TotalsRowProps {
   label: string
   totals: HoldingsTotalsDto
-  months: MonthColumns
+  context: TableContext
   shareOfGroup?: ShareOfGroup
+  className?: string
 }
 
-function totalCell(column: HoldingColumn, totals: HoldingsTotalsDto, shareOfGroup?: ShareOfGroup): ReactNode | undefined {
+function totalCell(column: HoldingColumn, totals: HoldingsTotalsDto, context: TableContext, shareOfGroup?: ShareOfGroup): ReactNode | undefined {
   if (column.shareOfGroup && shareOfGroup) return percent(shareOfGroup[column.shareOfGroup])
-  return column.total?.(totals)
+  return column.total?.(totals, context)
 }
 
-function TotalsRow({ label, totals, months, shareOfGroup }: TotalsRowProps) {
-  const notices = [unvaluedNotice(totals), monthStartNotice(totals)].filter(notice => notice !== null)
+function TotalsRow({ label, totals, context, shareOfGroup, className }: TotalsRowProps) {
+  const notices = [incompleteTotalNotice(totals), monthStartNotice(totals)].filter(notice => notice !== null)
   return (
-    <TableRow className="broker-holdings__totals-row">
+    <TableRow className={mergeClasses('broker-holdings__totals-row', className)}>
       <TableHeaderCell scope="row" className="broker-holdings__name-cell">
         <span>{label}</span>
         {notices.map(notice => (
@@ -325,11 +334,11 @@ function TotalsRow({ label, totals, months, shareOfGroup }: TotalsRowProps) {
         ))}
       </TableHeaderCell>
       {COLUMNS.map(column => {
-        const value = totalCell(column, totals, shareOfGroup)
+        const value = totalCell(column, totals, context, shareOfGroup)
         return (
           <DataTableCell
             key={column.key}
-            label={cellLabelOf(column, months)}
+            label={cellLabelOf(column, context)}
             className={mergeClasses(numericClass(column), value === undefined && 'data-table__cell--no-total')}
           >
             {value}
@@ -340,7 +349,7 @@ function TotalsRow({ label, totals, months, shareOfGroup }: TotalsRowProps) {
   )
 }
 
-function SegmentSection({ segment, rows, months }: { segment: HoldingsSegmentDto; rows: GroupedRow[]; months: MonthColumns }) {
+function SegmentSection({ segment, rows, context }: { segment: HoldingsSegmentDto; rows: GroupedRow[]; context: TableContext }) {
   const name = segment.name ?? NO_SEGMENT
   const hidden = useVisuallyHiddenStyles()
   return (
@@ -354,21 +363,21 @@ function SegmentSection({ segment, rows, months }: { segment: HoldingsSegmentDto
         <HoldingRow
           key={row.holding.asset.assetName}
           holding={row.holding}
-          months={months}
+          context={context}
           segmentLabel={<span className={hidden.visuallyHidden}>Segment {name}: </span>}
         />
       ))}
       <TotalsRow
         label={`Segment subtotal: ${name}`}
         totals={segment.subtotal}
-        months={months}
+        context={context}
         shareOfGroup={{ invested: segment.investedShareOfGroup, market: segment.marketShareOfGroup }}
       />
     </>
   )
 }
 
-function HoldingRow({ holding, months, segmentLabel }: { holding: HoldingRowDto; months: MonthColumns; segmentLabel?: ReactNode }) {
+function HoldingRow({ holding, context, segmentLabel }: { holding: HoldingRowDto; context: TableContext; segmentLabel?: ReactNode }) {
   return (
     <TableRow>
       <DataTableCell label="Asset name" className="broker-holdings__name-cell">
@@ -376,11 +385,82 @@ function HoldingRow({ holding, months, segmentLabel }: { holding: HoldingRowDto;
         <TruncatedText text={holding.asset.assetName} />
       </DataTableCell>
       {COLUMNS.map(column => (
-        <DataTableCell key={column.key} label={cellLabelOf(column, months)} className={numericClass(column)}>
-          {column.render(holding, months)}
+        <DataTableCell key={column.key} label={cellLabelOf(column, context)} className={numericClass(column)}>
+          {column.render(holding, context)}
         </DataTableCell>
       ))}
     </TableRow>
+  )
+}
+
+interface PortfolioGroupProps {
+  group: HoldingsGroupDto
+  groupIndex: number
+  rowsBySection: Map<string, GroupedRow[]>
+  context: TableContext
+}
+
+function PortfolioGroup({ group, groupIndex, rowsBySection, context }: PortfolioGroupProps) {
+  const hidden = useVisuallyHiddenStyles()
+  const bucketLabel = group.arcaSection === 'Arca' && group.arcaBucket ? ARCA_BUCKET_LABELS[group.arcaBucket] : null
+  return (
+    <TableBody>
+      <TableRow className="broker-holdings__group-row">
+        <TableHeaderCell scope="rowgroup" colSpan={COLUMN_COUNT} className="broker-holdings__group-cell">
+          <span className="broker-holdings__group-name">
+            {group.name}
+            {bucketLabel && (
+              <span className="broker-holdings__bucket">
+                <span aria-hidden="true"> · </span>
+                <span className={hidden.visuallyHidden}>, </span>
+                {bucketLabel}
+              </span>
+            )}
+          </span>
+        </TableHeaderCell>
+      </TableRow>
+      {group.segments.length === 0
+        ? (rowsBySection.get(`${groupIndex}`) ?? []).map(row => (
+            <HoldingRow key={row.holding.asset.assetName} holding={row.holding} context={context} />
+          ))
+        : group.segments.map((segment, segmentIndex) => (
+            <SegmentSection
+              key={segmentIndex}
+              segment={segment}
+              rows={rowsBySection.get(`${groupIndex}:${segmentIndex}`) ?? []}
+              context={context}
+            />
+          ))}
+      <TotalsRow label={`Subtotal ${group.name}`} totals={group.subtotal} context={context} />
+    </TableBody>
+  )
+}
+
+interface ArcaSectionLayout {
+  section: HoldingsGroupDto['arcaSection']
+  title: string
+  totalLabel: string
+  totals: HoldingsTotalsDto
+}
+
+function arcaSections(arca: ArcaAllocationDto): ArcaSectionLayout[] {
+  const sections: (Omit<ArcaSectionLayout, 'totals'> & { totals: HoldingsTotalsDto | null | undefined })[] = [
+    { section: 'Arca', title: 'ARCA', totalLabel: 'ARCA total', totals: arca.arcaTotal },
+    { section: 'ReserveFund', title: 'Reserve fund', totalLabel: 'Subtotal Reserve fund', totals: arca.reserveFund },
+    { section: 'NotInArca', title: NOT_IN_ARCA, totalLabel: `Subtotal ${NOT_IN_ARCA}`, totals: arca.notInArca },
+  ]
+  return sections.flatMap(s => (s.totals ? [{ ...s, totals: s.totals }] : []))
+}
+
+function SectionHeading({ title }: { title: string }) {
+  return (
+    <TableBody>
+      <TableRow className="broker-holdings__section-row">
+        <TableHeaderCell colSpan={COLUMN_COUNT} className="broker-holdings__group-cell">
+          <span role="heading" aria-level={3} className="broker-holdings__group-name">{title}</span>
+        </TableHeaderCell>
+      </TableRow>
+    </TableBody>
   )
 }
 
@@ -403,14 +483,21 @@ export default function BrokerHoldingsTab() {
   if (holdings.groups.length === 0) {
     return <p className="broker-holdings__empty">This broker has no active holdings.</p>
   }
-  const months: MonthColumns = { lastMonth: holdings.lastMonthStart, thisMonth: holdings.thisMonthStart }
-  const headerLabelOf = (column: HoldingColumn) => column.headerLabel?.(months) ?? column.label
-  const headerAriaLabelOf = (column: HoldingColumn) =>
-    column.headerLabel ? `${column.headerLabel(months)}, ${column.label.toLowerCase()}` : cellLabelOf(column, months)
+  const context: TableContext = {
+    lastMonth: holdings.lastMonthStart,
+    thisMonth: holdings.thisMonthStart,
+    base: holdings.arca ? 'ARCA' : 'broker',
+  }
+  const groupsIn = (section: HoldingsGroupDto['arcaSection']) =>
+    holdings.groups.flatMap((group, groupIndex) =>
+      group.arcaSection === section
+        ? [<PortfolioGroup key={group.name} group={group} groupIndex={groupIndex} rowsBySection={rowsBySection} context={context} />]
+        : [],
+    )
 
   return (
     <div className="broker-holdings">
-      <p id={captionId} className="broker-holdings__caption">{currencyCaption(holdings.currencies)}</p>
+      <p id={captionId} className="broker-holdings__caption">{amountsCaption('Holdings', holdings.currencies)}</p>
       <div className="broker-holdings__table-section">
         <Table className="broker-holdings__table data-table data-table--fit-content" aria-labelledby={captionId}>
           <TableHeader>
@@ -419,7 +506,7 @@ export default function BrokerHoldingsTab() {
               {COLUMN_GROUPS.map(group =>
                 group.label === null
                   ? group.columns.map(column => (
-                      <SortableColumnHeader key={column.key} rowSpan={2} numeric={!column.text} label={column.label} columnKey={column.key} sortDirection={sortDirectionFor(column.key)} onSort={requestSort} />
+                      <SortableColumnHeader key={column.key} rowSpan={2} numeric={!column.text} label={headerLabelOf(column, context)} columnKey={column.key} sortDirection={sortDirectionFor(column.key)} onSort={requestSort} />
                     ))
                   : (
                       <TableHeaderCell key={group.label} scope="colgroup" colSpan={group.columns.length} className="broker-holdings__group-header">
@@ -431,35 +518,24 @@ export default function BrokerHoldingsTab() {
             <TableRow>
               {COLUMN_GROUPS.filter(group => group.label !== null).flatMap(group =>
                 group.columns.map(column => (
-                  <SortableColumnHeader key={column.key} numeric={!column.text} label={headerLabelOf(column)} ariaLabel={headerAriaLabelOf(column)} columnKey={column.key} sortDirection={sortDirectionFor(column.key)} onSort={requestSort} />
+                  <SortableColumnHeader key={column.key} numeric={!column.text} label={headerLabelOf(column, context)} ariaLabel={headerAriaLabelOf(column, context)} columnKey={column.key} sortDirection={sortDirectionFor(column.key)} onSort={requestSort} />
                 )),
               )}
             </TableRow>
           </TableHeader>
-          {holdings.groups.map((group, groupIndex) => (
-            <TableBody key={group.name}>
-              <TableRow className="broker-holdings__group-row">
-                <TableHeaderCell scope="rowgroup" colSpan={COLUMN_COUNT} className="broker-holdings__group-cell">
-                  <span className="broker-holdings__group-name">{group.name}</span>
-                </TableHeaderCell>
-              </TableRow>
-              {group.segments.length === 0
-                ? (rowsBySection.get(`${groupIndex}`) ?? []).map(row => (
-                    <HoldingRow key={row.holding.asset.assetName} holding={row.holding} months={months} />
-                  ))
-                : group.segments.map((segment, segmentIndex) => (
-                    <SegmentSection
-                      key={segmentIndex}
-                      segment={segment}
-                      rows={rowsBySection.get(`${groupIndex}:${segmentIndex}`) ?? []}
-                      months={months}
-                    />
-                  ))}
-              <TotalsRow label={`Subtotal ${group.name}`} totals={group.subtotal} months={months} />
-            </TableBody>
-          ))}
+          {holdings.arca
+            ? arcaSections(holdings.arca).map(section => (
+                <Fragment key={section.title}>
+                  <SectionHeading title={section.title} />
+                  {groupsIn(section.section)}
+                  <TableBody>
+                    <TotalsRow label={section.totalLabel} totals={section.totals} context={context} className="broker-holdings__section-total" />
+                  </TableBody>
+                </Fragment>
+              ))
+            : groupsIn(null)}
           <tfoot>
-            <TotalsRow label="Broker total" totals={holdings.total} months={months} />
+            <TotalsRow label={holdings.arca ? 'Grand total' : 'Broker total'} totals={holdings.total} context={context} />
           </tfoot>
         </Table>
       </div>
