@@ -82,11 +82,11 @@ describe('PortfolioSummaryTab', () => {
     expect(labels.map((el) => el.textContent)).toEqual(['Total bought', 'Total sold', 'Total credits', 'Total invested'])
   })
 
-  it('does_not_render_the_assets_grid_or_footer', () => {
+  it('does_not_render_the_assets_grid_or_its_totals', () => {
     setAggregatedMock({ summary: SUMMARY })
     renderComponent()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    expect(document.querySelector('.portfolio-holdings__footer')).toBeNull()
+    expect(screen.queryByRole('rowheader', { name: /^Total/ })).not.toBeInTheDocument()
   })
 
   it('does_not_render_share_notice_when_fully_valued', () => {

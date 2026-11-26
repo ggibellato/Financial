@@ -70,42 +70,46 @@
   padding-left: 10px;
 }
 
-.portfolio-holdings__footer {
-  flex-shrink: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px 32px;
-  padding: 12px 0;
-  background: var(--colorNeutralBackground3);
-  border-radius: 4px;
-  padding-left: 12px;
+@media (min-width: 600px) {
+  .portfolio-holdings__table tfoot th,
+  .portfolio-holdings__table tfoot td {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    z-index: 1;
+  }
+
+  .portfolio-holdings__totals-row th {
+    border-top: 1px solid var(--colorNeutralForeground3);
+  }
 }
 
-.portfolio-holdings__footer-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.portfolio-holdings__footer-label {
-  font-size: 11px;
-  color: var(--colorNeutralForeground3);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.portfolio-holdings__footer-value {
-  font-size: 13px;
-}
-
-.portfolio-holdings__footer-footnote {
-  font-size: 11px;
-  color: var(--colorNeutralForeground3);
+.portfolio-holdings__totals-note {
+  display: block;
+  white-space: normal;
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightRegular);
   font-style: italic;
+  color: var(--colorNeutralForeground3);
+}
+
+.portfolio-holdings__month-credits {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--colorNeutralForeground3);
+}
+
+.portfolio-holdings__month-credits strong {
+  color: var(--colorNeutralForeground1);
 }
 
 @media (max-width: 599px) {
   .portfolio-holdings {
     height: auto;
+  }
+
+  .portfolio-holdings__totals-row th {
+    display: block;
+    position: static;
   }
 }
