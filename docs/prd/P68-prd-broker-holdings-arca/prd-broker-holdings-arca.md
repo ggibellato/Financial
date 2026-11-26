@@ -189,7 +189,7 @@ Everything is generic. No screen is tied to a broker's name. A broker without se
   - **Start of last month** (header shows the date, for example "1 Oct")
   - **Start of this month** (for example "1 Nov")
   - **Change %**
-- **Month-start price** of an asset for a given 1st = its saved price with the latest date that is on or before that 1st **and** no more than 7 days before it. The 7-day window covers weekends and holidays. If no saved price falls in that window, the cell shows the missing-value mark with the tooltip "No saved price between 25 Oct and 1 Nov".
+- **Month-start price** of an asset for a given 1st = its saved price whose date is nearest to that 1st, no more than 7 days before or after it; when two prices are equally near, the earlier one is used. The window covers weekends, holidays and prices saved a few days after the 1st. The cell's tooltip names the date of the price used. If no saved price falls in that window, the cell shows the missing-value mark with the tooltip "No saved price between 25 Oct and 8 Nov".
 - **Value shown:**
   - Assets valued by market price: current quantity × month-start price.
   - Assets valued by a recorded total value (provider value or manual valuation): the recorded value itself.
@@ -260,7 +260,7 @@ Everything is generic. No screen is tied to a broker's name. A broker without se
 - Exporting the table to a spreadsheet or CSV.
 
 **Prices**
-- Asking a price provider for a historical close when no saved price falls in the 7-day window.
+- Asking a price provider for a historical close when no saved price falls in the 7-day window either side of the 1st.
 - Scheduling an automatic price fetch on the 1st of each month.
 
 **Spreadsheet leftovers**
@@ -341,8 +341,10 @@ graph TD
 ### F03. Month-on-Month Values
 - [x] In November the column headers read "1 Oct" and "1 Nov".
 - [x] With saved prices dated 30 Oct (10.00) and 1 Nov (11.00), the 1 Nov value uses 11.00.
-- [x] With saved prices dated 30 Oct (10.00) and 2 Nov (11.00) and none on 1 Nov, the 1 Nov value uses 10.00.
-- [x] With the latest saved price before 1 Nov dated 20 Oct, the 1 Nov cell shows the missing-value mark with "No saved price between 25 Oct and 1 Nov".
+- [x] With saved prices dated 28 Oct (10.00) and 3 Nov (11.00) and none on 1 Nov, the 1 Nov value uses 11.00, the nearer one.
+- [x] With saved prices dated 30 Oct (10.00) and 3 Nov (11.00), equally near 1 Nov, the 1 Nov value uses 10.00, the earlier one.
+- [x] With saved prices dated 25 Oct or 8 Nov only, the 1 Nov value uses it.
+- [x] With saved prices dated 24 Oct or 9 Nov only, the 1 Nov cell shows the missing-value mark with "No saved price between 25 Oct and 8 Nov".
 - [x] A market-priced holding of 100 units with month-start prices 10.00 and 11.00 shows 1,000.00, 1,100.00 and Change % +10.00%.
 - [x] A holding valued by recorded total value shows the recorded values themselves, not multiplied by quantity.
 - [x] Each value cell's tooltip shows the unit price used and the date it was saved.
