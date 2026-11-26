@@ -12,7 +12,7 @@ export default function MonthStartValue({ value, column }: MonthStartValueProps)
   const hidden = useVisuallyHiddenStyles()
 
   if (value.value == null || value.unitPrice == null || value.priceDate == null) {
-    const detail = `No saved price between ${formatDayMonthUtc(column.earliestPriceDate)} and ${formatDayMonthUtc(column.date)}`
+    const detail = `No saved price between ${formatDayMonthUtc(column.earliestPriceDate)} and ${formatDayMonthUtc(column.latestPriceDate)}`
     return (
       <span title={detail}>
         <MissingValue label={detail} />

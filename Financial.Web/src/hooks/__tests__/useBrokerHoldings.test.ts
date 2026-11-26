@@ -35,7 +35,7 @@ const EMPTY_TOTALS = {
   monthChangePercent: null,
   monthStartExcludedCount: 0,
 }
-const MONTH = { date: '2026-11-01', earliestPriceDate: '2026-10-25' }
+const MONTH = { date: '2026-11-01', earliestPriceDate: '2026-10-25', latestPriceDate: '2026-11-08' }
 const HOLDINGS: BrokerHoldingsDto = { currencies: ['BRL'], lastMonthStart: MONTH, thisMonthStart: MONTH, groups: [], total: EMPTY_TOTALS, arca: null }
 
 describe('useBrokerHoldings', () => {

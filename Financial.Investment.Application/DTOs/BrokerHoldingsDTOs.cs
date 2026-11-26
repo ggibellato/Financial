@@ -36,6 +36,7 @@ public sealed class MonthStartColumnDTO
 {
     public DateOnly Date { get; init; }
     public DateOnly EarliestPriceDate { get; init; }
+    public DateOnly LatestPriceDate { get; init; }
 }
 
 public sealed class HoldingRowDTO

@@ -5268,6 +5268,10 @@
           "earliestPriceDate": {
             "format": "date",
             "type": "string"
+          },
+          "latestPriceDate": {
+            "format": "date",
+            "type": "string"
           }
         },
         "type": "object"
