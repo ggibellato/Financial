@@ -33,6 +33,24 @@ public class PortfolioEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task CreatePortfolio_WithAnArcaBucket_ReturnsItOnThePortfolioList()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "XPI", Name = "TestPortfolioA", ArcaBucket = "Pension" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var portfolios = await Client.GetFromJsonAsync<List<PortfolioDTO>>("/api/v1/financial/portfolios");
+        portfolios!.Single(p => p.Name == "TestPortfolioA").ArcaBucket.Should().Be(Financial.Investment.Domain.Entities.ArcaBucket.Pension);
+    }
+
+    [Fact]
+    public async Task CreatePortfolio_WithAnUnknownArcaBucket_ReturnsBadRequestNamingTheAllowedValues()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "XPI", Name = "TestPortfolioA", ArcaBucket = "International" });
+
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, "ARCA bucket must be one of Shares, RealEstate, Cash, Pension, ReserveFund or empty.");
+    }
+
+    [Fact]
     public async Task CreatePortfolio_UnknownBroker_ReturnsNotFound()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "NoSuchBroker", Name = "TestPortfolioA" });

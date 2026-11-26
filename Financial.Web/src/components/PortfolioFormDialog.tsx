@@ -1,25 +1,32 @@
 import { useState } from 'react'
-import { Field, Input, Select } from '@fluentui/react-components'
+import { Field, InfoLabel, Input, Select, type LabelProps } from '@fluentui/react-components'
 import type { BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
+import { ARCA_BUCKET_LABELS, ARCA_BUCKET_ORDER, NOT_IN_ARCA, type ArcaBucket } from '../utils/arcaBucket'
+import { optionalChoiceOptions } from '../utils/selectOptions'
 
 interface PortfolioFormDialogProps {
   portfolio: PortfolioDto | null
   activeBrokers: BrokerDto[]
   onCancel: () => void
-  onSubmit: (brokerName: string, name: string) => Promise<unknown>
+  onSubmit: (brokerName: string, name: string, arcaBucket: ArcaBucket | null) => Promise<unknown>
 }
+
+const ARCA_BUCKET_OPTIONS = optionalChoiceOptions(ARCA_BUCKET_ORDER, ARCA_BUCKET_LABELS, NOT_IN_ARCA)
+const ARCA_BUCKET_INFO =
+  "Places this portfolio in the broker's ARCA allocation on the Holdings and Summary tabs. A Reserve fund is shown apart and is not part of the ARCA percentages."
 
 export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel, onSubmit }: PortfolioFormDialogProps) {
   const isEditing = portfolio !== null
   const [brokerName, setBrokerName] = useState(portfolio?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [name, setName] = useState(portfolio?.name ?? '')
+  const [arcaBucket, setArcaBucket] = useState<ArcaBucket | ''>(portfolio?.arcaBucket ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The portfolio could not be saved.')
-  const form = useEntityForm({ brokerName, name })
+  const form = useEntityForm({ brokerName, name, arcaBucket })
 
   const trimmedName = name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, JSON.stringify([brokerName, trimmedName]))
@@ -31,7 +38,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
   const handleSubmit = () => {
     form.revealValidation()
     if (!canSubmit) return
-    void submit(() => onSubmit(brokerName, trimmedName))
+    void submit(() => onSubmit(brokerName, trimmedName, arcaBucket || null))
   }
 
   return (
@@ -72,6 +79,24 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
         validationMessage={nameMessage}
       >
         <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
+      </Field>
+
+      <Field
+        label={{
+          children: (_: unknown, props: LabelProps) => (
+            <InfoLabel {...props} info={ARCA_BUCKET_INFO}>
+              ARCA bucket
+            </InfoLabel>
+          ),
+        }}
+      >
+        <Select value={arcaBucket} onChange={(e) => setArcaBucket(e.target.value as ArcaBucket | '')}>
+          {ARCA_BUCKET_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
       </Field>
     </EntityFormDialog>
   )

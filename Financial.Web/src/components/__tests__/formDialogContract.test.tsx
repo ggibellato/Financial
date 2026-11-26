@@ -18,8 +18,8 @@ const ACTIVE_BROKERS: BrokerDto[] = [
 ]
 
 const PORTFOLIOS: PortfolioDto[] = [
-  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1 },
-  { name: 'ISA', brokerName: 'Avenue', brokerStatus: 'Active', assetCount: 0 },
+  { name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1, arcaBucket: null },
+  { name: 'ISA', brokerName: 'Avenue', brokerStatus: 'Active', assetCount: 0, arcaBucket: null },
 ]
 
 interface Handlers {

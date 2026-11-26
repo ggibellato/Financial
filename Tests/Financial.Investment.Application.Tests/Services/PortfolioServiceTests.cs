@@ -275,6 +275,45 @@ public class PortfolioServiceTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
+    [Fact]
+    public async Task CreatePortfolioAsync_WithAnArcaBucket_StoresIt()
+    {
+        _repository.Investments = Investments.Create();
+        _repository.Investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var result = await CreateService().CreatePortfolioAsync(new PortfolioCreateDTO { BrokerName = "XPI", Name = "FII", ArcaBucket = "RealEstate" });
+
+        result.ArcaBucket.Should().Be(ArcaBucket.RealEstate);
+    }
+
+    [Fact]
+    public async Task UpdatePortfolioAsync_BlankArcaBucket_TakesThePortfolioOutOfArca()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("FII").SetArcaBucket(ArcaBucket.RealEstate);
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdatePortfolioAsync("XPI", "FII", new PortfolioUpdateDTO { Name = "FII", ArcaBucket = " " });
+
+        result.ArcaBucket.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdatePortfolioAsync_UnknownArcaBucket_ThrowsWithTheAllowedValuesAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("FII");
+        _repository.Investments.AddActiveBroker(broker);
+
+        var act = async () => await CreateService().UpdatePortfolioAsync("XPI", "FII", new PortfolioUpdateDTO { Name = "FII", ArcaBucket = "International" });
+
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("ARCA bucket must be one of Shares, RealEstate, Cash, Pension, ReserveFund or empty.");
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
     private PortfolioService CreateService() => new(_repository, _tracer, _logger);
 
     /// <summary>"Default" holds an asset; "Stale" is the emptied one a move would have left behind.</summary>

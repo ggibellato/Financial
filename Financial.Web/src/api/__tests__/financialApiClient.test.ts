@@ -1162,7 +1162,7 @@ describe('financialApiClient', () => {
   })
 
   it('gets the admin portfolios list', async () => {
-    const responseBody: PortfolioDto[] = [{ name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 3 }]
+    const responseBody: PortfolioDto[] = [{ name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 3, arcaBucket: null }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -1172,8 +1172,8 @@ describe('financialApiClient', () => {
   })
 
   it('posts a portfolio create request', async () => {
-    const requestBody: PortfolioCreateDto = { brokerName: 'XPI', name: 'ISA' }
-    const responseBody: PortfolioDto = { name: 'ISA', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }
+    const requestBody: PortfolioCreateDto = { brokerName: 'XPI', name: 'ISA', arcaBucket: null }
+    const responseBody: PortfolioDto = { name: 'ISA', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0, arcaBucket: null }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -1186,8 +1186,8 @@ describe('financialApiClient', () => {
   })
 
   it('puts a portfolio update, defaulting to scope=active', async () => {
-    const requestBody: PortfolioUpdateDto = { name: 'ISA Renamed' }
-    const responseBody: PortfolioDto = { name: 'ISA Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }
+    const requestBody: PortfolioUpdateDto = { name: 'ISA Renamed', arcaBucket: null }
+    const responseBody: PortfolioDto = { name: 'ISA Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0, arcaBucket: null }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -1200,8 +1200,8 @@ describe('financialApiClient', () => {
   })
 
   it('puts a portfolio update, scoped to historic', async () => {
-    const requestBody: PortfolioUpdateDto = { name: 'Archived' }
-    const responseBody: PortfolioDto = { name: 'Archived', brokerName: 'XPI', brokerStatus: 'Historic', assetCount: 0 }
+    const requestBody: PortfolioUpdateDto = { name: 'Archived', arcaBucket: null }
+    const responseBody: PortfolioDto = { name: 'Archived', brokerName: 'XPI', brokerStatus: 'Historic', assetCount: 0, arcaBucket: null }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

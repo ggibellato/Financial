@@ -210,6 +210,29 @@ public class InvestmentSerializerAdapterTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTripPreservesTheArcaBucket()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.AddPortfolio("Reserva").SetArcaBucket(ArcaBucket.ReserveFund);
+        investments.AddActiveBroker(broker);
+
+        var result = Serializer.Deserialize(Serializer.Serialize(investments));
+
+        result.ActiveBrokers.Single().Portfolios.Single().ArcaBucket.Should().Be(ArcaBucket.ReserveFund);
+    }
+
+    [Fact]
+    public void Deserialize_PortfolioWithoutAnArcaBucket_LoadsAsNotInArca()
+    {
+        const string json = """
+            { "ActiveBrokers": [ { "Name": "XPI", "Currency": "BRL", "Portfolios": [ { "Name": "FII", "Assets": [] } ] } ] }
+            """;
+
+        Serializer.Deserialize(json).ActiveBrokers.Single().Portfolios.Single().ArcaBucket.Should().BeNull();
+    }
+
+    [Fact]
     public void Deserialize_MissingHistoricBrokersKey_ResultsInEmptyHistoricCollection()
     {
         const string json = """
