@@ -259,8 +259,10 @@ public class BrokerHoldingsTests
         using var _ = new AssertionScope();
         result.LastMonthStart.Date.Should().Be(new DateOnly(2026, 9, 1));
         result.LastMonthStart.EarliestPriceDate.Should().Be(new DateOnly(2026, 8, 25));
+        result.LastMonthStart.LatestPriceDate.Should().Be(new DateOnly(2026, 9, 8));
         result.ThisMonthStart.Date.Should().Be(new DateOnly(2026, 10, 1));
         result.ThisMonthStart.EarliestPriceDate.Should().Be(new DateOnly(2026, 9, 24));
+        result.ThisMonthStart.LatestPriceDate.Should().Be(new DateOnly(2026, 10, 8));
     }
 
     [Fact]

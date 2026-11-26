@@ -26,30 +26,50 @@ public class MonthStartValueCalculatorTests
     }
 
     [Fact]
-    public void Calculate_NoPriceOnTheFirst_UsesTheLatestSavedBeforeIt()
+    public void Calculate_NoPriceOnTheFirst_UsesTheNearestSavedPrice()
     {
-        var asset = MarketPricedAsset(100m, (new DateOnly(2026, 10, 30), 10m), (new DateOnly(2026, 11, 2), 11m));
+        var asset = MarketPricedAsset(100m, (new DateOnly(2026, 10, 28), 10m), (new DateOnly(2026, 11, 3), 11m));
 
         var result = MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL");
 
         using var _ = new AssertionScope();
-        result.UnitPrice.Should().Be(10m);
-        result.PriceDate.Should().Be(new DateOnly(2026, 10, 30));
-        result.Value.Should().Be(1000m);
+        result.UnitPrice.Should().Be(11m);
+        result.PriceDate.Should().Be(new DateOnly(2026, 11, 3));
+        result.Value.Should().Be(1100m);
     }
 
     [Fact]
-    public void Calculate_PriceSevenDaysBeforeTheFirst_IsStillUsed()
+    public void Calculate_TwoPricesBeforeTheFirst_UsesTheLaterOne()
     {
-        var asset = MarketPricedAsset(100m, (new DateOnly(2026, 10, 25), 10m));
+        var asset = MarketPricedAsset(100m, (new DateOnly(2026, 10, 28), 10m), (new DateOnly(2026, 10, 30), 11m));
+
+        MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").PriceDate.Should().Be(new DateOnly(2026, 10, 30));
+    }
+
+    [Fact]
+    public void Calculate_PricesEquallyNearBeforeAndAfter_UsesTheEarlierOne()
+    {
+        var asset = MarketPricedAsset(100m, (new DateOnly(2026, 10, 30), 10m), (new DateOnly(2026, 11, 3), 11m));
+
+        MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").PriceDate.Should().Be(new DateOnly(2026, 10, 30));
+    }
+
+    [Theory]
+    [InlineData(2026, 10, 25)]
+    [InlineData(2026, 11, 8)]
+    public void Calculate_PriceSevenDaysFromTheFirst_IsStillUsed(int year, int month, int day)
+    {
+        var asset = MarketPricedAsset(100m, (new DateOnly(year, month, day), 10m));
 
         MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").Value.Should().Be(1000m);
     }
 
-    [Fact]
-    public void Calculate_LatestPriceOlderThanTheWindow_IsMissing()
+    [Theory]
+    [InlineData(2026, 10, 24)]
+    [InlineData(2026, 11, 9)]
+    public void Calculate_PricesOnlyOutsideTheWindow_IsMissing(int year, int month, int day)
     {
-        var asset = MarketPricedAsset(100m, (new DateOnly(2026, 10, 20), 10m));
+        var asset = MarketPricedAsset(100m, (new DateOnly(year, month, day), 10m));
 
         MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").Should().Be(MonthStartValue.Missing);
     }
@@ -108,9 +128,10 @@ public class MonthStartValueCalculatorTests
     }
 
     [Fact]
-    public void EarliestPriceDate_IsSevenDaysBeforeTheFirst()
+    public void PriceWindow_IsSevenDaysEitherSideOfTheFirst()
     {
         MonthStartValueCalculator.EarliestPriceDate(FirstOfNovember).Should().Be(new DateOnly(2026, 10, 25));
+        MonthStartValueCalculator.LatestPriceDate(FirstOfNovember).Should().Be(new DateOnly(2026, 11, 8));
     }
 
     [Theory]

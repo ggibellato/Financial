@@ -82,6 +82,7 @@ internal static class BrokerHoldingsBuilder
     {
         Date = monthStart,
         EarliestPriceDate = MonthStartValueCalculator.EarliestPriceDate(monthStart),
+        LatestPriceDate = MonthStartValueCalculator.LatestPriceDate(monthStart),
     };
 
     private static MonthStartValueDTO ToDto(MonthStartValue value) => new()

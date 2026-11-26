@@ -95,8 +95,8 @@ function row(asset: Partial<PortfolioAssetSummaryItemDto>, shares: Partial<Holdi
 
 const HOLDINGS: BrokerHoldingsDto = {
   currencies: ['BRL'],
-  lastMonthStart: { date: '2026-10-01', earliestPriceDate: '2026-09-24' },
-  thisMonthStart: { date: '2026-11-01', earliestPriceDate: '2026-10-25' },
+  lastMonthStart: { date: '2026-10-01', earliestPriceDate: '2026-09-24', latestPriceDate: '2026-10-08' },
+  thisMonthStart: { date: '2026-11-01', earliestPriceDate: '2026-10-25', latestPriceDate: '2026-11-08' },
   groups: [
     {
       name: 'Acoes',
@@ -330,9 +330,9 @@ describe('BrokerHoldingsTab', () => {
       groups: [{ ...HOLDINGS.groups[1], holdings: [row({ assetName: 'NOPR11' }, { thisMonthStart: NO_MONTH_START, monthChangePercent: null })] }],
     })
     const holding = assetRow('NOPR11')
-    expect(within(holding).getByRole('img', { name: 'No saved price between 25 Oct and 1 Nov' })).toBeInTheDocument()
+    expect(within(holding).getByRole('img', { name: 'No saved price between 25 Oct and 8 Nov' })).toBeInTheDocument()
     expect(within(holding).getByRole('img', { name: 'No change: a month-start price is missing' })).toBeInTheDocument()
-    expect(within(holding).getByTitle('No saved price between 25 Oct and 1 Nov')).toBeInTheDocument()
+    expect(within(holding).getByTitle('No saved price between 25 Oct and 8 Nov')).toBeInTheDocument()
   })
 
   it('stars_a_month_start_subtotal_that_excludes_holdings_without_a_price', async () => {

@@ -21,10 +21,12 @@ public static class MonthStartValueCalculator
 
     public static DateOnly EarliestPriceDate(DateOnly monthStart) => monthStart.AddDays(-PriceWindowDays);
 
+    public static DateOnly LatestPriceDate(DateOnly monthStart) => monthStart.AddDays(PriceWindowDays);
+
     public static MonthStartValue Calculate(Asset asset, DateOnly monthStart, string fallbackCurrency)
     {
-        var price = asset.GetPriceAsOf(monthStart);
-        return price is null || price.Date < EarliestPriceDate(monthStart)
+        var price = NearestPrice(asset, monthStart);
+        return price is null
             ? MonthStartValue.Missing
             : new MonthStartValue(
                 HoldingValuationCalculator.ValueAt(asset.Quantity, price),
@@ -32,6 +34,13 @@ public static class MonthStartValueCalculator
                 price.Date,
                 string.IsNullOrEmpty(price.Currency) ? AssetCurrency(asset) ?? fallbackCurrency : price.Currency);
     }
+
+    private static AssetPriceSnapshot? NearestPrice(Asset asset, DateOnly monthStart) =>
+        asset.PriceSnapshots
+            .Select(price => new { Price = price, Distance = Math.Abs(price.Date.DayNumber - monthStart.DayNumber) })
+            .Where(candidate => candidate.Distance <= PriceWindowDays)
+            .MinBy(candidate => (candidate.Distance, candidate.Price.Date))
+            ?.Price;
 
     private static string? AssetCurrency(Asset asset) => asset.Transactions.MaxBy(t => t.Date)?.Currency.ToString();
 

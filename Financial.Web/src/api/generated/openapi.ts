@@ -8935,6 +8935,8 @@ export interface components {
             date: string;
             /** Format: date */
             earliestPriceDate: string;
+            /** Format: date */
+            latestPriceDate: string;
         };
         MonthStartValueDTO: {
             currency: null | string;
