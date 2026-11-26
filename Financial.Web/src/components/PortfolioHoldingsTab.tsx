@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { mergeClasses, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import MissingValue from './MissingValue'
@@ -62,14 +62,8 @@ function renderGatedCell(
 
 const MANUAL_PRICE_MEANING = 'This value came from a manually-entered price, not a live fetch.'
 
-function FooterTotal({ label, value, children }: { label: string; value: ReactNode; children?: ReactNode }) {
-  return (
-    <div className="portfolio-holdings__footer-item">
-      <span className="portfolio-holdings__footer-label">{label}</span>
-      <strong className="portfolio-holdings__footer-value">{value}</strong>
-      {children}
-    </div>
-  )
+function NoTotal({ label, className }: { label: string; className?: string }) {
+  return <DataTableCell label={label} className={mergeClasses('data-table__cell--no-total', className)} />
 }
 
 interface AssetRowProps {
@@ -185,6 +179,64 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
   )
 }
 
+interface HoldingsTotals {
+  totalInvested: number
+  totalCredits: number
+  currentMonthCredits: number
+  estAnnualCredits: number | null
+  realisedGainLoss: number
+  realisedGainLossSharesOnly: number
+  cv: { display: ReactNode; partial: boolean }
+}
+
+function TotalsRow({ totals, isHistoric }: { totals: HoldingsTotals; isHistoric: boolean }) {
+  return (
+    <TableRow className="portfolio-holdings__totals-row">
+      <TableHeaderCell scope="row" className="portfolio-holdings__name-cell">Total</TableHeaderCell>
+      <NoTotal label="First investment" />
+      <NoTotal label="Quantity" />
+      <NoTotal label={isHistoric ? '% Portfolio' : 'Market % of portfolio'} />
+      <DataTableCell label="Total invested">{formatN2(totals.totalInvested)}</DataTableCell>
+      {isHistoric ? (
+        <>
+          <DataTableCell label="Realised gain/loss">{formatN2(totals.realisedGainLoss)}</DataTableCell>
+          <DataTableCell label="Realised (shares only)">{formatN2(totals.realisedGainLossSharesOnly)}</DataTableCell>
+        </>
+      ) : (
+        <>
+          <NoTotal label="Invested % of portfolio" />
+          <DataTableCell label="Current value">
+            {totals.cv.display}
+            {totals.cv.partial && (
+              <span className="portfolio-holdings__totals-note">excludes assets with pending prices</span>
+            )}
+          </DataTableCell>
+        </>
+      )}
+      <DataTableCell label="Total credits">{formatN2(totals.totalCredits)}</DataTableCell>
+      {!isHistoric && (
+        <>
+          <NoTotal label="Credits % of invested" />
+          <NoTotal label="Monthly yield" />
+          <NoTotal label="APR" />
+        </>
+      )}
+      <NoTotal label="Average price" />
+      <NoTotal label={isHistoric ? 'Sold price' : 'Current price'} />
+      <NoTotal label="Profit %" />
+      {!isHistoric && <NoTotal label="Profit amount" />}
+      <NoTotal label="Profit % w/ credits" />
+      <NoTotal label="XIRR" />
+      <NoTotal label="Last month credits" className="portfolio-holdings__credits-separator" />
+      <NoTotal label="Last credit month" />
+      <NoTotal label="Last month credits %" />
+      {!isHistoric && <NoTotal label="Last credit % of market value" />}
+      <DataTableCell label="Est. annual credits">{orMissing(totals.estAnnualCredits, formatN2)}</DataTableCell>
+      <NoTotal label="Est. annual %" />
+    </TableRow>
+  )
+}
+
 function computeCurrentValueFooter(
   items: PortfolioAssetSummaryItemDto[],
   rowPrices: RowPriceState[],
@@ -252,21 +304,19 @@ export default function PortfolioHoldingsTab() {
 
   const creditsLabel = `Credits ${formatMonthYear(new Date())}`
 
-  const footer =
+  const footer: HoldingsTotals | null =
     items && items.length > 0 && summary
-      ? (() => {
-          const totalInvested = summary.totalInvested
-          const totalCredits = summary.totalCredits
-          const currentMonthCredits = items.reduce((acc, it) => acc + it.currentMonthCredits, 0)
-          const hasAnyAnnual = items.some(it => it.estimatedAnnualCredits !== null)
-          const estAnnualCredits = hasAnyAnnual
+      ? {
+          totalInvested: summary.totalInvested,
+          totalCredits: summary.totalCredits,
+          currentMonthCredits: items.reduce((acc, it) => acc + it.currentMonthCredits, 0),
+          estAnnualCredits: items.some(it => it.estimatedAnnualCredits !== null)
             ? items.reduce((acc, it) => acc + (it.estimatedAnnualCredits ?? 0), 0)
-            : null
-          const realisedGainLoss = items.reduce((acc, it) => acc + it.realisedGainLoss, 0)
-          const realisedGainLossSharesOnly = items.reduce((acc, it) => acc + it.realisedGainLossSharesOnly, 0)
-          const cv = computeCurrentValueFooter(items, rowPrices)
-          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, realisedGainLoss, realisedGainLossSharesOnly, cv }
-        })()
+            : null,
+          realisedGainLoss: items.reduce((acc, it) => acc + it.realisedGainLoss, 0),
+          realisedGainLossSharesOnly: items.reduce((acc, it) => acc + it.realisedGainLossSharesOnly, 0),
+          cv: computeCurrentValueFooter(items, rowPrices),
+        }
       : null
 
   return (
@@ -331,26 +381,19 @@ export default function PortfolioHoldingsTab() {
                 <AssetRow key={row.item.assetName} item={row.item} rowPrice={row.rowPrice} isHistoric={isHistoric} />
               ))}
             </TableBody>
+            {footer && (
+              <tfoot>
+                <TotalsRow totals={footer} isHistoric={isHistoric} />
+              </tfoot>
+            )}
           </Table>
         )}
       </div>
 
       {footer && (
-        <div className="portfolio-holdings__footer" role="group" aria-label="Totals for holdings">
-          <FooterTotal label="Total invested" value={formatN2(footer.totalInvested)} />
-          <FooterTotal label="Total credits" value={formatN2(footer.totalCredits)} />
-          {isHistoric && <FooterTotal label="Realised gain/loss" value={formatN2(footer.realisedGainLoss)} />}
-          {isHistoric && <FooterTotal label="Realised (shares only)" value={formatN2(footer.realisedGainLossSharesOnly)} />}
-          {!isHistoric && (
-            <FooterTotal label="Current value" value={footer.cv.display}>
-              {footer.cv.partial && (
-                <span className="portfolio-holdings__footer-footnote">excludes assets with pending prices</span>
-              )}
-            </FooterTotal>
-          )}
-          <FooterTotal label={creditsLabel} value={formatN2(footer.currentMonthCredits)} />
-          <FooterTotal label="Est. annual credits" value={orMissing(footer.estAnnualCredits, formatN2)} />
-        </div>
+        <p className="portfolio-holdings__month-credits" role="group" aria-label="Totals for Holdings">
+          <span>{creditsLabel}:</span> <strong>{formatN2(footer.currentMonthCredits)}</strong>
+        </p>
       )}
     </div>
   )
