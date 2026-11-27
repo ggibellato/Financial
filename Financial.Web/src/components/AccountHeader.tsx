@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../api/types'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
-import { formatLongMonthYear, formatN2 } from '../utils/formatters'
+import { formatDayMonthYearUtc, formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 import SavingsTermsSummary from './SavingsTermsSummary'
@@ -38,6 +38,11 @@ function viewedStatementAmount(statement: AccountStatementDto | null): number {
 
 function potLinkedText(amount: number | null | undefined, currency: string): string | null {
   return amount == null ? null : `${formatN2(amount)} ${currency} from Pots`
+}
+
+function statementDueText(statement: AccountStatementDto | null): string | null {
+  if (statement?.status !== UNPAID_STATEMENT_STATUS || !statement.dueDate) return null
+  return `Statement due ${formatDayMonthYearUtc(statement.dueDate)}`
 }
 
 function firstFigure(account: AccountDetailDto, hasParticipants: boolean): { label: string; value: string; status: string | null } {
@@ -80,6 +85,7 @@ export default function AccountHeader({
   const figure = firstFigure(account, hasParticipants)
   const statementFromPots = potLinkedText(account.viewedStatement?.potLinkedTotal, account.currency)
   const owedFromPots = potLinkedText(account.potLinkedOwed, account.currency)
+  const statementDue = statementDueText(account.viewedStatement)
   const destinations = destinationsSummary(account.roundUpDestination, account.cashbackDestination)
   const currencies = hasParticipants ? account.currentBalances.map(({ currency }) => currency).join(', ') : account.currency
 
@@ -130,6 +136,7 @@ export default function AccountHeader({
               {formatOwedOrCredit(account.totalOwed)} {account.currency}
             </Text>
             {owedFromPots && <Text size={300}>{owedFromPots}</Text>}
+            {statementDue && <Text size={300}>{statementDue}</Text>}
           </div>
         )}
       </div>
