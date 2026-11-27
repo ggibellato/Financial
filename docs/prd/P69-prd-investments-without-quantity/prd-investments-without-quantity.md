@@ -6,7 +6,7 @@ Investments Without a Quantity gives holdings without a usable unit count the sa
 
 The three holdings need two answers. Inco and Grão only ever show a balance, so they get a new **Tracked by: Balance** option. Money the investor adds is a **Deposit**, money taken out to a bank account or redeemed is a **Withdrawal** (amounts only, no quantity), and the balance shown by XP is recorded once a month as a dated **Balance entry**. For Inco, project payouts that stay in the Inco balance and are reinvested in new projects are internal movements and are never recorded. Only new money added and money moved out are. Gains use **proportional cost**: a withdrawal removes the same fraction of the invested amount as it removes of the balance, and the difference is realised gain.
 
-Guepardo is a regulated investment fund. XP shows only its current value, but the fund has a real quota value: the CVM (Brazil's securities regulator) publishes every fund's daily quota value by CNPJ in its open-data portal. Guepardo therefore stays a quantity holding and gets real quotas without the investor needing to know them. A new **CNPJ** field identifies the fund, a new **CVM daily quota** price source prices it every day, and a **buy-by-amount** option works out the quota count of each purchase from the amount invested and the CVM quota value on the conversion date. The same calculation recomputes the existing purchases once. Values are shown gross, as XP shows them, and the only tax recorded is the income tax (IR) actually withheld on a withdrawal. A one-off migration tool moves Inco and Grão off today's workaround, where each deposit is a "Buy of 1 unit" and each price is the balance divided by the number of deposits.
+Guepardo is a regulated investment fund. XP shows only its current value, but the fund has a real quota value: the CVM (Brazil's securities regulator) publishes every fund's daily quota value by CNPJ in its open-data portal. Guepardo therefore stays a quantity holding and gets real quotas without the investor needing to know them. A new optional **CNPJ** field identifies the fund (and every other Brazilian holding, with an optional **Administrator CNPJ** for funds, FIIs and ETFs, as the Brazilian IR declaration needs), a new **CVM daily quota** price source prices it every day, and a **buy-by-amount** option works out the quota count of each purchase from the amount invested and the CVM quota value on the conversion date. The same calculation recomputes the existing purchases once. Values are shown gross, as XP shows them, and the only tax recorded is the income tax (IR) actually withheld on a withdrawal. A one-off migration tool moves Inco and Grão off today's workaround, where each deposit is a "Buy of 1 unit" and each price is the balance divided by the number of deposits.
 
 ## 2. Problem and Opportunity
 
@@ -37,7 +37,7 @@ Guepardo is a regulated investment fund. XP shows only its current value, but th
 - **Manual calculation → direct entry.** Balance-tracked holdings take the XP balance exactly as shown (F03), and Guepardo is priced automatically from the CVM quota value (F07). No arithmetic remains.
 - **Broken history → stable history.** A balance entry is a total, not a per-unit price, so adding a deposit never changes an earlier entry's meaning (F02, F03). Between entries, the current value is the last balance plus the money moved since, so a new deposit is not read as a loss (F04).
 - **No way to enter → first-class option.** "Tracked by: Balance" is a choice in the asset form for any holding (F01), with amount-only Deposits and Withdrawals and proportional cost (F02).
-- **Unknown quotas → derived quotas.** A CNPJ field (F06), a CVM daily quota source with quota history by date (F07), and buy-by-amount plus a one-off quota recalculation (F08) give Guepardo real quotas from the amounts the investor already knows.
+- **Unknown quotas → derived quotas.** An optional CNPJ field on every Brazilian holding (F06, which also gives the IR declaration its identifiers), a CVM daily quota source with quota history by date (F07), and buy-by-amount plus a one-off quota recalculation (F08) give Guepardo real quotas from the amounts the investor already knows.
 - **Same oversight as shares.** Balance-tracked holdings report the same figures and feed the same totals as share holdings (F04), and existing records are converted without re-typing (F05).
 
 ## 3. Target Audience
@@ -100,9 +100,11 @@ Guepardo is a regulated investment fund. XP shows only its current value, but th
 - As an investor, I want the tool to run against a copy of my data file first and report what it changed so that my live data is never put at risk.
 - As an investor, I want the tool to refuse a holding that has sales, credits or corporate actions so that nothing it cannot convert exactly is silently lost.
 
-### F06. Fund CNPJ Identifier
-- As an investor, I want to enter a Brazilian fund's CNPJ on the asset form, with or without punctuation, so that the app can find its official quota value.
-- As an investor, I want an invalid CNPJ to be rejected with a clear message so that a typo never causes silent pricing failures.
+### F06. Brazilian CNPJ Identifiers
+- As an investor, I want to enter the CNPJ of any Brazilian holding (the company for shares, the fund for FIIs, funds and ETFs, the issuer for fixed income, the insurer for a pension plan), with or without punctuation, so that it is identified the way the IR declaration needs.
+- As an investor, I want to enter the administrator's CNPJ for a fund, FII or ETF so that the declaration's asset description can cite it.
+- As an investor, I want a fund's CNPJ to let the app find its official quota value so that it is priced from CVM.
+- As an investor, I want an invalid CNPJ to be rejected with a clear message so that a typo never reaches the declaration or causes silent pricing failures.
 
 ### F07. CVM Daily Quota Price Source
 - As the system, I want to fetch a fund's latest quota value from the CVM daily fund report by CNPJ so that Guepardo is priced without manual entry.
@@ -273,22 +275,26 @@ Guepardo is a regulated investment fund. XP shows only its current value, but th
 - A holding is already tracked by Balance → reported as "already migrated", skipped, and not treated as a failure.
 - The file can't be written (locked, permissions) → "Couldn't write <path>: <reason>." The original file is left unchanged because the write goes through a temp file and a move, and the backup is kept.
 
-### F06. Fund CNPJ Identifier
+### F06. Brazilian CNPJ Identifiers
 
 **Provides:**
-- Fund CNPJ, 14 digits (used by F07, F08)
+- Asset CNPJ, 14 digits: for a fund, the fund's own CNPJ (used by F07, F08)
 
 **Capabilities:**
-- New optional asset identity field **CNPJ**, shown in the asset form for holdings with country BR and class Fund (the only class CVM pricing uses).
-- Accepted input: 14 digits with or without the mask `00.000.000/0000-00`. Stored as 14 digits only. Validated with the standard CNPJ check-digit rule. All-same-digit values (for example 00000000000000) are rejected.
+- New optional asset identity field **CNPJ**, shown in the asset form for every holding with country BR. It is the CNPJ that identifies the holding in the Brazilian IR declaration (Bens e Direitos and income): the company for shares, the fund for FIIs, funds and ETFs, the issuer for fixed income, the insurer for a pension plan. For class Fund it is also the identifier CVM pricing uses (F07).
+- New optional field **Administrator CNPJ**, shown for holdings with country BR and class Fund, Real estate (FIIs) or ETF. It is the administrator's CNPJ that the declaration cites in the asset description. Nothing else in P69 reads it.
+- Neither field is required: a holding saves without them, and they can be filled in later. A value is validated only when one is entered.
+- CNPJ exists only in Brazil: neither field is shown or kept for a holding whose country is not BR. Changing a holding's country away from BR clears both, and changing its class away from Fund/Real estate/ETF clears the Administrator CNPJ.
+- Accepted input for both fields: 14 digits with or without the mask `00.000.000/0000-00`. Stored as 14 digits only. Validated with the standard CNPJ check-digit rule. All-same-digit values (for example 00000000000000) are rejected.
 - Shown masked (`00.000.000/0000-00`) in the asset form and on the Summary tab identity group.
-- Not required to be unique, because one fund can be held in more than one portfolio. Editing it never touches transactions.
-- Included in the asset admin create/update DTOs and the OpenAPI snapshot.
+- Not required to be unique, because one company or fund can be held in more than one portfolio. Editing either never touches transactions.
+- Both are included in the asset admin create/update DTOs and the OpenAPI snapshot.
 
 **Experience:**
-- The asset form shows a "CNPJ" text field under ISIN with the helper text "The fund's CNPJ, shown on its fact sheet (lâmina) in XP. Used to get its daily quota value from CVM."
-- An invalid value shows the inline error "Enter a valid 14-digit CNPJ." on blur and on submit, and focus moves to it on submit.
-- Clearing the field removes the CNPJ; the CVM price source and buy-by-amount then no longer apply to that holding.
+- The asset form shows a "CNPJ" text field under ISIN for BR holdings, with the helper text "The CNPJ that identifies this holding in the IR declaration: the company, fund, issuer or insurer. For a fund, also used to get its daily quota value from CVM."
+- For BR funds, FIIs and ETFs, an "Administrator CNPJ" field follows it, with the helper text "The fund administrator's CNPJ, cited in the IR declaration."
+- An invalid value in either field shows the inline error "Enter a valid 14-digit CNPJ." on blur and on submit, and focus moves to it on submit.
+- Clearing the CNPJ removes it; the CVM price source and buy-by-amount then no longer apply to that holding. Clearing the Administrator CNPJ removes it.
 
 ### F07. CVM Daily Quota Price Source
 
@@ -364,6 +370,9 @@ Guepardo is a regulated investment fund. XP shows only its current value, but th
 - Recording payouts, interest or amortisation that stay inside the Inco balance, or splitting a withdrawal into interest and principal.
 - Tracking individual Inco projects separately inside the holding.
 
+**IR declaration**
+- Producing the Brazilian IR declaration (Bens e Direitos, income reports) or its asset descriptions. F06 only stores the CNPJs that the declaration needs.
+
 **Tracking-mode changes**
 - Switching an existing holding between Quantity and price and Balance in the app while it has transactions. Only the F05 tool converts existing holdings.
 - Converting a balance-tracked holding back to quantities.
@@ -394,7 +403,7 @@ Guepardo is a regulated investment fund. XP shows only its current value, but th
 | F02 | Deposits and Withdrawals | 1 | F01, F03 |
 | F04 | Balance Holding Valuation and Performance | 1 | F01, F02, F03 |
 | F05 | Balance Holding Migration Tool | 1 | F01, F02, F03 |
-| F06 | Fund CNPJ Identifier | 1 | None |
+| F06 | Brazilian CNPJ Identifiers | 1 | None |
 | F07 | CVM Daily Quota Price Source | 1 | F06 |
 | F08 | Fund Purchases by Amount | 1 | F06, F07 |
 
@@ -424,7 +433,7 @@ graph TD
   F01 --> F05[F05 Migration tool]
   F02 --> F05
   F03 --> F05
-  F06[F06 Fund CNPJ] --> F07[F07 CVM quota source]
+  F06[F06 CNPJ ids] --> F07[F07 CVM quota source]
   F06 --> F08[F08 Buy by amount]
   F07 --> F08
 ```
@@ -497,12 +506,15 @@ graph TD
 - [ ] A write failure leaves the original file unchanged.
 - [ ] The tool prints the restart reminder after a successful write.
 
-### F06. Fund CNPJ Identifier
-- [ ] The CNPJ field appears in the asset form for country BR with class Fund, and nowhere else.
-- [ ] A valid CNPJ entered with or without the mask is stored as 14 digits and shown masked.
-- [ ] A CNPJ with wrong check digits, the wrong length or all identical digits shows "Enter a valid 14-digit CNPJ." and is not saved.
-- [ ] Clearing the field removes the CNPJ.
-- [ ] The CNPJ is in the asset admin DTOs and the OpenAPI snapshot, and the generated web types are regenerated.
+### F06. Brazilian CNPJ Identifiers
+- [ ] The CNPJ field appears in the asset form for every holding with country BR, and for no other country.
+- [ ] The Administrator CNPJ field appears for country BR with class Fund, Real estate or ETF, and nowhere else.
+- [ ] A valid CNPJ or Administrator CNPJ entered with or without the mask is stored as 14 digits and shown masked.
+- [ ] A value with wrong check digits, the wrong length or all identical digits shows "Enter a valid 14-digit CNPJ." in that field and is not saved.
+- [ ] A BR holding with both fields left empty saves without an error.
+- [ ] Clearing either field removes that value.
+- [ ] Changing a holding's country away from BR clears both values, and changing its class away from Fund/Real estate/ETF clears the Administrator CNPJ.
+- [ ] Both fields are in the asset admin DTOs and the OpenAPI snapshot, and the generated web types are regenerated.
 
 ### F07. CVM Daily Quota Price Source
 - [ ] A BR Fund holding with a CNPJ, tracked by quantity, is priced from the CVM daily report's latest quota value on or before the valuation date.
