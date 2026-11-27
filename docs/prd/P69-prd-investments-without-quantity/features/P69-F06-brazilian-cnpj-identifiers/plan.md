@@ -11,7 +11,7 @@
 
 **1. CNPJ domain rule** - Add the CNPJ normalisation and check-digit rule to the Investment Domain rules, with the single invalid-value message the PRD defines.
 
-**2. Asset fields** - Give the asset its optional CNPJ and Administrator CNPJ identity fields, the rules for which assets carry each (every BR asset; BR funds and FIIs), and setters that validate and apply those rules. Move the identity update's segment clearing into one helper that also clears each CNPJ when the asset stops qualifying.
+**2. Asset fields** - Give the asset its optional CNPJ and Administrator CNPJ identity fields, the rules for which assets carry each (every BR asset; BR funds, FIIs and ETFs), and setters that validate and apply those rules. Move the identity update's segment clearing into one helper that also clears each CNPJ when the asset stops qualifying.
 
 **3. Asset admin and details DTOs** - Add both fields to the asset admin read, create and update DTOs and to the asset details DTO.
 
@@ -23,7 +23,7 @@
 
 **6. CNPJ web helpers** - Add one web utility holding the client validity check and message, digit stripping, masking and which assets carry each field, and give the shared form hook a way to reveal one field's error on blur.
 
-**7. Asset form fields** - Add the CNPJ field under ISIN for BR assets and the Administrator CNPJ field after it for BR funds and FIIs, through one shared local field helper, with the PRD helper texts, on-blur and on-Save validation per field, stored values shown masked, and the digits in the submitted values.
+**7. Asset form fields** - Add the CNPJ field under ISIN for BR assets and the Administrator CNPJ field after it for BR funds, FIIs and ETFs, through one shared local field helper, with the PRD helper texts, on-blur and on-Save validation per field, stored values shown masked, and the digits in the submitted values.
 
 **8. Assets page wiring** - Send both fields on asset create and update, or null when cleared or hidden.
 

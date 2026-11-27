@@ -6,11 +6,11 @@
 
 **What:** Two new optional asset identity fields, both for Brazilian holdings only:
 - **CNPJ** for every asset with country BR. It is the CNPJ that identifies the holding in the Brazilian IR declaration (Bens e Direitos and income): the company for shares, the fund for FIIs, funds and ETFs, the issuer for fixed income, the insurer for a pension plan. For class Fund it is also the identifier the CVM price source matches (F07).
-- **Administrator CNPJ** for assets with country BR and class Fund or RealEstate (FIIs). The declaration cites it in the asset description. Nothing else in P69 reads it.
+- **Administrator CNPJ** for assets with country BR and class Fund, RealEstate (FIIs) or ETF. The declaration cites it in the asset description. Nothing else in P69 reads it.
 
 Both are optional: a holding saves without them and they can be filled in later; a value is validated only when one is entered. The server accepts 14 digits with or without the `00.000.000/0000-00` mask, checks them with the standard CNPJ check-digit rule, and stores the 14 digits only. Both fields go into the asset admin create, update and read DTOs and into `AssetDetailsDTO`. The web asset form edits them under ISIN, and the asset Summary tab shows them masked, also under ISIN.
 
-**Why:** The declaration needs the right CNPJ per holding (and, for funds and FIIs, the administrator's too), and F07/F08 need a fund's CNPJ to price it from CVM. All of them need stored identifiers that are already known to be valid, so a typo is caught when it is entered and never surfaces later in the declaration or as a pricing failure.
+**Why:** The declaration needs the right CNPJ per holding (and, for funds, FIIs and ETFs, the administrator's too), and F07/F08 need a fund's CNPJ to price it from CVM. All of them need stored identifiers that are already known to be valid, so a typo is caught when it is entered and never surfaces later in the declaration or as a pricing failure.
 
 **Scope:**
 
@@ -59,8 +59,8 @@ graph TD
 | How a CNPJ is modelled | `string? Cnpj` and `string? AdministratorCnpj` on `Asset` holding the 14 digits, with the rule in a static `CnpjRules` | A `Cnpj` value-object record | A record would serialise as a nested object in the data file and on the wire, needing a custom converter in Infrastructure and the Api. The PRD stores 14 digits. Plain strings match `ISIN`/`Segment` and keep the data file flat |
 | Where the rule lives | `Financial.Investment.Domain/Rules/CnpjRules.cs` | Inline on `Asset`; or Application `Validation/`, as `IsinValidator` is | A domain invariant of two stored values, shared, with its own tests. Investment must not reference CashFlow, and neither context nor Shared has a CNPJ validator today (searched) |
 | Which assets carry the CNPJ | `Asset.AcceptsCnpj(country)`: true for `CountryCode.BR`, any class | Funds only | PRD: every BR holding is identified by a CNPJ in the declaration; CNPJ exists only in Brazil |
-| Which assets carry the Administrator CNPJ | `Asset.AcceptsAdministratorCnpj(country, class)`: BR with `GlobalAssetClass.Fund` or `RealEstate` (BR FIIs map to RealEstate in `GlobalAssetClassMapping`) | Every BR asset | Only funds and FIIs have an administrator cited in the declaration |
-| Clearing when the asset changes | `UpdateIdentity` calls one private `ClearInapplicableIdentityFields()`: segment (existing rule, moved), CNPJ when not BR, Administrator CNPJ when not BR Fund/RealEstate | A clear per field inline | One place for every conditionally applicable identity field; F07 relies on a CNPJ never outliving the BR country |
+| Which assets carry the Administrator CNPJ | `Asset.AcceptsAdministratorCnpj(country, class)`: BR with `GlobalAssetClass.Fund`, `RealEstate` or `ETF` (BR FIIs map to RealEstate and BR ETFs to ETF in `GlobalAssetClassMapping`) | Every BR asset | Only funds, FIIs and ETFs have an administrator cited in the declaration |
+| Clearing when the asset changes | `UpdateIdentity` calls one private `ClearInapplicableIdentityFields()`: segment (existing rule, moved), CNPJ when not BR, Administrator CNPJ when not BR Fund/RealEstate/ETF | A clear per field inline | One place for every conditionally applicable identity field; F07 relies on a CNPJ never outliving the BR country |
 | Accepted input | Trim, then remove `.`, `/`, `-` and spaces. The result must be exactly 14 ASCII digits, not all the same, with correct check digits | Only bare digits or only the exact mask | Lenient about punctuation, as the PRD asks, strict about the digits. Letters are rejected |
 | Error message | One message, `CnpjRules.InvalidMessage` = "Enter a valid 14-digit CNPJ.", thrown as `ArgumentException` (400 through `DomainExceptionMappingMiddleware`) for either field | A message per cause or per field | The PRD gives a single message. The web shows it under the field that failed |
 | Update semantics | `AssetAdminUpdateDTO.Cnpj` / `.AdministratorCnpj`: null or blank clears, as `Segment` and `PickSource` do | Null keeps the current value | Matches the neighbouring fields and the PRD ("Clearing either field removes that value"). The web form always sends both |
@@ -95,7 +95,7 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Financial.Web/src/utils/cnpj.ts` | New | CNPJ rules and formatting | `INVALID_CNPJ_MESSAGE` ("Enter a valid 14-digit CNPJ."), `isValidCnpj(value)` (same rule as `CnpjRules`), `cnpjDigits(value)` (strip `.`, `/`, `-`, whitespace), `formatCnpj(digits)` (`00.000.000/0000-00`; returns the input unchanged unless it is 14 digits), `ADMINISTRATOR_CNPJ_CLASSES = ['Fund', 'RealEstate']` and `acceptsCnpj(country)` (`country === 'BR'`), mirroring `Asset.AcceptsCnpj` / `AcceptsAdministratorCnpj` the way `SEGMENT_CLASSES` mirrors `HasSegments` |
+| `Financial.Web/src/utils/cnpj.ts` | New | CNPJ rules and formatting | `INVALID_CNPJ_MESSAGE` ("Enter a valid 14-digit CNPJ."), `isValidCnpj(value)` (same rule as `CnpjRules`), `cnpjDigits(value)` (strip `.`, `/`, `-`, whitespace), `formatCnpj(digits)` (`00.000.000/0000-00`; returns the input unchanged unless it is 14 digits), `ADMINISTRATOR_CNPJ_CLASSES = ['Fund', 'RealEstate', 'ETF']` and `acceptsCnpj(country)` (`country === 'BR'`), mirroring `Asset.AcceptsCnpj` / `AcceptsAdministratorCnpj` the way `SEGMENT_CLASSES` mirrors `HasSegments` |
 | `Financial.Web/src/hooks/useEntityForm.ts` | Modified | Per-field reveal | `revealField(key)` and an optional `key` on `fieldValidation(message, key)` so one field's error shows after blur while the others wait for Save |
 | `Financial.Web/src/components/AssetFormDialog.tsx` | Modified | Form fields | `cnpj` and `administratorCnpj` state initialised masked; digits derived once per render (`cnpjDigits`) and reused for validation, the dirty check and submit; `AssetFormValues.cnpj` / `.administratorCnpj` (digits or ''); one local `CnpjInput` render helper in the same file, used for "CNPJ" under ISIN when `acceptsCnpj(country)` and for "Administrator CNPJ" after it when the class is in `ADMINISTRATOR_CNPJ_CLASSES`, label and hint as props; `onBlur` → `form.revealField(key)`; submit gating |
 | `Financial.Web/src/pages/AssetsPage.tsx` | Modified | Request wiring | `cnpj: values.cnpj \|\| null` and `administratorCnpj: values.administratorCnpj \|\| null` on create and update |
@@ -119,7 +119,7 @@ No new endpoint. The existing endpoints gain two optional fields:
 | Field | Type | Required | Validation | Description |
 |---|---|---|---|---|
 | `cnpj` | string \| null | No | After stripping `.`, `/`, `-` and spaces: 14 digits, not all identical, valid check digits | The holding's CNPJ (company, fund, issuer or insurer). Stored as null unless the asset ends up with country BR |
-| `administratorCnpj` | string \| null | No | Same | The fund or FII administrator's CNPJ. Stored as null unless the asset ends up BR with class Fund or RealEstate |
+| `administratorCnpj` | string \| null | No | Same | The fund, FII or ETF administrator's CNPJ. Stored as null unless the asset ends up BR with class Fund, RealEstate or ETF |
 
 **Request example (update of an FII)**
 
@@ -169,7 +169,7 @@ No new endpoint. The existing endpoints gain two optional fields:
 | Property | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | `Cnpj` | string (14 digits) | Yes | absent / `null` | The holding's CNPJ; only ever set on BR assets |
-| `AdministratorCnpj` | string (14 digits) | Yes | absent / `null` | Administrator's CNPJ; only ever set on BR Fund/RealEstate assets |
+| `AdministratorCnpj` | string (14 digits) | Yes | absent / `null` | Administrator's CNPJ; only ever set on BR Fund/RealEstate/ETF assets |
 
 - No `InvestmentDataMigrations` step and no `CurrentVersion` change. A document written before F06 has neither property, and both load as null.
 - No uniqueness constraint (the same company or fund can sit in several portfolios).
@@ -190,7 +190,7 @@ No new endpoint. The existing endpoints gain two optional fields:
   - *Disabled:* the whole fieldset is disabled while saving (existing).
   - *Loading / empty / success:* not applicable beyond the dialog's existing behaviour.
 - **Submit:** each field submits its digits when shown, otherwise ''. The page sends `value || null`, so a cleared or hidden field clears it on the server.
-- **Summary tab:** "CNPJ" after "ISIN" for BR assets and "Administrator CNPJ" after it for BR funds and FIIs, masked, "None" (`MissingValue`) when unset; non-BR assets' Summary is unchanged.
+- **Summary tab:** "CNPJ" after "ISIN" for BR assets and "Administrator CNPJ" after it for BR funds, FIIs and ETFs, masked, "None" (`MissingValue`) when unset; non-BR assets' Summary is unchanged.
 - **Accessibility / zoom:** labels visible and associated, hints linked through Fluent `Field` (`aria-describedby`), fields reflow with the existing dialog grid at narrow widths and 200% zoom. Light/dark and high contrast come from Fluent tokens, with no new style values.
 
 ## 9. Testing Strategy
@@ -236,15 +236,15 @@ Test vectors shared by the Domain and web tests (literals, never computed):
 | `Normalize_Blank_ReturnsNull` (Theory) | null, '', spaces | null |
 | `Normalize_Invalid_Throws` (Theory) | Each invalid vector: check digits, length, identical digits, letter | `ArgumentException`, message "Enter a valid 14-digit CNPJ." |
 | `SetCnpj_AppliesToEveryBrazilianAssetOnly` (Theory) | BR Equity/RealEstate/Fund/Bond/Pension store it; UK Equity, US Fund, Unknown store null | Literal per row |
-| `SetAdministratorCnpj_AppliesToBrazilianFundsAndFiisOnly` (Theory) | BR Fund/RealEstate store it; BR Equity, BR Pension, UK RealEstate store null | Literal per row |
+| `SetAdministratorCnpj_AppliesToBrazilianFundsFiisAndEtfsOnly` (Theory) | BR Fund/RealEstate/ETF store it; BR Equity, BR Pension, UK RealEstate store null | Literal per row |
 | `SetCnpjField_Blank_ClearsIt` (Theory over both fields) | After a valid set | null |
 | `UpdateIdentity_ClearsInapplicableCnpjs` (Theory) | BR→UK clears both; BR Fund→BR Equity clears only the Administrator CNPJ; rename only keeps both | Literal per row |
 | `UpdateAssetAsync_InvalidCnpj_ThrowsAndWritesNothing` (Theory over both fields) | One bad check digit | `ArgumentException`, `_repository.WriteCallCount == 0`, `ShouldHaveFailedSpan<ArgumentException>("Investment.AssetAdminService.UpdateAsset")` |
 | `GetAssets_MapsBothCnpjs` / `GetAssetDetails_ReturnsBothCnpjs` | Mapping | Equal to the stored values |
 | `SerializeDeserialize_RoundTripPreservesBothCnpjs` / `Deserialize_AssetWithoutCnpjs_LoadsThemAsNotSet` | Persistence | Equal / null |
-| web `cnpj.test.ts` "accepts the masked and bare forms", "rejects each invalid vector", "formats 14 digits with the mask", "strips punctuation", "applies the CNPJ to BR only and the Administrator CNPJ to BR funds and FIIs only" | Rules | As named |
+| web `cnpj.test.ts` "accepts the masked and bare forms", "rejects each invalid vector", "formats 14 digits with the mask", "strips punctuation", "applies the CNPJ to BR only and the Administrator CNPJ to BR funds, FIIs and ETFs only" | Rules | As named |
 | web `AssetFormDialog.test.tsx` "shows CNPJ under ISIN for every BR asset and for no other country" | Visibility | Field present / absent |
-| … "shows Administrator CNPJ only for BR funds and FIIs" | Visibility | Field present / absent |
+| … "shows Administrator CNPJ only for BR funds, FIIs and ETFs" | Visibility | Field present / absent |
 | … "shows a CNPJ field's message on blur and not the other's" | Blur | Message text, `aria-invalid` on the blurred field only |
 | … "refuses an invalid CNPJ on Save and moves focus to it" | Submit | `onSubmit` not called, focus on the invalid input |
 | … "submits the 14 digits of a masked CNPJ" | Submit | Typed `11.222.333/0001-81`, submitted `11222333000181` |
@@ -261,12 +261,12 @@ The F06 checkboxes in the PRD have no ids yet. They are numbered `P69-F06-brazil
 | AC | Test |
 |---|---|
 | -01 CNPJ field for every BR holding, no other country | `AssetFormDialog.test.tsx` "[AC P69-F06-brazilian-cnpj-identifiers-01] shows CNPJ under ISIN for every BR asset and for no other country" |
-| -02 Administrator CNPJ for BR Fund or Real estate only | `AssetFormDialog.test.tsx` "[AC …-02] shows Administrator CNPJ only for BR funds and FIIs" |
+| -02 Administrator CNPJ for BR Fund, Real estate or ETF only | `AssetFormDialog.test.tsx` "[AC …-02] shows Administrator CNPJ only for BR funds, FIIs and ETFs" |
 | -03 Valid value with or without mask stored as 14 digits and shown masked | `CreateAsset_WithMaskedCnpjs_StoresTheFourteenDigits` (acceptance, the one layer that proves persistence through HTTP); `AssetSummaryTab.test.tsx` "[AC …-03] renders_the_cnpjs_masked_for_a_brazilian_fii" |
 | -04 Invalid value shows the message in that field and is not saved | `UpdateAsset_WithAnInvalidCnpj_Returns400AndKeepsTheStoredValue` (Theory over the two fields, one invalid value each, acceptance; the causes are covered by `CnpjRulesTests` and `cnpj.test.ts`); `AssetFormDialog.test.tsx` "[AC …-04] refuses an invalid CNPJ on Save and moves focus to it" |
 | -05 A BR holding with both fields empty saves without an error | `CreateAsset_BrazilianAssetWithoutCnpjs_Succeeds` (acceptance); `AssetFormDialog.test.tsx` "[AC …-05] saves a BR asset with both CNPJ fields empty" |
 | -06 Clearing either field removes that value | `UpdateAsset_WithABlankCnpjField_RemovesIt` (Theory over both fields, acceptance); `AssetFormDialog.test.tsx` "[AC …-06] opens stored CNPJs masked and submits '' when cleared" |
-| -07 Country away from BR clears both; class away from Fund/Real estate clears the Administrator CNPJ | `UpdateAsset_Reclassified_ClearsInapplicableCnpjs` (Theory: country away from BR, class away from Fund; acceptance) |
+| -07 Country away from BR clears both; class away from Fund/Real estate/ETF clears the Administrator CNPJ | `UpdateAsset_Reclassified_ClearsInapplicableCnpjs` (Theory: country away from BR, class away from Fund; acceptance) |
 | -08 Both in the admin DTOs and the OpenAPI snapshot, web types regenerated | `OpenApiContractTests` (snapshot), `openapiFreshness.test.ts`, plus `GetAssets_ReturnsBothCnpjs` tagged `[Trait("AC","P69-F06-brazilian-cnpj-identifiers-08")]` |
 
 **Cross-feature (PRD Section 9 Integration):** "A CNPJ saved on a fund (F06) is used by the CVM source (F07)…" and "The CNPJ (F06) and the quota value on a date (F07) drive…" are proven by F07/F08, which consume `Asset.Cnpj`. F06 provides the precondition they rely on, `UpdateIdentity_ClearsInapplicableCnpjs` (a CNPJ never outlives the BR country), and the acceptance test `UpdateAsset_WithABlankCnpjField_RemovesIt` ("clearing it stops CVM pricing" starts from a null `Cnpj`).
@@ -276,8 +276,8 @@ The F06 checkboxes in the PRD have no ids yet. They are numbered `P69-F06-brazil
 Points the PRD does not settle and that the Technical Decisions table does not already record. Items 1–3 come from the user's review (2026-11-27); the rest are Batch Mode defaults kept or adjusted after `/code-review` and `/simplify`.
 
 1. **CNPJ on every BR asset, never required** (user): shown for every BR holding but optional, because finding a CNPJ can take time; validated only when a value is entered. It is the identifier the IR declaration uses for any Brazilian holding, and CNPJ exists only in Brazil.
-2. **Administrator CNPJ for BR funds and FIIs, never required** (user): a separate optional field, because FIIs and funds carry two CNPJs. FIIs are `GlobalAssetClass.RealEstate` in the BR class mapping. BR ETFs (also funds with an administrator) are not included; adding `ETF` to `AcceptsAdministratorCnpj` and `ADMINISTRATOR_CNPJ_CLASSES` is a one-line change if wanted.
-3. **Create with Class left at "Unknown":** the CNPJ field needs only country BR, so it shows. The Administrator CNPJ field shows once Class is Fund or Real estate (or on the next edit, which shows the resolved class); showing it for Unknown would break AC -02.
+2. **Administrator CNPJ for BR funds, FIIs and ETFs, never required** (user): a separate optional field, because funds, FIIs and ETFs each carry two CNPJs (their own and the administrator's). FIIs are `GlobalAssetClass.RealEstate` and ETFs `GlobalAssetClass.ETF` in the BR class mapping; ETFs were added at the user's request.
+3. **Create with Class left at "Unknown":** the CNPJ field needs only country BR, so it shows. The Administrator CNPJ field shows once Class is Fund, Real estate or ETF (or on the next edit, which shows the resolved class); showing it for Unknown would break AC -02.
 4. **Lenient punctuation:** any mix of `.`, `/`, `-` and spaces is stripped; only the digits are validated.
 5. **Alphanumeric CNPJ** (issued since July 2026, so a recently registered company or fund can already have one) is out of scope by choice: the PRD fixes 14 digits, and today's holdings have numeric CNPJs. Such a CNPJ is rejected with the standard message; widening `CnpjRules` and `utils/cnpj.ts` together is a follow-up.
 6. **No masked formatter in Domain yet:** F07 adds it with its first caller.
