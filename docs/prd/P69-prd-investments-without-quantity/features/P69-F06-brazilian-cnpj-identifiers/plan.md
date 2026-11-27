@@ -15,15 +15,15 @@
 
 **3. Asset admin and details DTOs** - Add both fields to the asset admin read, create and update DTOs and to the asset details DTO.
 
-**4. Service wiring** - Have the asset admin service set both fields on create and update inside the save (the setters validate), and map them to the admin DTO. Map them in the asset details read as well.
+**4. Service wiring** - Have the asset admin service validate both values before the save, next to the existing segment normalisation, then set them on create and update, and map them to the admin DTO. Map them in the asset details read as well.
 
 **5. Contract regeneration** - Regenerate the OpenAPI snapshot with the contract test filter, review the diff (only the new `cnpj` and `administratorCnpj` properties), then regenerate the web API types and commit both.
 
 ### Stage 2: Web form and Summary tab (PR 2)
 
-**6. CNPJ web helpers** - Add the client validity check and message next to the existing ISIN validator, and a small utility for which assets carry each field, digit stripping and masking.
+**6. CNPJ web helpers** - Add one web utility holding the client validity check and message, digit stripping, masking and which assets carry each field, and give the shared form hook a way to reveal one field's error on blur.
 
-**7. Asset form fields** - Add the CNPJ field under ISIN for BR assets and the Administrator CNPJ field after it for BR funds and FIIs, with the PRD helper texts, on-blur and on-Save validation per field, stored values shown masked, and the digits in the submitted values.
+**7. Asset form fields** - Add the CNPJ field under ISIN for BR assets and the Administrator CNPJ field after it for BR funds and FIIs, through one shared local field helper, with the PRD helper texts, on-blur and on-Save validation per field, stored values shown masked, and the digits in the submitted values.
 
 **8. Assets page wiring** - Send both fields on asset create and update, or null when cleared or hidden.
 
