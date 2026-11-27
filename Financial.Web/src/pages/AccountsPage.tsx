@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Badge, Field, Input, MessageBar, MessageBarBody, Tab, Text } from '@fluentui/react-components'
 import { Link, useLocation } from 'react-router-dom'
-import type { AccountGroupMemberDto, AccountTemplateGroupDto, MonthTransactionDto } from '../api/types'
+import type { AccountGroupMemberDto, AccountNextStatementDto, AccountTemplateGroupDto, MonthTransactionDto } from '../api/types'
 import AccountsSummaryTab from '../components/AccountsSummaryTab'
 import ErrorState from '../components/ErrorState'
 import IncomeTab from '../components/IncomeTab'
@@ -85,13 +85,15 @@ function statementColumn(year: number, month: number) {
 
 function columnTotalsRows(grid: AccountTemplateGrid, group: AccountTemplateGroupDto): ColumnTotalsRow[] {
   if (!grid.footerLabel) return []
-  return group.totals.map(({ currency, total, cashbackTotal, openStatementTotal }) => ({
+  return group.totals.map(({ currency, total, cashbackTotal, openStatementTotal, nextStatementPotLinkedTotal, potLinkedOwedTotal }) => ({
     label: `${grid.footerLabel} ${currency}`,
     values: {
       balance: formatN2(total),
       cashback: cashbackTotal == null ? undefined : formatN2(cashbackTotal),
       statement: openStatementTotal == null ? undefined : formatN2(openStatementTotal),
       totalOwed: formatOwedOrCredit(total),
+      nextStatementPotLinked: nextStatementPotLinkedTotal == null ? undefined : formatN2(nextStatementPotLinkedTotal),
+      potLinkedOwed: potLinkedOwedTotal == null ? undefined : formatN2(potLinkedOwedTotal),
     },
   }))
 }
@@ -100,14 +102,23 @@ function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | nu
   return nextStatement ? new Date(nextStatement.year, nextStatement.month - 1, 1) : null
 }
 
+function nextStatementText(row: AccountGroupMemberDto, amount: (nextStatement: AccountNextStatementDto) => number): ReactNode {
+  const month = nextStatementMonth(row)
+  return month && row.nextStatement ? `${formatMonthYear(month)} · ${formatN2(amount(row.nextStatement))}` : <MissingValue label="None" />
+}
+
 const nextStatementColumn = {
   key: 'nextStatement',
   header: 'Next statement',
-  render: (row: AccountGroupMemberDto) => {
-    const month = nextStatementMonth(row)
-    return month && row.nextStatement ? `${formatMonthYear(month)} · ${formatN2(row.nextStatement.outstandingTotal)}` : <MissingValue label="None" />
-  },
+  render: (row: AccountGroupMemberDto) => nextStatementText(row, (nextStatement) => nextStatement.outstandingTotal),
   sortAccessor: nextStatementMonth,
+}
+
+const nextStatementPotLinkedColumn = {
+  key: 'nextStatementPotLinked',
+  header: 'Next from Pots',
+  render: (row: AccountGroupMemberDto) => nextStatementText(row, (nextStatement) => nextStatement.potLinkedTotal),
+  sortAccessor: (row: AccountGroupMemberDto) => row.nextStatement?.potLinkedTotal,
 }
 
 const totalOwedColumn = {
@@ -116,6 +127,14 @@ const totalOwedColumn = {
   numeric: true,
   render: (row: AccountGroupMemberDto) => orMissing(row.totalOwed, formatOwedOrCredit),
   sortAccessor: (row: AccountGroupMemberDto) => row.totalOwed,
+}
+
+const potLinkedOwedColumn = {
+  key: 'potLinkedOwed',
+  header: 'Owed from Pots',
+  numeric: true,
+  render: (row: AccountGroupMemberDto) => orMissing(row.potLinkedOwed, formatN2),
+  sortAccessor: (row: AccountGroupMemberDto) => row.potLinkedOwed,
 }
 
 const settlementBalanceColumn = {
@@ -128,7 +147,14 @@ const settlementBalanceColumn = {
 function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode, year: number, month: number) {
   if (columns === 'settlement') return [nameColumn(renderName), settlementBalanceColumn]
   const leading = [nameColumn(renderName), currencyColumn]
-  if (columns === 'card') return [...leading, statementColumn(year, month), nextStatementColumn, totalOwedColumn]
+  if (columns === 'card') return [
+      ...leading,
+      statementColumn(year, month),
+      nextStatementColumn,
+      nextStatementPotLinkedColumn,
+      totalOwedColumn,
+      potLinkedOwedColumn,
+    ]
   return columns === 'bank' ? [...leading, balanceColumn, roundUpColumn, cashbackColumn] : [...leading, balanceColumn]
 }
 

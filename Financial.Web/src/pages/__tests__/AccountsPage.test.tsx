@@ -68,6 +68,7 @@ function member(accountId: string, name: string, templateName: string, fields: P
     balanceIsOwed: false,
     totalOwed: null,
     nextStatement: null,
+    potLinkedOwed: null,
     ...fields,
   }
 }
@@ -81,8 +82,8 @@ const BANKS: AccountTemplateGroupDto = {
     member('old', 'Old Savings', 'Bank', { balance: 10, isActive: false }),
   ],
   totals: [
-    { currency: 'GBP', total: 3310.25, cashbackTotal: 0.34, openStatementTotal: null },
-    { currency: 'BRL', total: 1000, cashbackTotal: null, openStatementTotal: null },
+    { currency: 'GBP', total: 3310.25, cashbackTotal: 0.34, openStatementTotal: null, nextStatementPotLinkedTotal: null, potLinkedOwedTotal: null },
+    { currency: 'BRL', total: 1000, cashbackTotal: null, openStatementTotal: null, nextStatementPotLinkedTotal: null, potLinkedOwedTotal: null },
   ],
 }
 
@@ -94,11 +95,12 @@ const CARDS: AccountTemplateGroupDto = {
       balanceIsOwed: true,
       statement: { outstandingTotal: 228, isPaid: false },
       totalOwed: 740.12,
-      nextStatement: { year: 2026, month: 10, outstandingTotal: 512.3 },
+      nextStatement: { year: 2026, month: 10, outstandingTotal: 512.3, potLinkedTotal: 120.5 },
+      potLinkedOwed: 160.5,
     }),
-    member('visa', 'Old Visa', 'CreditCard', { balanceIsOwed: true, isActive: false, totalOwed: 0 }),
+    member('visa', 'Old Visa', 'CreditCard', { balanceIsOwed: true, isActive: false, totalOwed: 0, potLinkedOwed: 0 }),
   ],
-  totals: [{ currency: 'GBP', total: 740.12, cashbackTotal: null, openStatementTotal: 228 }],
+  totals: [{ currency: 'GBP', total: 740.12, cashbackTotal: null, openStatementTotal: 228, nextStatementPotLinkedTotal: 120.5, potLinkedOwedTotal: 160.5 }],
 }
 
 const POTS: AccountTemplateGroupDto = {
@@ -107,7 +109,7 @@ const POTS: AccountTemplateGroupDto = {
     member('old-pots', 'Old pots', 'Pots', { balance: 12.5, isActive: false }),
     member('reserva', 'Reserva', 'Pots', { balance: 704.08 }),
   ],
-  totals: [{ currency: 'GBP', total: 716.58, cashbackTotal: null, openStatementTotal: null }],
+  totals: [{ currency: 'GBP', total: 716.58, cashbackTotal: null, openStatementTotal: null, nextStatementPotLinkedTotal: null, potLinkedOwedTotal: null }],
 }
 
 const SETTLEMENT: AccountTemplateGroupDto = {
@@ -260,7 +262,7 @@ describe('AccountsPage', () => {
 
     const cards = await screen.findByRole('table', { name: 'Credit cards' })
     expect(within(bodyRows(cards)[1]).getByText('Paid')).toBeInTheDocument()
-    expect(footerRows(cards)).toEqual([['Card total GBP', '', '228.00', '', '740.12']])
+    expect(footerRows(cards)).toEqual([['Card total GBP', '', '228.00', '', '120.50', '740.12', '160.50']])
   })
 
   it('shows no grid for a template without listed accounts', async () => {
@@ -277,23 +279,40 @@ describe('AccountsPage', () => {
     renderPage()
 
     const cards = await screen.findByRole('table', { name: 'Credit cards' })
-    expect(headers(cards)).toEqual(['Account', 'Currency', 'Oct 2026 statement', 'Next statement', 'Total owed'])
+    expect(headers(cards)).toEqual([
+      'Account',
+      'Currency',
+      'Oct 2026 statement',
+      'Next statement',
+      'Next from Pots',
+      'Total owed',
+      'Owed from Pots',
+    ])
     const [amex, visa] = bodyRows(cards)
     expect(within(amex).getByText('Oct 2026 · 512.30')).toBeInTheDocument()
     expect(within(amex).getByText('740.12')).toBeInTheDocument()
     expect(within(amex).queryByText('Owed 740.12')).not.toBeInTheDocument()
-    expect(within(visa).getAllByText('—')).toHaveLength(2)
-    expect(within(visa).getByText('0.00')).toBeInTheDocument()
+    expect(within(visa).getAllByText('—')).toHaveLength(3)
+    expect(within(visa).getAllByText('0.00')).toHaveLength(2)
     expect(within(visa).getByText('Inactive')).toBeInTheDocument()
-    expect(footerRows(cards)).toEqual([['Card total GBP', '', '228.00', '', '740.12']])
+  })
+
+  it('shows the Pot-linked part of each card’s next statement and total owed, with their totals', async () => {
+    renderPage()
+
+    const cards = await screen.findByRole('table', { name: 'Credit cards' })
+    const [amex] = bodyRows(cards)
+    expect(within(amex).getByText('Oct 2026 · 120.50')).toBeInTheDocument()
+    expect(within(amex).getByText('160.50')).toBeInTheDocument()
+    expect(footerRows(cards)).toEqual([['Card total GBP', '', '228.00', '', '120.50', '740.12', '160.50']])
   })
 
   it('[AC P60-F15-card-refunds-and-credit-06] shows a card in credit as Credit x in its Total owed cell and the footer, with no next statement', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
       {
         templateName: 'CreditCard',
-        members: [member('amex', 'BA Amex', 'CreditCard', { balance: 35, balanceIsOwed: true, totalOwed: -35, nextStatement: null })],
-        totals: [{ currency: 'GBP', total: -35, cashbackTotal: null, openStatementTotal: 0 }],
+        members: [member('amex', 'BA Amex', 'CreditCard', { balance: 35, balanceIsOwed: true, totalOwed: -35, nextStatement: null, potLinkedOwed: 0 })],
+        totals: [{ currency: 'GBP', total: -35, cashbackTotal: null, openStatementTotal: 0, nextStatementPotLinkedTotal: 0, potLinkedOwedTotal: 0 }],
       },
     ])
 
@@ -302,12 +321,12 @@ describe('AccountsPage', () => {
     const cards = await screen.findByRole('table', { name: 'Credit cards' })
     const [amex] = bodyRows(cards)
     expect(within(amex).getByText('Credit 35.00')).toBeInTheDocument()
-    expect(within(amex).getAllByText('—')).toHaveLength(2)
-    expect(footerRows(cards)).toEqual([['Card total GBP', '', '0.00', '', 'Credit 35.00']])
+    expect(within(amex).getAllByText('—')).toHaveLength(3)
+    expect(footerRows(cards)).toEqual([['Card total GBP', '', '0.00', '', '0.00', 'Credit 35.00', '0.00']])
   })
 
   it('keeps a negative balance total as a plain figure on a bank grid', async () => {
-    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20, cashbackTotal: 0.34, openStatementTotal: null }] }])
+    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20, cashbackTotal: 0.34, openStatementTotal: null, nextStatementPotLinkedTotal: null, potLinkedOwedTotal: null }] }])
 
     renderPage()
 
@@ -379,7 +398,7 @@ describe('AccountsPage', () => {
 
   it('shows an unknown template under its own name with a "Total" footer and plain-text rows', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
-      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50, cashbackTotal: null, openStatementTotal: null }] },
+      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50, cashbackTotal: null, openStatementTotal: null, nextStatementPotLinkedTotal: null, potLinkedOwedTotal: null }] },
     ])
 
     renderPage()
