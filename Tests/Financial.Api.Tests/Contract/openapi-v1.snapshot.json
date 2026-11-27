@@ -422,6 +422,13 @@
               "string"
             ]
           },
+          "potLinkedOwed": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "roundUpTotal": {
             "format": "double",
             "type": [
@@ -460,6 +467,7 @@
           "currencyBalances",
           "balanceIsOwed",
           "totalOwed",
+          "potLinkedOwed",
           "nextStatement"
         ],
         "type": "object"
@@ -538,6 +546,10 @@
             "format": "double",
             "type": "number"
           },
+          "potLinkedTotal": {
+            "format": "double",
+            "type": "number"
+          },
           "year": {
             "format": "int32",
             "type": "integer"
@@ -546,7 +558,8 @@
         "required": [
           "year",
           "month",
-          "outstandingTotal"
+          "outstandingTotal",
+          "potLinkedTotal"
         ],
         "type": "object"
       },
@@ -706,7 +719,21 @@
           "currency": {
             "type": "string"
           },
+          "nextStatementPotLinkedTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "openStatementTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "potLinkedOwedTotal": {
             "format": "double",
             "type": [
               "null",

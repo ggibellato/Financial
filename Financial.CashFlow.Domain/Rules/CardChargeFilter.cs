@@ -28,6 +28,17 @@ public static class CardChargeFilter
     public static bool IsPaidThroughStatement(Expense expense, IEnumerable<CardStatement> statements) =>
         expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && IsOnPaidStatement(expense, statements);
 
+    public static decimal PotLinkedOwed(
+        Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IReadOnlySet<Guid> potOperationIds) =>
+        expenses
+            .Where(expense => expense.IsUnpaidChargeOn(card) && !IsOnPaidStatement(expense, statements) && IsPotLinked(expense, potOperationIds))
+            .Sum(expense => expense.Value);
+
+    public static decimal PotLinkedOnStatement(Account card, IEnumerable<Expense> expenses, IReadOnlySet<Guid> potOperationIds, int year, int month) =>
+        ChargesFor(expenses, card, year, month)
+            .Where(expense => expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && IsPotLinked(expense, potOperationIds))
+            .Sum(expense => expense.Value);
+
     public static decimal TotalOwed(Account card, IEnumerable<IAccountTransaction> records) =>
         -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
@@ -38,4 +49,7 @@ public static class CardChargeFilter
 
     public static bool IsStatementPaid(IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         statements.Any(statement => statement.IsClosed && statement.IsFor(card.Id, year, month));
+
+    private static bool IsPotLinked(Expense expense, IReadOnlySet<Guid> potOperationIds) =>
+        expense.OperationId is { } operationId && potOperationIds.Contains(operationId);
 }

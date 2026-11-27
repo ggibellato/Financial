@@ -50,6 +50,44 @@ public class CardChargeFilterTests
         CardChargeFilter.ChargesFor([match, otherCard, otherMonth, bankExpense], _amex, 2026, 10).Should().Equal(match);
     }
 
+    private Expense PotCharge(Account card, DateOnly date, decimal value, Guid operationId) =>
+        Expense.Create(date, "Flights", value, _groceries, null, card, operationId: operationId);
+
+    [Fact]
+    public void PotLinkedOwed_SumsUnpaidPotChargesOnOpenStatementsOfThatCardOnly()
+    {
+        var potOperation = Guid.NewGuid();
+        var otherOperation = Guid.NewGuid();
+        var october = PotCharge(_amex, new DateOnly(2026, 10, 3), 120m, potOperation);
+        var november = PotCharge(_amex, new DateOnly(2026, 11, 3), 40m, Guid.NewGuid());
+        var onPaidStatement = PotCharge(_amex, new DateOnly(2026, 9, 3), 70m, Guid.NewGuid());
+        var settled = PotCharge(_amex, new DateOnly(2026, 10, 9), 15m, Guid.NewGuid());
+        settled.Settle(_barclays, new DateOnly(2026, 10, 20));
+        var otherCard = PotCharge(_visa, new DateOnly(2026, 10, 3), 25m, Guid.NewGuid());
+        var notPotOperation = PotCharge(_amex, new DateOnly(2026, 10, 4), 33m, otherOperation);
+        var plainCharge = Charge(_amex, new DateOnly(2026, 10, 5), 50m);
+        HashSet<Guid> potOperationIds =
+            [potOperation, november.OperationId!.Value, onPaidStatement.OperationId!.Value, settled.OperationId!.Value, otherCard.OperationId!.Value];
+
+        CardChargeFilter.PotLinkedOwed(
+                _amex,
+                [october, november, onPaidStatement, settled, otherCard, notPotOperation, plainCharge],
+                [Statement(_amex, 2026, 9, isPaid: true)],
+                potOperationIds)
+            .Should().Be(160m);
+    }
+
+    [Fact]
+    public void PotLinkedOnStatement_SumsOnlyThatMonthsUnpaidPotCharges()
+    {
+        var october = PotCharge(_amex, new DateOnly(2026, 10, 3), 120m, Guid.NewGuid());
+        var november = PotCharge(_amex, new DateOnly(2026, 11, 3), 40m, Guid.NewGuid());
+        var plainCharge = Charge(_amex, new DateOnly(2026, 10, 5), 50m);
+        HashSet<Guid> potOperationIds = [october.OperationId!.Value, november.OperationId!.Value];
+
+        CardChargeFilter.PotLinkedOnStatement(_amex, [october, november, plainCharge], potOperationIds, 2026, 10).Should().Be(120m);
+    }
+
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public void TotalOwed_CountsEveryUnpaidChargeWhateverItsDate()

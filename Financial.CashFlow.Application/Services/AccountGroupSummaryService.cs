@@ -90,13 +90,15 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
         var statements = _repository.GetCardStatements().ToList();
         var transfers = _repository.GetTransfers().ToList();
+        var potOperationIds = PotOperationIds();
         return account => ToGroupMemberDto(
             account,
             endOfMonth,
             records,
             listedExpenses,
             StatementFor(account, year, month, expenses, statements, transfers),
-            NextStatementFor(account, expenses, statements, transfers));
+            NextStatementFor(account, expenses, statements, transfers, potOperationIds),
+            PotLinkedOwedFor(account, expenses, statements, potOperationIds));
     }
 
     private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members, Account templateAccount) => new()
@@ -110,7 +112,11 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
                 Currency = group.Key,
                 Total = group.Sum(member => member.TotalOwed ?? member.Balance),
                 CashbackTotal = group.Any(member => member.CashbackTotal is not null) ? group.Sum(member => member.CashbackTotal ?? 0m) : null,
-                OpenStatementTotal = templateAccount.Has(Capability.HasStatements) ? group.Sum(OpenStatementAmount) : null
+                OpenStatementTotal = templateAccount.Has(Capability.HasStatements) ? group.Sum(OpenStatementAmount) : null,
+                NextStatementPotLinkedTotal = templateAccount.Has(Capability.HasStatements)
+                    ? group.Sum(member => member.NextStatement?.PotLinkedTotal ?? 0m)
+                    : null,
+                PotLinkedOwedTotal = templateAccount.Has(Capability.HasStatements) ? group.Sum(member => member.PotLinkedOwed ?? 0m) : null
             })
             .ToList()
     };
@@ -124,7 +130,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         IReadOnlyCollection<IAccountTransaction> records,
         IReadOnlyCollection<Expense> listedExpenses,
         AccountGroupStatementDTO? statement,
-        AccountNextStatementDTO? nextStatement)
+        AccountNextStatementDTO? nextStatement,
+        decimal? potLinkedOwed)
     {
         var balances = AccountBalanceRule.Balances(account, endOfMonth, records);
         var paidFromAccount = account.Has(Capability.SupportsRoundUp) || account.Has(Capability.SupportsCashback)
@@ -145,7 +152,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Statement = statement,
             BalanceIsOwed = account.BalanceIsOwed,
             TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
-            NextStatement = nextStatement
+            NextStatement = nextStatement,
+            PotLinkedOwed = potLinkedOwed
         };
     }
 
@@ -155,10 +163,27 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         return isOn || recorded.Count > 0 ? recorded.Sum() : null;
     }
 
+    private HashSet<Guid> PotOperationIds() =>
+        _repository.GetPotTransactions().Select(transaction => transaction.OperationId).OfType<Guid>().ToHashSet();
+
+    private static decimal? PotLinkedOwedFor(
+        Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements, IReadOnlySet<Guid> potOperationIds) =>
+        account.Has(Capability.HasStatements) ? CardChargeFilter.PotLinkedOwed(account, expenses, statements, potOperationIds) : null;
+
     private static AccountNextStatementDTO? NextStatementFor(
-        Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements, IReadOnlyCollection<Transfer> transfers) =>
+        Account account,
+        IReadOnlyCollection<Expense> expenses,
+        IReadOnlyCollection<CardStatement> statements,
+        IReadOnlyCollection<Transfer> transfers,
+        IReadOnlySet<Guid> potOperationIds) =>
         account.Has(Capability.HasStatements) && CardStatementLedger.NextToPay(account, expenses, statements, transfers) is { } next
-            ? new AccountNextStatementDTO { Year = next.Year, Month = next.Month, OutstandingTotal = next.AmountToPay }
+            ? new AccountNextStatementDTO
+            {
+                Year = next.Year,
+                Month = next.Month,
+                OutstandingTotal = next.AmountToPay,
+                PotLinkedTotal = CardChargeFilter.PotLinkedOnStatement(account, expenses, potOperationIds, next.Year, next.Month)
+            }
             : null;
 
     private static AccountGroupStatementDTO? StatementFor(
