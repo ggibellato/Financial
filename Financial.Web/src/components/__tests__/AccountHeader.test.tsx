@@ -116,6 +116,26 @@ describe('AccountHeader', () => {
     expect(within(totalOwedFigure).getByText('160.50 GBP from Pots')).toBeInTheDocument()
   })
 
+  it("shows the unpaid viewed statement's due date under the total owed", () => {
+    renderHeader({ ...AMEX, potLinkedOwed: 160.5 })
+
+    const totalOwedFigure = screen.getByText('Total owed').parentElement as HTMLElement
+    expect(totalOwedFigure.textContent).toBe('Total owed740.12 GBP160.50 GBP from PotsStatement due 3 Nov 2026')
+  })
+
+  it('shows no statement due date when the unpaid statement has none', () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, dueDate: null } })
+
+    expect(screen.queryByText(/^Statement due/)).not.toBeInTheDocument()
+  })
+
+  it('shows no statement due date once the statement is paid', () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, status: 'Paid', isPaid: true, paidOn: '2026-11-02' } })
+
+    expect(screen.queryByText(/^Statement due/)).not.toBeInTheDocument()
+    expect(screen.getByText('Paid 2 Nov 2026')).toBeInTheDocument()
+  })
+
   it('shows no Pot part for a statement that is not unpaid', () => {
     renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, status: 'Paid', isPaid: true, potLinkedTotal: null }, potLinkedOwed: 0 })
 
