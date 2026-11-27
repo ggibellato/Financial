@@ -2,48 +2,43 @@
 
 ## 1. Executive Summary
 
-Investments Without a Quantity gives holdings that have no usable unit count the same oversight in the app as shares, ETFs and bonds: what was invested, what the holding is worth today, the unrealised and realised gain, the result % and the XIRR, all counted in portfolio, broker, dashboard, ARCA and month-start totals. It covers three XPI holdings today: **Inco** (real-estate credit projects), **Grão ARCA** (a VGBL pension plan inside the multi-market ARCA bucket) and **Guepardo Institucional FIC FIA** (a Brazilian equity fund), plus any similar holding added later.
+Investments Without a Quantity gives holdings without a usable unit count the same oversight in the app as shares, ETFs and bonds: what was invested, what the holding is worth today, the unrealised and realised gain, the result % and the XIRR, all counted in portfolio, broker, dashboard, ARCA and month-start totals. It covers three XPI holdings today: **Inco** (real-estate credit projects), **Grão ARCA** (a VGBL pension plan inside the multi-market ARCA bucket) and **Guepardo Institucional FIC FIA** (a Brazilian equity fund), plus any similar holding added later.
 
-The three holdings need two different answers. Guepardo does have a real quantity: the XP statement shows the number of quotas and the quota value, and the CVM (Brazil's securities regulator) publishes every fund's daily quota value on its open-data portal. Guepardo therefore becomes a normal quantity holding, with its purchases corrected to the real quotas, a new **CNPJ** identifier on the asset and a new **CVM daily quota** price source that prices it automatically. Inco and Grão only ever show a balance. They are tracked with a new **Tracked by: Balance** option, where money moves in as **Deposits** and out as **Withdrawals** (amounts only, no quantity), and the investor records the statement balance once a month as a dated **Balance entry**.
+The three holdings need two answers. Inco and Grão only ever show a balance, so they get a new **Tracked by: Balance** option. Money the investor adds is a **Deposit**, money taken out to a bank account or redeemed is a **Withdrawal** (amounts only, no quantity), and the balance shown by XP is recorded once a month as a dated **Balance entry**. For Inco, project payouts that stay in the Inco balance and are reinvested in new projects are internal movements and are never recorded. Only new money added and money moved out are. Gains use **proportional cost**: a withdrawal removes the same fraction of the invested amount as it removes of the balance, and the difference is realised gain.
 
-Gains on balance-tracked holdings use **proportional cost**: a withdrawal removes the same fraction of the invested amount as it removes of the balance, and the difference is realised gain. This matches how share holdings already separate the cost of what is still held from gains already realised, and it matches how Brazilian income tax treats a partial redemption. Values are shown gross, as XP shows them. The only tax recorded is the income tax (IR) actually withheld on a withdrawal. A one-off migration tool moves the existing Inco and Grão records off today's workaround, where each deposit is a "Buy of 1 unit" and every price is the balance divided by the number of deposits.
+Guepardo is a regulated investment fund. XP shows only its current value, but the fund has a real quota value: the CVM (Brazil's securities regulator) publishes every fund's daily quota value by CNPJ in its open-data portal. Guepardo therefore stays a quantity holding and gets real quotas without the investor needing to know them. A new **CNPJ** field identifies the fund, a new **CVM daily quota** price source prices it every day, and a **buy-by-amount** option works out the quota count of each purchase from the amount invested and the CVM quota value on the conversion date. The same calculation recomputes the existing purchases once. Values are shown gross, as XP shows them, and the only tax recorded is the income tax (IR) actually withheld on a withdrawal. A one-off migration tool moves Inco and Grão off today's workaround, where each deposit is a "Buy of 1 unit" and each price is the balance divided by the number of deposits.
 
 ## 2. Problem and Opportunity
 
 ### The Problem
 
 **Invented quantities make every value update a manual calculation**
-- Inco and Grão are recorded as one "Buy" of quantity 1 per deposit, so each price snapshot has to be entered as the statement balance divided by the number of deposits held on that date.
-- Guepardo is recorded with fractional quantities derived by hand, so its snapshots are a pseudo unit price that matches nothing on the statement.
-- Each update takes a calculator step per holding per month, and a slip in the divisor silently misstates the holding's value, the portfolio total and the dashboard.
+- Inco and Grão are recorded as one "Buy" of quantity 1 per deposit, so each price has to be entered as the XP balance divided by the number of deposits held on that date.
+- Guepardo's purchases have quantities derived by hand from an assumed price, and its prices are entered as the XP current value divided by that invented quantity.
+- Each update takes a calculator step per holding, every time, and a slip in the divisor silently misstates the holding's value, the portfolio total and the dashboard.
 
 **History breaks every time money is added**
-- Adding a deposit changes the divisor, so every earlier per-unit snapshot is re-read against the new unit count and older values stop meaning what was recorded.
-- The month-start values and month-on-month change added by P68 read those snapshots, so the change column for these holdings jumps whenever a deposit lands.
+- Adding a deposit changes the divisor, so every earlier per-unit price is re-read against the new unit count and older values stop meaning what was recorded.
+- The month-start values and month-on-month change added by P68 read those prices, so the change column for these holdings jumps whenever a deposit lands.
 - Price-history charts for these holdings show steps caused by deposits, not by performance.
-
-**Inco's invested amount and gain are wrong**
-- Inco projects pay money back as one lump sum to the XP account, and the investor reinvests it in new projects.
-- The reinvestments are recorded as new purchases, but the payouts are recorded nowhere, so the same money is counted as invested twice.
-- The holding's invested amount is inflated and its gain and result % are understated by the total of all payouts.
 
 **A balance-only holding cannot be entered correctly at all**
 - The transaction form requires a quantity and a unit price, but neither exists for a VGBL plan or a real-estate credit pool.
-- The domain already reads a snapshot as the whole position's worth for the `ProviderValue` and `Manual` valuation methods, but nothing in the web app can set that method, and the transaction model still needs a quantity.
-- There is no way to record a partial redemption of a balance and get a meaningful realised gain.
+- The domain already reads a snapshot as the whole position's worth for the `ProviderValue` and `Manual` valuation methods, but nothing in the web app can set that method, and transactions still need a quantity.
+- There is no way to record money moved out of a balance (an Inco transfer to a bank, a VGBL redemption) and get a meaningful realised gain.
 
-**Guepardo needs a typed price even though an official one is published**
-- Fund quota values are published daily by the CVM, but no price source reads them, and the fund has no ticker the existing Google/Yahoo/Status Invest chain can price.
-- The asset has no field to hold the fund's CNPJ, the identifier CVM uses.
+**Guepardo's real value is published, but the app can't use it**
+- XP shows the fund's current value but not the quota count or the quota value, so the investor has no quotas to enter.
+- The CVM publishes the quota value of every fund every day, but no price source reads it, and the fund has no ticker that the existing Google/Yahoo/Status Invest chain can price.
+- The asset has no field for the fund's CNPJ, the identifier CVM uses, and nothing can turn an amount invested on a date into a quota count.
 
 ### The Opportunity
 
-- **Manual calculation → direct entry.** Balance-tracked holdings take the statement balance exactly as printed (F03), and Guepardo is priced automatically from the CVM quota value (F07). No arithmetic remains.
-- **Broken history → stable history.** A balance entry is a total, not a per-unit price, so adding a deposit never changes an earlier entry's meaning (F02, F03). Between entries, the current value is the last balance plus the money moved since, so a new deposit is not misread as a loss (F04).
-- **Double-counted Inco money → correct invested amount.** Payouts are recorded as lump-sum Withdrawals with proportional cost, so invested, realised and unrealised gain are true figures (F02), and past payouts can be entered after migration (F05).
-- **No way to enter → first-class option.** "Tracked by: Balance" is a choice in the asset form for any holding (F01), with amount-only Deposits and Withdrawals (F02).
-- **Typed fund price → official quota.** A CNPJ field (F06) and a CVM daily quota price source (F07) turn Guepardo into an ordinary quantity holding.
-- **Same oversight as shares.** Balance-tracked holdings report the same figures and feed the same totals as share holdings (F04).
+- **Manual calculation → direct entry.** Balance-tracked holdings take the XP balance exactly as shown (F03), and Guepardo is priced automatically from the CVM quota value (F07). No arithmetic remains.
+- **Broken history → stable history.** A balance entry is a total, not a per-unit price, so adding a deposit never changes an earlier entry's meaning (F02, F03). Between entries, the current value is the last balance plus the money moved since, so a new deposit is not read as a loss (F04).
+- **No way to enter → first-class option.** "Tracked by: Balance" is a choice in the asset form for any holding (F01), with amount-only Deposits and Withdrawals and proportional cost (F02).
+- **Unknown quotas → derived quotas.** A CNPJ field (F06), a CVM daily quota source with quota history by date (F07), and buy-by-amount plus a one-off quota recalculation (F08) give Guepardo real quotas from the amounts the investor already knows.
+- **Same oversight as shares.** Balance-tracked holdings report the same figures and feed the same totals as share holdings (F04), and existing records are converted without re-typing (F05).
 
 ## 3. Target Audience
 
@@ -51,45 +46,46 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 
 **Self-directed investor (single user)**
 - Holds shares, ETFs, bonds and funds across Brazilian (XPI) and UK brokers, and wants one consolidated view in BRL and GBP.
-- Holds pension, fund and private-credit products whose statements show a balance rather than units, and updates them monthly from the XP statement or portal.
+- Holds pension, fund and private-credit products whose XP screens show a balance or current value rather than units, and updates them from the XP app.
 - Expects every holding to show invested amount, current value, gain and return on the same screens, so the portfolio totals and ARCA allocation can be trusted without a side spreadsheet.
 
 ## 4. Objectives
 
 ### Product Objectives
 
-1. **Remove manual value arithmetic** for holdings without a usable quantity: the investor types the number printed on the statement, or nothing at all for CVM-priced funds.
+1. **Remove manual value arithmetic** for holdings without a usable quantity: the investor types the number XP shows, or nothing at all for CVM-priced funds.
 2. **Report correct invested amount and gain** for balance-tracked holdings, including partial and full withdrawals.
 3. **Show balance-tracked holdings with the same figures as share holdings** across the asset summary, portfolio and broker holdings, the dashboard, ARCA and month-start values.
-4. **Price Brazilian funds automatically** from the official CVM daily quota value.
-5. **Migrate the existing records** of Inco and Grão without losing any deposit or recorded value.
+4. **Price Brazilian funds from official data**: real quota counts derived from amounts, and a daily quota value from CVM.
+5. **Migrate the existing records** of Inco, Grão and Guepardo without losing any deposit, purchase or recorded value.
 
 ### Success Metrics
 
-1. **Arithmetic removed:** 0 calculator steps per monthly update for Inco, Grão and Guepardo, measured as the number of values the investor must derive rather than copy (today 3 per update round).
-2. **Gain correctness:** for every balance-tracked holding, invested − realised gain (gross) = total deposits + fees − total withdrawals, to within R$0.01,, checked by automated tests over deposit/withdrawal sequences of at least 20 flows, including partial and full withdrawals and backdated entries.
+1. **Arithmetic removed:** 0 values the investor must derive rather than copy per update round for Inco, Grão and Guepardo (today 3).
+2. **Gain correctness:** for every balance-tracked holding, invested − realised gain (gross) = total deposits + fees − total withdrawals, to within R$0.01, checked by automated tests over deposit/withdrawal sequences of at least 20 flows, including partial and full withdrawals and backdated entries.
 3. **Same figures:** 100% of the summary fields shown for a quantity holding (invested, current value, unrealised gain, realised gain, result %, XIRR, as-of date and status) have a value or an explicit "not available" reason for a balance-tracked holding, verified on the asset Summary tab and the portfolio and broker Holdings tabs.
-4. **Automatic fund pricing:** Guepardo's price is refreshed without manual entry on at least 95% of weekdays over a 30-day period, measured by saved snapshots with source CVM dated no more than 2 business days before the day they were fetched.
-5. **Lossless migration:** after the migration tool runs on a temp copy, 100% of the original deposits of Inco and Grão exist as Deposits with the same date and amount, and every converted balance entry equals the original per-unit snapshot × units held on its date to within R$0.01, as reported by the tool's own verification output.
+4. **Fund pricing accuracy and freshness:** after its purchases are recalculated (F08), Guepardo's current value in the app differs from the value XP shows for the same date by less than 0.5%, checked by the investor once at rollout. Its price is refreshed without manual entry on at least 95% of weekdays over a 30-day period, measured by saved CVM prices dated no more than 2 business days before the day they were fetched.
+5. **Lossless migration:** after the migration tool runs on a temp copy, 100% of the original deposits of Inco and Grão exist as Deposits with the same date and amount, and every converted balance entry equals the original per-unit price × units held on its date to within R$0.01, as reported by the tool's verification output. Every Guepardo purchase keeps its date and total amount to within R$0.01 after the quota recalculation.
 
 ## 5. User Stories
 
 ### F01. Balance-Tracked Holding Option
-- As an investor, I want to choose "Tracked by: Balance" when creating a holding so that I can add a pension plan or fund that has no unit count.
+- As an investor, I want to choose "Tracked by: Balance" when creating a holding so that I can add a pension plan or credit pool that has no unit count.
 - As an investor, I want the asset form to show how an existing holding is tracked so that I know which kind of transactions it takes.
 - As an investor, I want the app to stop me from changing how a holding is tracked once it has transactions so that its history is never reinterpreted.
 
 ### F02. Deposits and Withdrawals
-- As an investor, I want to record a deposit with a date and an amount only so that I can enter a VGBL contribution exactly as the statement shows it.
-- As an investor, I want to record a lump-sum withdrawal, with optional IR withheld, so that Inco payouts and pension redemptions reduce the holding correctly.
-- As an investor, I want the withdrawal form to pre-fill the balance just before the withdrawal from my latest balance entry so that I only correct it when the statement differs.
+- As an investor, I want to record a deposit of only the new money I add, with a date and an amount, so that a contribution is entered exactly as I made it.
+- As an investor, I want Inco payouts that I reinvest inside Inco to need no record so that only money crossing in or out of the holding is logged.
+- As an investor, I want to record a withdrawal when I move money out to a bank account or redeem, with optional IR withheld, so that the holding's invested amount and realised gain stay correct.
+- As an investor, I want the withdrawal form to pre-fill the balance just before the withdrawal from my latest balance entry so that I only correct it when XP shows a different figure.
 - As an investor, I want each withdrawal to show the realised gain it produced, gross and net of IR withheld, so that I know what I actually earned.
-- As an investor, I want to edit or delete a deposit or withdrawal, including backdated ones, so that I can fix mistakes and enter past Inco payouts after migration.
+- As an investor, I want to edit or delete a deposit or withdrawal, including backdated ones, so that I can fix mistakes.
 - As an investor, I want a withdrawal of the whole balance to close the position so that a fully redeemed holding looks like a fully sold share holding.
 
 ### F03. Balance Entries
-- As an investor, I want to record a dated balance taken from the statement so that the holding's current value is up to date.
-- As an investor, I want to see a balance history with the change since the previous entry so that I can follow the holding's evolution month by month.
+- As an investor, I want to record a dated balance taken from XP so that the holding's current value is up to date.
+- As an investor, I want to see a balance history with the change since the previous entry so that I can follow the holding month by month.
 - As an investor, I want to edit or delete a balance entry so that I can correct a typo.
 - As an investor, I want a warning when no balance has been entered for more than 35 days so that I know the value shown is out of date.
 
@@ -97,7 +93,7 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - As an investor, I want a balance-tracked holding's Summary tab to show invested, current value, unrealised gain, realised gain, result % and XIRR so that I get the same oversight as for shares.
 - As an investor, I want a deposit made after the latest balance entry to be added to the current value so that a new contribution is not shown as a loss.
 - As an investor, I want balance-tracked holdings to count in portfolio, broker and dashboard totals, in ARCA and in month-start values so that my overall picture is complete.
-- As an investor, I want quantity and average price to be shown as not applicable for a balance-tracked holding so that I'm never shown a meaningless number.
+- As an investor, I want quantity and average price shown as not applicable for a balance-tracked holding so that I'm never shown a meaningless number.
 
 ### F05. Balance Holding Migration Tool
 - As an investor, I want a one-off tool to convert Inco and Grão from "Buy of 1 unit" records to Deposits and balance entries so that I don't re-enter dozens of records by hand.
@@ -110,9 +106,17 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 
 ### F07. CVM Daily Quota Price Source
 - As the system, I want to fetch a fund's latest quota value from the CVM daily fund report by CNPJ so that Guepardo is priced without manual entry.
-- As an investor, I want the quota value's date and the source "CVM" to be shown next to the price so that I know how current it is.
+- As the system, I want to look up a fund's quota value on a given past date so that quota counts can be derived from purchase amounts.
+- As an investor, I want the quota value's date and the source "CVM" shown next to the price so that I know how current it is.
 - As an investor, I want a manual quota value for today to still take priority over the CVM value so that I can override it when needed.
 - As an investor, I want the last saved quota value to be used when the CVM fetch fails so that the holding is still valued.
+
+### F08. Fund Purchases by Amount
+- As an investor, I want to record a fund purchase by entering only the amount and the conversion date so that the app works out the quotas from the CVM quota value.
+- As an investor, I want to see the quota value and quota count the app derived before saving, and override them if XP's order details differ, so that I stay in control.
+- As an investor, I want to recalculate the quotas of a fund holding's existing purchases from their amounts in one action, with a preview, so that Guepardo's invented quantities are replaced by real ones.
+- As an investor, I want the preview to show the current value the recalculated quotas give so that I can compare it with the value XP shows before applying.
+- As an investor, I want the old hand-calculated prices to be removable in the same action so that they don't distort the price history.
 
 ## 6. Functionalities
 
@@ -125,13 +129,13 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - Every holding has a tracking mode: **Quantity and price** (default, today's behaviour) or **Balance**.
 - Balance maps to the existing `ProviderValue` valuation method, under which a snapshot is the whole position's worth. Holdings already set to `ProviderValue` or `Manual` are shown as Balance. All other valuation methods are shown as Quantity and price.
 - The tracking mode can be set when the holding is created and changed only while the holding has 0 transactions, 0 credits and 0 corporate actions. Price snapshots alone do not block the change, but changing mode with snapshots present asks for confirmation because their meaning changes (per-unit vs total).
-- A balance-tracked holding accepts only Deposit and Withdrawal transactions (F02). It never accepts Buy, Sell, credits (dividends, interest), splits or other corporate actions. Payouts are Withdrawals.
+- A balance-tracked holding accepts only Deposit and Withdrawal transactions (F02). It never accepts Buy, Sell, credits (dividends, interest), splits or other corporate actions.
 - Available for any country, class and broker. The asset-class, segment and pick-source rules from P68 are unchanged.
 
 **Experience:**
-- The asset form (create and edit) gets a "Tracked by" radio group with two options: "Quantity and price" and "Balance". Helper text under Balance: "For holdings whose statement shows only a balance, such as pension plans. You record deposits, withdrawals and the balance."
+- The asset form (create and edit) gets a "Tracked by" radio group with two options: "Quantity and price" and "Balance". Helper text under Balance: "For holdings whose broker shows only a balance, such as pension plans. You record deposits, withdrawals and the balance."
 - When the holding has transactions, credits or corporate actions, the group is disabled and the helper text reads: "Can't change how this holding is tracked because it has transactions. Remove them first."
-- Changing the mode on a holding with price snapshots shows a confirmation dialog: "This holding has N saved prices. After the change they will be read as [total balances / per-unit prices]. Continue?" with "Change" and "Cancel".
+- Changing the mode on a holding with saved prices shows a confirmation dialog: "This holding has N saved prices. After the change they will be read as [total balances / per-unit prices]. Continue?" with "Change" and "Cancel".
 - The asset's header shows a "Balance" tag next to the asset class for balance-tracked holdings.
 - The save, saving and error states of the existing asset form are reused unchanged.
 
@@ -150,8 +154,9 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - Remaining invested amount (cost of what is still held) and realised gain per withdrawal, gross and net of IR withheld (used by F04)
 
 **Capabilities:**
+- **What is recorded:** only money that crosses the holding's boundary. A Deposit is new money the investor adds. A Withdrawal is money moved out to a bank account or another holding, or a redemption. Income, interest, amortisation and payouts that stay inside the holding's balance (for example an Inco project payout reinvested in another Inco project, or left as uninvested Inco cash) are not recorded; they are part of the balance (F03).
 - **Deposit**: date (required, not in the future), amount (required, > 0, up to 2 decimals, at most 1,000,000,000), fees (optional, ≥ 0, default 0). The currency is the holding's currency. Fees add to the invested amount.
-- **Withdrawal**: date (required, not in the future), amount (required, > 0, up to 2 decimals; the gross amount redeemed), IR withheld (optional, ≥ 0 and < amount, default 0), balance before withdrawal (required, ≥ amount). When the statement shows only the net amount received, the investor enters it as the amount with IR withheld 0.
+- **Withdrawal**: date (required, not in the future), amount (required, > 0, up to 2 decimals; the gross amount taken out), IR withheld (optional, ≥ 0 and < amount, default 0), balance before withdrawal (required, ≥ amount). When XP shows only the net amount received, the investor enters it as the amount with IR withheld 0.
 - **Proportional cost rule** (in date order; on the same date, deposits before withdrawals, then by entry order):
   - fraction = amount ÷ balance before withdrawal
   - cost removed = invested before the withdrawal × fraction, rounded to 2 decimals
@@ -165,11 +170,11 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 
 **Experience:**
 - On a balance-tracked holding, the Transactions tab's "Add transaction" opens a form with a "Type" choice of **Deposit** or **Withdrawal** only. Quantity and unit price fields are not shown.
-- Deposit form: Date, Amount, Fees. Withdrawal form: Date, Amount, IR withheld, Balance before withdrawal.
-- "Balance before withdrawal" is pre-filled with the value calculated as at the chosen date (latest balance entry on or before that date, plus deposits and minus withdrawals dated after that entry and before this withdrawal) and re-calculated when the date changes, until the user types in the field. Helper text: "From your balance on DD/MM/YYYY. Change it if the statement shows a different balance just before this withdrawal."
+- Deposit form: Date, Amount, Fees, with the helper text under Amount "Only new money you add. Reinvested payouts that stay in the balance aren't recorded." Withdrawal form: Date, Amount, IR withheld, Balance before withdrawal.
+- "Balance before withdrawal" is pre-filled with the value calculated for the chosen date (latest balance entry on or before that date, plus deposits and minus withdrawals dated after that entry and before this withdrawal), and recalculated when the date changes until the user types in the field. Helper text: "From your balance on DD/MM/YYYY. Change it if XP shows a different balance just before this withdrawal."
 - When no balance entry exists on or before the date, the field is empty and required, with the helper text "No balance recorded before this date. Enter the balance just before the withdrawal."
 - Before saving, the withdrawal form shows a live preview: "Cost removed R$X · Realised gain R$Y (net R$Z)".
-- The Transactions grid for a balance-tracked holding shows the columns Date, Type, Amount, Fees / IR withheld, Balance before, Realised gain. Amounts are right-aligned. Withdrawals show realised gain with a sign and a "+"/"−" prefix, not colour alone.
+- The Transactions grid for a balance-tracked holding shows the columns Date, Type, Amount, Fees / IR withheld, Balance before, Realised gain. Amounts are right-aligned. Realised gain is shown with a "+" or "−" sign, not colour alone.
 - Validation messages appear inline under each field on blur and on submit, and focus moves to the first invalid field: "Enter an amount greater than 0.", "Date can't be in the future.", "IR withheld must be less than the amount.", "Balance before withdrawal must be at least the amount withdrawn."
 - Save shows the existing saving state on the button. On success the dialog closes, the grid and summary refresh, and a success toast reads "Deposit saved" or "Withdrawal saved". Closing a dirty form asks "Discard changes?".
 - Delete asks "Delete this withdrawal? Realised gains of later withdrawals will be recalculated." with "Delete" and "Cancel".
@@ -190,7 +195,8 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - Balance status (Current or Stale, with as-of date) (used by F04)
 
 **Capabilities:**
-- A balance entry is a date (required, not in the future) and a value (required, ≥ 0, up to 2 decimals) in the holding's currency, with an optional note of up to 100 characters (stored as the source reference, for example "XP statement Oct 2026").
+- A balance entry is a date (required, not in the future) and a value (required, ≥ 0, up to 2 decimals) in the holding's currency, with an optional note of up to 100 characters (stored as the source reference, for example "XP app 01/11").
+- The value is the holding's whole balance as XP shows it, including any uninvested cash inside the holding (for Inco, payouts not yet reinvested).
 - At most one entry per holding per date. Saving on a date that already has an entry replaces it after confirmation.
 - Entries are stored as the holding's existing price snapshots with source "Provider valuation", so the existing price-history storage, editing and deletion are reused.
 - A balance entry is read as the holding's value at the end of its date, including that day's deposits and withdrawals.
@@ -200,7 +206,7 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 **Experience:**
 - For a balance-tracked holding, the "Price history" tab is titled **Balance history**. "Add price" becomes **Add balance**, with the fields Date (default today), Balance and Note.
 - The history grid shows Date, Balance, Change since previous entry (amount and %), Net deposits/withdrawals since previous entry, and Note, newest first. Numbers are right-aligned. Change is shown with a sign, not colour alone.
-- Empty state: "No balance recorded yet. Add the balance from your latest statement to see this holding's value." with an "Add balance" button.
+- Empty state: "No balance recorded yet. Add the balance XP shows to see this holding's value." with an "Add balance" button.
 - When the holding is Stale, the Summary tab's status line and the holdings grids show the existing stale badge with the text "Balance as of DD/MM/YYYY (N days ago)".
 - Validation, saving and success behaviour reuse the existing price form: inline messages "Enter a balance of 0 or more." and "Date can't be in the future.", toast "Balance saved", and "Discard changes?" when closing a dirty form.
 - Delete asks "Delete the balance of DD/MM/YYYY?".
@@ -220,7 +226,7 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 **Capabilities:**
 - **Current value** = latest balance entry on or before the valuation date + deposits − withdrawals dated after that entry and on or before the valuation date. With no balance entry, current value is unavailable and status is "No balance recorded"; the holding is left out of value totals, the same treatment as a share holding with no price.
 - **Invested** = remaining invested amount after all withdrawals (F02).
-- **Unrealised gain** = current value − invested.
+- **Unrealised gain** = current value − invested. For Inco this includes the return on payouts reinvested inside the holding, since those were never recorded as new money.
 - **Realised gain** = sum of the withdrawals' realised gains (gross), with the net figure alongside.
 - **Result %** = unrealised gain ÷ invested; unavailable when invested is 0.
 - **XIRR** uses the existing XIRR calculator with cash flows: each deposit (amount + fees) negative on its date, each withdrawal (amount − IR withheld) positive on its date, and the current value positive on the valuation date (omitted when the position is closed). "XIRR with credits" equals "XIRR" because balance-tracked holdings have no credits.
@@ -232,7 +238,7 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 
 **Experience:**
 - The asset Summary tab for a balance-tracked holding replaces "Quantity" and "Average price" with "Tracked by: Balance", and shows the groups Totals (Total deposited, Total withdrawn), Realised (Realised gain, Realised net of IR, XIRR) and Current (Current value, Balance as of, Invested, Unrealised gain, Result %, XIRR).
-- When deposits or withdrawals were dated after the latest balance entry, the "Current value" field shows a note: "Balance of DD/MM/YYYY plus R$X net deposits since."
+- When deposits or withdrawals are dated after the latest balance entry, the "Current value" field shows a note: "Balance of DD/MM/YYYY plus R$X net deposits since."
 - Portfolio and broker Holdings grids show the balance-tracked holding in the same row layout as other holdings. Quantity and price cells show "—" with the accessible label "Not applicable, tracked by balance".
 - Loading, empty ("No balance recorded"), stale and error states reuse the existing Summary and Holdings components.
 
@@ -250,9 +256,9 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
   - Each Buy becomes a Deposit with the same date and id, amount = quantity × unit price rounded to 2 decimals, and fees = the Buy's fees rounded to 2 decimals (values below 0.01 become 0).
   - Each price snapshot becomes a balance entry with value = snapshot price × total quantity bought on or before the snapshot date, rounded to 2 decimals, keeping its date and retrieved-at. The source becomes "Provider valuation" and the original per-unit value is kept in the source reference ("migrated: unit value N × Q units").
   - The holding's tracking mode becomes Balance.
-- **Verification output** per holding: count of Buys vs Deposits, sum of Buy amounts vs sum of Deposit amounts, each snapshot's original and converted value, and the holding's invested amount and current value before and after. A holding whose before/after invested amount differs by more than R$0.01 fails the run, and nothing is written.
+- **Verification output** per holding: count of Buys vs Deposits, sum of Buy amounts vs sum of Deposit amounts, each snapshot's original and converted value, and the holding's invested amount and current value before and after. A holding whose before/after invested amount or current value differs by more than R$0.01 fails the run, and nothing is written.
 - `--dry-run` prints the verification output without writing. A real run writes atomically: either every named holding is converted or the file is left untouched.
-- Guepardo is not converted. Its 3 Buys are corrected to the real quota count and quota value through the existing transaction edit screen (see F07), and past Inco payouts are entered through F02 after migration.
+- Guepardo is not converted by this tool; its purchases are corrected in the app by the quota recalculation (F08).
 - The app must be restarted after the tool writes, because the data file is loaded once at startup. The tool prints this reminder.
 
 **Experience:**
@@ -268,7 +274,7 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 ### F06. Fund CNPJ Identifier
 
 **Provides:**
-- Fund CNPJ, 14 digits (used by F07)
+- Fund CNPJ, 14 digits (used by F07, F08)
 
 **Capabilities:**
 - New optional asset identity field **CNPJ**, shown in the asset form for holdings with country BR and class Fund or Pension.
@@ -278,25 +284,30 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - Included in the asset admin create/update DTOs and the OpenAPI snapshot.
 
 **Experience:**
-- The asset form shows a "CNPJ" text field under ISIN with the helper text "Used to fetch the fund's daily quota value from CVM."
+- The asset form shows a "CNPJ" text field under ISIN with the helper text "The fund's CNPJ, shown on its fact sheet (lâmina) in XP. Used to get its daily quota value from CVM."
 - An invalid value shows the inline error "Enter a valid 14-digit CNPJ." on blur and on submit, and focus moves to it on submit.
-- Clearing the field removes the CNPJ; the CVM price source then no longer applies to that holding.
+- Clearing the field removes the CNPJ; the CVM price source and buy-by-amount then no longer apply to that holding.
 
 ### F07. CVM Daily Quota Price Source
 
 **Consumes:**
 - F06: fund CNPJ (14 digits)
 
+**Provides:**
+- A fund's quota value on a given date: competence date and quota value, or "not available" (used by F08)
+
 **Capabilities:**
 - New price source **CVM**, used for holdings tracked by Quantity and price with country BR, class Fund and a CNPJ. It comes first in the fetch routing for those holdings, and the existing Google/Yahoo/Status Invest chain is not tried for them.
-- Data comes from the CVM open-data daily fund report (Informe Diário de Fundos de Investimento): one compressed CSV per month listing every fund's daily quota value by CNPJ and competence date. The quota value used is the row for the holding's CNPJ with the latest competence date on or before the valuation date.
-- The current month's file is downloaded at most once every 12 hours per process and kept in memory as a CNPJ → (date, quota value) map, holding only the funds the app needs. When the current month's file has no row for the CNPJ (the first business days of a month), the previous month's file is used.
-- Each successful fetch is saved as a price snapshot with source "CVM", the quota's competence date as the snapshot date (not the fetch date), and the source reference "CNPJ <masked> · competence DD/MM/YYYY". It only replaces an existing automatic snapshot for that date.
+- **Data**: the CVM open-data daily fund report (Informe Diário de Fundos de Investimento) at `dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/`, one compressed CSV per month named `inf_diario_fi_YYYYMM.zip`, available from January 2021. Each row has the fund identifier `CNPJ_FUNDO_CLASSE`, the competence date `DT_COMPTC` and the quota value `VL_QUOTA`, plus an optional `ID_SUBCLASSE`. A recent month's file is about 10–12 MB compressed. The current and previous months' files are refreshed daily (Monday to Saturday, around 08:00 Brasília time) with values up to the previous day; older months are refreshed weekly.
+- **Latest quota**: the row for the holding's CNPJ with the latest competence date on or before the valuation date. When the current month's file has no row yet (the first business days of a month), the previous month's file is used.
+- **Quota on a date** (used by F08): the row for the CNPJ on exactly that competence date; when that date has no row (weekend, holiday), the nearest earlier competence date within 5 calendar days. Otherwise "not available". Dates before January 2021 are "not available" (the yearly historical files are out of scope).
+- **Subclasses**: when a CNPJ has rows with more than one `ID_SUBCLASSE`, the row with an empty subclass is used; if none is empty, the quota is "not available" with the reason "Fund has subclasses".
+- **Caching**: each monthly file is downloaded at most once every 12 hours per process (current and previous month) or once per process (older months), and reduced in memory to the CNPJs the app holds, as a CNPJ → (date → quota value) map. The file is streamed and parsed without loading the whole uncompressed CSV into memory. The CSV separator and text encoding are confirmed against a real file in the spec and pinned by a parsing test.
+- Each successful latest-quota fetch is saved as a price snapshot with source "CVM", the quota's competence date as the snapshot date (not the fetch date), and the source reference "CNPJ <masked> · competence DD/MM/YYYY". It only replaces an existing automatic snapshot for that date.
 - Existing price rules are unchanged: a manual price for today wins and stops the fetch, and a failed fetch falls back to the most recent saved price with the existing fallback status.
-- Market status uses the existing weekday rule against the quota's competence date. A quota value dated more than 1 weekday back is Stale, which is expected on Mondays and the day after holidays.
-- Download timeout is 30 seconds; the file can be tens of MB, so it is streamed and parsed without loading the whole uncompressed CSV into memory.
+- Market status uses the existing weekday rule against the quota's competence date. A quota value dated more than 1 weekday back is Stale, which is expected on Mondays and the day after a holiday.
+- Download timeout is 60 seconds.
 - The CVM client lives in its own `Integrations/` project behind a first-party interface, following the integration isolation rule.
-- **Guepardo correction** (manual, using existing screens): the investor adds the CNPJ (F06) and edits the 3 existing Buys to the real quota count and quota value from the XP statement, keeping each Buy's date and total amount. Because Guepardo has no sales, no realised-gain regeneration is triggered. Its existing pseudo-unit snapshots are deleted from Price history, since they no longer match real quotas.
 
 **Experience:**
 - The price badge and Price history grid show "CVM" as the source, with the quota's competence date as "As of".
@@ -309,6 +320,35 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - Quota value is ≤ 0 or not a number for the CNPJ → that row is ignored and the previous valid competence date is used.
 - Saving the snapshot fails → the fetched price is still shown for the current request, with the existing "price not saved" warning, as today for other automatic sources.
 
+### F08. Fund Purchases by Amount
+
+**Consumes:**
+- F06: fund CNPJ (14 digits)
+- F07: a fund's quota value on a given date (competence date, quota value, or not available)
+
+**Capabilities:**
+- Applies to holdings tracked by Quantity and price with a CNPJ (F06). Other holdings keep the existing Buy form unchanged.
+- **Buy by amount**: the Buy form gets an "Enter by: Amount / Quantity and price" choice, defaulting to Amount for these holdings. With Amount, the investor enters Amount (required, > 0, up to 2 decimals), Quota date (required, not in the future, defaults to the transaction date) and Fees (optional). The app looks up the quota value on the quota date (F07) and sets unit price = quota value and quantity = (amount − fees) ÷ quota value, rounded to 8 decimals. The saved Buy is an ordinary Buy with that quantity and unit price, so every existing share calculation applies.
+- The quota date is the fund's conversion date (data de cotização), which for many equity funds is one or more business days after the order date. The Buy's transaction date stays the order date.
+- The investor can switch to "Quantity and price" at any time to override the derived figures, for example when XP's order details show a different quota count.
+- **Recalculate quotas from CVM**: an action on the holding (Transactions tab menu) available when the holding has a CNPJ, at least 1 Buy, and 0 Sells, 0 credits and 0 corporate actions. For each Buy it keeps the date, total amount (quantity × unit price) and fees, looks up the quota value on the Buy's date (F07), and proposes unit price = quota value and quantity = (amount − fees) ÷ quota value.
+- The recalculation preview also shows the current value the new quotas give at the latest CVM quota value, so the investor can compare it with the value XP shows.
+- The recalculation optionally deletes the holding's manual price snapshots dated before today (default on, showing their count), because hand-calculated pseudo prices don't match real quotas.
+- Applying the recalculation writes all Buys and deletions in one save: either everything is applied or nothing.
+
+**Experience:**
+- Buy form in Amount mode: Date, Amount, Quota date, Fees, and a read-only line under them, "Quota value R$X on DD/MM/YYYY (CVM) → Y quotas", updated when Amount, Quota date or Fees change. While the lookup runs, the line reads "Getting the quota value from CVM…".
+- When the quota is not available for the quota date, the line reads "CVM has no quota value for DD/MM/YYYY. Pick another quota date or enter quantity and price." and Save is disabled in Amount mode.
+- Recalculate dialog: a grid with Date, Amount, Current quantity, New quantity, Quota value, Quota date used, newest first, with right-aligned numbers. Below it: "Current value with new quotas: R$X at the CVM quota value of DD/MM/YYYY. Compare it with XP before applying." Then a checkbox "Also delete N hand-entered prices recorded before today", and the buttons "Apply" and "Cancel".
+- Rows whose quota is not available are listed with "No CVM quota for this date", and Apply is disabled with the message "N purchases have no CVM quota. Fix their dates or enter them manually."
+- On success: toast "Quotas recalculated for N purchases", and the grid, summary and price history refresh.
+
+**Error Handling:**
+- CVM can't be reached during a Buy in Amount mode → "Couldn't get the quota value from CVM. Try again or enter quantity and price." Save is disabled in Amount mode, and the input is kept.
+- CVM can't be reached during a recalculation → the dialog shows "Couldn't get quota values from CVM. Try again later." and nothing is changed.
+- The holding gained a Sell, credit or corporate action after the dialog was opened → Apply is rejected with "This holding now has sales or income, so its quotas can't be recalculated." and nothing is changed.
+- Storage fails while applying → "Couldn't save the recalculated quotas. Nothing was changed." The in-memory holding is restored to its previous state.
+
 ## 7. Out of Scope
 
 **Tax**
@@ -316,27 +356,32 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 - Applying P51 tax rules to balance-tracked withdrawals: they are recorded as unclassified.
 - IOF and VGBL loading fees (taxa de carregamento) as separate concepts; they can only be entered as deposit fees.
 
-**Inco payouts**
-- Splitting a payout into interest (income) and principal (capital returned). Every payout is a lump-sum Withdrawal.
+**Inco**
+- Recording payouts, interest or amortisation that stay inside the Inco balance, or splitting a withdrawal into interest and principal.
 - Tracking individual Inco projects separately inside the holding.
 
 **Tracking-mode changes**
 - Switching an existing holding between Quantity and price and Balance in the app while it has transactions. Only the F05 tool converts existing holdings.
 - Converting a balance-tracked holding back to quantities.
 
+**Funds and CVM**
+- CVM quota values before January 2021 (the yearly historical files).
+- Recalculating quotas for a fund holding that has sales, credits or corporate actions.
+- Fund subclasses with no class-level quota.
+- Pricing VGBL plans from CVM: Grão is tracked by balance.
+
 **Automation**
-- Importing balances, deposits or withdrawals automatically from XP statements, the XP portal or e-mail.
-- Fetching values for VGBL plans or Inco from any external source.
-- Back-filling historical CVM quota values for past dates or past month-starts: only the latest quota value is fetched, and the month-start values use saved snapshots as P68 defines.
+- Importing balances, deposits or withdrawals automatically from XP.
+- Fetching values for Inco or VGBL plans from any external source.
+- Back-filling past CVM prices into price history: only the latest quota value is saved as a price, and month-start values use saved prices as P68 defines.
 
 **Other**
 - Time-weighted return for any holding.
-- Balance-tracked holdings in currencies other than the holding's own currency.
-- Changes to CashFlow; no money is moved between the investment and CashFlow contexts when a withdrawal is recorded.
+- Changes to CashFlow: recording a withdrawal moves no money into a CashFlow bank account.
 
 ## 8. Dependency Graph
 
-### Part 1: Dependency Table
+### Dependency Table
 
 | # | Feature | Priority | Dependencies |
 |---|---------|----------|--------------|
@@ -345,25 +390,24 @@ Gains on balance-tracked holdings use **proportional cost**: a withdrawal remove
 | F02 | Deposits and Withdrawals | 1 | F01, F03 |
 | F04 | Balance Holding Valuation and Performance | 1 | F01, F02, F03 |
 | F05 | Balance Holding Migration Tool | 1 | F01, F02, F03 |
-| F06 | Fund CNPJ Identifier | 2 | None |
-| F07 | CVM Daily Quota Price Source | 2 | F06 |
+| F06 | Fund CNPJ Identifier | 1 | None |
+| F07 | CVM Daily Quota Price Source | 1 | F06 |
+| F08 | Fund Purchases by Amount | 1 | F06, F07 |
 
-### Part 3: Execution Waves
+### Execution Waves
 
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
 
 - **Wave 1**: F01, F06
 - **Wave 2**: F03, F07
-- **Wave 3**: F02
+- **Wave 3**: F02, F08
 - **Wave 4**: F04, F05
 
-### Part 4: Priority Levels
+### Priority levels
 
 - **1** = Essential — product does not work without it
 - **2** = Important — significant value addition
 - **3** = Desirable — incremental improvement
-
-### Part 5: Mermaid Diagram
 
 ```mermaid
 graph TD
@@ -377,6 +421,8 @@ graph TD
   F02 --> F05
   F03 --> F05
   F06[F06 Fund CNPJ] --> F07[F07 CVM quota source]
+  F06 --> F08[F08 Buy by amount]
+  F07 --> F08
 ```
 
 ## 9. Acceptance Criteria
@@ -393,6 +439,7 @@ graph TD
 
 ### F02. Deposits and Withdrawals
 - [ ] On a balance-tracked holding, the transaction form offers only Deposit and Withdrawal, with no quantity or unit price field.
+- [ ] The Deposit form shows the helper text explaining that reinvested payouts aren't recorded.
 - [ ] A Deposit of R$1,000 with R$5 fees raises the invested amount by R$1,005.
 - [ ] With invested R$10,000 and balance before R$12,000, a R$3,000 withdrawal records cost removed R$2,500, realised gain R$500 gross, and invested afterwards R$7,500.
 - [ ] The same withdrawal with R$75 IR withheld shows realised gain R$500 gross and R$425 net.
@@ -423,6 +470,7 @@ graph TD
 
 ### F04. Balance Holding Valuation and Performance
 - [ ] With a balance entry of R$12,000 on 01/11 and a R$1,000 deposit on 05/11, the current value on 10/11 is R$13,000, and the note "plus R$1,000 net deposits since" is shown.
+- [ ] With deposits of R$10,000, no withdrawals and a balance of R$11,500 (including reinvested payouts), invested is R$10,000 and unrealised gain is R$1,500.
 - [ ] Unrealised gain = current value − invested, and Result % = unrealised gain ÷ invested; Result % is "not available" when invested is 0.
 - [ ] XIRR is calculated from deposits (negative), withdrawals net of IR (positive) and the current value (positive) on the valuation date, and "XIRR with credits" equals it.
 - [ ] Quantity, average price and current price show "Not applicable" on the Summary tab, and "—" with the accessible label in the Holdings grids, never 0.
@@ -436,7 +484,7 @@ graph TD
 - [ ] On a temp copy, converting Inco and Grão produces one Deposit per original Buy with the same id, date and amount (quantity × unit price, 2 decimals).
 - [ ] Each converted balance entry equals the original per-unit price × units bought on or before its date, to within R$0.01, and keeps its date and retrieved-at.
 - [ ] The original per-unit value is kept in each converted entry's source reference.
-- [ ] Each holding's invested amount before and after conversion matches to within R$0.01, and the verification output shows it.
+- [ ] Each holding's invested amount and current value before and after conversion match to within R$0.01, and the verification output shows them.
 - [ ] `--dry-run` prints the verification output and leaves the file byte-for-byte unchanged.
 - [ ] A holding with a Sell, credit, corporate action or realised gain stops the run with exit code 1 and the reason, and nothing is written.
 - [ ] A holding already tracked by Balance is reported as "already migrated" and skipped.
@@ -455,13 +503,32 @@ graph TD
 - [ ] A BR Fund holding with a CNPJ, tracked by quantity, is priced from the CVM daily report's latest quota value on or before the valuation date.
 - [ ] The saved snapshot has source "CVM", the competence date as its date, and the source reference with the masked CNPJ and competence date.
 - [ ] In the first business days of a month, when the current month's file has no row for the CNPJ, the previous month's latest value is used.
-- [ ] The monthly file is downloaded at most once every 12 hours per process.
+- [ ] The quota on a date returns the exact competence date's value, or the nearest earlier one within 5 calendar days, and otherwise "not available".
+- [ ] A date before January 2021 returns "not available".
+- [ ] A CNPJ with several subclasses uses the row with an empty subclass, and otherwise returns "not available" with "Fund has subclasses".
+- [ ] The current and previous months' files are downloaded at most once every 12 hours per process, and older months at most once per process.
 - [ ] A manual price for today takes priority, and no CVM fetch is made.
 - [ ] A timeout or non-success response falls back to the last saved price, shows the "Couldn't fetch the CVM quota value" status, and retries no sooner than 15 minutes later.
 - [ ] An unrecognised CSV layout saves no snapshot and logs "CVM daily report format not recognised."
 - [ ] A CNPJ absent from the last two monthly files shows the "CVM has no quota value for CNPJ…" status.
 - [ ] Holdings without a CNPJ, or tracked by Balance, never call CVM.
+- [ ] A parsing test pins the CSV separator, encoding and column names against a sample taken from a real CVM file.
 - [ ] The CVM client sits in its own `Integrations/` project behind a first-party interface, and the architecture tests pass.
+
+### F08. Fund Purchases by Amount
+- [ ] On a holding with a CNPJ, the Buy form defaults to "Enter by: Amount"; on other holdings the Buy form is unchanged.
+- [ ] An amount of R$1,000 with a quota value of R$2.50 on the quota date saves a Buy with quantity 400 and unit price 2.50.
+- [ ] Fees are deducted before dividing: R$1,000 with R$10 fees at R$2.50 gives 396 quotas.
+- [ ] The derived quota value, its date and the quota count are shown before saving, and update when Amount, Quota date or Fees change.
+- [ ] When CVM has no quota for the quota date, the message is shown and Save is disabled in Amount mode.
+- [ ] Switching to "Quantity and price" lets the investor override the derived quantity and unit price.
+- [ ] "Recalculate quotas from CVM" is available only on a holding with a CNPJ, at least 1 Buy, and no Sells, credits or corporate actions.
+- [ ] The recalculation preview keeps each Buy's date, amount and fees, and shows the current and new quantity and the quota value used.
+- [ ] The preview shows the current value at the latest CVM quota value for comparison with XP.
+- [ ] With the delete option on, applying removes the holding's manual prices dated before today; with it off, they are kept.
+- [ ] Apply is disabled while any Buy has no CVM quota for its date, with the count shown.
+- [ ] Applying changes all Buys (and deletions) in one save, and a storage failure changes nothing.
+- [ ] A Sell, credit or corporate action added after the dialog opened makes Apply fail with the message, and nothing is changed.
 
 ### Cross-Feature Integration
 - [ ] A holding set to "Tracked by: Balance" (F01) accepts Deposits and Withdrawals (F02) and rejects Buys, and a holding set to "Quantity and price" shows the Buy/Sell form.
@@ -470,6 +537,7 @@ graph TD
 - [ ] Deposits, fees, withdrawals, IR withheld, remaining invested and realised gain recorded in F02 appear unchanged on the Summary tab and in the totals (F04).
 - [ ] The latest balance entry, the entry nearest the 1st and the balance status from F03 drive the current value, the month-start value and the market status shown in F04.
 - [ ] A holding marked Balance (F01) is valued by F04's rules in the portfolio, broker, dashboard and ARCA totals.
-- [ ] Holdings converted by the F05 tool show the same deposits as F02 Deposits and the converted values as F03 balance entries after the app restarts, and are flagged as tracked by Balance (F01).
-- [ ] After migration, entering a past Inco payout as a Withdrawal (F02) lowers the invested amount and raises the realised gain shown in F04.
-- [ ] A CNPJ saved on Guepardo (F06) is used by the CVM source (F07) to price it, and after its 3 Buys are corrected to real quotas, its current value equals quotas × CVM quota value.
+- [ ] Holdings converted by the F05 tool show their deposits as F02 Deposits and their converted values as F03 balance entries after the app restarts, and are tracked by Balance (F01).
+- [ ] A CNPJ saved on a fund (F06) is used by the CVM source (F07) to price it, and clearing it stops CVM pricing.
+- [ ] The CNPJ (F06) and the quota value on a date (F07) drive the derived quantity of a Buy by amount (F08).
+- [ ] After Guepardo's purchases are recalculated (F08) with quota values from F07, its current value equals the total quotas × the latest CVM quota value.
