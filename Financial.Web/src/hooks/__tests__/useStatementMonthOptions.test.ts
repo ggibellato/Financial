@@ -27,7 +27,7 @@ const statement = (year: number, month: number, isPaid: boolean): AccountStateme
   paidOn: null,
   paidAmount: null,
   paidFromAccountName: null,
-  potWithdrawals: [],
+  potLinkedTotal: null, potWithdrawals: [],
 })
 
 const values = (options: { value: string }[]) => options.map((option) => option.value)

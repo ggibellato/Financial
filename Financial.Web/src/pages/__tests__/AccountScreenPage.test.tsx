@@ -195,9 +195,9 @@ const TRANSACTIONS: AccountTransactionDto[] = [
 ]
 
 const CARD_STATEMENTS: AccountStatementDto[] = [
-  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
-  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potWithdrawals: [] },
-  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, settledOn: null, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidFromAccountName: null, potLinkedTotal: null, potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potLinkedTotal: null, potWithdrawals: [] },
+  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, settledOn: null, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potLinkedTotal: null, potWithdrawals: [] },
 ]
 
 const CATEGORIES: CategoryDto[] = [

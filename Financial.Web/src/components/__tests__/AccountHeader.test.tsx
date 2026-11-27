@@ -16,7 +16,7 @@ const ACCOUNTS: AccountDto[] = [
 ]
 
 const OCTOBER_UNPAID: AccountStatementDto = {
-  id: 's-oct', potWithdrawals: [],
+  id: 's-oct', potLinkedTotal: null, potWithdrawals: [],
   year: 2026,
   month: 10,
   total: 650.1,
@@ -104,6 +104,23 @@ describe('AccountHeader', () => {
     expect(screen.getByText('Total owed')).toBeInTheDocument()
     expect(screen.getByText('740.12 GBP')).toBeInTheDocument()
     expect(screen.queryByText('812.33 GBP')).not.toBeInTheDocument()
+  })
+
+  it("shows the Pot part of a card's unpaid viewed statement and of its total owed", () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, potLinkedTotal: 120 }, potLinkedOwed: 160.5 })
+
+    const statementFigure = screen.getByText('October 2026 statement').parentElement as HTMLElement
+    expect(within(statementFigure).getByText('120.00 GBP from Pots')).toBeInTheDocument()
+    expect(statementFigure.textContent).toBe('October 2026 statement650.10 GBP120.00 GBP from PotsUnpaid')
+    const totalOwedFigure = screen.getByText('Total owed').parentElement as HTMLElement
+    expect(within(totalOwedFigure).getByText('160.50 GBP from Pots')).toBeInTheDocument()
+  })
+
+  it('shows no Pot part for a statement that is not unpaid', () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, status: 'Paid', isPaid: true, potLinkedTotal: null }, potLinkedOwed: 0 })
+
+    expect(screen.getAllByText(/from Pots$/)).toHaveLength(1)
+    expect(screen.getByText('0.00 GBP from Pots')).toBeInTheDocument()
   })
 
   it('[AC P60-F15-card-refunds-and-credit-07] shows a paid statement with the amount paid and its date', () => {

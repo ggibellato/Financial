@@ -41,7 +41,7 @@ describe('formatOwedOrCredit', () => {
 
 describe('statementStatusText', () => {
   const statement = (overrides: Partial<AccountStatementDto>): AccountStatementDto => ({
-    id: 's1', year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, ...overrides, potWithdrawals: [],
+    id: 's1', year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, ...overrides, potLinkedTotal: null, potWithdrawals: [],
   })
 
   it('names an unpaid statement Unpaid', () => {

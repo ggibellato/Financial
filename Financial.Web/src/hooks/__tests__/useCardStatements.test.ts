@@ -32,14 +32,14 @@ vi.mock('../../api/financialApiClient', () => ({
 const CARD_ID = 'card-amex'
 
 const OCTOBER: StoredStatement = {
-  creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potWithdrawals: [],
+  creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null, potLinkedTotal: null, potWithdrawals: [],
 }
 const SEPTEMBER: StoredStatement = {
-  creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, settledOn: null, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potWithdrawals: [],
+  creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, settledOn: null, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays', potLinkedTotal: null, potWithdrawals: [],
 }
 const AUGUST: StoredStatement = {
   ...OCTOBER, id: 's-aug', month: 8, total: -35, outstandingTotal: 0, status: 'NothingDue', dueDate: null,
-  potWithdrawals: [{ operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }],
+  potLinkedTotal: null, potWithdrawals: [{ operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }],
 }
 
 const ACCOUNTS = [

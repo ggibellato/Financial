@@ -7532,6 +7532,8 @@ export interface components {
             month: number;
             name: string;
             otherParticipant?: null | string;
+            /** Format: double */
+            potLinkedOwed: null | number;
             roundUpDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             savings?: null | components["schemas"]["SavingsSummaryDTO"];
             templateName: string;
@@ -7611,6 +7613,8 @@ export interface components {
             paidFromAccountName?: null | string;
             /** Format: date */
             paidOn?: null | string;
+            /** Format: double */
+            potLinkedTotal?: null | number;
             potWithdrawals: components["schemas"]["StatementPotWithdrawalDTO"][];
             /** Format: date */
             settledOn?: null | string;

@@ -71,7 +71,7 @@ const paidStatement = (year: number, month: number): AccountStatementDto => ({
   paidOn: '2026-11-03',
   paidAmount: 10,
   paidFromAccountName: 'Barclays',
-  potWithdrawals: [],
+  potLinkedTotal: null, potWithdrawals: [],
 })
 
 const BANKS: BankOption[] = [

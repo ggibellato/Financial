@@ -128,6 +128,7 @@ export function accountDetail(fields: RequiredAccountDetailFields & Partial<Acco
     hasStatements: false,
     totalOwed: null,
     viewedStatement: null,
+    potLinkedOwed: null,
     allowedActions: [],
     disabledActions: {},
     currentBalances: [],

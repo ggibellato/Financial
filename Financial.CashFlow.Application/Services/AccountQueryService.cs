@@ -119,6 +119,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 HasStatements = hasStatements,
                 TotalOwed = totalOwed,
                 ViewedStatement = hasStatements ? ViewedStatementOf(account, year, month) : null,
+                PotLinkedOwed = hasStatements ? CardChargeFilter.PotLinkedOwed(account, records.OfType<Expense>(), _repository.GetCardStatements()) : null,
                 AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList(),
                 DisabledActions = AccountActions.DisabledFor(account, currentBalances).ToDictionary(disabled => disabled.Key.ToString(), disabled => disabled.Value),
                 CurrentBalances = CurrencyBalanceMapper.ToDtos(currentBalances),
@@ -286,7 +287,8 @@ public sealed class AccountQueryService : IAccountQueryService
             PaidOn = payment?.Date,
             PaidAmount = row.PaidAmount,
             PaidFromAccountName = payment?.Account.Name,
-            PotWithdrawals = potWithdrawalsOn(card, row.Year, row.Month)
+            PotWithdrawals = potWithdrawalsOn(card, row.Year, row.Month),
+            PotLinkedTotal = row.IsUnpaid ? CardChargeFilter.PotLinkedOnStatement(card, expenses, row.Year, row.Month) : null
         };
     }
 

@@ -306,6 +306,13 @@
               "string"
             ]
           },
+          "potLinkedOwed": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "roundUpDestination": {
             "oneOf": [
               {
@@ -364,6 +371,7 @@
           "hasStatements",
           "totalOwed",
           "viewedStatement",
+          "potLinkedOwed",
           "allowedActions",
           "disabledActions",
           "currentBalances",
@@ -616,6 +624,13 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "potLinkedTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
             ]
           },
           "potWithdrawals": {
