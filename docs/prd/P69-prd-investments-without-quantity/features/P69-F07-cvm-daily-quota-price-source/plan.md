@@ -1,5 +1,7 @@
 # Implementation Plan: CVM Daily Quota Price Source
 
+**Note:** `spec.md` §13 (review amendments) is binding and supersedes earlier spec sections where they differ; read it before each stage.
+
 **Prerequisites:**
 - F01 (Balance-tracked holding option) and F06 (Brazilian CNPJ identifiers) merged: this feature reads `Asset.IsTrackedByBalance`, `Asset.Cnpj`, `CnpjRules`, `AssetDetailsDTO.cnpj` and the web `utils/cnpj.ts`. If the built code differs from their specs, follow the code and record it in the PR's docs commit.
 - .NET 10 SDK and Node with `Financial.Web` dependencies installed (`npm ci`).

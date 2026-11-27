@@ -1,5 +1,7 @@
 # Implementation Plan: Balance Entries
 
+**Note:** `spec.md` §13 (review amendments) is binding and supersedes earlier spec sections where they differ; read it before each stage.
+
 **Prerequisites:**
 - F01 built and merged: its valuation policy, the asset's tracking-mode flag and the reshaped valuation calculator (F01 PRs 1 and 2) before Stage 1; the tree selection's tracking-mode flag (F01 PR 3) before Stage 3. Everything the spec marks "from F01".
 - .NET 10 SDK and Node as pinned by the repo; `npm ci` in `Financial.Web` (run it in a Claude-created worktree before any web check).
