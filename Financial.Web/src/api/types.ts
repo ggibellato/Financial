@@ -178,6 +178,7 @@ export type AccountTransferUpdateDto = Schema<'AccountTransferUpdateDTO'>
 export type TransferAccountOptionDto = Schema<'TransferAccountOptionDTO'>
 export type AccountGroupSummaryDto = Schema<'AccountGroupSummaryDTO'>
 export type AccountGroupMemberDto = Schema<'AccountGroupMemberDTO'>
+export type AccountNextStatementDto = Schema<'AccountNextStatementDTO'>
 export type CurrencyTotalDto = Schema<'CurrencyTotalDTO'>
 export type AccountTemplateGroupDto = Schema<'AccountTemplateGroupDTO'>
 export type IncomeSourceTotalDto = Schema<'IncomeSourceTotalDTO'>

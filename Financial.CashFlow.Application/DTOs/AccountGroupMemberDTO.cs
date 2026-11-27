@@ -15,5 +15,6 @@ public sealed class AccountGroupMemberDTO
     public AccountGroupStatementDTO? Statement { get; init; }
     public required bool BalanceIsOwed { get; init; }
     public required decimal? TotalOwed { get; init; }
+    public required decimal? PotLinkedOwed { get; init; }
     public required AccountNextStatementDTO? NextStatement { get; init; }
 }

@@ -107,7 +107,7 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             september.Name.Should().Be("BA Amex");
-            september.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 154.04m });
+            september.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 154.04m, PotLinkedTotal = 0m });
             september.TotalOwed.Should().Be(740.12m);
             october.NextStatement.Should().BeEquivalentTo(september.NextStatement);
             october.TotalOwed.Should().Be(740.12m);

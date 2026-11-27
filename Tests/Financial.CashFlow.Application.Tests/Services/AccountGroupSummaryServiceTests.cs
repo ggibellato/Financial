@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -272,7 +273,7 @@ public class AccountGroupSummaryServiceTests
             amex.Statement!.OutstandingTotal.Should().Be(42m);
             amex.Statement.IsPaid.Should().BeFalse();
             amex.TotalOwed.Should().Be(87m);
-            amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 42m });
+            amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 42m, PotLinkedTotal = 0m });
         }
     }
 
@@ -320,7 +321,7 @@ public class AccountGroupSummaryServiceTests
 
         var amex = _sut.GetTemplateGroups(2026, 8).SelectMany(group => group.Members).Single(member => member.Name == "Amex");
 
-        amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 10, OutstandingTotal = 25m });
+        amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 10, OutstandingTotal = 25m, PotLinkedTotal = 0m });
     }
 
     [Fact]
@@ -369,7 +370,7 @@ public class AccountGroupSummaryServiceTests
             amex.BalanceIsOwed.Should().BeTrue();
             amex.TotalOwed.Should().Be(80m);
             amex.Statement!.OutstandingTotal.Should().Be(30m);
-            amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 30m });
+            amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 30m, PotLinkedTotal = 0m });
         }
     }
 
@@ -404,6 +405,37 @@ public class AccountGroupSummaryServiceTests
             groups[1].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 80m));
             groups[0].Totals.Should().OnlyContain(total => total.OpenStatementTotal == null);
             groups[1].Totals.Single().OpenStatementTotal.Should().Be(30m);
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_CardsWithPotWithdrawals_ShowThePotLinkedPartOfTheNextStatementAndOfWhatIsOwed()
+    {
+        var visa = TestAccounts.CreditCard("Visa");
+        var reserva = TestAccounts.Pots("Reserva", category: Category.Create("Reserva"));
+        reserva.AddPot(Pot.Create("Viagem", 100m));
+        _repository.Accounts.AddRange([_amex, visa, reserva]);
+        AddCardPotWithdrawal(reserva, _amex, 120m, new DateOnly(2026, 9, 1));
+        AddCardPotWithdrawal(reserva, _amex, 40m, new DateOnly(2026, 10, 1));
+        AddCardPotWithdrawal(reserva, visa, 25m, new DateOnly(2026, 10, 1));
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+
+        var groups = _sut.GetTemplateGroups(2026, 9);
+        var cards = groups.Single(group => group.TemplateName == "CreditCard");
+        var amex = cards.Members.Single(member => member.Name == "Amex");
+
+        using (new AssertionScope())
+        {
+            amex.NextStatement.Should().BeEquivalentTo(
+                new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 150m, PotLinkedTotal = 120m });
+            amex.PotLinkedOwed.Should().Be(160m);
+            cards.Members.Single(member => member.Name == "Visa").PotLinkedOwed.Should().Be(25m);
+            cards.Totals.Single().NextStatementPotLinkedTotal.Should().Be(145m);
+            cards.Totals.Single().PotLinkedOwedTotal.Should().Be(185m);
+            groups.Where(group => group.TemplateName != "CreditCard").SelectMany(group => group.Members)
+                .Should().OnlyContain(member => member.PotLinkedOwed == null);
+            groups.Where(group => group.TemplateName == "Bank").SelectMany(group => group.Totals)
+                .Should().OnlyContain(total => total.NextStatementPotLinkedTotal == null && total.PotLinkedOwedTotal == null);
         }
     }
 
@@ -554,6 +586,15 @@ public class AccountGroupSummaryServiceTests
                 ("GBP", 1200m, 45.50m),
                 ("BRL", 500m, 0m));
         }
+    }
+
+    private void AddCardPotWithdrawal(Account potsAccount, Account card, decimal amount, DateOnly statementMonth)
+    {
+        var operation = PotWithdrawal.Build(
+            potsAccount, potsAccount.Pots![0], amount, new DateOnly(2026, 8, 10), "Flights", bank: null, _home, Guid.NewGuid(),
+            new DateOnly(2026, 9, 1), new PotWithdrawalCard(card, statementMonth));
+        _repository.PotTransactions.AddRange(operation.Transactions);
+        _repository.Expenses.AddRange(operation.Expenses);
     }
 
     private Expense AddCharge(DateOnly date, decimal value, DateOnly invoiceDate)

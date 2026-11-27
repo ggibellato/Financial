@@ -7556,6 +7556,8 @@ export interface components {
             nextStatement: null | components["schemas"]["AccountNextStatementDTO"];
             otherParticipant?: null | string;
             /** Format: double */
+            potLinkedOwed: null | number;
+            /** Format: double */
             roundUpTotal?: null | number;
             statement?: null | components["schemas"]["AccountGroupStatementDTO"];
             templateName: string;
@@ -7585,6 +7587,8 @@ export interface components {
             month: number;
             /** Format: double */
             outstandingTotal: number;
+            /** Format: double */
+            potLinkedTotal: number;
             /** Format: int32 */
             year: number;
         };
@@ -7631,7 +7635,11 @@ export interface components {
             cashbackTotal?: null | number;
             currency: string;
             /** Format: double */
+            nextStatementPotLinkedTotal?: null | number;
+            /** Format: double */
             openStatementTotal?: null | number;
+            /** Format: double */
+            potLinkedOwedTotal?: null | number;
             /** Format: double */
             total: number;
         };

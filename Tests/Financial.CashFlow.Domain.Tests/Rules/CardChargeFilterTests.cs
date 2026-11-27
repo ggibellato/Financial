@@ -50,6 +50,37 @@ public class CardChargeFilterTests
         CardChargeFilter.ChargesFor([match, otherCard, otherMonth, bankExpense], _amex, 2026, 10).Should().Equal(match);
     }
 
+    private Expense PotCharge(Account card, DateOnly date, decimal value) =>
+        Expense.Create(date, "Flights", value, _groceries, null, card, operationId: Guid.NewGuid());
+
+    [Fact]
+    public void PotLinkedOwed_SumsUnpaidPotChargesOnOpenStatementsOfThatCardOnly()
+    {
+        var october = PotCharge(_amex, new DateOnly(2026, 10, 3), 120m);
+        var november = PotCharge(_amex, new DateOnly(2026, 11, 3), 40m);
+        var onPaidStatement = PotCharge(_amex, new DateOnly(2026, 9, 3), 70m);
+        var settled = PotCharge(_amex, new DateOnly(2026, 10, 9), 15m);
+        settled.Settle(_barclays, new DateOnly(2026, 10, 20));
+        var otherCard = PotCharge(_visa, new DateOnly(2026, 10, 3), 25m);
+        var plainCharge = Charge(_amex, new DateOnly(2026, 10, 5), 50m);
+
+        CardChargeFilter.PotLinkedOwed(
+                _amex, [october, november, onPaidStatement, settled, otherCard, plainCharge], [Statement(_amex, 2026, 9, isPaid: true)])
+            .Should().Be(160m);
+    }
+
+    [Fact]
+    public void PotLinkedOnStatement_SumsOnlyThatMonthsUnpaidPotCharges()
+    {
+        var october = PotCharge(_amex, new DateOnly(2026, 10, 3), 120m);
+        var november = PotCharge(_amex, new DateOnly(2026, 11, 3), 40m);
+        var settled = PotCharge(_amex, new DateOnly(2026, 10, 9), 15m);
+        settled.Settle(_barclays, new DateOnly(2026, 10, 20));
+        var plainCharge = Charge(_amex, new DateOnly(2026, 10, 5), 50m);
+
+        CardChargeFilter.PotLinkedOnStatement(_amex, [october, november, settled, plainCharge], 2026, 10).Should().Be(120m);
+    }
+
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public void TotalOwed_CountsEveryUnpaidChargeWhateverItsDate()

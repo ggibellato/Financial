@@ -28,6 +28,16 @@ public static class CardChargeFilter
     public static bool IsPaidThroughStatement(Expense expense, IEnumerable<CardStatement> statements) =>
         expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && IsOnPaidStatement(expense, statements);
 
+    public static decimal PotLinkedOwed(Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements) =>
+        expenses
+            .Where(expense => expense.IsPotWithdrawalCharge && expense.IsUnpaidChargeOn(card) && !IsOnPaidStatement(expense, statements))
+            .Sum(expense => expense.Value);
+
+    public static decimal PotLinkedOnStatement(Account card, IEnumerable<Expense> expenses, int year, int month) =>
+        ChargesFor(expenses, card, year, month)
+            .Where(expense => expense.IsPotWithdrawalCharge && expense.IsUnpaidChargeOn(card))
+            .Sum(expense => expense.Value);
+
     public static decimal TotalOwed(Account card, IEnumerable<IAccountTransaction> records) =>
         -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
