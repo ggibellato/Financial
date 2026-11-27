@@ -117,6 +117,7 @@ const nextStatementColumn = {
 const nextStatementPotLinkedColumn = {
   key: 'nextStatementPotLinked',
   header: 'Next from Pots',
+  numeric: true,
   render: (row: AccountGroupMemberDto) => nextStatementText(row, (nextStatement) => nextStatement.potLinkedTotal),
   sortAccessor: (row: AccountGroupMemberDto) => row.nextStatement?.potLinkedTotal,
 }

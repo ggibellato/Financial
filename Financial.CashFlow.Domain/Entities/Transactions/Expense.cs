@@ -287,6 +287,8 @@ public class Expense : IAccountTransaction
     private bool IsPaidFromCashbackBank =>
         PaymentStatus == ExpensePaymentStatus.ImmediatePayment && PaymentSourceAccount?.EarnsCashback == true;
 
+    public bool IsPotWithdrawalCharge => CreditCard is not null && OperationId is not null;
+
     public bool IsUnpaidChargeOn(Account card) =>
         PaymentStatus == ExpensePaymentStatus.CreditCardCharge && CreditCard!.Id == card.Id;
 
