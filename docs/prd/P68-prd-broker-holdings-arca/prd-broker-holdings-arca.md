@@ -191,7 +191,8 @@ Everything is generic. No screen is tied to a broker's name. A broker without se
   - **Change %**
 - **Month-start price** of an asset for a given 1st = its saved price whose date is nearest to that 1st, no more than 7 days before or after it; when two prices are equally near, the earlier one is used. The window covers weekends, holidays and prices saved a few days after the 1st. The cell's tooltip names the date of the price used. If no saved price falls in that window, the cell shows the missing-value mark with the tooltip "No saved price between 25 Oct and 8 Nov".
 - **Value shown:**
-  - Assets valued by market price: current quantity × month-start price.
+  - Assets valued by market price: quantity held on that 1st (transactions dated on or before it) × month-start price. When a split falls between the price's date and the 1st, the quantity is converted to the price's side of the split.
+  - A holding first bought after that 1st shows 0.00, and its Change % is blank.
   - Assets valued by a recorded total value (provider value or manual valuation): the recorded value itself.
 - **Change %** = (start of this month − start of last month) ÷ start of last month × 100, shown only when both values exist.
 - Subtotal and total rows sum each month-start column over holdings that have both values and show the change % of those sums. When any holding in the group lacks either value, the subtotal is marked with "*" and the tooltip "Excludes N holdings without both month-start prices".
@@ -347,6 +348,7 @@ graph TD
 - [x] With saved prices dated 24 Oct or 9 Nov only, the 1 Nov cell shows the missing-value mark with "No saved price between 25 Oct and 8 Nov".
 - [x] A market-priced holding of 100 units with month-start prices 10.00 and 11.00 shows 1,000.00, 1,100.00 and Change % +10.00%.
 - [x] A holding valued by recorded total value shows the recorded values themselves, not multiplied by quantity.
+- [x] A holding of 10 units on 1 Nov with 10 more bought on 15 Nov shows the 1 Nov value for 10 units.
 - [x] Each value cell's tooltip shows the unit price used and the date it was saved.
 - [x] A subtotal excluding a holding without a month-start price is marked "*" with "Excludes 1 holdings without both month-start prices".
 - [x] No price is fetched or saved by opening the Holdings tab.
@@ -367,6 +369,6 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Segment groups (F02) are built from the same per-holding rows and portfolio groups as the broker Holdings table (F01), and segment subtotals add up to their portfolio's subtotal.
-- [x] Month-start columns (F03) use the current quantity of each F01 row, and their subtotals sit on the same subtotal rows as F01's.
+- [x] Month-start columns (F03) are shown on each F01 row, valued at the quantity held on each 1st, and their subtotals sit on the same subtotal rows as F01's.
 - [x] ARCA sections (F04) are made of F01's portfolio groups; the ARCA total equals the sum of the ARCA portfolios' F01 subtotals, and the "% of ARCA" column replaces F01's "% of broker" for the same rows.
 - [x] Inside ARCA portfolios, the segment groups and subtotals from F02 appear unchanged.

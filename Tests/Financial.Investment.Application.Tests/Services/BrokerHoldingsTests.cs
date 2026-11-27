@@ -420,7 +420,7 @@ public class BrokerHoldingsTests
     private static Asset MakeAsset(string name, decimal units, decimal? price = null)
     {
         var asset = Asset.Create(name, "ISIN", "BVMF", name);
-        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, units, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 5), Transaction.TransactionType.Buy, units, 100m, 0m));
         if (price.HasValue)
         {
             asset.SetPrice(TestClock.Today, price.Value, isManual: false);
