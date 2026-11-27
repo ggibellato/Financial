@@ -111,6 +111,7 @@ describe('AccountHeader', () => {
 
     const statementFigure = screen.getByText('October 2026 statement').parentElement as HTMLElement
     expect(within(statementFigure).getByText('120.00 GBP from Pots')).toBeInTheDocument()
+    expect(statementFigure.textContent).toBe('October 2026 statement650.10 GBP120.00 GBP from PotsUnpaid')
     const totalOwedFigure = screen.getByText('Total owed').parentElement as HTMLElement
     expect(within(totalOwedFigure).getByText('160.50 GBP from Pots')).toBeInTheDocument()
   })

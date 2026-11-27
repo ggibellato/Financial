@@ -119,8 +119,8 @@ export default function AccountHeader({
           <Text size={500} weight="semibold">
             {figure.value}
           </Text>
-          {figure.status && <Text size={300}>{figure.status}</Text>}
           {statementFromPots && <Text size={300}>{statementFromPots}</Text>}
+          {figure.status && <Text size={300}>{figure.status}</Text>}
         </div>
 
         {account.totalOwed !== null && (
