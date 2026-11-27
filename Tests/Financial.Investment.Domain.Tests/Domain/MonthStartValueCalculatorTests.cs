@@ -151,6 +151,59 @@ public class MonthStartValueCalculatorTests
         MonthStartValueCalculator.ChangePercent((decimal?)from, (decimal?)to).Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(Transaction.TransactionType.Buy)]
+    [InlineData(Transaction.TransactionType.Sell)]
+    public void Calculate_TradeAfterTheFirst_UsesTheQuantityHeldOnTheFirst(Transaction.TransactionType type)
+    {
+        var asset = MarketPricedAsset(10m, (FirstOfNovember, 10m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 11, 15), type, 4m, 12m, 0m));
+
+        MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").Value.Should().Be(100m);
+    }
+
+    [Theory]
+    [InlineData(11, 1, 11, 1)]
+    [InlineData(10, 29, 10, 31)]
+    public void Calculate_TradeOnOrBeforeTheFirst_CountsInTheQuantityHeldOnTheFirst(int priceMonth, int priceDay, int tradeMonth, int tradeDay)
+    {
+        var asset = MarketPricedAsset(10m, (new DateOnly(2026, priceMonth, priceDay), 10m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, tradeMonth, tradeDay), Transaction.TransactionType.Buy, 5m, 10m, 0m));
+
+        MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").Value.Should().Be(150m);
+    }
+
+    [Theory]
+    [InlineData(ValuationMethod.MarketPrice)]
+    [InlineData(ValuationMethod.ProviderValue)]
+    public void Calculate_FirstBoughtAfterTheFirst_IsZeroWithThePriceUsed(ValuationMethod method)
+    {
+        var asset = Asset.Create("AAAA11", "ISIN", "BVMF", "AAAA11");
+        asset.SetValuationMethod(method);
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 11, 3), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.SetPrice(new DateOnly(2026, 11, 3), 100m, isManual: false);
+
+        var result = MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL");
+
+        using var _ = new AssertionScope();
+        result.Value.Should().Be(0m);
+        result.UnitPrice.Should().Be(100m);
+        result.PriceDate.Should().Be(new DateOnly(2026, 11, 3));
+    }
+
+    [Theory]
+    [InlineData(10, 30, 100, 11, 1)]
+    [InlineData(11, 3, 50, 11, 2)]
+    [InlineData(11, 2, 50, 11, 2)]
+    [InlineData(11, 1, 50, 10, 1)]
+    public void Calculate_Split_ValuesTheQuantityOnTheSameSideOfTheSplitAsThePrice(int priceMonth, int priceDay, int price, int splitMonth, int splitDay)
+    {
+        var asset = MarketPricedAsset(10m, (new DateOnly(2026, priceMonth, priceDay), price));
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2026, splitMonth, splitDay), 2m), DateTimeOffset.UnixEpoch);
+
+        MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").Value.Should().Be(1000m);
+    }
+
     private static Asset MarketPricedAsset(decimal units, params (DateOnly Date, decimal Price)[] prices)
     {
         var asset = Asset.Create("AAAA11", "ISIN", "BVMF", "AAAA11");

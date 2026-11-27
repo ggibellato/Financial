@@ -518,6 +518,11 @@ public class Asset
     public (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate) =>
         PositionAsOf(effectiveDate, _corporateActions);
 
+    public decimal QuantityHeldOn(DateOnly date) =>
+        CorporateActionReplay.ReplayAveragePosition(
+            Transactions, _corporateActions,
+            stopBefore: step => DateOnly.FromDateTime(step.Date) > date).Quantity;
+
     private (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate, IEnumerable<CorporateAction> corporateActions) =>
         CorporateActionReplay.ReplayAveragePosition(
             Transactions, corporateActions,

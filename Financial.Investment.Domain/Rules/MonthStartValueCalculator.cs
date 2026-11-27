@@ -29,11 +29,27 @@ public static class MonthStartValueCalculator
         return price is null
             ? MonthStartValue.Missing
             : new MonthStartValue(
-                HoldingValuationCalculator.ValueAt(asset.Quantity, price),
+                ValueAt(asset, monthStart, price),
                 price.Price,
                 price.Date,
                 string.IsNullOrEmpty(price.Currency) ? AssetCurrency(asset) ?? fallbackCurrency : price.Currency);
     }
+
+    private static decimal ValueAt(Asset asset, DateOnly monthStart, AssetPriceSnapshot price)
+    {
+        var quantity = QuantityInPriceBasis(asset, monthStart, price.Date);
+        return quantity == 0m ? 0m : HoldingValuationCalculator.ValueAt(quantity, price);
+    }
+
+    private static decimal QuantityInPriceBasis(Asset asset, DateOnly monthStart, DateOnly priceDate) =>
+        asset.QuantityHeldOn(monthStart) * SplitFactorBetween(asset, monthStart, priceDate) / SplitFactorBetween(asset, priceDate, monthStart);
+
+    private static decimal SplitFactorBetween(Asset asset, DateOnly after, DateOnly upTo) =>
+        asset.CorporateActions
+            .Where(action => action.Type == CorporateAction.CorporateActionType.Split
+                && DateOnly.FromDateTime(action.EffectiveDate) > after
+                && DateOnly.FromDateTime(action.EffectiveDate) <= upTo)
+            .Aggregate(1m, (factor, split) => factor * CorporateActionReplay.RequireRatioFactor(split));
 
     private static AssetPriceSnapshot? NearestPrice(Asset asset, DateOnly monthStart) =>
         asset.PriceSnapshots
