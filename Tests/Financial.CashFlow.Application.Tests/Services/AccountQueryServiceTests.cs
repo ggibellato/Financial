@@ -806,6 +806,32 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetAccount_CardWithPotWithdrawals_ShowsThePotPartOfTheUnpaidViewedStatementAndOfTheTotalOwed()
+    {
+        _repository.Accounts.Add(_amex);
+        var paidOctober = CardStatement.Create(_amex, 2026, 10);
+        paidOctober.MarkLegacyPaid();
+        _repository.CardStatements.Add(paidOctober);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 10, 2), "Paid flights", 90m, _groceries, null, _amex, operationId: Guid.NewGuid()),
+            Expense.Create(new DateOnly(2026, 11, 2), "Flights", 120m, _groceries, null, _amex, operationId: Guid.NewGuid()),
+            Expense.Create(new DateOnly(2026, 11, 3), "Shop", 30m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 12, 2), "Hotel", 40m, _groceries, null, _amex, operationId: Guid.NewGuid())]);
+
+        var november = _sut.GetAccount(_amex.Id, 2026, 11);
+        var october = _sut.GetAccount(_amex.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            november.ViewedStatementPotLinkedTotal.Should().Be(120m);
+            november.PotLinkedOwed.Should().Be(160m);
+            october.ViewedStatementPotLinkedTotal.Should().BeNull();
+            _sut.GetAccount(_amex.Id, 2026, 9).ViewedStatementPotLinkedTotal.Should().BeNull();
+            _sut.GetAccount(_barclays.Id, 2026, 11).PotLinkedOwed.Should().BeNull();
+        }
+    }
+
+    [Fact]
     public void GetAccount_CardMonthBeforeItsFirstCharge_HasNoViewedStatement()
     {
         _repository.Accounts.Add(_amex);

@@ -36,6 +36,10 @@ function viewedStatementAmount(statement: AccountStatementDto | null): number {
   return statement?.paidAmount ?? 0
 }
 
+function potLinkedText(amount: number, currency: string): string {
+  return `${formatN2(amount)} ${currency} from Pots`
+}
+
 function firstFigure(account: AccountDetailDto, hasParticipants: boolean): { label: string; value: string; status: string | null } {
   if (hasParticipants) {
     return {
@@ -114,6 +118,9 @@ export default function AccountHeader({
             {figure.value}
           </Text>
           {figure.status && <Text size={300}>{figure.status}</Text>}
+          {account.viewedStatementPotLinkedTotal != null && (
+            <Text size={300}>{potLinkedText(account.viewedStatementPotLinkedTotal, account.currency)}</Text>
+          )}
         </div>
 
         {account.totalOwed !== null && (
@@ -122,6 +129,7 @@ export default function AccountHeader({
             <Text size={500} weight="semibold">
               {formatOwedOrCredit(account.totalOwed)} {account.currency}
             </Text>
+            {account.potLinkedOwed != null && <Text size={300}>{potLinkedText(account.potLinkedOwed, account.currency)}</Text>}
           </div>
         )}
       </div>

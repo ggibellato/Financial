@@ -7532,12 +7532,16 @@ export interface components {
             month: number;
             name: string;
             otherParticipant?: null | string;
+            /** Format: double */
+            potLinkedOwed: null | number;
             roundUpDestination?: null | components["schemas"]["MoneyDestinationDTO"];
             savings?: null | components["schemas"]["SavingsSummaryDTO"];
             templateName: string;
             /** Format: double */
             totalOwed: null | number;
             viewedStatement: null | components["schemas"]["AccountStatementDTO"];
+            /** Format: double */
+            viewedStatementPotLinkedTotal: null | number;
             /** Format: int32 */
             year: number;
         };

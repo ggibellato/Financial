@@ -106,6 +106,22 @@ describe('AccountHeader', () => {
     expect(screen.queryByText('812.33 GBP')).not.toBeInTheDocument()
   })
 
+  it("shows the Pot part of a card's unpaid viewed statement and of its total owed", () => {
+    renderHeader({ ...AMEX, viewedStatementPotLinkedTotal: 120, potLinkedOwed: 160.5 })
+
+    const statementFigure = screen.getByText('October 2026 statement').parentElement as HTMLElement
+    expect(within(statementFigure).getByText('120.00 GBP from Pots')).toBeInTheDocument()
+    const totalOwedFigure = screen.getByText('Total owed').parentElement as HTMLElement
+    expect(within(totalOwedFigure).getByText('160.50 GBP from Pots')).toBeInTheDocument()
+  })
+
+  it('shows no Pot part for a statement that is not unpaid', () => {
+    renderHeader({ ...AMEX, viewedStatement: null, viewedStatementPotLinkedTotal: null, potLinkedOwed: 0 })
+
+    expect(screen.getAllByText(/from Pots$/)).toHaveLength(1)
+    expect(screen.getByText('0.00 GBP from Pots')).toBeInTheDocument()
+  })
+
   it('[AC P60-F15-card-refunds-and-credit-07] shows a paid statement with the amount paid and its date', () => {
     renderHeader({
       ...AMEX,

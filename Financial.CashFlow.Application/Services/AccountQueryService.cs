@@ -100,6 +100,8 @@ public sealed class AccountQueryService : IAccountQueryService
             var records = AccountTransactionReader.Read(_repository);
             var hasStatements = account.Has(Capability.HasStatements);
             decimal? totalOwed = hasStatements ? CardChargeFilter.TotalOwed(account, records) : null;
+            var viewedStatement = hasStatements ? ViewedStatementOf(account, year, month) : null;
+            var expenses = records.OfType<Expense>().ToList();
             var currentBalances = account.Has(Capability.HasParticipants)
                 ? AccountBalanceRule.CurrentBalances(account, records)
                 : [];
@@ -118,7 +120,11 @@ public sealed class AccountQueryService : IAccountQueryService
                 BalanceIsOwed = account.BalanceIsOwed,
                 HasStatements = hasStatements,
                 TotalOwed = totalOwed,
-                ViewedStatement = hasStatements ? ViewedStatementOf(account, year, month) : null,
+                ViewedStatement = viewedStatement,
+                ViewedStatementPotLinkedTotal = viewedStatement?.Status == nameof(CardStatementLedgerStatus.Unpaid)
+                    ? CardChargeFilter.PotLinkedOnStatement(account, expenses, year, month)
+                    : null,
+                PotLinkedOwed = hasStatements ? CardChargeFilter.PotLinkedOwed(account, expenses, _repository.GetCardStatements()) : null,
                 AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList(),
                 DisabledActions = AccountActions.DisabledFor(account, currentBalances).ToDictionary(disabled => disabled.Key.ToString(), disabled => disabled.Value),
                 CurrentBalances = CurrencyBalanceMapper.ToDtos(currentBalances),
