@@ -16,7 +16,7 @@ const ACCOUNTS: AccountDto[] = [
 ]
 
 const OCTOBER_UNPAID: AccountStatementDto = {
-  id: 's-oct', potWithdrawals: [],
+  id: 's-oct', potLinkedTotal: null, potWithdrawals: [],
   year: 2026,
   month: 10,
   total: 650.1,
@@ -107,7 +107,7 @@ describe('AccountHeader', () => {
   })
 
   it("shows the Pot part of a card's unpaid viewed statement and of its total owed", () => {
-    renderHeader({ ...AMEX, viewedStatementPotLinkedTotal: 120, potLinkedOwed: 160.5 })
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, potLinkedTotal: 120 }, potLinkedOwed: 160.5 })
 
     const statementFigure = screen.getByText('October 2026 statement').parentElement as HTMLElement
     expect(within(statementFigure).getByText('120.00 GBP from Pots')).toBeInTheDocument()
@@ -116,7 +116,7 @@ describe('AccountHeader', () => {
   })
 
   it('shows no Pot part for a statement that is not unpaid', () => {
-    renderHeader({ ...AMEX, viewedStatement: null, viewedStatementPotLinkedTotal: null, potLinkedOwed: 0 })
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, status: 'Paid', isPaid: true, potLinkedTotal: null }, potLinkedOwed: 0 })
 
     expect(screen.getAllByText(/from Pots$/)).toHaveLength(1)
     expect(screen.getByText('0.00 GBP from Pots')).toBeInTheDocument()

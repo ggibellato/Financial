@@ -823,10 +823,9 @@ public class AccountQueryServiceTests
 
         using (new AssertionScope())
         {
-            november.ViewedStatementPotLinkedTotal.Should().Be(120m);
+            november.ViewedStatement!.PotLinkedTotal.Should().Be(120m);
             november.PotLinkedOwed.Should().Be(160m);
-            october.ViewedStatementPotLinkedTotal.Should().BeNull();
-            _sut.GetAccount(_amex.Id, 2026, 9).ViewedStatementPotLinkedTotal.Should().BeNull();
+            october.ViewedStatement!.PotLinkedTotal.Should().BeNull();
             _sut.GetAccount(_barclays.Id, 2026, 11).PotLinkedOwed.Should().BeNull();
         }
     }

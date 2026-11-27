@@ -353,13 +353,6 @@
               }
             ]
           },
-          "viewedStatementPotLinkedTotal": {
-            "format": "double",
-            "type": [
-              "null",
-              "number"
-            ]
-          },
           "year": {
             "format": "int32",
             "type": "integer"
@@ -378,7 +371,6 @@
           "hasStatements",
           "totalOwed",
           "viewedStatement",
-          "viewedStatementPotLinkedTotal",
           "potLinkedOwed",
           "allowedActions",
           "disabledActions",
@@ -632,6 +624,13 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "potLinkedTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
             ]
           },
           "potWithdrawals": {

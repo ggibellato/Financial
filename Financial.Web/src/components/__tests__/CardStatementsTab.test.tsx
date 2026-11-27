@@ -27,16 +27,16 @@ vi.mock('../../api/financialApiClient', () => ({
 const INVESTIMENTO_WITHDRAWAL = { operationId: 'op1', potsAccountName: 'Reserva', potName: 'Investimento', amount: 120 }
 
 const NOVEMBER: AccountStatementDto = {
-  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potLinkedTotal: null, potWithdrawals: [],
 }
 const OCTOBER: StoredStatement = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, settledOn: null, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null, potLinkedTotal: null, potWithdrawals: [],
 }
 const SEPTEMBER: StoredStatement = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, settledOn: null, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays', potWithdrawals: [],
+  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, settledOn: null, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays', potLinkedTotal: null, potWithdrawals: [],
 }
 const CARRYING: AccountStatementDto = {
-  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potWithdrawals: [],
+  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, settledOn: null, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, potLinkedTotal: null, potWithdrawals: [],
 }
 const CARRYING_JULY: AccountStatementDto = { ...CARRYING, id: 's-jul', month: 7 }
 
@@ -192,9 +192,9 @@ describe('CardStatementsTab', () => {
   })
 
   it('[AC P62-F04-settle-a-nothing-due-statement-01] offers Settle pot withdrawals only on a stored Nothing due statement with pending pot withdrawals', async () => {
-    const withPots = { ...CARRYING, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
+    const withPots = { ...CARRYING, potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
     const statements = renderTab({
-      statements: [withPots, { ...NOVEMBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }, { ...OCTOBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }, CARRYING_JULY],
+      statements: [withPots, { ...NOVEMBER, potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }, { ...OCTOBER, potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }, CARRYING_JULY],
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Settle pot withdrawals for August 2026' }))
@@ -204,7 +204,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('shows a settled statement as settled with Unmark settled and no other action', async () => {
-    const settled = { ...CARRYING, settledOn: '2026-10-03', potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
+    const settled = { ...CARRYING, settledOn: '2026-10-03', potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
     const statements = renderTab({ statements: [settled] })
     const row = rowOf('August 2026')
 
@@ -216,7 +216,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('shows the settle form with the pot withdrawals, their total and its own save label', () => {
-    const withPots = { ...CARRYING, potWithdrawals: [INVESTIMENTO_WITHDRAWAL, { ...INVESTIMENTO_WITHDRAWAL, operationId: 'op2', potName: 'Viagem', amount: 60 }] } as StoredStatement
+    const withPots = { ...CARRYING, potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL, { ...INVESTIMENTO_WITHDRAWAL, operationId: 'op2', potName: 'Viagem', amount: 60 }] } as StoredStatement
     renderTab({ statements: [withPots], payForm: { kind: 'settle', statement: withPots, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
     const form = screen.getByRole('form', { name: 'Settle August 2026 pot withdrawals' })
 
@@ -227,7 +227,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('asks before unmarking a settled statement and names the withdrawals it removes', () => {
-    const settled = { ...CARRYING, settledOn: '2026-09-03', potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
+    const settled = { ...CARRYING, settledOn: '2026-09-03', potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] } as StoredStatement
     renderTab({ statements: [settled], unmark: { statement: settled, isBusy: false, error: null } })
     const dialog = screen.getByRole('dialog', { name: 'Unmark settled statement' })
 
@@ -672,7 +672,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('[AC P62-F02-investment-withdrawal-on-statement-payment-06] names what paying takes from each pot, on the chosen bank once there is one', () => {
-    const withPots = { ...OCTOBER, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }
+    const withPots = { ...OCTOBER, potLinkedTotal: null, potWithdrawals: [INVESTIMENTO_WITHDRAWAL] }
     const payForm = { kind: 'pay' as const, statement: withPots, bankId: '', date: '2026-10-16', isSaving: false, error: null, fieldErrors: {} }
     const { rerenderWith } = renderTab({ payForm })
 
@@ -686,7 +686,7 @@ describe('CardStatementsTab', () => {
   it('[AC P62-F02-investment-withdrawal-on-statement-payment-06] says how many investment withdrawals unmarking removes', () => {
     const withPots = {
       ...SEPTEMBER,
-      potWithdrawals: [
+      potLinkedTotal: null, potWithdrawals: [
         INVESTIMENTO_WITHDRAWAL,
         { operationId: 'op2', potsAccountName: 'Reserva', potName: 'HouseTreats', amount: 30 },
       ],

@@ -36,8 +36,8 @@ function viewedStatementAmount(statement: AccountStatementDto | null): number {
   return statement?.paidAmount ?? 0
 }
 
-function potLinkedText(amount: number, currency: string): string {
-  return `${formatN2(amount)} ${currency} from Pots`
+function potLinkedText(amount: number | null | undefined, currency: string): string | null {
+  return amount == null ? null : `${formatN2(amount)} ${currency} from Pots`
 }
 
 function firstFigure(account: AccountDetailDto, hasParticipants: boolean): { label: string; value: string; status: string | null } {
@@ -78,6 +78,8 @@ export default function AccountHeader({
   const selectedName =
     accounts.find((candidate) => candidate.id.toLowerCase() === selectedAccountId.toLowerCase())?.name ?? account.name
   const figure = firstFigure(account, hasParticipants)
+  const statementFromPots = potLinkedText(account.viewedStatement?.potLinkedTotal, account.currency)
+  const owedFromPots = potLinkedText(account.potLinkedOwed, account.currency)
   const destinations = destinationsSummary(account.roundUpDestination, account.cashbackDestination)
   const currencies = hasParticipants ? account.currentBalances.map(({ currency }) => currency).join(', ') : account.currency
 
@@ -118,9 +120,7 @@ export default function AccountHeader({
             {figure.value}
           </Text>
           {figure.status && <Text size={300}>{figure.status}</Text>}
-          {account.viewedStatementPotLinkedTotal != null && (
-            <Text size={300}>{potLinkedText(account.viewedStatementPotLinkedTotal, account.currency)}</Text>
-          )}
+          {statementFromPots && <Text size={300}>{statementFromPots}</Text>}
         </div>
 
         {account.totalOwed !== null && (
@@ -129,7 +129,7 @@ export default function AccountHeader({
             <Text size={500} weight="semibold">
               {formatOwedOrCredit(account.totalOwed)} {account.currency}
             </Text>
-            {account.potLinkedOwed != null && <Text size={300}>{potLinkedText(account.potLinkedOwed, account.currency)}</Text>}
+            {owedFromPots && <Text size={300}>{owedFromPots}</Text>}
           </div>
         )}
       </div>

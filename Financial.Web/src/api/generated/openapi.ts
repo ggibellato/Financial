@@ -7540,8 +7540,6 @@ export interface components {
             /** Format: double */
             totalOwed: null | number;
             viewedStatement: null | components["schemas"]["AccountStatementDTO"];
-            /** Format: double */
-            viewedStatementPotLinkedTotal: null | number;
             /** Format: int32 */
             year: number;
         };
@@ -7615,6 +7613,8 @@ export interface components {
             paidFromAccountName?: null | string;
             /** Format: date */
             paidOn?: null | string;
+            /** Format: double */
+            potLinkedTotal?: null | number;
             potWithdrawals: components["schemas"]["StatementPotWithdrawalDTO"][];
             /** Format: date */
             settledOn?: null | string;

@@ -128,7 +128,6 @@ export function accountDetail(fields: RequiredAccountDetailFields & Partial<Acco
     hasStatements: false,
     totalOwed: null,
     viewedStatement: null,
-    viewedStatementPotLinkedTotal: null,
     potLinkedOwed: null,
     allowedActions: [],
     disabledActions: {},
