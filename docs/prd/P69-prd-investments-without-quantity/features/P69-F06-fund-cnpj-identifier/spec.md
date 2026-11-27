@@ -17,7 +17,7 @@
 - The web form field (shown for BR + Fund only, helper text, inline error on blur and on submit, focus on submit), masked display in the form and on the Summary tab.
 
 *Provides (to F07, F08)*
-- `Asset.Cnpj`: 14 digits, or null when it is not set or not applicable.
+- `Asset.Cnpj`: 14 digits, or null when it is not set or not applicable. `Cnpj` is the identifier, not the eligibility gate: whether a holding is priced from CVM (Quantity and price, BR, Fund, CNPJ set) is defined once in F07 and read by F08. `Asset.AcceptsCnpj(country, class)` only says whether the field applies.
 
 *Excluded*
 - The CVM price source, the masked source reference text and the CNPJ on the price request (F07). Buy-by-amount and quota recalculation (F08).
@@ -53,16 +53,16 @@ graph TD
 |---|---|---|---|
 | How the CNPJ is modelled | `string? Cnpj` on `Asset` holding the 14 digits, with the rule in a static `CnpjRules` | A `Cnpj` value-object record | A record would serialise as a nested object in the data file and on the wire, so it would need a custom converter in Infrastructure and the Api. The PRD says the value is stored as 14 digits. A plain string matches `ISIN`/`Segment` and the data file stays flat |
 | Where the rule lives | `Financial.Investment.Domain/Rules/CnpjRules.cs` | Inline on `Asset`, as `NormalizeSegment` is; or Application `Validation/`, as `IsinValidator` is | The check-digit rule is a domain invariant of the stored value, not only the shape of a request. A stateless algorithm with its own test class qualifies for `Rules/`. Investment must not reference CashFlow, and neither context nor Shared has a CNPJ validator today (searched), so this is the first |
-| Which assets carry it | `Asset.HasCnpj(country, class)`: true only for `CountryCode.BR` with `GlobalAssetClass.Fund`. `SetCnpj` stores null otherwise, and `UpdateIdentity` clears it when the asset stops qualifying | Store it on any asset | This mirrors `HasSegments`/`SetSegment`/`UpdateIdentity` exactly. F07 relies on "has a CNPJ" meaning "is a BR fund", so a CNPJ left behind on a reclassified asset would wrongly select CVM |
+| Which assets carry it | `Asset.AcceptsCnpj(country, class)`: true only for `CountryCode.BR` with `GlobalAssetClass.Fund`. `SetCnpj` stores null otherwise, and `UpdateIdentity` clears it when the asset stops qualifying | Store it on any asset | This mirrors `HasSegments`/`SetSegment`/`UpdateIdentity` exactly. F07 relies on "has a CNPJ" meaning "is a BR fund", so a CNPJ left behind on a reclassified asset would wrongly select CVM |
 | Accepted input | Trim, then remove `.`, `/`, `-` and spaces. The result must be exactly 14 ASCII digits that are not all the same and whose two check digits are correct | Accept only the bare digits or the exact mask | Lenient about punctuation, as the PRD asks ("with or without the mask"), and strict about the digits. Letters are rejected |
 | Error message | One message, `CnpjRules.InvalidMessage` = "Enter a valid 14-digit CNPJ.", thrown as `ArgumentException` (400 through `DomainExceptionMappingMiddleware`) for a wrong length, wrong check digits or identical digits | A message per cause | The PRD gives a single message. The web form shows the same text, so the client and server read identically |
 | Update semantics | `AssetAdminUpdateDTO.Cnpj`: null or blank clears it, as `Segment` and `PickSource` do | Null keeps the current value | Matches the neighbouring fields and the PRD ("Clearing the field removes the CNPJ"). The web form always sends the field |
-| Validation order in the service | `CnpjRules.Normalize(request.Cnpj)` runs before `ApplyAndSaveAsync`, and `SetCnpj` runs inside it after `UpdateIdentity` | Validate only inside the mutation | The same fail-fast shape as `NormalizeSegment`. A bad value writes nothing, and class/country are already updated when `SetCnpj` decides whether the field applies |
+| Validation order in the service | Only `SetCnpj` normalises and validates, inside `ApplyAndSaveAsync` after `UpdateIdentity` | A service pre-check plus a second normalise in `SetCnpj` | One code path; a bad value throws inside the mutation and `ApplyAndSaveAsync` rolls back, so nothing is written |
 | An invalid CNPJ on an asset that is not BR + Fund | Still refused | Silently ignored | The same as an over-long segment on a class without segments: a malformed request is reported. The web never sends a CNPJ for a hidden field |
 | Persistence | A new optional `Cnpj` property, with no `InvestmentDataMigrations` step and no `CurrentVersion` bump | A version bump | `Segment`/`PickSource` were added the same way. A document without the property loads it as null. A stored value is trusted on load, because the private setter is wired by reflection |
 | Wire name | `Cnpj` in C#, `cnpj` in JSON | `CNPJ`, like the legacy `ISIN` | .NET naming for acronyms longer than two letters. `ISIN` is a pre-existing exception that is not repeated |
 | Masking | Done in the web (`formatCnpj`). The API carries digits only | A masked string from the API | One canonical wire format. F07 adds the Domain formatter it needs for the source reference, so none is added here unused |
-| Web rule copy | `Financial.Web/src/utils/cnpj.ts` mirrors `CnpjRules`, pinned by the same test vectors on both sides | Validate only on the server | The PRD wants the inline error on blur, which needs a client check. This follows the `utils/roundUp.ts` precedent, and the server stays authoritative |
+| Web rule copy | `isValidCnpj` and the message go in `Financial.Web/src/utils/validators.ts` next to `isValidIsin` (the existing web copy of `IsinValidator`), pinned by the same test vectors as `CnpjRules` | Validate only on the server | The PRD wants the inline error on blur, which needs a client check; the server stays authoritative |
 
 ## 5. Component Overview
 
@@ -71,11 +71,11 @@ graph TD
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
 | `Financial.Investment.Domain/Rules/CnpjRules.cs` | New | CNPJ rule | `InvalidMessage` const; `Normalize(string? input) → string?` (blank → null; strip mask characters; throw `ArgumentException(InvalidMessage)` unless 14 digits, not all identical, with valid check digits); a private check-digit computation with weights 5,4,3,2,9,8,7,6,5,4,3,2 for the first digit and 6,5,4,3,2,9,8,7,6,5,4,3,2 for the second (remainder < 2 → 0, else 11 − remainder) |
-| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Field and applicability | `public string? Cnpj { get; private set; }` after `PickSource`; `public static bool HasCnpj(CountryCode country, GlobalAssetClass assetClass)`; `SetCnpj(string? cnpj)` = `CnpjRules.Normalize` then store only when `HasCnpj(Country, Class)`; `UpdateIdentity` sets `Cnpj = null` when `!HasCnpj(country, assetClass)`, next to the existing segment clear |
+| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Field and applicability | `public string? Cnpj { get; private set; }` after `PickSource`; `public static bool AcceptsCnpj(CountryCode country, GlobalAssetClass assetClass)`; `SetCnpj(string? cnpj)` = `CnpjRules.Normalize` then store only when `AcceptsCnpj(Country, Class)`; `UpdateIdentity` calls one private `ClearInapplicableIdentityFields()` that clears the segment (existing rule, moved) and the CNPJ |
 | `Financial.Investment.Application/DTOs/AssetAdminDTO.cs` | Modified | Read | `public string? Cnpj { get; set; }` (14 digits or null) |
 | `Financial.Investment.Application/DTOs/AssetAdminCreateDTO.cs` | Modified | Create | `public string? Cnpj { get; set; }` (null or blank leaves it unset) |
 | `Financial.Investment.Application/DTOs/AssetAdminUpdateDTO.cs` | Modified | Update | `public string? Cnpj { get; set; }` (null or blank clears it) |
-| `Financial.Investment.Application/Services/AssetAdminService.cs` | Modified | Carry through | Create and Update: `var cnpj = CnpjRules.Normalize(request.Cnpj);` alongside the segment normalisation, then `SetCnpj(cnpj)` after `SetSegment`; `ToDto` maps `Cnpj` |
+| `Financial.Investment.Application/Services/AssetAdminService.cs` | Modified | Carry through | Create and Update: `SetCnpj(request.Cnpj)` after `SetSegment`, inside `ApplyAndSaveAsync`; `ToDto` maps `Cnpj` |
 | `Financial.Investment.Application/DTOs/AssetDetailsDTO.cs` | Modified | Summary read | `public string? Cnpj { get; set; }` after `ISIN` |
 | `Financial.Investment.Application/Services/NavigationService.cs` | Modified | Details mapping | `GetAssetDetails` maps `Cnpj = asset.Cnpj` |
 | `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json` | Regenerated | Contract | `cnpj` (string, nullable) on `AssetAdminDTO`, `AssetAdminCreateDTO`, `AssetAdminUpdateDTO`, `AssetDetailsDTO` |
@@ -87,12 +87,13 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Financial.Web/src/utils/cnpj.ts` | New | Client rule and formatting | `INVALID_CNPJ_MESSAGE` ("Enter a valid 14-digit CNPJ."), `hasCnpj(country, assetClass)` (BR + Fund), `cnpjDigits(value)` (strip `.`, `/`, `-`, whitespace), `isValidCnpj(value)` (same rule as `CnpjRules`), `formatCnpj(digits)` (`00.000.000/0000-00`; returns the input unchanged unless it is 14 digits) |
-| `Financial.Web/src/components/AssetFormDialog.tsx` | Modified | Form field | `cnpj` state initialised to `formatCnpj(asset?.cnpj ?? '')`; `AssetFormValues.cnpj` (digits or ''); the "CNPJ" `Field` directly under ISIN, rendered only when `hasCnpj(country, assetClass)`, with the PRD helper `hint`; on-blur reveal and reformat; removal warning; submit gating |
+| `Financial.Web/src/utils/validators.ts` | Modified | Client rule | `INVALID_CNPJ_MESSAGE` ("Enter a valid 14-digit CNPJ.") and `isValidCnpj(value)` (same rule as `CnpjRules`), next to `isValidIsin` |
+| `Financial.Web/src/utils/cnpj.ts` | New | Formatting | `acceptsCnpj(country, assetClass)` (BR + Fund), `cnpjDigits(value)` (strip `.`, `/`, `-`, whitespace), `formatCnpj(digits)` (`00.000.000/0000-00`; returns the input unchanged unless it is 14 digits) |
+| `Financial.Web/src/components/AssetFormDialog.tsx` | Modified | Form field | `cnpj` state initialised to `formatCnpj(asset?.cnpj ?? '')`; `AssetFormValues.cnpj` (digits or ''); the "CNPJ" `Field` directly under ISIN, rendered only when `acceptsCnpj(country, assetClass)`, with the PRD helper `hint`; on-blur error reveal; submit gating |
 | `Financial.Web/src/pages/AssetsPage.tsx` | Modified | Request wiring | `cnpj: values.cnpj \|\| null` on both the create and update requests |
-| `Financial.Web/src/components/AssetSummaryTab.tsx` | Modified | Display | A "CNPJ" `Field` right after "ISIN" in the identity `dl`, rendered only when `hasCnpj(asset.country, asset.class)`: `formatCnpj(asset.cnpj)`, or `<MissingValue label="None" />` when unset |
+| `Financial.Web/src/components/AssetSummaryTab.tsx` | Modified | Display | A "CNPJ" `Field` right after "ISIN" in the identity `dl`, rendered only when `acceptsCnpj(asset.country, asset.class)`: `orMissing(asset.cnpj, formatCnpj, 'None')` |
 
-4 non-test code files.
+5 non-test code files.
 
 ## 6. API Contracts
 
@@ -170,9 +171,8 @@ No new endpoint. The existing endpoints gain one optional field:
 - **States:**
   - *Initial / edit:* opens with the stored digits shown masked, or empty.
   - *Validation:* the message is computed on `cnpjDigits(cnpj)` only when the field is shown and not blank. It is revealed on blur (a local `isCnpjBlurred` flag) and on Save (`form.revealValidation`). On Save the dialog's existing `useFieldErrorSummary` moves focus to the field when it is the only invalid one, or to the summary when several fields are invalid. Errors are shown with the Fluent error icon and text, never colour alone.
-  - *Blur on a valid value:* the text is rewritten masked (`formatCnpj`).
-  - *Removal warning:* when a CNPJ is entered but Country/Class no longer qualify, the Class field shows a warning next to the existing segment warning: "The CNPJ will be removed when you save" (or "The segment and the CNPJ will be removed when you save" when both apply).
-  - *Saving / server error / unsaved changes:* unchanged `EntityFormDialog` behaviour. The server's 400 detail shows in the dialog alert and the entered values are kept. The dirty check reads `cnpjDigits(cnpj)`, so re-masking alone never marks the form dirty.
+  - *Masking:* the stored value is shown masked when the dialog opens; whatever the user types is kept as typed (the server normalises it). No removal warning: a hidden field submits '' and the server clears the CNPJ on reclassify.
+  - *Saving / server error / unsaved changes:* unchanged `EntityFormDialog` behaviour. The server's 400 detail shows in the dialog alert and the entered values are kept. The dirty check compares `cnpjDigits(cnpj)` with the stored digits.
   - *Disabled:* the whole fieldset is disabled while saving (existing).
   - *Loading / empty / success:* not applicable beyond the dialog's existing behaviour.
 - **Submit:** `cnpj` = `cnpjDigits(cnpj)` when shown, otherwise ''. The page sends `values.cnpj || null`, so a cleared or hidden field clears it on the server.
@@ -200,14 +200,15 @@ Test vectors shared by the Domain and web tests (literals, never computed):
 | Test File | Test Type | Target |
 |---|---|---|
 | `Tests/Financial.Investment.Domain.Tests/Rules/CnpjRulesTests.cs` (new) | Unit | `CnpjRules.Normalize` over the vectors |
-| `Tests/Financial.Investment.Domain.Tests/Domain/AssetTests.cs` | Unit | `SetCnpj`, `HasCnpj`, `UpdateIdentity` clearing |
+| `Tests/Financial.Investment.Domain.Tests/Domain/AssetTests.cs` | Unit | `SetCnpj`, `AcceptsCnpj`, `UpdateIdentity` clearing |
 | `Tests/Financial.Investment.Application.Tests/Services/AssetAdminServiceTests.cs` | Unit | Create/update persist, clear and reject. Persistence is proven by reloading from disk (`PersistedInvestmentFile.ReloadAsset`) and failure through the span |
 | `Tests/Financial.Investment.Application.Tests/Services/NavigationServiceTests.cs` | Unit | `GetAssetDetails` returns `Cnpj` |
 | `Tests/Financial.Investment.Infrastructure.Tests/Persistence/InvestmentSerializerAdapterTests.cs` | Unit | Round trip, and a document without the property |
 | `Tests/Financial.Api.Tests/Acceptance/FundCnpjAcceptanceTests.cs` (new, `ApiEndpointTests`, `[Trait("Category","Integration")]`) | Integration | PRD F06 criteria over HTTP |
 | `Tests/Financial.Api.Tests/Contract/OpenApiContractTests` (existing) | Contract | Regenerated snapshot |
-| `Financial.Web/src/utils/__tests__/cnpj.test.ts` (new) | Unit | `isValidCnpj`, `cnpjDigits`, `formatCnpj`, `hasCnpj` over the same vectors |
-| `Financial.Web/src/components/__tests__/AssetFormDialog.test.tsx` | Unit | Visibility, blur and submit validation, focus, mask, removal warning, submit value |
+| `Financial.Web/src/utils/__tests__/validators.test.ts` | Unit | `isValidCnpj` over the same vectors |
+| `Financial.Web/src/utils/__tests__/cnpj.test.ts` (new) | Unit | `cnpjDigits`, `formatCnpj`, `acceptsCnpj` |
+| `Financial.Web/src/components/__tests__/AssetFormDialog.test.tsx` | Unit | Visibility, blur and submit validation, focus, masked initial value, submit value |
 | `Financial.Web/src/pages/__tests__/AssetsPage.test.tsx` | Unit | `cnpj` sent on create/update, `null` when cleared |
 | `Financial.Web/src/components/__tests__/AssetSummaryTab.test.tsx` | Unit | Masked display, "None", hidden for other assets |
 | `src/api/generated/__tests__/openapiFreshness.test.ts` (existing) | Unit | Generated types match the snapshot |
@@ -239,9 +240,8 @@ Test vectors shared by the Domain and web tests (literals, never computed):
 | web `AssetFormDialog.test.tsx` "shows CNPJ under ISIN only for country BR and class Fund" | Visibility | Field present / absent |
 | … "shows the CNPJ message on blur and keeps it until fixed" | Blur | Message text, `aria-invalid` |
 | … "refuses an invalid CNPJ on Save and moves focus to it" | Submit | `onSubmit` not called, focus on the CNPJ input |
-| … "masks a valid CNPJ on blur and submits the 14 digits" | Mask/submit | Display `11.222.333/0001-81`, submitted `11222333000181` |
+| … "submits the 14 digits of a masked CNPJ" | Submit | Typed `11.222.333/0001-81`, submitted `11222333000181` |
 | … "opens an existing fund's CNPJ masked and submits '' when cleared" | Edit/clear | Value, submitted '' |
-| … "warns that the CNPJ will be removed when Class changes from Fund" | Warning | Text on the Class field |
 | … "submits '' when the CNPJ field is hidden" | Hidden | '' |
 | web `AssetsPage.test.tsx` "sends the CNPJ, and null for a cleared CNPJ" | Wiring | Request bodies |
 | web `AssetSummaryTab.test.tsx` "renders_the_cnpj_masked_for_a_brazilian_fund", "renders_none_for_a_brazilian_fund_without_a_cnpj", "hides_the_cnpj_for_other_assets" | Display | As named |
@@ -265,19 +265,19 @@ The F06 checkboxes in the PRD have no ids yet. They are numbered `P69-F06-fund-c
 Each is an Auto-Accept default ("Technical decisions with a clear recommendation" unless noted) for a point the PRD does not settle. Review and override as needed.
 
 1. **Applicability rule on the server:** a CNPJ is kept only for country BR + class Fund, and reclassifying clears it, following the `HasSegments` precedent. The PRD only says where the form shows the field.
-2. **Create with Class left at "Unknown":** the form decides visibility from the Class select, so a new BR fund whose class the server would auto-resolve to Fund does not show the field until Class is set to Fund (or on the next edit, which shows the resolved class). Documented rather than mirroring `GlobalAssetClassMapping` on the client.
+2. **Create with Class left at "Unknown":** the form decides visibility from the Class select, so a new BR fund whose class the server would auto-resolve to Fund does not show the field until Class is set to Fund (or on the next edit, which shows the resolved class). Documented rather than mirroring `GlobalAssetClassMapping` on the client, because showing the field for Class Unknown would break PRD AC -01 ("for class Fund, and nowhere else").
 3. **Lenient punctuation:** any mix of `.`, `/`, `-` and spaces is stripped. Only the digits are validated ("Partial PRD specification" row).
 4. **One error message** for every invalid cause, the PRD's text, used on the server and the client.
-5. **Alphanumeric CNPJ** (the Receita Federal format being introduced from July 2026) is out of scope. The PRD fixes 14 digits, and existing CVM fund CNPJs are numeric. A future change would widen `CnpjRules` and `utils/cnpj.ts` together.
+5. **Alphanumeric CNPJ** (issued by the Receita Federal since July 2026, so a recently registered fund can already have one) is out of scope by choice: the PRD fixes 14 digits, and the funds held today, including Guepardo, have numeric CNPJs. Such a CNPJ is rejected with the standard message; widening `CnpjRules` and `utils/cnpj.ts` together is a follow-up.
 6. **No data version bump.** The property is optional, as `Segment`/`PickSource` were in P68. Stored values are trusted on load.
 7. **Wire/property name `Cnpj` / `cnpj`**, not `CNPJ` (naming guideline; `ISIN` is legacy).
 8. **Rule placement:** `Domain/Rules/CnpjRules.cs` (stateless algorithm + own test class; F07 reuses digit stripping). No CNPJ rule exists anywhere in the solution, including CashFlow and Shared, so nothing is reused and no cross-context reference is introduced.
 9. **Client-side mirror** of the check-digit rule in `utils/cnpj.ts`, pinned by the same literal vectors (the `utils/roundUp.ts` precedent), because the PRD requires an on-blur error.
-10. **Blur behaviour:** a local blur flag reveals the CNPJ error (the admin dialog otherwise reveals errors only on Save), and a valid value is re-rendered masked on blur. The dirty check compares digits only.
-11. **Removal warning** on the Class field when a typed CNPJ will be dropped, mirroring the segment warning.
+10. **Blur behaviour:** a local blur flag reveals the CNPJ error (the admin dialog otherwise reveals errors only on Save). The value is not re-masked on blur. The dirty check compares digits only.
+11. **No removal warning** for the CNPJ (simplify review): the server clears it on reclassify, and the field disappears when Country/Class stop qualifying.
 12. **Summary tab** shows the CNPJ row only for BR + Fund ("None" when unset), so other assets' Summary stays unchanged.
 13. **No masked formatter in Domain yet:** F07 adds it with its first caller (no unused code in this slice).
 14. **Slicing:** two PRs (backend 8 non-test code files; web 4). Between them, the web update request omits `cnpj`, which the server reads as "clear". No CNPJ can exist before PR 2 except one set through the raw API, and deploys happen after a feature's last PR, so this is accepted rather than adding a keep-on-null special case.
 15. **AC ids:** `P69-F06-fund-cnpj-identifier-01…05` in PRD order, added to the PRD boxes in PR 2's ticking commit.
-16. **Parallel F01 work:** F01 (Tracked by) also edits `Asset.cs`, the asset admin DTOs, `AssetAdminService` and `AssetFormDialog.tsx` in the same wave. The two features touch neighbouring lines, so whichever merges second rebases. There is no design dependency.
+16. **Parallel F01 work:** F01 (Tracked by) also edits `Asset.cs`, the asset admin DTOs, `AssetAdminService` and `AssetFormDialog.tsx` in the same wave. The two features touch neighbouring lines, so whichever merges second rebases, and regenerates `openapi-v1.snapshot.json` and `src/api/generated/openapi.ts` after the rebase rather than hand-merging them. There is no design dependency.
 17. **No `context.md` change:** it does not document asset identity fields today.
