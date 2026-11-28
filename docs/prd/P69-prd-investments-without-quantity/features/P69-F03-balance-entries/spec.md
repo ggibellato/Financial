@@ -4,7 +4,7 @@
 
 **Read §13 first: its review amendments supersede earlier sections.**
 
-**Built on F01 (specified, not yet built).** Every item marked "from F01" must exist on `main` before the PR that uses it starts: `ValuationRules` (`ValuationRules.For`, `PerUnit`, `PositionTotal`, `IsBalance`, `ValueAt`, `ValueWithoutPrice`, `AllowsZeroPrice`, `FetchesAutomatically`, `ManualEntrySource`), `Asset.ValuationRules`, `Asset.IsTrackedByBalance`, the reshaped `HoldingValuationCalculator.Calculate(quantity, averagePrice, price, policy, valuationDate)`, and `SelectedNode.isTrackedByBalance` (F01 PR 3). F03 PR 1 starts after F01 PR 2 merges (it touches `AssetPriceLookupService`, which F01 PR 2 changes); F03 PR 3 starts after F01 PR 3 merges.
+**Built on F01 (specified, not yet built).** Every item marked "from F01" must exist on `main` before the PR that uses it starts: `ValuationRules` (`ValuationRules.For`, `PerUnit`, `PositionTotal`, `ForBalanceHoldings`, `ValueAt`, `AllowsZeroPrice`, `FetchesAutomatically`, `ManualEntrySource`), `Asset.ValuationRules`, `Asset.IsTrackedByBalance`, the reshaped `HoldingValuationCalculator.Calculate(quantity, averagePrice, price, policy, valuationDate)`, and `SelectedNode.isTrackedByBalance` (F01 PR 3). F03 PR 1 starts after F01 PR 2 merges (it touches `AssetPriceLookupService`, which F01 PR 2 changes); F03 PR 3 starts after F01 PR 3 merges.
 
 ## 1. Technical Overview
 
@@ -64,7 +64,7 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |---|---|---|---|
-| Where balance on a date lives | `PositionTotal.ValueAt(quantity, snapshot, netFlowsSinceSnapshot)` = snapshot price + net flows; callers pass `BalanceFlowCalculator.NetBetween(transactions, snapshot.Date, date)` | A separate `BalanceValuationCalculator` with `if (IsBalance)` in each caller | One policy, as the PRD asks; callers compute flows uniformly for every holding, which costs one pass over the transactions and is always 0 for quantity holdings |
+| Where balance on a date lives | `PositionTotal.ValueAt(quantity, snapshot, netFlowsSinceSnapshot)` = snapshot price + net flows; callers pass `BalanceFlowCalculator.NetBetween(transactions, snapshot.Date, date)` | A separate `BalanceValuationCalculator` with `if (ForBalanceHoldings)` in each caller | One policy, as the PRD asks; callers compute flows uniformly for every holding, which costs one pass over the transactions and is always 0 for quantity holdings |
 | "Cash flows dated in a range" abstraction | `BalanceEffect { None, Increase, Decrease }` as a third, defaulted component of `TransactionTypeEffect`, and `Transaction.BalanceFlow` (+ gross amount, − gross amount, 0) | An `IBalanceFlowSource` interface, or F03 defining Deposit/Withdrawal | Uses the existing effects table, which every consumer already keys off; until F02 every flow is 0, so the rule is live and exercised by every valuation but changes no value |
 | Direction of the flows sum | Signed: entry before the date adds flows in (entry, date]; entry after the date subtracts flows in (date, entry] | Two functions | One function serves current value (entry on or before) and month-start (P68's nearest entry, either side) |
 | Status on a date | `ValuationRules.StatusOn(asOfDate, valuationDate)`; PositionTotal: Stale when `valuationDate − asOfDate > 35` days; PerUnit delegates to `MarketStatusCalculator.For` | A branch in `MarketStatusCalculator` | `MarketStatusCalculator` stays a pure weekday rule; the policy chooses the rule |
@@ -204,7 +204,7 @@ No change. A balance entry is an `AssetPriceSnapshot` with `Price` = balance, `S
 - **Balance flow of a transaction:** `TransactionTypeEffects.For(type).Balance` — `Increase` → `+GrossAmount`, `Decrease` → `−GrossAmount`, `None` → 0. Fees and IR withheld never change the balance (a deposit's fees are paid on top; a withdrawal's IR is part of the gross amount taken out).
 - **What F02 plugs in:** (1) give its Deposit row `BalanceEffect.Increase` and its Withdrawal row `BalanceEffect.Decrease` in `TransactionTypeEffects`; (2) store each such transaction as `Quantity = 1`, `UnitPrice = amount` (with `QuantityEffect.None`, so the position's quantity is not changed), so that the private `GrossAmount` (`UnitPrice × Quantity`) equals the deposit amount or the withdrawal's gross amount; if F02 chooses another shape, it changes `Transaction.BalanceFlow` to read the amount where it stores it. A cash-only transaction with quantity 0 would give a flow of 0, so F02 adds `BalanceFlow_DepositOfOneThousand_IsOneThousand` and the matching withdrawal test. Nothing in the calculators or services changes. Until then every flow is 0 and balance on a date equals the entry it starts from.
 - **Net flows:** `NetBetween(tx, entryDate, date)` as in §5 PR 1. Transaction dates compare as `DateOnly.FromDateTime(tx.Date)`.
-- **Balance on a date D** (current value): entry = `asset.GetPriceAsOf(D)` (latest on or before D). None → `policy.ValueWithoutPrice` (F01: unavailable for PositionTotal). Otherwise value = entry + `NetBetween(tx, entry.Date, D)`. An entry is the end of its date, so flows on the entry date are inside it and flows on D are counted.
+- **Balance on a date D** (current value): entry = `asset.GetPriceAsOf(D)` (latest on or before D). None → unavailable (F01: `HoldingValuationCalculator` with `policy.ForBalanceHoldings`). Otherwise value = entry + `NetBetween(tx, entry.Date, D)`. An entry is the end of its date, so flows on the entry date are inside it and flows on D are counted.
 - **Month-start value:** the P68 nearest entry within ±7 days; value = entry + `NetBetween(tx, entry.Date, monthStart)`, which subtracts flows in (1st, entry] when the entry is after the 1st. A deposit on the 2nd is never in the 1st's value; one on the 1st is.
 - **Status:** PositionTotal `StatusOn(asOf, D)` = `D.DayNumber − asOf.DayNumber > 35` ? Stale : Current (35 days Current, 36 Stale). PerUnit unchanged (weekday rule). `asOf` is the entry date, not the date of a later flow.
 - **No fetch:** unchanged from F01 (`FetchesAutomatically` false); `AssetPriceLookupService` returns the latest entry with the policy's status.
@@ -236,7 +236,7 @@ No change. A balance entry is an `AssetPriceSnapshot` with `Price` = balance, `S
 |---|---|
 | Storage fails while saving | 503; `ApplyAndSaveAsync` restores the in-memory history; form stays open with input and "Couldn't save the balance. Try again." |
 | Storage fails while deleting | 503; history unchanged; delete error shown under the grid with the existing delete-failure text for "balance" |
-| Deleting the only entry of a holding with transactions | Allowed after the confirmation carrying the warning; current value becomes unavailable (F01's `ValueWithoutPrice`) |
+| Deleting the only entry of a holding with transactions | Allowed after the confirmation carrying the warning; current value becomes unavailable (F01's no-snapshot rule for balance holdings) |
 | Server rejects decimals, note length, negative value or future date | 400 detail shown in the form; input kept |
 | Automatic entry on a balance holding (legacy data) | Not editable or deletable, as today (`isManual` false) |
 

@@ -27,6 +27,16 @@ public class ValuationRulesTests
     }
 
     [Fact]
+    public void ForBalanceHoldings_OnlyForPositionTotal()
+    {
+        using (new AssertionScope())
+        {
+            ValuationRules.PositionTotal.ForBalanceHoldings.Should().BeTrue();
+            ValuationRules.PerUnit.ForBalanceHoldings.Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void AllowsZeroPrice_OnlyForPositionTotal()
     {
         using (new AssertionScope())
@@ -58,20 +68,6 @@ public class ValuationRulesTests
             ValuationRules.PerUnit.ValueOfPortion(3m, 4m, price).Should().Be(3000m);
             ValuationRules.PositionTotal.ValueOfPortion(3m, 4m, price).Should().Be(750m);
         }
-    }
-
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(5, null)]
-    public void ValueWithoutPrice_PerUnit_IsZeroOnlyForAnEmptyPosition(int quantity, int? expected)
-    {
-        ValuationRules.PerUnit.ValueWithoutPrice(quantity).Should().Be(expected);
-    }
-
-    [Fact]
-    public void ValueWithoutPrice_PositionTotal_IsUnavailable()
-    {
-        ValuationRules.PositionTotal.ValueWithoutPrice(5m).Should().BeNull();
     }
 
     private static AssetPriceSnapshot Snapshot(decimal price) =>

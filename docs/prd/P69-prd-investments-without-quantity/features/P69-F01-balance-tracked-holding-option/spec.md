@@ -11,7 +11,7 @@
 **Scope:**
 
 *Included*
-- `ValuationRules` (Domain): the valuation policy chosen by the asset's method, `ValuationRules.For(ValuationMethod)`, with a per-unit and a position-total implementation. It is the one place that says how a method reads a snapshot (`ValueAt`, `ValueOfPortion`, `ValueWithoutPrice`, `AllowsZeroPrice`, `FetchesAutomatically`, `ManualEntrySource`, `IsBalance`). F03 adds value and status on a date to the same policy, and F02 gates on it.
+- `ValuationRules` (Domain): the valuation policy chosen by the asset's method, `ValuationRules.For(ValuationMethod)`, with a per-unit and a position-total implementation. It is the one place that says how a method reads a snapshot (`ForBalanceHoldings`, `ValueAt`, `ValueOfPortion`, `AllowsZeroPrice`, `FetchesAutomatically`, `ManualEntrySource`). F03 adds value and status on a date to the same policy, and F02 gates on it.
 - `HoldingValuationCalculator`, `MonthStartValueCalculator`, `DividendAttributionCalculator`, `AssetPriceSnapshot.ValidatePrice`, `AssetPriceLookupService` and `AssetPriceHistoryService` take the asset's policy (`Asset.ValuationRules`) instead of branching on a method.
 - `Asset.IsTrackedByBalance`, `Asset.HasRecords`, and the lock enforced in `Asset.SetValuationMethod`.
 - `AssetAdminDTO.IsTrackedByBalance` and `AssetAdminDTO.HasRecords`; the `TrackedByBalance` tree metadata key (no `AssetNodeDTO` field).
@@ -56,10 +56,10 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |---|---|---|---|
-| Where "total or per unit" is decided | One `ValuationRules` per method (`PerUnit`, `PositionTotal`), taken from `Asset.ValuationRules` and passed to the calculators | An `IsBalance` check at each call site | The PRD (F03/F04) asks for one valuation policy; building it here means F03 adds value/status on a date to it instead of reshaping the same signatures a second time |
+| Where "total or per unit" is decided | One `ValuationRules` per method (`PerUnit`, `PositionTotal`), taken from `Asset.ValuationRules` and passed to the calculators | A `ForBalanceHoldings` check at each call site | The PRD (F03/F04) asks for one valuation policy; building it here means F03 adds value/status on a date to it instead of reshaping the same signatures a second time |
 | How the mode is stored | Derived from `Asset.ValuationMethod` (`ProviderValue`/`Manual` = Balance) | A new `TrackingMode` field on `Asset` | No data change and no second field that could disagree with the method; the cost is that "mode" is a projection, not a stored value |
 | Request contract | Reuse the existing optional `valuationMethod` on `AssetAdminCreateDTO` / `AssetAdminUpdateDTO`; the web sends `ProviderValue` for Balance, `Unspecified` for Quantity and price, and `null` when the mode did not change | A new `trackingMode` request field | No request-shape change; `null` keeps today's "preserve" behaviour, so editing a `Manual` holding never silently rewrites it to `ProviderValue` |
-| What the lock compares | The mode (`IsBalance(old) != IsBalance(new)`), not the raw method | Lock every method change | A same-mode change (`MarketPrice` → `Unspecified`, `Manual` → `ProviderValue`) never changes how a snapshot is read, so it stays allowed, as today |
+| What the lock compares | The mode (`ForBalanceHoldings` of the old and the new method differ), not the raw method | Lock every method change | A same-mode change (`MarketPrice` → `Unspecified`, `Manual` → `ProviderValue`) never changes how a snapshot is read, so it stays allowed, as today |
 | Where the lock lives | `Asset.SetValuationMethod`, throwing `InvestmentRuleViolationException` (409 via `DomainExceptionMappingMiddleware`) | A check in `AssetAdminService` | The invariant sits on the entity that owns it; any future caller is covered |
 | What counts as history | `Asset.HasRecords`: any transaction, credit, corporate action or price snapshot | Transactions only | Matches the PRD; named and shaped like CashFlow's `AccountDTO.HasRecords` so the form copies `AccountFormDialog`'s lock |
 | How the web learns lock and mode | Server-derived `AssetAdminDTO.IsTrackedByBalance` and `HasRecords` | Web recomputes from `valuationMethod` and counts | One copy of the rule; the admin list does not carry credit/price counts |
@@ -73,7 +73,7 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Financial.Investment.Domain/Rules/ValuationRules.cs` | New | One rule set per method | Abstract `ValuationRules` with `For(ValuationMethod)` returning `PerUnit` (Unspecified, MarketPrice, BondQuote) or `PositionTotal` (ProviderValue, Manual); members `IsBalance`, `ValueAt(quantity, snapshot)`, `ValueOfPortion(shares, held, snapshot)`, `ValueWithoutPrice(quantity)` (PerUnit: 0 when quantity is 0, else unavailable; PositionTotal: always unavailable), `AllowsZeroPrice`, `FetchesAutomatically` (false for PositionTotal), `ManualEntrySource` (PositionTotal: `PriceSource.ProviderValuation`; PerUnit: `PriceSource.Manual`). Built: PR 1 ships only the members it uses (`AllowsZeroPrice`, `ValueAt`, `ValueOfPortion`, `ValueWithoutPrice`); `IsBalance`, `FetchesAutomatically` and `ManualEntrySource` arrive in PR 2 with their callers |
+| `Financial.Investment.Domain/Rules/ValuationRules.cs` | New | One rule set per method | Abstract `ValuationRules` with `For(ValuationMethod)` returning `PerUnit` (Unspecified, MarketPrice, BondQuote) or `PositionTotal` (ProviderValue, Manual); members `ForBalanceHoldings` (true for PositionTotal), `ValueAt(quantity, snapshot)`, `ValueOfPortion(shares, held, snapshot)`, `AllowsZeroPrice`, `FetchesAutomatically` (false for PositionTotal), `ManualEntrySource` (PositionTotal: `PriceSource.ProviderValuation`; PerUnit: `PriceSource.Manual`). Built: PR 1 ships only the members it uses (`ForBalanceHoldings`, `AllowsZeroPrice`, `ValueAt`, `ValueOfPortion`); `FetchesAutomatically` and `ManualEntrySource` arrive in PR 2 with their callers |
 | `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Expose the policy | `ValuationRules => ValuationRules.For(ValuationMethod)` |
 | `Financial.Investment.Domain/Rules/HoldingValuationCalculator.cs` | Modified | Value from the policy | `Calculate(quantity, averagePrice, price, rules, valuationDate)` delegates to the rules; `ValueAt` is removed (built: callers use `ValuationRules.ValueAt` directly); `price.ValuationMethod` is no longer read |
 | `Financial.Investment.Domain/Rules/MonthStartValueCalculator.cs` | Modified | Month-start value | Uses `asset.ValuationRules` |
@@ -88,7 +88,7 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Mode and lock | `IsTrackedByBalance => ValuationRules.IsBalance`; `HasRecords` (any transaction, credit, corporate action or price snapshot, using the private lists' counts); `SetValuationMethod` throws `InvestmentRuleViolationException(TrackingModeLockedMessage)` when the mode changes and `HasRecords` is true; `public const string TrackingModeLockedMessage = "This holding now has transactions or prices, so how it is tracked can't be changed."` |
+| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Mode and lock | `IsTrackedByBalance => ValuationRules.ForBalanceHoldings`; `HasRecords` (any transaction, credit, corporate action or price snapshot, using the private lists' counts); `SetValuationMethod` throws `InvestmentRuleViolationException(TrackingModeLockedMessage)` when the mode changes and `HasRecords` is true; `public const string TrackingModeLockedMessage = "This holding now has transactions or prices, so how it is tracked can't be changed."` |
 | `Financial.Investment.Application/DTOs/AssetAdminDTO.cs` | Modified | Read contract | `bool IsTrackedByBalance`, `bool HasRecords` |
 | `Financial.Investment.Application/Services/AssetAdminService.cs` | Modified | Mapping | `ToDto` maps the two flags; create/update logic unchanged (the Domain guard does the work inside `ApplyAndSaveAsync`, so a rejection rolls back the rename and every other field) |
 | `Financial.Investment.Application/Services/AssetPriceLookupService.cs` | Modified | No fetch for Balance | The "ProviderValue or Manual: no automatic fetch" branch becomes `!asset.ValuationRules.FetchesAutomatically` |
@@ -180,9 +180,9 @@ No change. `Asset.ValuationMethod` is already persisted; `AssetPriceSnapshot.Val
 ## 8. Rules in detail
 
 - **Mode:** Balance ⇔ `ValuationMethod` ∈ {`ProviderValue`, `Manual`}. Everything else is Quantity and price.
-- **No snapshot:** `Calculate` asks `policy.ValueWithoutPrice(quantity)`. PerUnit keeps today's rule (quantity 0 → value 0, Current; otherwise unavailable). PositionTotal is always unavailable (value null, `MarketStatus.Unavailable`), because F02's deposits are cash-only and a balance holding's quantity is always 0. F04 changes only the PositionTotal policy to "No balance recorded".
+- **No snapshot:** `Calculate` returns value 0, Current, only when quantity is 0 and `!policy.ForBalanceHoldings` (today's rule for quantity holdings); otherwise unavailable (value null, `MarketStatus.Unavailable`). A balance holding is always unavailable here because F02's deposits are cash-only and its quantity is always 0, so quantity 0 does not mean the position is closed. F04 changes only the balance branch to "No balance recorded".
 - **Reading a snapshot:** `policy.ValueAt(quantity, price)` = `price.Price` for PositionTotal, `quantity × price.Price` for PerUnit. Same in month-start values. Dividend market value on date: `policy.ValueOfPortion(shares, held, price)` = `price.Price × shares ÷ held` for PositionTotal, `shares × price.Price` for PerUnit.
-- **Lock:** `SetValuationMethod(next)`: if `IsBalance(next) != IsTrackedByBalance` and `HasRecords` → `InvestmentRuleViolationException(TrackingModeLockedMessage)`. Otherwise sets the method. Applies to active and historic assets.
+- **Lock:** `SetValuationMethod(next)`: if `ValuationRules.For(next).ForBalanceHoldings != IsTrackedByBalance` and `HasRecords` → `InvestmentRuleViolationException(TrackingModeLockedMessage)`. Otherwise sets the method. Applies to active and historic assets.
 - **Create:** a new asset has no history, so any method is accepted. Available for every country, class and broker; P68 class, segment and pick-source rules unchanged.
 - **Update with `valuationMethod: null`** never trips the lock (the method does not change), so every existing client and every edit that leaves the mode alone keeps working on holdings with history.
 
@@ -231,7 +231,7 @@ No change. `Asset.ValuationMethod` is already persisted; `AssetPriceSnapshot.Val
 
 | Test Function | Description | Assertions |
 |---|---|---|
-| `For_ProviderValueAndManual_ArePositionTotal` / `For_OtherMethods_ArePerUnit` (theory) | Classification | Policy type and `IsBalance` per value |
+| `For_ProviderValueAndManual_ArePositionTotal` / `For_OtherMethods_ArePerUnit` (theory) | Classification | Policy type and `ForBalanceHoldings` per value |
 | `PositionTotal_ManualEntrySource_IsProviderValuation` / `PositionTotal_FetchesAutomatically_IsFalse` | Policy | Literal values; PerUnit opposites |
 | `Calculate_BalanceAsset_ReadsSnapshotAsTotal_EvenWhenSnapshotSaysMarketPrice` | Authority | Qty 10, snapshot 5000 stored as MarketPrice, asset ProviderValue → market value 5000 |
 | `Calculate_QuantityAsset_ReadsSnapshotPerUnit_EvenWhenSnapshotSaysProviderValue` | Authority | Qty 10, snapshot 8 stored as ProviderValue, asset MarketPrice → 80 |

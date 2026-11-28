@@ -22,8 +22,8 @@ public static class HoldingValuationCalculator
 
         if (price is null)
         {
-            return rules.ValueWithoutPrice(quantity) is { } value
-                ? new HoldingValuation(value, costOfUnitsHeld, value - costOfUnitsHeld, null, MarketStatus.Current, null, null)
+            return quantity == 0m && !rules.ForBalanceHoldings
+                ? new HoldingValuation(0m, costOfUnitsHeld, -costOfUnitsHeld, null, MarketStatus.Current, null, null)
                 : new HoldingValuation(null, costOfUnitsHeld, null, null, MarketStatus.Unavailable, null, null);
         }
 
