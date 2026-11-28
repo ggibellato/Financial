@@ -201,7 +201,7 @@ public class Asset
     public static bool AcceptsCnpj(CountryCode country) => country == CountryCode.BR;
 
     public static bool AcceptsAdministratorCnpj(CountryCode country, GlobalAssetClass assetClass) =>
-        country == CountryCode.BR && assetClass is GlobalAssetClass.Fund or GlobalAssetClass.RealEstate or GlobalAssetClass.ETF;
+        country == CountryCode.BR && assetClass is (GlobalAssetClass.Fund or GlobalAssetClass.RealEstate or GlobalAssetClass.ETF);
 
     public void SetCnpj(string? cnpj)
     {

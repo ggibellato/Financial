@@ -159,13 +159,14 @@ public class AssetTests
     }
 
     [Theory]
-    [InlineData(CountryCode.UK, GlobalAssetClass.Fund, null, null)]
-    [InlineData(CountryCode.BR, GlobalAssetClass.Equity, "11222333000181", null)]
-    [InlineData(CountryCode.BR, GlobalAssetClass.Fund, "11222333000181", "11444777000161")]
+    [InlineData(GlobalAssetClass.Fund, CountryCode.UK, GlobalAssetClass.Fund, null, null)]
+    [InlineData(GlobalAssetClass.Fund, CountryCode.BR, GlobalAssetClass.Equity, "11222333000181", null)]
+    [InlineData(GlobalAssetClass.ETF, CountryCode.BR, GlobalAssetClass.Equity, "11222333000181", null)]
+    [InlineData(GlobalAssetClass.Fund, CountryCode.BR, GlobalAssetClass.Fund, "11222333000181", "11444777000161")]
     public void UpdateIdentity_ClearsInapplicableCnpjs(
-        CountryCode country, GlobalAssetClass assetClass, string? expectedCnpj, string? expectedAdministratorCnpj)
+        GlobalAssetClass startClass, CountryCode country, GlobalAssetClass assetClass, string? expectedCnpj, string? expectedAdministratorCnpj)
     {
-        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Fund);
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", startClass);
         asset.SetCnpj("11222333000181");
         asset.SetAdministratorCnpj("11444777000161");
 
@@ -175,22 +176,6 @@ public class AssetTests
         {
             asset.Cnpj.Should().Be(expectedCnpj);
             asset.AdministratorCnpj.Should().Be(expectedAdministratorCnpj);
-        }
-    }
-
-    [Fact]
-    public void UpdateIdentity_EtfToEquity_ClearsOnlyTheAdministratorCnpj()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.ETF);
-        asset.SetCnpj("11222333000181");
-        asset.SetAdministratorCnpj("11444777000161");
-
-        asset.UpdateIdentity("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Equity);
-
-        using (new AssertionScope())
-        {
-            asset.Cnpj.Should().Be("11222333000181");
-            asset.AdministratorCnpj.Should().BeNull();
         }
     }
 

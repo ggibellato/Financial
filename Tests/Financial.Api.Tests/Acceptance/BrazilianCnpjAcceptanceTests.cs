@@ -86,12 +86,15 @@ public class BrazilianCnpjAcceptanceTests : ApiEndpointTests
 
     [Theory]
     [Trait("AC", "P69-F06-brazilian-cnpj-identifiers-07")]
-    [InlineData(CountryCode.UK, GlobalAssetClass.Fund, null, null)]
-    [InlineData(CountryCode.BR, GlobalAssetClass.Equity, FundCnpj, null)]
+    [InlineData(GlobalAssetClass.Fund, CountryCode.UK, GlobalAssetClass.Fund, null, null)]
+    [InlineData(GlobalAssetClass.Fund, CountryCode.BR, GlobalAssetClass.Equity, FundCnpj, null)]
+    [InlineData(GlobalAssetClass.ETF, CountryCode.BR, GlobalAssetClass.Equity, FundCnpj, null)]
     public async Task UpdateAsset_Reclassified_ClearsInapplicableCnpjs(
-        CountryCode country, GlobalAssetClass assetClass, string? expectedCnpj, string? expectedAdministratorCnpj)
+        GlobalAssetClass createdClass, CountryCode country, GlobalAssetClass assetClass, string? expectedCnpj, string? expectedAdministratorCnpj)
     {
-        await CreateFundAsync(FundCnpj, AdministratorCnpj);
+        var create = FundRequest(FundCnpj, AdministratorCnpj);
+        create.Class = createdClass;
+        (await Client.PostAsJsonAsync(AssetsRoute, create)).StatusCode.Should().Be(HttpStatusCode.OK);
         var request = UpdateRequest(FundCnpj, AdministratorCnpj);
         request.Country = country;
         request.Class = assetClass;
@@ -105,24 +108,6 @@ public class BrazilianCnpjAcceptanceTests : ApiEndpointTests
             stored.Cnpj.Should().Be(expectedCnpj);
             stored.AdministratorCnpj.Should().Be(expectedAdministratorCnpj);
         }
-    }
-
-    [Fact]
-    [Trait("AC", "P69-F06-brazilian-cnpj-identifiers-07")]
-    public async Task UpdateAsset_EtfReclassifiedAsEquity_ClearsOnlyTheAdministratorCnpj()
-    {
-        var create = FundRequest(FundCnpj, AdministratorCnpj);
-        create.Class = GlobalAssetClass.ETF;
-        (await Client.PostAsJsonAsync(AssetsRoute, create)).StatusCode.Should().Be(HttpStatusCode.OK);
-        var request = UpdateRequest(FundCnpj, AdministratorCnpj);
-        request.Class = GlobalAssetClass.Equity;
-
-        var response = await Client.PutAsJsonAsync($"{AssetsRoute}/{Broker}/{Portfolio}/{FundName}", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var stored = await GetStoredAsync(FundName);
-        stored.Cnpj.Should().Be(FundCnpj);
-        stored.AdministratorCnpj.Should().BeNull();
     }
 
     [Fact]

@@ -7,18 +7,13 @@ namespace Financial.Investment.Domain.Tests.Rules;
 public class CnpjRulesTests
 {
     [Theory]
-    [InlineData("11222333000181")]
-    [InlineData("11.222.333/0001-81")]
-    [InlineData(" 11.222.333/0001-81 ")]
-    public void Normalize_ValidDigitsOrMask_ReturnsTheFourteenDigits(string input)
+    [InlineData("11222333000181", "11222333000181")]
+    [InlineData("11.222.333/0001-81", "11222333000181")]
+    [InlineData(" 11.222.333/0001-81 ", "11222333000181")]
+    [InlineData("11444777000161", "11444777000161")]
+    public void Normalize_ValidDigitsOrMask_ReturnsTheFourteenDigits(string input, string expected)
     {
-        CnpjRules.Normalize(input).Should().Be("11222333000181");
-    }
-
-    [Fact]
-    public void Normalize_SecondValidValue_ReturnsItsDigits()
-    {
-        CnpjRules.Normalize("11444777000161").Should().Be("11444777000161");
+        CnpjRules.Normalize(input).Should().Be(expected);
     }
 
     [Theory]
