@@ -15,18 +15,19 @@ public sealed record HoldingValuation(
 
 public static class HoldingValuationCalculator
 {
-    public static HoldingValuation Calculate(decimal quantity, decimal averagePrice, AssetPriceSnapshot? price, DateOnly valuationDate)
+    public static HoldingValuation Calculate(
+        decimal quantity, decimal averagePrice, AssetPriceSnapshot? price, ValuationRules rules, DateOnly valuationDate)
     {
         var costOfUnitsHeld = OpenPositionCostCalculator.CostOfUnitsHeld(quantity, averagePrice);
 
         if (price is null)
         {
-            return quantity == 0
-                ? new HoldingValuation(0m, costOfUnitsHeld, -costOfUnitsHeld, null, MarketStatus.Current, null, null)
+            return rules.ValueWithoutPrice(quantity) is { } value
+                ? new HoldingValuation(value, costOfUnitsHeld, value - costOfUnitsHeld, null, MarketStatus.Current, null, null)
                 : new HoldingValuation(null, costOfUnitsHeld, null, null, MarketStatus.Unavailable, null, null);
         }
 
-        var marketValue = ValueAt(quantity, price);
+        var marketValue = rules.ValueAt(quantity, price);
 
         return new HoldingValuation(
             marketValue,
@@ -37,11 +38,6 @@ public static class HoldingValuationCalculator
             null,
             null);
     }
-
-    public static decimal ValueAt(decimal quantity, AssetPriceSnapshot price) =>
-        price.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual
-            ? price.Price
-            : quantity * price.Price;
 
     public static HoldingValuation NotMarkedToMarket(decimal quantity, decimal averagePrice) =>
         new(0m, OpenPositionCostCalculator.CostOfUnitsHeld(quantity, averagePrice), null, null, MarketStatus.Current, null, null);

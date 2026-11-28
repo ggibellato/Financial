@@ -28,6 +28,8 @@ public class Asset
 
     public IncomePolicy IncomePolicy { get; private set; } = IncomePolicy.Unknown;
 
+    public ValuationRules ValuationRules => ValuationRules.For(ValuationMethod);
+
     public const int MaxSegmentLength = 40;
 
     public string? Segment { get; private set; }

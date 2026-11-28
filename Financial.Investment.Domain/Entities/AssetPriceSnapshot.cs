@@ -1,4 +1,5 @@
 using System;
+using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -55,7 +56,7 @@ public class AssetPriceSnapshot
     /// </summary>
     private static void ValidatePrice(decimal price, ValuationMethod valuationMethod)
     {
-        var allowsZero = valuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual;
+        var allowsZero = ValuationRules.For(valuationMethod).AllowsZeroPrice;
         if (allowsZero ? price < 0 : price <= 0)
         {
             throw new ArgumentException(allowsZero

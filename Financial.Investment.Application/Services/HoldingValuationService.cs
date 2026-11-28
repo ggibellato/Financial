@@ -40,7 +40,7 @@ public sealed class HoldingValuationService : IHoldingValuationService
 
             var valuation = scope == InvestmentScope.Historic
                 ? HoldingValuationCalculator.NotMarkedToMarket(asset.Quantity, asset.AveragePrice)
-                : HoldingValuationCalculator.Calculate(asset.Quantity, asset.AveragePrice, asset.GetPriceAsOf(today), today);
+                : HoldingValuationCalculator.Calculate(asset.Quantity, asset.AveragePrice, asset.GetPriceAsOf(today), asset.ValuationRules, today);
 
             if (valuation.MarketValue is not null)
             {

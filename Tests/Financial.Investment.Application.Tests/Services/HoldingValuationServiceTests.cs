@@ -51,6 +51,20 @@ public class HoldingValuationServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P69-F01-balance-tracked-holding-option-05")]
+    public void GetValuation_PassesTheAssetsMethod()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.SetPrice(new DateOnly(2026, 8, 14), 5000m, isManual: false);
+        asset.SetValuationMethod(ValuationMethod.ProviderValue);
+
+        var result = CreateService().GetValuation(asset, InvestmentScope.Active);
+
+        result.MarketValue.Should().Be(5000m);
+    }
+
+    [Fact]
     public void GetValuation_PriceOlderThanThePreviousWeekday_IsStaleAgainstTheClocksToday()
     {
         var asset = MakeAsset();

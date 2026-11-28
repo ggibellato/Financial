@@ -15,7 +15,7 @@ public class DividendAttributionCalculatorTests
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null, ValuationRules.PerUnit);
 
         result.Should().NotBeNull();
         result!.SharesForDividend.Should().Be(1000m);
@@ -34,7 +34,7 @@ public class DividendAttributionCalculatorTests
             Buy(new DateTime(2024, 6, 1), 200m, 15m)
         };
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null, ValuationRules.PerUnit);
 
         result.Should().NotBeNull();
         result!.SharesForDividend.Should().Be(1200m);
@@ -49,7 +49,7 @@ public class DividendAttributionCalculatorTests
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
         var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 0m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price, ValuationRules.PositionTotal);
 
         result!.MarketValueOnDate.Should().Be(0m);
         result.YieldOnMarket.Should().BeNull();
@@ -62,7 +62,7 @@ public class DividendAttributionCalculatorTests
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
         var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price, ValuationRules.PositionTotal);
 
         result!.MarketValueOnDate.Should().Be(5000m, "leaving Shares for this dividend blank attributes the whole position, so the pro-rated share is 100%");
     }
@@ -73,7 +73,7 @@ public class DividendAttributionCalculatorTests
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
         var transactions = new[] { Buy(new DateTime(2024, 7, 1), 1000m, 9m) };
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null, ValuationRules.PerUnit);
 
         result.Should().BeNull();
     }
@@ -88,7 +88,7 @@ public class DividendAttributionCalculatorTests
             Buy(new DateTime(2024, 8, 1), 200m, 20m) // bought after the dividend date - excluded
         };
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null, ValuationRules.PerUnit);
 
         result.Should().NotBeNull();
         result!.SharesForDividend.Should().Be(800m);
@@ -104,7 +104,7 @@ public class DividendAttributionCalculatorTests
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
         var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 10m, ValuationMethod.MarketPrice, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price, ValuationRules.PerUnit);
 
         result.Should().NotBeNull();
         result!.MarketValueOnDate.Should().Be(8000m);
@@ -117,7 +117,7 @@ public class DividendAttributionCalculatorTests
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null, ValuationRules.PerUnit);
 
         result.Should().NotBeNull();
         result!.MarketValueOnDate.Should().BeNull();
@@ -131,9 +131,33 @@ public class DividendAttributionCalculatorTests
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
         var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
-        var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price, ValuationRules.PositionTotal);
 
         result!.MarketValueOnDate.Should().Be(4000m, "5000 is the whole 1000-unit position's worth, so 800 attributed shares are 80% of it");
+    }
+
+    [Fact]
+    public void Calculate_BalanceRules_ProRateTheSnapshot_EvenWhenItSaysMarketPrice()
+    {
+        var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
+        var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.MarketPrice, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
+
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price, ValuationRules.PositionTotal);
+
+        result!.MarketValueOnDate.Should().Be(4000m);
+    }
+
+    [Fact]
+    public void Calculate_QuantityRules_MultiplyPerShare_EvenWhenTheSnapshotSaysProviderValue()
+    {
+        var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
+        var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 10m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
+
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price, ValuationRules.PerUnit);
+
+        result!.MarketValueOnDate.Should().Be(8000m);
     }
 
     private static Transaction Buy(DateTime date, decimal quantity, decimal unitPrice) =>
