@@ -257,7 +257,17 @@ public class AssetPriceHistoryServiceTests
                 Price = 5000m
             });
 
-            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.ProviderValuation);
+            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.ProviderValuation && p.IsManual);
+
+            var deleted = await service.DeletePriceAsync(new DeleteAssetPriceDTO
+            {
+                BrokerName = BrokerName,
+                PortfolioName = PortfolioName,
+                AssetName = NewAssetName,
+                Date = new DateOnly(2026, 8, 15)
+            });
+
+            deleted!.PriceSnapshots.Should().BeEmpty();
         }
         finally
         {

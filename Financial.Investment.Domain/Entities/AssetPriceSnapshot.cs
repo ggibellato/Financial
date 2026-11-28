@@ -19,7 +19,7 @@ public class AssetPriceSnapshot
 
     public DateTimeOffset RetrievedAt { get; private set; }
 
-    public bool IsManual => Source == PriceSource.Manual;
+    public bool IsManual => Source is PriceSource.Manual or PriceSource.ProviderValuation;
 
     private AssetPriceSnapshot() { }
 

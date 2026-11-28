@@ -89,6 +89,7 @@ public class AssetPriceSnapshotTests
         var today = TestClock.Today;
 
         Create(today, 10m, ValuationMethod.MarketPrice, PriceSource.Manual).IsManual.Should().BeTrue();
+        Create(today, 10m, ValuationMethod.ProviderValue, PriceSource.ProviderValuation).IsManual.Should().BeTrue();
         Create(today, 10m, ValuationMethod.MarketPrice, PriceSource.Google).IsManual.Should().BeFalse();
     }
 
