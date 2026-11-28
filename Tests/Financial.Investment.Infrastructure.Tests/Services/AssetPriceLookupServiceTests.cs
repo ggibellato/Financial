@@ -448,7 +448,7 @@ public class AssetPriceLookupServiceTests
         try
         {
             var oldDate = TestClock.Today.AddDays(-30);
-            var asset = RegisterAssetWithoutHistory(repository, valuationMethod);
+            var asset = repository.GetInvestments().RegisterAsset(BrokerName, PortfolioName, NewAssetName, valuationMethod);
             asset.SetPrice(oldDate, 5000m, isManual: false);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest(NewAssetName));
@@ -468,7 +468,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
         try
         {
-            RegisterAssetWithoutHistory(repository, ValuationMethod.ProviderValue);
+            repository.GetInvestments().RegisterAsset(BrokerName, PortfolioName, NewAssetName, ValuationMethod.ProviderValue);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest(NewAssetName));
 
@@ -531,14 +531,6 @@ public class AssetPriceLookupServiceTests
         PortfolioName = PortfolioName,
         AssetName = assetName
     };
-
-    private static Asset RegisterAssetWithoutHistory(IInvestmentRepository repository, ValuationMethod valuationMethod)
-    {
-        var asset = Asset.Create(NewAssetName, string.Empty, "BVMF", NewAssetName);
-        asset.SetValuationMethod(valuationMethod);
-        repository.GetInvestments().GetBroker(BrokerName, preferHistoric: false).GetPortfolio(PortfolioName).RegisterAsset(asset);
-        return asset;
-    }
 
     [Fact]
     public async Task GetCurrentPriceAsync_WhenPersistenceFails_ReturnsTheFetchedPriceButReportsFailure()

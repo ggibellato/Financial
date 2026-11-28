@@ -244,9 +244,7 @@ public class AssetPriceHistoryServiceTests
         var (service, repository, _, tempFile) = CreateServiceWithRepository();
         try
         {
-            var asset = Asset.Create(NewAssetName, string.Empty, "BVMF", NewAssetName);
-            asset.SetValuationMethod(valuationMethod);
-            repository.GetInvestments().GetBroker(BrokerName, preferHistoric: false).GetPortfolio(PortfolioName).RegisterAsset(asset);
+            repository.GetInvestments().RegisterAsset(BrokerName, PortfolioName, NewAssetName, valuationMethod);
 
             var result = await service.SetPriceAsync(new SetAssetPriceDTO
             {

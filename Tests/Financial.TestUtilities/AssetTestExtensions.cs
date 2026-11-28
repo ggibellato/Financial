@@ -60,4 +60,12 @@ public static class AssetTestExtensions
     // today = date: fixtures never trip the future-date rule; call the 7-argument SetPrice to test it.
     public static void SetPrice(this Asset asset, DateOnly date, decimal price, bool isManual) =>
         asset.SetPrice(date, price, isManual ? PriceSource.Manual : PriceSource.Unknown, string.Empty, null, TestClock.Default, date);
+
+    public static Asset RegisterAsset(this Investments investments, string brokerName, string portfolioName, string assetName, ValuationMethod valuationMethod)
+    {
+        var asset = Asset.Create(assetName, string.Empty, "BVMF", assetName);
+        asset.SetValuationMethod(valuationMethod);
+        investments.GetBroker(brokerName, preferHistoric: false).GetPortfolio(portfolioName).RegisterAsset(asset);
+        return asset;
+    }
 }
