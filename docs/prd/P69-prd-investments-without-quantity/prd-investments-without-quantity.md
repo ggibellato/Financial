@@ -137,13 +137,13 @@ Guepardo is a regulated investment fund. XP shows only its current value, but th
 
 **Experience:**
 - The asset form (create and edit) gets a "Tracked by" radio group with two options: "Quantity and price" and "Balance". Helper text under Balance: "For holdings whose broker shows only a balance, such as pension plans. You record deposits, withdrawals and the balance."
-- When the holding has transactions, credits, corporate actions or saved prices, the group is disabled and the helper text reads: "Can't change how this holding is tracked because it has transactions or prices. Remove them first."
+- When the holding has transactions, credits, corporate actions or saved prices, the mode is shown read-only (a focusable field, not a disabled group) and the helper text reads: "Can't change how this holding is tracked because it has transactions or prices. Remove them first."
 - The asset's header shows a "Balance" tag next to the asset class for balance-tracked holdings.
 - The save, saving and error states of the existing asset form are reused unchanged.
 
 **Error Handling:**
-- A mode change is sent for a holding that gained a transaction after the form was opened → the save is rejected with "This holding now has transactions, so how it is tracked can't be changed." The form stays open with the previous mode reselected.
-- Save fails because of a storage error → the existing "Couldn't save the asset" error is shown, the form keeps the user's input, and nothing is changed.
+- A mode change is sent for a holding that gained a transaction after the form was opened → the save is rejected with "This holding now has transactions or prices, so how it is tracked can't be changed." The form stays open with the message and the user's input kept.
+- Save fails because of a storage error → the existing "The asset could not be saved." error is shown, the form keeps the user's input, and nothing is changed.
 
 ### F02. Deposits and Withdrawals
 
@@ -444,7 +444,7 @@ graph TD
 - [ ] **P69-F01-balance-tracked-holding-option-01** A new holding can be created with "Tracked by: Balance", and it is stored with the `ProviderValue` valuation method.
 - [ ] **P69-F01-balance-tracked-holding-option-02** A new holding created without a choice is "Quantity and price", and existing holdings keep their current behaviour.
 - [ ] **P69-F01-balance-tracked-holding-option-03** Holdings already set to `ProviderValue` or `Manual` show "Balance" in the asset form.
-- [ ] **P69-F01-balance-tracked-holding-option-04** The "Tracked by" group is disabled, with the explanatory helper text, on a holding with at least 1 transaction, credit, corporate action or saved price.
+- [ ] **P69-F01-balance-tracked-holding-option-04** The "Tracked by" mode is shown read-only, with the explanatory helper text, on a holding with at least 1 transaction, credit, corporate action or saved price.
 - [ ] **P69-F01-balance-tracked-holding-option-05** Valuation reads a snapshot as a total or a per-unit price from the asset's valuation method, not from the method stored on the snapshot.
 - [ ] **P69-F01-balance-tracked-holding-option-06** A mode change sent through the API for a holding with transactions is rejected with the "can't be changed" message, and nothing is saved.
 - [ ] **P69-F01-balance-tracked-holding-option-07** The asset header shows a "Balance" tag for balance-tracked holdings only.

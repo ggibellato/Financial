@@ -14,6 +14,10 @@ public abstract class ValuationRules
 
     public abstract bool AllowsZeroPrice { get; }
 
+    public abstract bool FetchesAutomatically { get; }
+
+    public abstract PriceSource ManualEntrySource { get; }
+
     public abstract decimal ValueAt(decimal quantity, AssetPriceSnapshot price);
 
     public abstract decimal ValueOfPortion(decimal shares, decimal quantityHeld, AssetPriceSnapshot price);
@@ -23,6 +27,10 @@ public abstract class ValuationRules
         public override bool ForBalanceHoldings => false;
 
         public override bool AllowsZeroPrice => false;
+
+        public override bool FetchesAutomatically => true;
+
+        public override PriceSource ManualEntrySource => PriceSource.Manual;
 
         public override decimal ValueAt(decimal quantity, AssetPriceSnapshot price) => quantity * price.Price;
 
@@ -34,6 +42,10 @@ public abstract class ValuationRules
         public override bool ForBalanceHoldings => true;
 
         public override bool AllowsZeroPrice => true;
+
+        public override bool FetchesAutomatically => false;
+
+        public override PriceSource ManualEntrySource => PriceSource.ProviderValuation;
 
         public override decimal ValueAt(decimal quantity, AssetPriceSnapshot price) => price.Price;
 

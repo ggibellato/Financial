@@ -1,6 +1,7 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
 using Financial.Investment.Domain.Rules;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -1312,5 +1313,98 @@ public class AssetTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 5m, 120m, 0m));
 
         asset.RealisedGainLossSharesOnly.Should().Be(asset.RealisedGains.Sum(r => r.GainLoss)).And.Be(350m);
+    }
+
+    [Theory]
+    [InlineData(ValuationMethod.Unspecified, false)]
+    [InlineData(ValuationMethod.MarketPrice, false)]
+    [InlineData(ValuationMethod.BondQuote, false)]
+    [InlineData(ValuationMethod.ProviderValue, true)]
+    [InlineData(ValuationMethod.Manual, true)]
+    public void IsTrackedByBalance_FollowsValuationMethod(ValuationMethod method, bool expected)
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+
+        asset.SetValuationMethod(method);
+
+        asset.IsTrackedByBalance.Should().Be(expected);
+    }
+
+    [Fact]
+    public void HasRecords_NoHistory_IsFalse()
+    {
+        Asset.Create("PREV", "", "", "PREV").HasRecords.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasRecords_WithATransaction_IsTrue()
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        asset.HasRecords.Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasRecords_WithACredit_IsTrue()
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+        asset.AddCredit(Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m));
+
+        asset.HasRecords.Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasRecords_WithAPrice_IsTrue()
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+        asset.SetPrice(new DateOnly(2024, 1, 1), 100m, isManual: true);
+
+        asset.HasRecords.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(ValuationMethod.MarketPrice, ValuationMethod.ProviderValue)]
+    [InlineData(ValuationMethod.ProviderValue, ValuationMethod.Unspecified)]
+    public void SetValuationMethod_ModeChangeWithHistory_Throws(ValuationMethod current, ValuationMethod next)
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+        asset.SetValuationMethod(current);
+        asset.SetPrice(new DateOnly(2024, 1, 1), 100m, isManual: true);
+
+        var act = () => asset.SetValuationMethod(next);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<InvestmentRuleViolationException>().WithMessage(Asset.TrackingModeLockedMessage);
+            asset.ValuationMethod.Should().Be(current);
+        }
+    }
+
+    [Theory]
+    [InlineData(ValuationMethod.MarketPrice, ValuationMethod.Unspecified)]
+    [InlineData(ValuationMethod.Manual, ValuationMethod.ProviderValue)]
+    public void SetValuationMethod_SameModeWithHistory_IsAllowed(ValuationMethod current, ValuationMethod next)
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+        asset.SetValuationMethod(current);
+        asset.SetPrice(new DateOnly(2024, 1, 1), 100m, isManual: true);
+
+        asset.SetValuationMethod(next);
+
+        asset.ValuationMethod.Should().Be(next);
+    }
+
+    [Theory]
+    [InlineData(ValuationMethod.Unspecified, ValuationMethod.ProviderValue)]
+    [InlineData(ValuationMethod.ProviderValue, ValuationMethod.Unspecified)]
+    public void SetValuationMethod_ModeChangeWithoutHistory_Changes(ValuationMethod current, ValuationMethod next)
+    {
+        var asset = Asset.Create("PREV", "", "", "PREV");
+        asset.SetValuationMethod(current);
+
+        asset.SetValuationMethod(next);
+
+        asset.ValuationMethod.Should().Be(next);
     }
 }

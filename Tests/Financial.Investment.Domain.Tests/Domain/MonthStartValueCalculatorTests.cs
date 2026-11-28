@@ -96,17 +96,6 @@ public class MonthStartValueCalculatorTests
     }
 
     [Fact]
-    public void Calculate_BalanceAssetWithAPriceSavedAsMarketPrice_UsesTheSnapshotTotal()
-    {
-        var asset = Asset.Create("FUND", "ISIN", "", "FUND");
-        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 5), Transaction.TransactionType.Buy, 16m, 100m, 0m));
-        asset.SetPrice(FirstOfNovember, 5000m, isManual: false);
-        asset.SetValuationMethod(ValuationMethod.ProviderValue);
-
-        MonthStartValueCalculator.Calculate(asset, FirstOfNovember, "BRL").Value.Should().Be(5000m);
-    }
-
-    [Fact]
     public void Calculate_PriceSavedWithoutACurrency_UsesTheCurrencyOfTheLatestTransactionByDate()
     {
         var asset = Asset.Create("VWRL", "ISIN", "LSE", "VWRL");

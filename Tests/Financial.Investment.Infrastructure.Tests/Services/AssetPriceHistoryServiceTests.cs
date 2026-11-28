@@ -17,6 +17,7 @@ public class AssetPriceHistoryServiceTests
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
     private const string AssetName = "BCIA11";
+    private const string NewAssetName = "NEWASSET";
 
     [Fact]
     public async Task SetPriceAsync_NewDate_AddsManualEntryInTheGivenCurrency()
@@ -235,24 +236,36 @@ public class AssetPriceHistoryServiceTests
         }
     }
 
-    [Fact]
-    public async Task SetPriceAsync_AssetClassifiedProviderValue_RecordsProviderValuationSource()
+    [Theory]
+    [InlineData(ValuationMethod.ProviderValue)]
+    [InlineData(ValuationMethod.Manual)]
+    public async Task SetPriceAsync_BalanceTrackedHolding_RecordsProviderValuationSource(ValuationMethod valuationMethod)
     {
         var (service, repository, _, tempFile) = CreateServiceWithRepository();
         try
         {
-            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
+            repository.GetInvestments().RegisterAsset(BrokerName, PortfolioName, NewAssetName, valuationMethod);
 
             var result = await service.SetPriceAsync(new SetAssetPriceDTO
             {
                 BrokerName = BrokerName,
                 PortfolioName = PortfolioName,
-                AssetName = AssetName,
+                AssetName = NewAssetName,
                 Date = new DateOnly(2026, 8, 15),
                 Price = 5000m
             });
 
-            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.ProviderValuation);
+            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.ProviderValuation && p.IsManual);
+
+            var deleted = await service.DeletePriceAsync(new DeleteAssetPriceDTO
+            {
+                BrokerName = BrokerName,
+                PortfolioName = PortfolioName,
+                AssetName = NewAssetName,
+                Date = new DateOnly(2026, 8, 15)
+            });
+
+            deleted!.PriceSnapshots.Should().BeEmpty();
         }
         finally
         {

@@ -46,13 +46,7 @@ public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
                 request.AssetName,
                 asset =>
                 {
-                    // A holding classified ProviderValue records its worth from the provider's own
-                    // statement/portal, not an override of a market price - the source says so even
-                    // though both are entered by the investor through the same form.
-                    var source = asset.ValuationMethod == ValuationMethod.ProviderValue
-                        ? PriceSource.ProviderValuation
-                        : PriceSource.Manual;
-                    asset.SetPrice(request.Date, request.Price, source, request.Currency ?? string.Empty, request.SourceReference, _timeProvider.GetUtcNow(), _timeProvider.GetLocalToday());
+                    asset.SetPrice(request.Date, request.Price, asset.ValuationRules.ManualEntrySource, request.Currency ?? string.Empty, request.SourceReference, _timeProvider.GetUtcNow(), _timeProvider.GetLocalToday());
                     return true;
                 }).ConfigureAwait(false);
 

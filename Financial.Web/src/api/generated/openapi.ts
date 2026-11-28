@@ -7853,7 +7853,9 @@ export interface components {
             cnpj?: null | string;
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
+            hasRecords?: boolean;
             incomePolicy?: components["schemas"]["IncomePolicy"];
+            isTrackedByBalance?: boolean;
             isin?: string;
             localTypeCode?: string;
             name: string;

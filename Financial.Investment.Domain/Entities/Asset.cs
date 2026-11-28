@@ -30,6 +30,12 @@ public class Asset
 
     public ValuationRules ValuationRules => ValuationRules.For(ValuationMethod);
 
+    public bool IsTrackedByBalance => ValuationRules.ForBalanceHoldings;
+
+    public const string TrackingModeLockedMessage = "This holding now has transactions or prices, so how it is tracked can't be changed.";
+
+    public bool HasRecords => Transactions.Count > 0 || _credits.Count > 0 || _corporateActions.Count > 0 || _priceSnapshots.Count > 0;
+
     public const int MaxSegmentLength = 40;
 
     public string? Segment { get; private set; }
@@ -651,7 +657,15 @@ public class Asset
         _credits.Add(credit);
     }
 
-    public void SetValuationMethod(ValuationMethod valuationMethod) => ValuationMethod = valuationMethod;
+    public void SetValuationMethod(ValuationMethod valuationMethod)
+    {
+        if (ValuationRules.For(valuationMethod).ForBalanceHoldings != IsTrackedByBalance && HasRecords)
+        {
+            throw new InvestmentRuleViolationException(TrackingModeLockedMessage);
+        }
+
+        ValuationMethod = valuationMethod;
+    }
 
     public void SetIncomePolicy(IncomePolicy incomePolicy) => IncomePolicy = incomePolicy;
 

@@ -201,21 +201,13 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task SetPrice_ZeroPrice_AssetClassifiedProviderValue_ReturnsOk()
     {
-        var updateResponse = await Client.PutAsJsonAsync("/api/v1/financial/assets/XPI/Default/BCIA11", new AssetAdminUpdateDTO
-        {
-            Name = "BCIA11",
-            ISIN = "",
-            Exchange = "BVMF",
-            Ticker = "BCIA11",
-            ValuationMethod = ValuationMethod.ProviderValue
-        });
-        updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        await CreateAssetWithoutHistoryAsync(ValuationMethod.ProviderValue);
 
         var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
-            AssetName = "BCIA11",
+            AssetName = NewAssetName,
             Date = new DateOnly(2026, 8, 15),
             Price = 0m
         });
@@ -228,25 +220,18 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task GetCurrentPrice_AssetClassifiedManual_ReturnsRecordedValueWithoutFetching()
     {
-        await Client.PutAsJsonAsync("/api/v1/financial/assets/XPI/Default/BCIA11", new AssetAdminUpdateDTO
-        {
-            Name = "BCIA11",
-            ISIN = "",
-            Exchange = "BVMF",
-            Ticker = "BCIA11",
-            ValuationMethod = ValuationMethod.Manual
-        });
+        await CreateAssetWithoutHistoryAsync(ValuationMethod.Manual);
         await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
-            AssetName = "BCIA11",
+            AssetName = NewAssetName,
             Date = TestClock.Today.AddDays(-30),
             Price = 1234.56m
         });
 
         var response = await Client.GetAsync(
-            "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");
+            $"/api/v1/financial/prices/current?exchange=BVMF&ticker={NewAssetName}&brokerName=XPI&portfolioName=Default&assetName={NewAssetName}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var price = await response.Content.ReadFromJsonAsync<AssetPriceDTO>();
@@ -412,5 +397,21 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     {
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) =>
             throw new ArgumentException("Simulated fetch failure.", nameof(request));
+    }
+
+    private const string NewAssetName = "NEWASSET";
+
+    private async Task CreateAssetWithoutHistoryAsync(ValuationMethod valuationMethod)
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = NewAssetName,
+            Exchange = "BVMF",
+            Ticker = NewAssetName,
+            ValuationMethod = valuationMethod
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

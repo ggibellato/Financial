@@ -24,6 +24,7 @@ public class AssetPriceLookupServiceTests
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
     private const string AssetName = "BCIA11";
+    private const string NewAssetName = "NEWASSET";
 
     [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PropagatesTheFetchedSourceAndReportsCurrent()
@@ -447,11 +448,10 @@ public class AssetPriceLookupServiceTests
         try
         {
             var oldDate = TestClock.Today.AddDays(-30);
-            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
-            asset.SetValuationMethod(valuationMethod);
+            var asset = repository.GetInvestments().RegisterAsset(BrokerName, PortfolioName, NewAssetName, valuationMethod);
             asset.SetPrice(oldDate, 5000m, isManual: false);
 
-            var result = await service.GetCurrentPriceAsync(BuildRequest());
+            var result = await service.GetCurrentPriceAsync(BuildRequest(NewAssetName));
 
             result.Price.Should().Be(5000m);
             repository.SaveCount.Should().Be(0);
@@ -468,9 +468,9 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
         try
         {
-            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
+            repository.GetInvestments().RegisterAsset(BrokerName, PortfolioName, NewAssetName, ValuationMethod.ProviderValue);
 
-            var result = await service.GetCurrentPriceAsync(BuildRequest());
+            var result = await service.GetCurrentPriceAsync(BuildRequest(NewAssetName));
 
             result.MarketStatus.Should().Be(MarketStatus.Unavailable);
         }
@@ -523,13 +523,13 @@ public class AssetPriceLookupServiceTests
         }
     }
 
-    private static AssetPriceRequestDTO BuildRequest() => new()
+    private static AssetPriceRequestDTO BuildRequest(string assetName = AssetName) => new()
     {
         Exchange = "BVMF",
-        Ticker = AssetName,
+        Ticker = assetName,
         BrokerName = BrokerName,
         PortfolioName = PortfolioName,
-        AssetName = AssetName
+        AssetName = assetName
     };
 
     [Fact]

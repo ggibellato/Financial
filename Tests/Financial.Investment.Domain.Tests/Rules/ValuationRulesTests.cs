@@ -37,6 +37,18 @@ public class ValuationRulesTests
     }
 
     [Fact]
+    public void PositionTotal_IsNeverFetchedAndRecordsProviderValuation()
+    {
+        using (new AssertionScope())
+        {
+            ValuationRules.PositionTotal.FetchesAutomatically.Should().BeFalse();
+            ValuationRules.PositionTotal.ManualEntrySource.Should().Be(PriceSource.ProviderValuation);
+            ValuationRules.PerUnit.FetchesAutomatically.Should().BeTrue();
+            ValuationRules.PerUnit.ManualEntrySource.Should().Be(PriceSource.Manual);
+        }
+    }
+
+    [Fact]
     public void AllowsZeroPrice_OnlyForPositionTotal()
     {
         using (new AssertionScope())

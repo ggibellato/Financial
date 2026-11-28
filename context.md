@@ -63,6 +63,8 @@ Supported asset classes (`GlobalAssetClass` enum) include:
 
 Assets are classified using a two-level system: `CountryCode` (BR, US, UK) combined with a `LocalTypeCode` string (e.g., `Acoes`, `FII`, `TesouroDireto`, `ConventionalGilt`, `CreditoImobiliario`) maps to a `GlobalAssetClass`. Cryptocurrencies (e.g. Bitcoin) are held in a dedicated broker (Coinbase); there is no `LocalTypeCode` mapping row for them yet, so the `Cryptocurrency` class is set directly on the asset instead of being derived from the mapping table.
 
+Every holding is tracked either by **Quantity and price** (units times a price) or by **Balance** (the broker shows only the position's total, as for a pension plan). The mode is derived from the asset's valuation method (`ProviderValue` and `Manual` are Balance) and is the only authority for how a saved price is read. It is chosen in the asset form and locked once the holding has any transaction, credit, corporate action or saved price, so its history is never reinterpreted.
+
 Note: ISA is a UK tax wrapper (account type), not an asset class. ISA accounts at FreeTrade or Trading 212 hold assets of the classes above.
 
 The solution must be extensible so that new asset classes can be added in the future without significant architectural changes.

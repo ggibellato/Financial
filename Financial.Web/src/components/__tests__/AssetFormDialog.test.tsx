@@ -30,6 +30,8 @@ const EXISTING_ASSET: AssetAdminDto = {
   localTypeCode: 'FII',
   class: 'RealEstate',
   valuationMethod: 'Unspecified',
+  isTrackedByBalance: false,
+  hasRecords: false,
   incomePolicy: 'Unknown',
   quantity: 100,
   segment: 'Logistics',
@@ -260,5 +262,70 @@ describe('AssetFormDialog', () => {
 
     expect(await screen.findByText('Pick source must be Recommended or MyChoice.')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /^Pick source/ })).toHaveValue('Recommended')
+  })
+
+  it('offers Tracked by with Quantity and price selected on a new asset', () => {
+    render(
+      <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} segments={SEGMENTS} onCancel={vi.fn()} onSubmit={vi.fn()} />,
+    )
+
+    const group = screen.getByRole('radiogroup', { name: 'Tracked by' })
+    expect(within(group).getByRole('radio', { name: 'Quantity and price' })).toBeChecked()
+    expect(within(group).getByRole('radio', { name: 'Balance' })).not.toBeChecked()
+    expect(screen.getByText(/whose broker shows only a balance/)).toBeInTheDocument()
+  })
+
+  it('shows Balance on an existing balance-tracked holding and submits the chosen mode', async () => {
+    const onSubmit = renderEditing({ valuationMethod: 'Manual', isTrackedByBalance: true })
+    const group = screen.getByRole('radiogroup', { name: 'Tracked by' })
+    expect(within(group).getByRole('radio', { name: 'Balance' })).toBeChecked()
+
+    await userEvent.click(within(group).getByRole('radio', { name: 'Quantity and price' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ trackingMode: 'quantity' })))
+  })
+
+  it('[AC P69-F01-balance-tracked-holding-option-04] shows the mode read-only with the locked hint when the holding has history', () => {
+    renderEditing({ isTrackedByBalance: true, hasRecords: true })
+
+    expect(screen.queryByRole('radiogroup', { name: 'Tracked by' })).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /^Tracked by/ })).toHaveValue('Balance')
+    expect(screen.getByRole('textbox', { name: /^Tracked by/ })).toHaveAttribute('readonly')
+    expect(screen.getByText(/Can't change how this holding is tracked/)).toBeInTheDocument()
+  })
+
+  it('[AC P69-F01-balance-tracked-holding-option-08] Tracked by is a named radio group operable with the keyboard', async () => {
+    renderEditing()
+    const group = screen.getByRole('radiogroup', { name: 'Tracked by' })
+    within(group).getByRole('radio', { name: 'Quantity and price' }).focus()
+
+    await userEvent.keyboard('{ArrowDown}')
+
+    expect(within(group).getByRole('radio', { name: 'Balance' })).toBeChecked()
+    expect(within(group).getByRole('radio', { name: 'Balance' })).toHaveFocus()
+  })
+
+  it('counts a changed tracking mode as an unsaved change', async () => {
+    const onCancel = vi.fn()
+    render(
+      <AssetFormDialog asset={EXISTING_ASSET} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} segments={SEGMENTS} onCancel={onCancel} onSubmit={vi.fn()} />,
+    )
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Balance' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('keeps the chosen mode after a failed save', async () => {
+    renderEditing({}, vi.fn().mockRejectedValue(new Error('The asset could not be saved.')))
+    await userEvent.click(screen.getByRole('radio', { name: 'Balance' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('The asset could not be saved.')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Balance' })).toBeChecked()
   })
 })
