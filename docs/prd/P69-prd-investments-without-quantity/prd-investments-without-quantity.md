@@ -441,14 +441,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Balance-Tracked Holding Option
-- [ ] A new holding can be created with "Tracked by: Balance", and it is stored with the `ProviderValue` valuation method.
-- [ ] A new holding created without a choice is "Quantity and price", and existing holdings keep their current behaviour.
-- [ ] Holdings already set to `ProviderValue` or `Manual` show "Balance" in the asset form.
-- [ ] The "Tracked by" group is disabled, with the explanatory helper text, on a holding with at least 1 transaction, credit, corporate action or saved price.
-- [ ] Valuation reads a snapshot as a total or a per-unit price from the asset's valuation method, not from the method stored on the snapshot.
-- [ ] A mode change sent through the API for a holding with transactions is rejected with the "can't be changed" message, and nothing is saved.
-- [ ] The asset header shows a "Balance" tag for balance-tracked holdings only.
-- [ ] The "Tracked by" group is keyboard operable, has a visible focus indicator and an accessible group name.
+- [ ] **P69-F01-balance-tracked-holding-option-01** A new holding can be created with "Tracked by: Balance", and it is stored with the `ProviderValue` valuation method.
+- [ ] **P69-F01-balance-tracked-holding-option-02** A new holding created without a choice is "Quantity and price", and existing holdings keep their current behaviour.
+- [ ] **P69-F01-balance-tracked-holding-option-03** Holdings already set to `ProviderValue` or `Manual` show "Balance" in the asset form.
+- [ ] **P69-F01-balance-tracked-holding-option-04** The "Tracked by" group is disabled, with the explanatory helper text, on a holding with at least 1 transaction, credit, corporate action or saved price.
+- [ ] **P69-F01-balance-tracked-holding-option-05** Valuation reads a snapshot as a total or a per-unit price from the asset's valuation method, not from the method stored on the snapshot.
+- [ ] **P69-F01-balance-tracked-holding-option-06** A mode change sent through the API for a holding with transactions is rejected with the "can't be changed" message, and nothing is saved.
+- [ ] **P69-F01-balance-tracked-holding-option-07** The asset header shows a "Balance" tag for balance-tracked holdings only.
+- [ ] **P69-F01-balance-tracked-holding-option-08** The "Tracked by" group is keyboard operable, has a visible focus indicator and an accessible group name.
 
 ### F02. Deposits and Withdrawals
 - [ ] On a balance-tracked holding, the transaction form offers only Deposit and Withdrawal, with no quantity or unit price field.
