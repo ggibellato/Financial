@@ -25,7 +25,8 @@ public static class DividendAttributionCalculator
     public static DividendAttribution? Calculate(
         Credit credit,
         IEnumerable<Transaction> transactions,
-        AssetPriceSnapshot? priceOnDate)
+        AssetPriceSnapshot? priceOnDate,
+        ValuationRules rules)
     {
         var openLots = OpenLotTracker.GetOpenLots(transactions.Where(t => t.Date <= credit.Date));
         var quantityHeld = openLots.Sum(lot => lot.RemainingQuantity);
@@ -39,15 +40,9 @@ public static class DividendAttributionCalculator
         var averageCostPerShare = openLots.Sum(lot => lot.RemainingQuantity * lot.UnitCost) / quantityHeld;
         var investedAmount = sharesForDividend * averageCostPerShare;
 
-        // ProviderValue/Manual snapshots record the whole position's worth, not a per-share price
-        // (see AssetPriceSnapshot.ValidatePrice), so it must be pro-rated to the attributed shares'
-        // portion of the position held on the credit date - using it as-is would value the shares
-        // that earned this dividend as if they were the entire holding.
         var marketValueOnDate = priceOnDate is null
             ? (decimal?)null
-            : priceOnDate.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual
-                ? priceOnDate.Price * (sharesForDividend / quantityHeld)
-                : sharesForDividend * priceOnDate.Price;
+            : rules.ValueOfPortion(sharesForDividend, quantityHeld, priceOnDate);
 
         return new DividendAttribution(
             sharesForDividend,

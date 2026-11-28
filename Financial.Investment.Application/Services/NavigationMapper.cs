@@ -113,7 +113,8 @@ internal static class NavigationMapper
         var attribution = DividendAttributionCalculator.Calculate(
             credit,
             asset.Transactions,
-            asset.GetPriceAsOf(DateOnly.FromDateTime(credit.Date)));
+            asset.GetPriceAsOf(DateOnly.FromDateTime(credit.Date)),
+            asset.ValuationRules);
 
         return new CreditDTO
         {

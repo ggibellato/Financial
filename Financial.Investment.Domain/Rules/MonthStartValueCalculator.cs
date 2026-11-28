@@ -38,7 +38,7 @@ public static class MonthStartValueCalculator
     private static decimal ValueAt(Asset asset, DateOnly monthStart, AssetPriceSnapshot price)
     {
         var quantity = QuantityInPriceBasis(asset, monthStart, price.Date);
-        return quantity == 0m ? 0m : HoldingValuationCalculator.ValueAt(quantity, price);
+        return quantity == 0m ? 0m : asset.ValuationRules.ValueAt(quantity, price);
     }
 
     private static decimal QuantityInPriceBasis(Asset asset, DateOnly monthStart, DateOnly priceDate) =>

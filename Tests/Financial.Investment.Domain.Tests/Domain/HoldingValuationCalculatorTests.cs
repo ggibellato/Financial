@@ -1,6 +1,7 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.Investment.Domain.Tests;
 
@@ -10,7 +11,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_NoPrice_MarketValueAndUnrealisedGainAndPriceAsOfDateAreAllNull()
     {
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().BeNull();
         result.UnrealisedGain.Should().BeNull();
@@ -22,7 +23,7 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 8m);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(80m);
         result.UnrealisedGain.Should().Be(30m);
@@ -34,7 +35,7 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 8m);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.CostOfUnitsHeld.Should().Be(50m);
     }
@@ -44,7 +45,7 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 3m);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(30m);
         result.UnrealisedGain.Should().Be(result.MarketValue!.Value - result.CostOfUnitsHeld);
@@ -57,7 +58,7 @@ public class HoldingValuationCalculatorTests
         var valuationDate = new DateOnly(2026, 8, 31); // Monday
         var price = CreatePrice(valuationDate, 8m);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, valuationDate);
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, valuationDate);
 
         result.MarketStatus.Should().Be(MarketStatus.Current);
     }
@@ -69,7 +70,7 @@ public class HoldingValuationCalculatorTests
         var monday = new DateOnly(2026, 8, 31);
         var price = CreatePrice(friday, 8m);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, monday);
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, monday);
 
         result.MarketStatus.Should().Be(MarketStatus.Current);
     }
@@ -81,7 +82,7 @@ public class HoldingValuationCalculatorTests
         var tuesday = new DateOnly(2026, 9, 1);
         var price = CreatePrice(friday, 8m);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, tuesday);
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, tuesday);
 
         result.MarketStatus.Should().Be(MarketStatus.Stale);
     }
@@ -89,7 +90,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_NoPrice_PriceOnlyReturnAndTotalReturnDefaultNull()
     {
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.PriceOnlyReturn.Should().BeNull();
         result.TotalReturn.Should().BeNull();
@@ -98,7 +99,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_ZeroQuantityAndNoPrice_MarketValueIsZero_NotUnavailable()
     {
-        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(0m);
     }
@@ -106,7 +107,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_ZeroQuantityAndNoPrice_UnrealisedGainIsZero()
     {
-        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.UnrealisedGain.Should().Be(0m);
     }
@@ -114,7 +115,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_ZeroQuantityAndNoPrice_ReportsNoPriceAsOfDateAndIsNeverStale()
     {
-        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.PriceAsOfDate.Should().BeNull();
         result.MarketStatus.Should().Be(MarketStatus.Current);
@@ -123,7 +124,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_NonZeroQuantityAndNoPrice_StillReportsUnavailable()
     {
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().BeNull();
         result.MarketStatus.Should().Be(MarketStatus.Unavailable);
@@ -167,7 +168,7 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 5000m, ValuationMethod.ProviderValue);
 
-        var result = HoldingValuationCalculator.Calculate(0m, 0m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(0m, 0m, price, ValuationRules.PositionTotal, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(5000m);
     }
@@ -177,7 +178,7 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 1234.56m, ValuationMethod.Manual);
 
-        var result = HoldingValuationCalculator.Calculate(0m, 0m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(0m, 0m, price, ValuationRules.PositionTotal, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(1234.56m);
     }
@@ -187,7 +188,7 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 0m, ValuationMethod.ProviderValue);
 
-        var result = HoldingValuationCalculator.Calculate(1m, 200m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(1m, 200m, price, ValuationRules.PositionTotal, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(0m);
         result.UnrealisedGain.Should().Be(-200m);
@@ -200,7 +201,7 @@ public class HoldingValuationCalculatorTests
         // Asset table) - the recorded figure is still the whole answer, not multiplied by it.
         var price = CreatePrice(new DateOnly(2026, 9, 10), 5000m, ValuationMethod.ProviderValue);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PositionTotal, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(5000m);
     }
@@ -210,9 +211,41 @@ public class HoldingValuationCalculatorTests
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 8m, ValuationMethod.MarketPrice);
 
-        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().Be(80m);
+    }
+
+    [Fact]
+    public void Calculate_BalanceRules_ReadSnapshotAsTotal_EvenWhenSnapshotSaysMarketPrice()
+    {
+        var price = CreatePrice(new DateOnly(2026, 9, 10), 5000m, ValuationMethod.MarketPrice);
+
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PositionTotal, new DateOnly(2026, 9, 10));
+
+        result.MarketValue.Should().Be(5000m);
+    }
+
+    [Fact]
+    public void Calculate_QuantityRules_ReadSnapshotPerUnit_EvenWhenSnapshotSaysProviderValue()
+    {
+        var price = CreatePrice(new DateOnly(2026, 9, 10), 8m, ValuationMethod.ProviderValue);
+
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price, ValuationRules.PerUnit, new DateOnly(2026, 9, 10));
+
+        result.MarketValue.Should().Be(80m);
+    }
+
+    [Fact]
+    public void Calculate_BalanceRules_NoSnapshot_IsUnavailable()
+    {
+        var result = HoldingValuationCalculator.Calculate(0m, 0m, price: null, ValuationRules.PositionTotal, new DateOnly(2026, 9, 10));
+
+        using (new AssertionScope())
+        {
+            result.MarketValue.Should().BeNull();
+            result.MarketStatus.Should().Be(MarketStatus.Unavailable);
+        }
     }
 
     private static AssetPriceSnapshot CreatePrice(DateOnly date, decimal price, ValuationMethod valuationMethod = ValuationMethod.MarketPrice) =>
