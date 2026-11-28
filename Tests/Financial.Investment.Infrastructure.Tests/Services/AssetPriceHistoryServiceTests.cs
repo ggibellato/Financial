@@ -17,6 +17,7 @@ public class AssetPriceHistoryServiceTests
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
     private const string AssetName = "BCIA11";
+    private const string NewAssetName = "NEWASSET";
 
     [Fact]
     public async Task SetPriceAsync_NewDate_AddsManualEntryInTheGivenCurrency()
@@ -235,19 +236,23 @@ public class AssetPriceHistoryServiceTests
         }
     }
 
-    [Fact]
-    public async Task SetPriceAsync_AssetClassifiedProviderValue_RecordsProviderValuationSource()
+    [Theory]
+    [InlineData(ValuationMethod.ProviderValue)]
+    [InlineData(ValuationMethod.Manual)]
+    public async Task SetPriceAsync_BalanceTrackedHolding_RecordsProviderValuationSource(ValuationMethod valuationMethod)
     {
         var (service, repository, _, tempFile) = CreateServiceWithRepository();
         try
         {
-            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
+            var asset = Asset.Create(NewAssetName, string.Empty, "BVMF", NewAssetName);
+            asset.SetValuationMethod(valuationMethod);
+            repository.GetInvestments().GetBroker(BrokerName, preferHistoric: false).GetPortfolio(PortfolioName).RegisterAsset(asset);
 
             var result = await service.SetPriceAsync(new SetAssetPriceDTO
             {
                 BrokerName = BrokerName,
                 PortfolioName = PortfolioName,
-                AssetName = AssetName,
+                AssetName = NewAssetName,
                 Date = new DateOnly(2026, 8, 15),
                 Price = 5000m
             });

@@ -173,6 +173,8 @@ public sealed class AssetAdminService : IAssetAdminService
         LocalTypeCode = asset.LocalTypeCode,
         Class = asset.Class,
         ValuationMethod = asset.ValuationMethod,
+        IsTrackedByBalance = asset.IsTrackedByBalance,
+        HasRecords = asset.HasRecords,
         IncomePolicy = asset.IncomePolicy,
         Segment = asset.Segment,
         PickSource = asset.PickSource,

@@ -1586,8 +1586,14 @@
           "exchange": {
             "type": "string"
           },
+          "hasRecords": {
+            "type": "boolean"
+          },
           "incomePolicy": {
             "$ref": "#/components/schemas/IncomePolicy"
+          },
+          "isTrackedByBalance": {
+            "type": "boolean"
           },
           "isin": {
             "type": "string"

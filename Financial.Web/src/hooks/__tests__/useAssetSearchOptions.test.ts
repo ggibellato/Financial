@@ -45,6 +45,8 @@ function makeAsset(overrides: Partial<AssetAdminDto>): AssetAdminDto {
     localTypeCode: '',
     class: 'Unknown',
     valuationMethod: 'Unspecified',
+    isTrackedByBalance: false,
+    hasRecords: false,
     incomePolicy: 'Unknown',
     segment: null,
     pickSource: null,

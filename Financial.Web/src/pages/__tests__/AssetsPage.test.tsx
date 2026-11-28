@@ -48,6 +48,8 @@ const ASSETS: AssetAdminDto[] = [
     localTypeCode: 'FII',
     class: 'RealEstate',
     valuationMethod: 'Unspecified',
+    isTrackedByBalance: false,
+    hasRecords: false,
     incomePolicy: 'Unknown',
     segment: null,
     pickSource: null,
@@ -67,6 +69,8 @@ const ASSETS: AssetAdminDto[] = [
     localTypeCode: '',
     class: 'Unknown',
     valuationMethod: 'Unspecified',
+    isTrackedByBalance: false,
+    hasRecords: false,
     incomePolicy: 'Unknown',
     segment: null,
     pickSource: null,
@@ -180,6 +184,49 @@ describe('AssetsPage', () => {
 
     await waitFor(() =>
       expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', expect.objectContaining({ class: null }), 'historic'),
+    )
+  })
+
+  it('sends ProviderValue when creating a Balance holding', async () => {
+    createAssetMock.mockResolvedValue({ ...ASSETS[0], name: 'NEWASSET', quantity: 0 })
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New asset' }))
+    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'NEWASSET' } })
+    fireEvent.click(screen.getByRole('radio', { name: 'Balance' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add asset' }))
+
+    await waitFor(() => expect(createAssetMock).toHaveBeenCalledWith(expect.objectContaining({ valuationMethod: 'ProviderValue' })))
+  })
+
+  it('sends null when the tracking mode is unchanged', async () => {
+    updateAssetMock.mockResolvedValue(ASSETS[0])
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit BCIA11' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', expect.objectContaining({ valuationMethod: null }), 'active'),
+    )
+  })
+
+  it('sends Unspecified when switching a Balance holding to Quantity and price', async () => {
+    const balance = { ...ASSETS[0], valuationMethod: 'ProviderValue' as const, isTrackedByBalance: true }
+    getAdminAssetsMock.mockResolvedValue([balance, ASSETS[1]])
+    updateAssetMock.mockResolvedValue(balance)
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit BCIA11' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Quantity and price' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', expect.objectContaining({ valuationMethod: 'Unspecified' }), 'active'),
     )
   })
 

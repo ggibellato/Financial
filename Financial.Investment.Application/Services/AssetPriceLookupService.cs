@@ -48,10 +48,10 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
 
             var describedRequest = DescribeWith(asset, request);
 
-            // A ProviderValue/Manual holding's worth only ever changes when the investor records
-            // one - never from a fetch, at any date, not just "today" (FR-007). Its most recently
-            // recorded snapshot is authoritative regardless of age.
-            if (asset.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual)
+            // A balance holding's worth only ever changes when the investor records one - never
+            // from a fetch, at any date, not just "today" (FR-007). Its most recently recorded
+            // snapshot is authoritative regardless of age.
+            if (!asset.ValuationRules.FetchesAutomatically)
             {
                 var recorded = asset.GetMostRecentPrice();
                 return CompleteSuccessfully(span, recorded is null ? UnavailablePriceFor(describedRequest) : BuildPriceFrom(recorded, describedRequest));

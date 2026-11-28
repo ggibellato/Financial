@@ -563,6 +563,46 @@ public class AssetAdminServiceTests
         _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AssetAdminService.UpdateAsset");
     }
 
+    [Fact]
+    public void GetAssets_MapsTrackingFlags()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.CreatePortfolio("Default");
+        var balance = Asset.Create("PREV", "", "", "PREV");
+        balance.SetValuationMethod(ValuationMethod.ProviderValue);
+        var quantity = Asset.Create("AAAA", "ISIN123", "NYSE", "AAA");
+        quantity.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        portfolio.RegisterAsset(balance);
+        portfolio.RegisterAsset(quantity);
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = CreateService().GetAssets().ToDictionary(a => a.Name);
+
+        using (new AssertionScope())
+        {
+            result["PREV"].IsTrackedByBalance.Should().BeTrue();
+            result["PREV"].HasRecords.Should().BeFalse();
+            result["AAAA"].IsTrackedByBalance.Should().BeFalse();
+            result["AAAA"].HasRecords.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_ModeChangeWithHistory_ThrowsAndWritesNothing()
+    {
+        SeedBrokerWithAsset("AAAA");
+        _repository.Investments!.GetBroker("XPI", preferHistoric: false).GetPortfolio("Default").FindAsset("AAAA")!
+            .AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        var request = new AssetAdminUpdateDTO { Name = "AAAA", ValuationMethod = ValuationMethod.ProviderValue };
+
+        var act = async () => await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", request);
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>().WithMessage(Asset.TrackingModeLockedMessage);
+        _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.AssetAdminService.UpdateAsset");
+    }
+
     private void SeedBrokerWithAsset(string? assetName)
     {
         _repository.Investments = Investments.Create();

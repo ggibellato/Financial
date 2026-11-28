@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Combobox, Field, InfoLabel, Input, Option, Select, type LabelProps } from '@fluentui/react-components'
+import { Combobox, Field, InfoLabel, Input, Option, Radio, RadioGroup, Select, type LabelProps } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
@@ -11,6 +11,7 @@ import { isValidIsin } from '../utils/validators'
 import { MAX_SEGMENT_LENGTH, SEGMENT_CLASSES, segmentKey } from '../utils/assetSegments'
 import { PICK_SOURCE_LABELS, PICK_SOURCE_ORDER } from '../utils/pickSource'
 import { optionalChoiceOptions } from '../utils/selectOptions'
+import { TRACKING_MODE_LABELS, TRACKING_MODE_ORDER, initialTrackingMode, type TrackingMode } from '../utils/trackingMode'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
 const CLASS_OPTIONS = [
@@ -27,6 +28,8 @@ const CLASS_OPTIONS = [
   'PrivateCredit',
 ] as const
 const PICK_SOURCE_OPTIONS = optionalChoiceOptions(PICK_SOURCE_ORDER, PICK_SOURCE_LABELS, 'Not set')
+const TRACKED_BY_HINT = 'For holdings whose broker shows only a balance, such as pension plans. You record deposits, withdrawals and the balance.'
+const TRACKED_BY_LOCKED_HINT = "Can't change how this holding is tracked because it has transactions or prices. Remove them first."
 
 export interface AssetFormValues {
   brokerName: string
@@ -39,6 +42,7 @@ export interface AssetFormValues {
   localTypeCode: string
   assetClass: string
   segment: string
+  trackingMode: TrackingMode
   pickSource: string
 }
 
@@ -63,9 +67,11 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, segm
   const [localTypeCode, setLocalTypeCode] = useState(asset?.localTypeCode ?? '')
   const [assetClass, setAssetClass] = useState<string>(asset?.class ?? 'Unknown')
   const [segment, setSegment] = useState(asset?.segment ?? '')
+  const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialTrackingMode(asset))
   const [pickSource, setPickSource] = useState<string>(asset?.pickSource ?? '')
+  const isTrackingModeLocked = asset?.hasRecords === true
   const { isSaving, error, failure, submit } = useDialogSubmit('The asset could not be saved.')
-  const form = useEntityForm({ brokerName, portfolioName, name, isin, exchange, ticker, country, localTypeCode, assetClass, segment, pickSource })
+  const form = useEntityForm({ brokerName, portfolioName, name, isin, exchange, ticker, country, localTypeCode, assetClass, segment, trackingMode, pickSource })
 
   const brokerPortfolios = portfolios.filter((p) => p.brokerName === brokerName)
 
@@ -116,6 +122,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, segm
         localTypeCode: localTypeCode.trim(),
         assetClass,
         segment: trimmedSegment,
+        trackingMode,
         pickSource,
       }),
     )
@@ -248,6 +255,18 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, segm
           </Combobox>
         </Field>
       )}
+
+      <Field label="Tracked by" hint={isTrackingModeLocked ? TRACKED_BY_LOCKED_HINT : TRACKED_BY_HINT}>
+        {isTrackingModeLocked ? (
+          <ReadOnlyInput value={TRACKING_MODE_LABELS[trackingMode]} />
+        ) : (
+          <RadioGroup value={trackingMode} onChange={(_, data) => setTrackingMode(data.value as TrackingMode)}>
+            {TRACKING_MODE_ORDER.map((mode) => (
+              <Radio key={mode} value={mode} label={TRACKING_MODE_LABELS[mode]} />
+            ))}
+          </RadioGroup>
+        )}
+      </Field>
 
       <Field
         label={{

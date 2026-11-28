@@ -30,6 +30,10 @@ public class AssetAdminDTO
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ValuationMethod ValuationMethod { get; set; } = ValuationMethod.Unspecified;
 
+    public bool IsTrackedByBalance { get; set; }
+
+    public bool HasRecords { get; set; }
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public IncomePolicy IncomePolicy { get; set; } = IncomePolicy.Unknown;
 

@@ -3,6 +3,7 @@ import { Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from
 import AdminEntityPage from '../components/AdminEntityPage'
 import AssetFormDialog, { type AssetFormValues } from '../components/AssetFormDialog'
 import { distinctSegments } from '../utils/assetSegments'
+import { initialTrackingMode, valuationMethodForCreate, valuationMethodForUpdate } from '../utils/trackingMode'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import TruncatedText from '../components/TruncatedText'
 import DataTableCell from '../components/grid/DataTableCell'
@@ -54,9 +55,7 @@ export default function AssetsPage() {
             // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
             // other selection is an explicit override.
             class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
-            // No form field yet for either of these - left null so the backend preserves whatever the
-            // asset already has (valuation method / income policy pickers are a later increment).
-            valuationMethod: null,
+            valuationMethod: valuationMethodForUpdate(initialTrackingMode(editingAsset), values.trackingMode),
             incomePolicy: null,
             segment: values.segment || null,
             pickSource: values.pickSource || null,
@@ -78,9 +77,7 @@ export default function AssetsPage() {
           // backend auto-resolves it from Country/LocalTypeCode; any other selection is an explicit
           // override.
           class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
-          // No form field yet for either of these - left null so the backend defaults them
-          // (valuation method / income policy pickers are a later increment).
-          valuationMethod: null,
+          valuationMethod: valuationMethodForCreate(values.trackingMode),
           incomePolicy: null,
           segment: values.segment || null,
           pickSource: values.pickSource || null,
