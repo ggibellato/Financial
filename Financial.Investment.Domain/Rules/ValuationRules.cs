@@ -10,13 +10,7 @@ public abstract class ValuationRules
     public static ValuationRules For(ValuationMethod method) =>
         method is ValuationMethod.ProviderValue or ValuationMethod.Manual ? PositionTotal : PerUnit;
 
-    public abstract bool IsBalance { get; }
-
     public abstract bool AllowsZeroPrice { get; }
-
-    public abstract bool FetchesAutomatically { get; }
-
-    public abstract PriceSource ManualEntrySource { get; }
 
     public abstract decimal ValueAt(decimal quantity, AssetPriceSnapshot price);
 
@@ -26,13 +20,7 @@ public abstract class ValuationRules
 
     private sealed class PerUnitRules : ValuationRules
     {
-        public override bool IsBalance => false;
-
         public override bool AllowsZeroPrice => false;
-
-        public override bool FetchesAutomatically => true;
-
-        public override PriceSource ManualEntrySource => PriceSource.Manual;
 
         public override decimal ValueAt(decimal quantity, AssetPriceSnapshot price) => quantity * price.Price;
 
@@ -43,13 +31,7 @@ public abstract class ValuationRules
 
     private sealed class PositionTotalRules : ValuationRules
     {
-        public override bool IsBalance => true;
-
         public override bool AllowsZeroPrice => true;
-
-        public override bool FetchesAutomatically => false;
-
-        public override PriceSource ManualEntrySource => PriceSource.ProviderValuation;
 
         public override decimal ValueAt(decimal quantity, AssetPriceSnapshot price) => price.Price;
 

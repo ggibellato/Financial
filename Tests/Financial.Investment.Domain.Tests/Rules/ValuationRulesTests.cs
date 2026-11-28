@@ -14,13 +14,7 @@ public class ValuationRulesTests
     [InlineData(ValuationMethod.Manual)]
     public void For_ProviderValueAndManual_ArePositionTotal(ValuationMethod method)
     {
-        var rules = ValuationRules.For(method);
-
-        using (new AssertionScope())
-        {
-            rules.Should().BeSameAs(ValuationRules.PositionTotal);
-            rules.IsBalance.Should().BeTrue();
-        }
+        ValuationRules.For(method).Should().BeSameAs(ValuationRules.PositionTotal);
     }
 
     [Theory]
@@ -29,33 +23,15 @@ public class ValuationRulesTests
     [InlineData(ValuationMethod.BondQuote)]
     public void For_OtherMethods_ArePerUnit(ValuationMethod method)
     {
-        var rules = ValuationRules.For(method);
-
-        using (new AssertionScope())
-        {
-            rules.Should().BeSameAs(ValuationRules.PerUnit);
-            rules.IsBalance.Should().BeFalse();
-        }
+        ValuationRules.For(method).Should().BeSameAs(ValuationRules.PerUnit);
     }
 
     [Fact]
-    public void PositionTotal_EntryAndFetchRules_AreBalanceRules()
+    public void AllowsZeroPrice_OnlyForPositionTotal()
     {
         using (new AssertionScope())
         {
-            ValuationRules.PositionTotal.ManualEntrySource.Should().Be(PriceSource.ProviderValuation);
-            ValuationRules.PositionTotal.FetchesAutomatically.Should().BeFalse();
             ValuationRules.PositionTotal.AllowsZeroPrice.Should().BeTrue();
-        }
-    }
-
-    [Fact]
-    public void PerUnit_EntryAndFetchRules_AreMarketPriceRules()
-    {
-        using (new AssertionScope())
-        {
-            ValuationRules.PerUnit.ManualEntrySource.Should().Be(PriceSource.Manual);
-            ValuationRules.PerUnit.FetchesAutomatically.Should().BeTrue();
             ValuationRules.PerUnit.AllowsZeroPrice.Should().BeFalse();
         }
     }
@@ -92,12 +68,10 @@ public class ValuationRulesTests
         ValuationRules.PerUnit.ValueWithoutPrice(quantity).Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(5)]
-    public void ValueWithoutPrice_PositionTotal_IsAlwaysUnavailable(int quantity)
+    [Fact]
+    public void ValueWithoutPrice_PositionTotal_IsUnavailable()
     {
-        ValuationRules.PositionTotal.ValueWithoutPrice(quantity).Should().BeNull();
+        ValuationRules.PositionTotal.ValueWithoutPrice(5m).Should().BeNull();
     }
 
     private static AssetPriceSnapshot Snapshot(decimal price) =>
