@@ -22,6 +22,8 @@ const EXISTING_ASSET: AssetAdminDto = {
   portfolioName: 'Default',
   brokerStatus: 'Active',
   isin: 'BR0000000001',
+  cnpj: null,
+  administratorCnpj: null,
   exchange: 'BVMF',
   ticker: 'BCIA11',
   country: 'BR',

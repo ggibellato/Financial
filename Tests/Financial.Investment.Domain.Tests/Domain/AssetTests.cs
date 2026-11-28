@@ -92,6 +92,107 @@ public class AssetTests
         asset.Segment.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Equity, "11222333000181")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.RealEstate, "11222333000181")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Fund, "11222333000181")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Bond, "11222333000181")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Pension, "11222333000181")]
+    [InlineData(CountryCode.UK, GlobalAssetClass.Equity, null)]
+    [InlineData(CountryCode.US, GlobalAssetClass.Fund, null)]
+    [InlineData(CountryCode.Unknown, GlobalAssetClass.Unknown, null)]
+    public void SetCnpj_AppliesToEveryBrazilianAssetOnly(CountryCode country, GlobalAssetClass assetClass, string? expected)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", country, "", assetClass);
+
+        asset.SetCnpj("11.222.333/0001-81");
+
+        asset.Cnpj.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Fund, "11444777000161")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.RealEstate, "11444777000161")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.ETF, "11444777000161")]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Equity, null)]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Pension, null)]
+    [InlineData(CountryCode.UK, GlobalAssetClass.RealEstate, null)]
+    public void SetAdministratorCnpj_AppliesOnlyToAcceptedBrazilianClasses(CountryCode country, GlobalAssetClass assetClass, string? expected)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", country, "", assetClass);
+
+        asset.SetAdministratorCnpj("11444777000161");
+
+        asset.AdministratorCnpj.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SetCnpjField_Blank_ClearsIt(bool administrator)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Fund);
+        asset.SetCnpj("11222333000181");
+        asset.SetAdministratorCnpj("11444777000161");
+
+        if (administrator)
+        {
+            asset.SetAdministratorCnpj("  ");
+            asset.AdministratorCnpj.Should().BeNull();
+        }
+        else
+        {
+            asset.SetCnpj("  ");
+            asset.Cnpj.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void SetCnpj_InvalidValueOnANonBrazilianAsset_IsRefused()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "LSE", "AAA", CountryCode.UK, "", GlobalAssetClass.Equity);
+
+        var act = () => asset.SetCnpj("11222333000182");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Enter a valid 14-digit CNPJ.");
+    }
+
+    [Theory]
+    [InlineData(CountryCode.UK, GlobalAssetClass.Fund, null, null)]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Equity, "11222333000181", null)]
+    [InlineData(CountryCode.BR, GlobalAssetClass.Fund, "11222333000181", "11444777000161")]
+    public void UpdateIdentity_ClearsInapplicableCnpjs(
+        CountryCode country, GlobalAssetClass assetClass, string? expectedCnpj, string? expectedAdministratorCnpj)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Fund);
+        asset.SetCnpj("11222333000181");
+        asset.SetAdministratorCnpj("11444777000161");
+
+        asset.UpdateIdentity("Asset B", "ISIN123", "BVMF", "AAA", country, "", assetClass);
+
+        using (new AssertionScope())
+        {
+            asset.Cnpj.Should().Be(expectedCnpj);
+            asset.AdministratorCnpj.Should().Be(expectedAdministratorCnpj);
+        }
+    }
+
+    [Fact]
+    public void UpdateIdentity_EtfToEquity_ClearsOnlyTheAdministratorCnpj()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.ETF);
+        asset.SetCnpj("11222333000181");
+        asset.SetAdministratorCnpj("11444777000161");
+
+        asset.UpdateIdentity("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Equity);
+
+        using (new AssertionScope())
+        {
+            asset.Cnpj.Should().Be("11222333000181");
+            asset.AdministratorCnpj.Should().BeNull();
+        }
+    }
+
     [Fact]
     public void SetSegment_FortyCharacters_IsAccepted()
     {

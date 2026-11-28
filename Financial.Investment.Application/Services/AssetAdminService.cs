@@ -60,6 +60,8 @@ public sealed class AssetAdminService : IAssetAdminService
             var name = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
             var segment = Asset.NormalizeSegment(request.Segment);
+            var cnpj = CnpjRules.Normalize(request.Cnpj);
+            var administratorCnpj = CnpjRules.Normalize(request.AdministratorCnpj);
             var pickSource = EnumParser.ParseOptionalDefinedName<PickSource>(request.PickSource, UnknownPickSource);
 
             var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
@@ -77,6 +79,8 @@ public sealed class AssetAdminService : IAssetAdminService
                 created.SetIncomePolicy(request.IncomePolicy ?? IncomePolicy.Unknown);
                 created.SetSegment(segment);
                 created.SetPickSource(pickSource);
+                created.SetCnpj(cnpj);
+                created.SetAdministratorCnpj(administratorCnpj);
                 portfolio.RegisterAsset(created);
                 return true;
             }).ConfigureAwait(false);
@@ -104,6 +108,8 @@ public sealed class AssetAdminService : IAssetAdminService
             var newName = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
             var segment = Asset.NormalizeSegment(request.Segment);
+            var cnpj = CnpjRules.Normalize(request.Cnpj);
+            var administratorCnpj = CnpjRules.Normalize(request.AdministratorCnpj);
             var pickSource = EnumParser.ParseOptionalDefinedName<PickSource>(request.PickSource, UnknownPickSource);
             var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
 
@@ -122,6 +128,8 @@ public sealed class AssetAdminService : IAssetAdminService
                 updated.SetIncomePolicy(request.IncomePolicy ?? updated.IncomePolicy);
                 updated.SetSegment(segment);
                 updated.SetPickSource(pickSource);
+                updated.SetCnpj(cnpj);
+                updated.SetAdministratorCnpj(administratorCnpj);
                 return true;
             }).ConfigureAwait(false);
 
@@ -168,6 +176,8 @@ public sealed class AssetAdminService : IAssetAdminService
         IncomePolicy = asset.IncomePolicy,
         Segment = asset.Segment,
         PickSource = asset.PickSource,
+        Cnpj = asset.Cnpj,
+        AdministratorCnpj = asset.AdministratorCnpj,
         Quantity = asset.Quantity
     };
 }

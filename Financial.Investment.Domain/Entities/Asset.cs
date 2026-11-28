@@ -34,6 +34,10 @@ public class Asset
 
     public PickSource? PickSource { get; private set; }
 
+    public string? Cnpj { get; private set; }
+
+    public string? AdministratorCnpj { get; private set; }
+
     public Transactions Transactions { get; private set; } = new();
 
     public decimal AveragePrice => Transactions.AveragePrice;
@@ -170,14 +174,46 @@ public class Asset
         Country = country;
         LocalTypeCode = NormalizeLocalTypeCode(localTypeCode);
         Class = assetClass;
-        if (!HasSegments(assetClass))
+        ClearInapplicableIdentityFields();
+    }
+
+    private void ClearInapplicableIdentityFields()
+    {
+        if (!HasSegments(Class))
         {
             Segment = null;
+        }
+
+        if (!AcceptsCnpj(Country))
+        {
+            Cnpj = null;
+        }
+
+        if (!AcceptsAdministratorCnpj(Country, Class))
+        {
+            AdministratorCnpj = null;
         }
     }
 
     public static bool HasSegments(GlobalAssetClass assetClass) =>
         assetClass is GlobalAssetClass.Equity or GlobalAssetClass.RealEstate;
+
+    public static bool AcceptsCnpj(CountryCode country) => country == CountryCode.BR;
+
+    public static bool AcceptsAdministratorCnpj(CountryCode country, GlobalAssetClass assetClass) =>
+        country == CountryCode.BR && assetClass is GlobalAssetClass.Fund or GlobalAssetClass.RealEstate or GlobalAssetClass.ETF;
+
+    public void SetCnpj(string? cnpj)
+    {
+        var normalized = CnpjRules.Normalize(cnpj);
+        Cnpj = AcceptsCnpj(Country) ? normalized : null;
+    }
+
+    public void SetAdministratorCnpj(string? cnpj)
+    {
+        var normalized = CnpjRules.Normalize(cnpj);
+        AdministratorCnpj = AcceptsAdministratorCnpj(Country, Class) ? normalized : null;
+    }
 
     public static string? NormalizeSegment(string? segment)
     {

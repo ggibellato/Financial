@@ -520,6 +520,49 @@ public class AssetAdminServiceTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
+    [Fact]
+    [Trait("AC", "P69-F06-brazilian-cnpj-identifiers-08")]
+    public void GetAssets_MapsBothCnpjs()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("AAAA11", "ISIN123", "BVMF", "AAAA11", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetCnpj("11222333000181");
+        asset.SetAdministratorCnpj("11444777000161");
+        broker.CreatePortfolio("Default").RegisterAsset(asset);
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = CreateService().GetAssets().Single();
+
+        using (new AssertionScope())
+        {
+            result.Cnpj.Should().Be("11222333000181");
+            result.AdministratorCnpj.Should().Be("11444777000161");
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UpdateAssetAsync_InvalidCnpj_ThrowsAndWritesNothing(bool administrator)
+    {
+        SeedBrokerWithAsset("AAAA");
+        var request = new AssetAdminUpdateDTO
+        {
+            Name = "AAAA",
+            Country = CountryCode.BR,
+            Class = GlobalAssetClass.Fund,
+            Cnpj = administrator ? null : "11222333000182",
+            AdministratorCnpj = administrator ? "11444777000162" : null
+        };
+
+        var act = async () => await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Enter a valid 14-digit CNPJ.");
+        _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AssetAdminService.UpdateAsset");
+    }
+
     private void SeedBrokerWithAsset(string? assetName)
     {
         _repository.Investments = Investments.Create();
