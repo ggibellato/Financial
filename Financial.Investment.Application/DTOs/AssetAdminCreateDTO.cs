@@ -41,4 +41,8 @@ public class AssetAdminCreateDTO
 
     /// <summary>"Recommended" or "MyChoice"; null or blank leaves it unset.</summary>
     public string? PickSource { get; set; }
+
+    public string? Cnpj { get; set; }
+
+    public string? AdministratorCnpj { get; set; }
 }

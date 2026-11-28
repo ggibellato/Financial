@@ -38,4 +38,8 @@ public class AssetAdminUpdateDTO
 
     /// <summary>"Recommended" or "MyChoice"; unlike the fields above, null or blank clears it rather than keeping it.</summary>
     public string? PickSource { get; set; }
+
+    public string? Cnpj { get; set; }
+
+    public string? AdministratorCnpj { get; set; }
 }

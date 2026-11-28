@@ -7829,8 +7829,10 @@ export interface components {
             sourcePortfolioName: string;
         };
         AssetAdminCreateDTO: {
+            administratorCnpj?: null | string;
             brokerName: string;
             class?: null | components["schemas"]["GlobalAssetClass"];
+            cnpj?: null | string;
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
             incomePolicy?: null | components["schemas"]["IncomePolicy"];
@@ -7844,9 +7846,11 @@ export interface components {
             valuationMethod?: null | components["schemas"]["ValuationMethod"];
         };
         AssetAdminDTO: {
+            administratorCnpj?: null | string;
             brokerName: string;
             brokerStatus: string;
             class?: components["schemas"]["GlobalAssetClass"];
+            cnpj?: null | string;
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
             incomePolicy?: components["schemas"]["IncomePolicy"];
@@ -7862,7 +7866,9 @@ export interface components {
             valuationMethod?: components["schemas"]["ValuationMethod"];
         };
         AssetAdminUpdateDTO: {
+            administratorCnpj?: null | string;
             class?: null | components["schemas"]["GlobalAssetClass"];
+            cnpj?: null | string;
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
             incomePolicy?: null | components["schemas"]["IncomePolicy"];
@@ -7888,12 +7894,14 @@ export interface components {
             percentage: number;
         };
         AssetDetailsDTO: {
+            administratorCnpj?: null | string;
             /** Format: double */
             averagePrice?: number;
             /** Format: double */
             averageSellPrice?: null | number;
             brokerName: string;
             class?: components["schemas"]["GlobalAssetClass"];
+            cnpj?: null | string;
             corporateActions?: components["schemas"]["CorporateActionDTO"][];
             costBasisMethod?: components["schemas"]["CostBasisMethod"];
             /** Format: double */

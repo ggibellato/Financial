@@ -210,6 +210,36 @@ public class InvestmentSerializerAdapterTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTripPreservesBothCnpjs()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("AAAA11", "ISIN123", "BVMF", "AAAA11", CountryCode.BR, "", GlobalAssetClass.RealEstate);
+        asset.SetCnpj("11222333000181");
+        asset.SetAdministratorCnpj("11444777000161");
+        broker.AddPortfolio("FII").AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        var loaded = Serializer.Deserialize(Serializer.Serialize(investments)).ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+
+        loaded.Cnpj.Should().Be("11222333000181");
+        loaded.AdministratorCnpj.Should().Be("11444777000161");
+    }
+
+    [Fact]
+    public void Deserialize_AssetWithoutCnpjs_LoadsThemAsNotSet()
+    {
+        const string json = """
+            { "ActiveBrokers": [ { "Name": "XPI", "Currency": "BRL", "Portfolios": [ { "Name": "FII", "Assets": [ { "Name": "AAAA11", "Country": "BR", "Class": "RealEstate" } ] } ] } ] }
+            """;
+
+        var asset = Serializer.Deserialize(json).ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+
+        asset.Cnpj.Should().BeNull();
+        asset.AdministratorCnpj.Should().BeNull();
+    }
+
+    [Fact]
     public void SerializeDeserialize_RoundTripPreservesTheArcaBucket()
     {
         var investments = Investments.Create();

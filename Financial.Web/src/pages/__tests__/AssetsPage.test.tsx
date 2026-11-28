@@ -40,6 +40,8 @@ const ASSETS: AssetAdminDto[] = [
     portfolioName: 'Default',
     brokerStatus: 'Active',
     isin: 'BR0000000001',
+    cnpj: null,
+    administratorCnpj: null,
     exchange: 'BVMF',
     ticker: 'BCIA11T',
     country: 'BR',
@@ -57,6 +59,8 @@ const ASSETS: AssetAdminDto[] = [
     portfolioName: 'Uncategorized',
     brokerStatus: 'Historic',
     isin: '',
+    cnpj: null,
+    administratorCnpj: null,
     exchange: '',
     ticker: 'CLOSEDT',
     country: 'Unknown',
@@ -176,6 +180,27 @@ describe('AssetsPage', () => {
 
     await waitFor(() =>
       expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', expect.objectContaining({ class: null }), 'historic'),
+    )
+  })
+
+  it('sends the stored CNPJs back unchanged when editing an asset', async () => {
+    const stored = { ...ASSETS[0], cnpj: '11222333000181', administratorCnpj: '11444777000161' }
+    getAdminAssetsMock.mockResolvedValue([stored, ASSETS[1]])
+    updateAssetMock.mockResolvedValue(stored)
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit BCIA11' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateAssetMock).toHaveBeenCalledWith(
+        'XPI',
+        'Default',
+        'BCIA11',
+        expect.objectContaining({ cnpj: '11222333000181', administratorCnpj: '11444777000161' }),
+        'active',
+      ),
     )
   })
 

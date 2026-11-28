@@ -100,6 +100,24 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_ReturnsBothCnpjs()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN1", "BVMF", "ASSET1", CountryCode.BR, "", GlobalAssetClass.Fund);
+        asset.SetCnpj("11222333000181");
+        asset.SetAdministratorCnpj("11444777000161");
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var result = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        result.Should().NotBeNull();
+        result!.Cnpj.Should().Be("11222333000181");
+        result.AdministratorCnpj.Should().Be("11444777000161");
+    }
+
+    [Fact]
     public void GetAssetDetails_WithActiveTaxClassifications_ReturnsDistinctJurisdictions()
     {
         var broker = Broker.Create("Broker", "BRL");

@@ -1471,6 +1471,12 @@
       },
       "AssetAdminCreateDTO": {
         "properties": {
+          "administratorCnpj": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "brokerName": {
             "type": "string"
           },
@@ -1482,6 +1488,12 @@
               {
                 "$ref": "#/components/schemas/GlobalAssetClass"
               }
+            ]
+          },
+          "cnpj": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "country": {
@@ -1547,6 +1559,12 @@
       },
       "AssetAdminDTO": {
         "properties": {
+          "administratorCnpj": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "brokerName": {
             "type": "string"
           },
@@ -1555,6 +1573,12 @@
           },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
+          },
+          "cnpj": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "country": {
             "$ref": "#/components/schemas/CountryCode"
@@ -1614,6 +1638,12 @@
       },
       "AssetAdminUpdateDTO": {
         "properties": {
+          "administratorCnpj": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "class": {
             "oneOf": [
               {
@@ -1622,6 +1652,12 @@
               {
                 "$ref": "#/components/schemas/GlobalAssetClass"
               }
+            ]
+          },
+          "cnpj": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "country": {
@@ -1721,6 +1757,12 @@
       },
       "AssetDetailsDTO": {
         "properties": {
+          "administratorCnpj": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "averagePrice": {
             "format": "double",
             "type": "number"
@@ -1737,6 +1779,12 @@
           },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
+          },
+          "cnpj": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "corporateActions": {
             "items": {

@@ -60,6 +60,8 @@ export default function AssetsPage() {
             incomePolicy: null,
             segment: values.segment || null,
             pickSource: values.pickSource || null,
+            cnpj: editingAsset.cnpj,
+            administratorCnpj: editingAsset.administratorCnpj,
           },
           editingAsset.brokerStatus === 'Active' ? 'active' : 'historic',
         )
@@ -82,6 +84,8 @@ export default function AssetsPage() {
           incomePolicy: null,
           segment: values.segment || null,
           pickSource: values.pickSource || null,
+          cnpj: null,
+          administratorCnpj: null,
         })
     closeFormDialog()
     return result

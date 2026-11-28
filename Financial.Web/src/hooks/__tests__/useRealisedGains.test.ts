@@ -56,6 +56,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   portfolioName: 'ISA',
   ticker: 'AAA',
   isin: 'ISIN-A',
+  cnpj: null,
+  administratorCnpj: null,
   exchange: 'LSE',
   currency: 'GBP',
   country: 'UK',

@@ -11,6 +11,8 @@ public class AssetDetailsDTO
     public required string PortfolioName { get; set; }
     public required string Ticker { get; set; }
     public string ISIN { get; set; } = string.Empty;
+    public string? Cnpj { get; set; }
+    public string? AdministratorCnpj { get; set; }
     public string Exchange { get; set; } = string.Empty;
     public string Currency { get; set; } = string.Empty;
     [JsonConverter(typeof(JsonStringEnumConverter))]

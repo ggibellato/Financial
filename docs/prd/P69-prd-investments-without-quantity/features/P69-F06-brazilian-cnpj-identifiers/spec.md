@@ -88,8 +88,9 @@ graph TD
 | `Financial.Investment.Application/Services/NavigationService.cs` | Modified | Details mapping | `GetAssetDetails` maps both |
 | `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json` | Regenerated | Contract | `cnpj` and `administratorCnpj` (string, nullable) on `AssetAdminDTO`, `AssetAdminCreateDTO`, `AssetAdminUpdateDTO`, `AssetDetailsDTO` |
 | `Financial.Web/src/api/generated/openapi.ts` | Regenerated | Web types | `npm run generate-api-types`; `types.ts` aliases unchanged |
+| `Financial.Web/src/pages/AssetsPage.tsx` | Modified | Keep the stored values | The generated request types make both fields required, so update sends the edited asset's stored `cnpj` / `administratorCnpj` back unchanged and create sends `null`. Web test fixtures of `AssetAdminDto` / `AssetDetailsDto` gain `cnpj: null, administratorCnpj: null` |
 
-8 non-test code files. Nothing needs a new comment or XML doc: the existing `///` on neighbouring DTO properties are kept and none are added. Regenerate with `UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests --filter "FullyQualifiedName~OpenApiContractTests"`.
+9 non-test code files (the ninth, `AssetsPage.tsx`, is the type fix `tsc -b` forced; recorded 2026-11-28). Nothing needs a new comment or XML doc: the existing `///` on neighbouring DTO properties are kept and none are added. Regenerate with `UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests --filter "FullyQualifiedName~OpenApiContractTests"`.
 
 ### PR 2: web
 
@@ -281,7 +282,7 @@ Points the PRD does not settle and that the Technical Decisions table does not a
 4. **Lenient punctuation:** any mix of `.`, `/`, `-` and spaces is stripped; only the digits are validated.
 5. **Alphanumeric CNPJ** (issued since July 2026, so a recently registered company or fund can already have one) is out of scope by choice: the PRD fixes 14 digits, and today's holdings have numeric CNPJs. Such a CNPJ is rejected with the standard message; widening `CnpjRules` and `utils/cnpj.ts` together is a follow-up.
 6. **No masked formatter in Domain yet:** F07 adds it with its first caller.
-7. **Slicing:** two PRs (backend 8 non-test code files; web 5), because one PR would be 13. Between them, the web update request omits both fields, which the server reads as "clear". No value can exist before PR 2 except one set through the raw API, and deploys happen after a feature's last PR, so this is accepted rather than adding a keep-on-null special case.
+7. **Slicing:** two PRs (backend 9 non-test code files; web 5), because one PR would be 14. Between them, the web update request sends the asset's stored values back unchanged (PR 1's `AssetsPage.tsx`), so editing an asset in the form never clears a CNPJ set through the API; PR 2 replaces that with the form's values.
 8. **AC ids:** `P69-F06-brazilian-cnpj-identifiers-01…08` in PRD order, added to the PRD boxes in PR 2's ticking commit. The feature and folder were renamed from "Fund CNPJ Identifier" when the scope widened.
 9. **Parallel F01 work:** F01 (Tracked by) also edits `Asset.cs`, the asset admin DTOs, `AssetAdminService` and `AssetFormDialog.tsx`. This feature's PR 1 merges first; F01's PR 2 rebases and regenerates `openapi-v1.snapshot.json` and `src/api/generated/openapi.ts` rather than hand-merging them.
 10. **No `context.md` change:** it does not document asset identity fields today.

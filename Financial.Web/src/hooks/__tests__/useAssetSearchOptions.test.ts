@@ -37,6 +37,8 @@ function makeAsset(overrides: Partial<AssetAdminDto>): AssetAdminDto {
     portfolioName: 'Acoes',
     brokerStatus: 'Active',
     isin: '',
+    cnpj: null,
+    administratorCnpj: null,
     exchange: '',
     ticker: '',
     country: 'Unknown',

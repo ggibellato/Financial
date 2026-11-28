@@ -134,6 +134,8 @@ function assetDetails(realisedGains: RealisedGainDto[]): AssetDetailsDto {
     portfolioName: 'Acoes',
     ticker: 'KLBN4',
     isin: 'BRKLBN',
+    cnpj: null,
+    administratorCnpj: null,
     exchange: 'BVMF',
     currency: 'BRL',
     country: 'BR',

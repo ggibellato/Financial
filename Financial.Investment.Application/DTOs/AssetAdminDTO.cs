@@ -38,5 +38,9 @@ public class AssetAdminDTO
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public PickSource? PickSource { get; set; }
 
+    public string? Cnpj { get; set; }
+
+    public string? AdministratorCnpj { get; set; }
+
     public decimal Quantity { get; set; }
 }

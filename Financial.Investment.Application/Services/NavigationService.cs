@@ -129,6 +129,8 @@ public sealed class NavigationService : INavigationService
                 PortfolioName = portfolioName,
                 Ticker = asset.Ticker,
                 ISIN = asset.ISIN,
+                Cnpj = asset.Cnpj,
+                AdministratorCnpj = asset.AdministratorCnpj,
                 Exchange = asset.Exchange,
                 Currency = broker?.Currency ?? string.Empty,
                 Country = asset.Country,
