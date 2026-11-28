@@ -22,6 +22,7 @@ export default function AssetsPage() {
   const { brokers } = useBrokers()
   const { portfolios } = usePortfolios()
   const activeBrokers = brokers.filter((b) => b.status === 'Active')
+  const activePortfolios = portfolios.filter((p) => p.brokerStatus === 'Active')
 
   const [brokerFilter, setBrokerFilter] = useState('')
   const [portfolioFilter, setPortfolioFilter] = useState('')
@@ -150,7 +151,7 @@ export default function AssetsPage() {
             <AssetFormDialog
               asset={editingAsset}
               activeBrokers={activeBrokers}
-              portfolios={portfolios}
+              portfolios={activePortfolios}
               segments={segments}
               onCancel={closeFormDialog}
               onSubmit={handleFormSubmit}
