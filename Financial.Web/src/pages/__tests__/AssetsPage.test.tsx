@@ -4,6 +4,7 @@ import AssetsPage from '../AssetsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../../api/types'
 import { never } from '../../test-utils/deferred'
+import { optionNames } from '../../test-utils/optionNames'
 import { duplicateNameRejection, expectDuplicateUnderName } from '../../test-utils/duplicateName'
 
 const {
@@ -111,6 +112,20 @@ describe('AssetsPage', () => {
     render(<AssetsPage />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
+  })
+
+  it("offers only the active broker's portfolios when a historic broker has the same name", async () => {
+    getAdminPortfoliosMock.mockResolvedValue([
+      ...PORTFOLIOS,
+      { name: 'Shares', brokerName: 'XPI', brokerStatus: 'Historic', assetCount: 2, arcaBucket: null },
+      { name: 'Default', brokerName: 'XPI', brokerStatus: 'Historic', assetCount: 1, arcaBucket: null },
+    ])
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'New asset' }))
+
+    await waitFor(() => expect(optionNames(screen.getByLabelText(/^Portfolio/))).toEqual(['Select a portfolio', 'Default']))
   })
 
   it('creates an asset through the New asset dialog', async () => {
