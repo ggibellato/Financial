@@ -126,25 +126,26 @@ public class AssetTests
         asset.AdministratorCnpj.Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void SetCnpjField_Blank_ClearsIt(bool administrator)
+    [Fact]
+    public void SetCnpj_Blank_ClearsIt()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Fund);
         asset.SetCnpj("11222333000181");
+
+        asset.SetCnpj("  ");
+
+        asset.Cnpj.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetAdministratorCnpj_Blank_ClearsIt()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA", CountryCode.BR, "", GlobalAssetClass.Fund);
         asset.SetAdministratorCnpj("11444777000161");
 
-        if (administrator)
-        {
-            asset.SetAdministratorCnpj("  ");
-            asset.AdministratorCnpj.Should().BeNull();
-        }
-        else
-        {
-            asset.SetCnpj("  ");
-            asset.Cnpj.Should().BeNull();
-        }
+        asset.SetAdministratorCnpj("  ");
+
+        asset.AdministratorCnpj.Should().BeNull();
     }
 
     [Fact]
