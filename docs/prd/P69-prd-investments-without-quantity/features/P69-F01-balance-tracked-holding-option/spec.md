@@ -11,8 +11,8 @@
 **Scope:**
 
 *Included*
-- `ValuationPolicy` (Domain): the valuation policy chosen by the asset's method, `ValuationPolicy.For(ValuationMethod)`, with a per-unit and a position-total implementation. It is the one place that says how a method reads a snapshot (`ValueAt`, `ValueOfPortion`, `ValueWithoutPrice`, `AllowsZeroPrice`, `FetchesAutomatically`, `ManualEntrySource`, `IsBalance`). F03 adds value and status on a date to the same policy, and F02 gates on it.
-- `HoldingValuationCalculator`, `MonthStartValueCalculator`, `DividendAttributionCalculator`, `AssetPriceSnapshot.ValidatePrice`, `AssetPriceLookupService` and `AssetPriceHistoryService` take the asset's policy (`Asset.ValuationPolicy`) instead of branching on a method.
+- `ValuationRules` (Domain): the valuation policy chosen by the asset's method, `ValuationRules.For(ValuationMethod)`, with a per-unit and a position-total implementation. It is the one place that says how a method reads a snapshot (`ValueAt`, `ValueOfPortion`, `ValueWithoutPrice`, `AllowsZeroPrice`, `FetchesAutomatically`, `ManualEntrySource`, `IsBalance`). F03 adds value and status on a date to the same policy, and F02 gates on it.
+- `HoldingValuationCalculator`, `MonthStartValueCalculator`, `DividendAttributionCalculator`, `AssetPriceSnapshot.ValidatePrice`, `AssetPriceLookupService` and `AssetPriceHistoryService` take the asset's policy (`Asset.ValuationRules`) instead of branching on a method.
 - `Asset.IsTrackedByBalance`, `Asset.HasRecords`, and the lock enforced in `Asset.SetValuationMethod`.
 - `AssetAdminDTO.IsTrackedByBalance` and `AssetAdminDTO.HasRecords`; the `TrackedByBalance` tree metadata key (no `AssetNodeDTO` field).
 - Asset form "Tracked by" radio group (create and edit), read-only when locked; "Balance" badge in the `DetailPanel` header.
@@ -29,10 +29,10 @@
 
 ## 2. Before you design (docs/rules/design.md)
 
-1. **Where it belongs:** Investment bounded context. The mode is a property of `Asset` (Domain); the lock is an invariant of `Asset` (enforced in `SetValuationMethod`, the only setter that could violate it); how a method reads a snapshot is a valuation policy with several call sites, so it lives in `Domain/Rules/ValuationPolicy.cs` and the asset exposes its own (`Asset.ValuationPolicy`). `AssetAdminService` (Application) only carries the request field through and maps the derived flags to the DTO.
+1. **Where it belongs:** Investment bounded context. The mode is a property of `Asset` (Domain); the lock is an invariant of `Asset` (enforced in `SetValuationMethod`, the only setter that could violate it); how a method reads a snapshot is a valuation policy with several call sites, so it lives in `Domain/Rules/ValuationRules.cs` and the asset exposes its own (`Asset.ValuationRules`). `AssetAdminService` (Application) only carries the request field through and maps the derived flags to the DTO.
 2. **Layers touched, in direction:** PR 1 Domain → Application. PR 2 Domain → Application → API contract → Web. PR 3 Application → Web (tree metadata only, no contract change). Infrastructure is untouched: `ValuationMethod` is already persisted on the asset.
 3. **What keeps Domain free of Infrastructure:** nothing new crosses a boundary. `AssetAdminService` keeps using `IInvestmentRepository` (declared in Application) and `ApplyAndSaveAsync`, whose rollback already discards a half-applied change when the delegate throws.
-4. **SOLID:** Single responsibility: how each method reads a snapshot exists once (`ValuationPolicy`), the lock exists once (`Asset.SetValuationMethod`). Open/closed: the request contract is unchanged (`valuationMethod` stays an optional field), so existing callers and stored data keep working; new DTO fields are additive. Dependency inversion: unchanged repository abstraction.
+4. **SOLID:** Single responsibility: how each method reads a snapshot exists once (`ValuationRules`), the lock exists once (`Asset.SetValuationMethod`). Open/closed: the request contract is unchanged (`valuationMethod` stays an optional field), so existing callers and stored data keep working; new DTO fields are additive. Dependency inversion: unchanged repository abstraction.
 
 ## 3. Architecture Impact
 
@@ -42,7 +42,7 @@ graph TD
     B --> C["POST/PUT /assets"]
     C --> D["AssetAdminService"]
     D --> E["Asset.SetValuationMethod (lock)"]
-    E --> F["ValuationPolicy.For(method)"]
+    E --> F["ValuationRules.For(method)"]
     G["HoldingValuationService"] --> H["HoldingValuationCalculator (asset method)"]
     I["MonthStartValueCalculator"] --> H
     J["NavigationMapper.MapCredit"] --> K["DividendAttributionCalculator (asset method)"]
@@ -56,7 +56,7 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |---|---|---|---|
-| Where "total or per unit" is decided | One `ValuationPolicy` per method (`PerUnit`, `PositionTotal`), taken from `Asset.ValuationPolicy` and passed to the calculators | An `IsBalance` check at each call site | The PRD (F03/F04) asks for one valuation policy; building it here means F03 adds value/status on a date to it instead of reshaping the same signatures a second time |
+| Where "total or per unit" is decided | One `ValuationRules` per method (`PerUnit`, `PositionTotal`), taken from `Asset.ValuationRules` and passed to the calculators | An `IsBalance` check at each call site | The PRD (F03/F04) asks for one valuation policy; building it here means F03 adds value/status on a date to it instead of reshaping the same signatures a second time |
 | How the mode is stored | Derived from `Asset.ValuationMethod` (`ProviderValue`/`Manual` = Balance) | A new `TrackingMode` field on `Asset` | No data change and no second field that could disagree with the method; the cost is that "mode" is a projection, not a stored value |
 | Request contract | Reuse the existing optional `valuationMethod` on `AssetAdminCreateDTO` / `AssetAdminUpdateDTO`; the web sends `ProviderValue` for Balance, `Unspecified` for Quantity and price, and `null` when the mode did not change | A new `trackingMode` request field | No request-shape change; `null` keeps today's "preserve" behaviour, so editing a `Manual` holding never silently rewrites it to `ProviderValue` |
 | What the lock compares | The mode (`IsBalance(old) != IsBalance(new)`), not the raw method | Lock every method change | A same-mode change (`MarketPrice` → `Unspecified`, `Manual` → `ProviderValue`) never changes how a snapshot is read, so it stays allowed, as today |
@@ -73,14 +73,14 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Financial.Investment.Domain/Rules/ValuationPolicy.cs` | New | One policy per method | Abstract `ValuationPolicy` with `For(ValuationMethod)` returning `PerUnit` (Unspecified, MarketPrice, BondQuote) or `PositionTotal` (ProviderValue, Manual); members `IsBalance`, `ValueAt(quantity, snapshot)`, `ValueOfPortion(shares, held, snapshot)`, `ValueWithoutPrice(quantity)` (PerUnit: 0 when quantity is 0, else unavailable; PositionTotal: always unavailable), `AllowsZeroPrice`, `FetchesAutomatically` (false for PositionTotal), `ManualEntrySource` (PositionTotal: `PriceSource.ProviderValuation`; PerUnit: `PriceSource.Manual`) |
-| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Expose the policy | `ValuationPolicy => ValuationPolicy.For(ValuationMethod)` |
+| `Financial.Investment.Domain/Rules/ValuationRules.cs` | New | One rule set per method | Abstract `ValuationRules` with `For(ValuationMethod)` returning `PerUnit` (Unspecified, MarketPrice, BondQuote) or `PositionTotal` (ProviderValue, Manual); members `IsBalance`, `ValueAt(quantity, snapshot)`, `ValueOfPortion(shares, held, snapshot)`, `ValueWithoutPrice(quantity)` (PerUnit: 0 when quantity is 0, else unavailable; PositionTotal: always unavailable), `AllowsZeroPrice`, `FetchesAutomatically` (false for PositionTotal), `ManualEntrySource` (PositionTotal: `PriceSource.ProviderValuation`; PerUnit: `PriceSource.Manual`) |
+| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Expose the policy | `ValuationRules => ValuationRules.For(ValuationMethod)` |
 | `Financial.Investment.Domain/Rules/HoldingValuationCalculator.cs` | Modified | Value from the policy | `Calculate(quantity, averagePrice, price, policy, valuationDate)` and `ValueAt(quantity, price, policy)` delegate to the policy; `price.ValuationMethod` is no longer read |
-| `Financial.Investment.Domain/Rules/MonthStartValueCalculator.cs` | Modified | Month-start value | Uses `asset.ValuationPolicy` |
+| `Financial.Investment.Domain/Rules/MonthStartValueCalculator.cs` | Modified | Month-start value | Uses `asset.ValuationRules` |
 | `Financial.Investment.Domain/Rules/DividendAttributionCalculator.cs` | Modified | Dividend yield on market | `Calculate(credit, transactions, priceOnDate, policy)`; uses `policy.ValueOfPortion` |
-| `Financial.Investment.Domain/Entities/AssetPriceSnapshot.cs` | Modified | Zero-price rule | `ValidatePrice` uses `ValuationPolicy.For(method).AllowsZeroPrice` (behaviour unchanged; the method passed in is already the asset's, from `Asset.SetPrice`) |
-| `Financial.Investment.Application/Services/HoldingValuationService.cs` | Modified | Caller | Passes `asset.ValuationPolicy` |
-| `Financial.Investment.Application/Services/NavigationMapper.cs` | Modified | Caller | `MapCredit` passes `asset.ValuationPolicy` |
+| `Financial.Investment.Domain/Entities/AssetPriceSnapshot.cs` | Modified | Zero-price rule | `ValidatePrice` uses `ValuationRules.For(method).AllowsZeroPrice` (behaviour unchanged; the method passed in is already the asset's, from `Asset.SetPrice`) |
+| `Financial.Investment.Application/Services/HoldingValuationService.cs` | Modified | Caller | Passes `asset.ValuationRules` |
+| `Financial.Investment.Application/Services/NavigationMapper.cs` | Modified | Caller | `MapCredit` passes `asset.ValuationRules` |
 
 8 non-test code files, plus the PRD §9 F01 AC ids (docs commit). No contract change. The Application price services move to PR 2 to keep this PR at 8 files.
 
@@ -88,11 +88,11 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Mode and lock | `IsTrackedByBalance => ValuationPolicy.IsBalance`; `HasRecords` (any transaction, credit, corporate action or price snapshot, using the private lists' counts); `SetValuationMethod` throws `InvestmentRuleViolationException(TrackingModeLockedMessage)` when the mode changes and `HasRecords` is true; `public const string TrackingModeLockedMessage = "This holding now has transactions or prices, so how it is tracked can't be changed."` |
+| `Financial.Investment.Domain/Entities/Asset.cs` | Modified | Mode and lock | `IsTrackedByBalance => ValuationRules.IsBalance`; `HasRecords` (any transaction, credit, corporate action or price snapshot, using the private lists' counts); `SetValuationMethod` throws `InvestmentRuleViolationException(TrackingModeLockedMessage)` when the mode changes and `HasRecords` is true; `public const string TrackingModeLockedMessage = "This holding now has transactions or prices, so how it is tracked can't be changed."` |
 | `Financial.Investment.Application/DTOs/AssetAdminDTO.cs` | Modified | Read contract | `bool IsTrackedByBalance`, `bool HasRecords` |
 | `Financial.Investment.Application/Services/AssetAdminService.cs` | Modified | Mapping | `ToDto` maps the two flags; create/update logic unchanged (the Domain guard does the work inside `ApplyAndSaveAsync`, so a rejection rolls back the rename and every other field) |
-| `Financial.Investment.Application/Services/AssetPriceLookupService.cs` | Modified | No fetch for Balance | The "ProviderValue or Manual: no automatic fetch" branch becomes `!asset.ValuationPolicy.FetchesAutomatically` |
-| `Financial.Investment.Application/Services/AssetPriceHistoryService.cs` | Modified | Manual entry source | `SetPriceAsync` uses `asset.ValuationPolicy.ManualEntrySource`, so a `Manual` holding now records `ProviderValuation` like a `ProviderValue` one (PRD F03) |
+| `Financial.Investment.Application/Services/AssetPriceLookupService.cs` | Modified | No fetch for Balance | The "ProviderValue or Manual: no automatic fetch" branch becomes `!asset.ValuationRules.FetchesAutomatically` |
+| `Financial.Investment.Application/Services/AssetPriceHistoryService.cs` | Modified | Manual entry source | `SetPriceAsync` uses `asset.ValuationRules.ManualEntrySource`, so a `Manual` holding now records `ProviderValuation` like a `ProviderValue` one (PRD F03) |
 | `Financial.Web/src/utils/trackingMode.ts` | New | Web mapping | `TrackingMode = 'quantity' \| 'balance'`, `TRACKING_MODE_LABELS` ("Quantity and price", "Balance"), `initialTrackingMode(asset)`, `valuationMethodForCreate(mode)` (`'ProviderValue'` or `null`), `valuationMethodForUpdate(initial, chosen)` (`null` when unchanged, else `'ProviderValue'` / `'Unspecified'`) |
 | `Financial.Web/src/components/AssetFormDialog.tsx` | Modified | "Tracked by" field | `trackingMode` in `AssetFormValues` and in the dirty check; `RadioGroup` when `hasRecords` is false, `ReadOnlyInput` + locked hint when true (as `AccountFormDialog` does with `isLocked = account?.hasRecords === true`) |
 | `Financial.Web/src/pages/AssetsPage.tsx` | Modified | Request mapping | Sends `valuationMethod` from `utils/trackingMode` on create and update instead of the hard-coded `null`; the two stale comments about "no form field yet" go |
@@ -213,7 +213,7 @@ No change. `Asset.ValuationMethod` is already persisted; `AssetPriceSnapshot.Val
 
 | Test File | Test Type | Target |
 |---|---|---|
-| `Tests/Financial.Investment.Domain.Tests/Rules/ValuationPolicyTests.cs` (new, PR 1) | Unit | `For` per enum value and each policy member |
+| `Tests/Financial.Investment.Domain.Tests/Rules/ValuationRulesTests.cs` (new, PR 1) | Unit | `For` per enum value and each policy member |
 | `Tests/Financial.Investment.Domain.Tests/Domain/HoldingValuationCalculatorTests.cs` (PR 1) | Unit | Asset method decides total vs per unit, whatever the snapshot's copy says |
 | `Tests/Financial.Investment.Domain.Tests/Domain/MonthStartValueCalculatorTests.cs` (PR 1) | Unit | Month-start value follows the asset method |
 | `Tests/Financial.Investment.Domain.Tests/Domain/DividendAttributionCalculatorTests.cs` (PR 1) | Unit | Pro-rating follows the asset method |

@@ -6,7 +6,7 @@
 
 **Builds on (specified, not yet built):**
 - **F06** (`../P69-F06-brazilian-cnpj-identifiers/spec.md`): `Asset.Cnpj` (14 digits or null, only ever set on BR assets), `CnpjRules` in `Financial.Investment.Domain/Rules/`, `cnpj` on `AssetDetailsDTO`, and `Financial.Web/src/utils/cnpj.ts` (`formatCnpj`). F06 leaves the masked Domain formatter and the CVM eligibility gate to this feature.
-- **F01** (`../P69-F01-balance-tracked-holding-option/spec.md`): `Asset.IsTrackedByBalance` (from `ValuationPolicy`), and the lookup's "no automatic fetch" branch rewritten as `!asset.ValuationPolicy.FetchesAutomatically`.
+- **F01** (`../P69-F01-balance-tracked-holding-option/spec.md`): `Asset.IsTrackedByBalance` (from `ValuationRules`), and the lookup's "no automatic fetch" branch rewritten as `!asset.ValuationRules.FetchesAutomatically`.
 
 Both are in wave 1 and merge before any F07 PR. Where this spec names an F01 or F06 member, it is that spec's contract; if the built code differs, follow the built code and record the difference in the PR's docs commit.
 
@@ -77,13 +77,13 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |---|---|---|---|
-| Eligibility gate | `Asset.IsPricedFromCvm => !IsTrackedByBalance && Country == CountryCode.BR && Class == GlobalAssetClass.Fund && Cnpj is not null` | A check in the fetcher's `Supports`; or on `ValuationPolicy` | The rule is a fact of the asset and has two callers (here and F08); the policy (F01) describes how a snapshot is read, not where it comes from |
+| Eligibility gate | `Asset.IsPricedFromCvm => !IsTrackedByBalance && Country == CountryCode.BR && Class == GlobalAssetClass.Fund && Cnpj is not null` | A check in the fetcher's `Supports`; or on `ValuationRules` | The rule is a fact of the asset and has two callers (here and F08); the policy (F01) describes how a snapshot is read, not where it comes from |
 | How the fetcher sees the CNPJ | `AssetPriceRequestDTO.CvmFundCnpj` (string?), set by `DescribeWith` only when `asset.IsPricedFromCvm` | A plain `Cnpj` always copied from the asset | Since F06 every BR holding can carry a CNPJ; naming it for its one use keeps a share's CNPJ from ever selecting CVM |
 | Source selection | `IAssetPriceFetcher.Supports(AssetPriceRequestDTO request)`; the three existing fetchers read `request.AssetClass` / `request.ValuationMethod` exactly as today; CVM registered first and supports `request.CvmFundCnpj is not null` | Keep `Supports(class, method)` and add a CNPJ branch in `AssetPriceService` | PRD asks for the existing `Supports` selection; a branch would make `AssetPriceService` know about CVM |
 | Historical capability | `IHistoricalAssetPriceFetcher : IAssetPriceFetcher` with `GetPriceOnDate(request, date)`; `AssetPriceService.GetPriceOnDate` picks the supporting fetcher and throws `UnsupportedAssetClassException` when it is not historical | A default member on `IAssetPriceFetcher` | Optional by type (ISP); the existing fetchers stay untouched |
 | Carrying the competence date | `AssetValueSnapshot` gains optional `DateOnly? EffectiveDate` and `string? SourceReference`; `AssetPriceService` maps `EffectiveDate` to `AssetPriceDTO.AsOfDate` with `AsOf` null, and `SourceReference` to the new `AssetPriceDTO.SourceReference` | Return the competence date as `AsOf` at midnight | A midnight timestamp is re-read in the viewer's time zone and can show the previous day (the reason `AsOfDate` exists); the lookup can only reach Infrastructure's answer through `AssetPriceDTO` |
 | Recording date | The lookup records `price.AsOfDate ?? today`, with `price.SourceReference`, through the existing `RecordAutomaticPriceIfNeededAsync` (renamed parameter, same check-and-write) | A CVM-specific recording path | One rule for every source: a source that publishes dated values gets its value recorded on that date |
-| Market status of a live dated price | `asset.ValuationPolicy.StatusOn(asOfDate, today)` when `AsOfDate` is set, else `Current` (today's behaviour) | `MarketStatusCalculator.For` directly | PRD: the weekday rule against the competence date; going through the policy (F01, extended by F03) keeps one status path for live and saved prices |
+| Market status of a live dated price | `asset.ValuationRules.StatusOn(asOfDate, today)` when `AsOfDate` is set, else `Current` (today's behaviour) | `MarketStatusCalculator.For` directly | PRD: the weekday rule against the competence date; going through the policy (F01, extended by F03) keeps one status path for live and saved prices |
 | Where CVM code lives | `Integrations/WebPageParser`: `CvmDailyReport` (static, pure), `CvmMonthFileStore` (instance), `CvmReportException`; Investment Infrastructure: `CvmQuotaPriceFetcher`, `CvmQuoteOptions` | A new `Integrations/Cvm` project | PRD decision; plain HTTP + CSV, no vendor SDK |
 | HTTP client | One named client (`CvmMonthFileStore.HttpClientName`) from `AddHttpClient`, created once and held by the singleton store, `Timeout` from options (60 s) | A `static readonly HttpClient` as `TesouroTransparente` does | Same effect (one long-lived client) but the tests and `ApiTestFactory` can give it a fake handler |
 | Revalidation timestamp | The cached file's last-write time (UTC) is "last downloaded or confirmed": `If-Modified-Since` sends it, a 304 touches it, a 200 replaces the file | A sidecar file holding the server's `Last-Modified` | No second file to keep in step; survives restarts (AC -08) |
@@ -130,7 +130,7 @@ graph TD
 | `Financial.Investment.Domain/ValueObjects/AssetValueSnapshot.cs` | Modified | Value object | Optional trailing parameters `DateOnly? EffectiveDate = null`, `string? SourceReference = null` |
 | `Financial.Investment.Application/DTOs/AssetPriceDTO.cs` | Modified | Wire | `public string? SourceReference { get; set; }`; the existing `AsOfDate` doc text is corrected to say it is also set for a fetched value its source dates (edit an existing comment, add none) |
 | `Financial.Investment.Infrastructure/Services/AssetPriceService.cs` | Modified | Mapping | `AsOf = snapshot.EffectiveDate is null ? snapshot.AsOf : null`, `AsOfDate = snapshot.EffectiveDate`, `SourceReference = snapshot.SourceReference` |
-| `Financial.Investment.Application/Services/AssetPriceLookupService.cs` | Modified | Recording and status | Live price: `MarketStatus = AsOfDate is { } d ? asset.ValuationPolicy.StatusOn(d, today) : Current` (F03 PR 1 adds `StatusOn`; if F07 PR 2 merges first, it adds `StatusOn` to the policy with the PerUnit weekday rule only and F03 adds the PositionTotal rule). `RecordAutomaticPriceIfNeededAsync(asset, price)` records on `price.AsOfDate ?? today` with `price.SourceReference`; the existing "only automatic entries are overwritten; unchanged price and source skip the write" check is evaluated against the entry on that date |
+| `Financial.Investment.Application/Services/AssetPriceLookupService.cs` | Modified | Recording and status | Live price: `MarketStatus = AsOfDate is { } d ? asset.ValuationRules.StatusOn(d, today) : Current` (F03 PR 1 adds `StatusOn`; if F07 PR 2 merges first, it adds `StatusOn` to the policy with the PerUnit weekday rule only and F03 adds the PositionTotal rule). `RecordAutomaticPriceIfNeededAsync(asset, price)` records on `price.AsOfDate ?? today` with `price.SourceReference`; the existing "only automatic entries are overwritten; unchanged price and source skip the write" check is evaluated against the entry on that date |
 
 4 non-test code files. Wire change: `sourceReference` on `AssetPriceDTO`. Regenerate the OpenAPI snapshot and the web types.
 
@@ -349,7 +349,7 @@ An invalid duration throws `InvalidOperationException` at start-up naming the ke
 - Current month quotes (if published) → `LatestOnOrBefore(today)`. Found → that quote. Otherwise previous month → `LatestOnOrBefore(today)`.
 - Neither month has a class-level quote: subclass-only rows seen in either → `FundHasSubclasses`; otherwise `NotFound`.
 - A `CvmReportException` from either month's store call fails the fetch only when the other month cannot answer: if the current month is unavailable but the previous month has a quote, the previous month's quote is used (it is still the latest the app can know), recorded as usual, and the price carries `fetchIssue = SourceUnreachable` (PR 5) so the Summary says a newer quote could not be fetched.
-- Market status is then `asset.ValuationPolicy.StatusOn(competence, today)` (PR 2; PerUnit applies the weekday rule): a Friday quote read on Monday is Current, and a Thursday quote read on Monday (before CVM's Monday run publishes Friday) is Stale, as the PRD expects.
+- Market status is then `asset.ValuationRules.StatusOn(competence, today)` (PR 2; PerUnit applies the weekday rule): a Friday quote read on Monday is Current, and a Thursday quote read on Monday (before CVM's Monday run publishes Friday) is Stale, as the PRD expects.
 
 ### 8.4 Quota on a date (`CvmQuotaPriceFetcher.GetPriceOnDate`)
 
@@ -519,7 +519,7 @@ Each point is one the PRD did not settle, resolved by the Auto-Accept row "Techn
 19. **Fetcher order:** CVM is registered first; because it supports only requests with `CvmFundCnpj`, the others' relative order and behaviour are unchanged.
 20. **Status texts not in the PRD** ("No saved value yet", the subclasses and not-saved texts, the CVM badge meaning) are new wording, kept short and specific, for review.
 21. **Status and badges on the Summary only:** the portfolio and broker Holdings grids are unchanged; their stale badges already follow the saved competence date.
-22. **Parallel wave-2 work:** F03 (Balance entries) also edits `AssetPriceLookupService` and `PriceHistoryTab.tsx`. Whichever merges second rebases; the generated OpenAPI files are regenerated, never hand-merged. Both route market status through `ValuationPolicy.StatusOn`; whichever lands first adds it.
+22. **Parallel wave-2 work:** F03 (Balance entries) also edits `AssetPriceLookupService` and `PriceHistoryTab.tsx`. Whichever merges second rebases; the generated OpenAPI files are regenerated, never hand-merged. Both route market status through `ValuationRules.StatusOn`; whichever lands first adds it.
 
 ## 13. Review amendments (binding; they supersede any earlier section they contradict)
 
